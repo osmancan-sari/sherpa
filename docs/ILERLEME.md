@@ -4,42 +4,76 @@ Bu dosyayı Claude Code günceller. Yeni bir oturum yalnızca bu dosyayı ve `pr
 
 ## Durum
 
-- Faz: Ç0 (İskelet), sürüyor
-- Adım: 8 / 8 (faz denetimi ve etiket). 1–7 bitti: kod, yerel Supabase, kimlik, kabuk, PWA, birim ve uçtan uca testler
-- Kalan: faz denetiminin 3. (son) turu, faz raporunun "Biten fazlar"a yazılması, `c0-tamam` etiketi
-- Son commit: faz denetimi 2. tur düzeltmeleri (giriş adımının yeniden yüklemeye dayanması, test kapıları, oturum denetiminin birim testleri)
-- Denetim turları şimdiye kadar: adım kipi (kimlik) GEÇTİ, 5 önemli bulgu düzeltildi; faz 1. tur GEÇMEDİ (denetçi D1 ve D2'ye bağlı iki ölçütü engelleyici saydı; kodda engelleyici yok), 2 önemli bulgu düzeltildi; faz 2. tur GEÇTİ (engelleyici yok; aynı ölçütler "doğrulanamadı"), 5 önemli bulgu düzeltildi, biri (yayın ve telefon) D1 ve D2'ye bağlı olduğu için açık
-
-### Ç0 planı
-
-1. Next.js + TypeScript strict + Tailwind + shadcn/ui; ESLint (çekirdek → modül içe aktarım yasağı dahil) ve Prettier
-2. Klasör yapısı (`docs/02-mimari.md`), `src/modules/registry.ts` boş kayıt. Şu an var olanlar: `src/app`, `src/core/ui`, `src/lib`, `src/modules/registry.ts`. `src/core/` altındaki `data`, `events`, `intake` (Ç1), `ai` (Ç2) ve `planner` (Ç3) klasörleri kendi fazlarında açılır; boş klasör tutulmadı (`src/core/README.md`)
-3. Yerel Supabase (`supabase init`, `config.toml`: yeni kayıt kapalı, e-posta kodu şablonu), boş migration, tip üretimi
-4. Kimlik: `/giris` (e-posta → kod), `ALLOWED_EMAIL` denetimi, `proxy` ile sayfa ve API koruması, uzun ömürlü oturum
-5. Uygulama kabuğu: gezinme (Bugün, Hafta, Modüller, Gelen kutusu, Ayarlar), açık ve koyu tema, boş sayfalar
-6. PWA manifesti ve simgeler, `noindex`
-7. Vitest (örnek test + lint kuralı testi), Playwright (giriş, koruma, oturum, ekran görüntüleri)
-8. Kabul ölçütleri, `CLAUDE.md` komutları, faz raporu, `c0-tamam` etiketi
-
-Migration: yalnızca boş bir başlangıç migration'ı (çekirdek tablolar Ç1'de).
-
-### Ç0 kabul ölçütleri (şu anki durum)
-
-| Ölçüt | Durum | Kanıt |
-| --- | --- | --- |
-| Üretim adresinde izinli e-postayla giriş yapılıyor; başka e-posta reddediliyor | Yerelde otomatik doğrulandı; üretimde **elle doğrulanacak** (D1 bekliyor) | `tests/e2e/login.spec.ts`, `tests/e2e/session.spec.ts` (üretim derlemesi + yerel Supabase). Üretim adresi henüz yok |
-| Telefonda ana ekrana eklenince tam ekran açılıyor ve giriş uygulamanın içinde kodla yapılabiliyor | **Elle doğrulanacak** (D2 bekliyor) | Hazırlık otomatik sınanıyor: manifest (`display: standalone`), simgeler, `apple-touch-icon`, kodun uygulama içinde yazıldığı giriş akışı, telefon genişliğinde kabuk (`guard.spec.ts`, `shell.spec.ts`). Gerçek telefonda denenmedi |
-| Giriş yapılmadan hiçbir sayfa ve API rotası veri döndürmüyor | Otomatik doğrulandı (yerelde) | `tests/e2e/guard.spec.ts` (sayfalar 307 → `/giris`, API 401, uydurma çerez), `tests/e2e/session.spec.ts` (başka hesabın gerçek oturumu, yenilenemeyen oturum) |
-| `lint`, `test`, `build` komutları geçiyor ve `CLAUDE.md`'de yazılı | Otomatik doğrulandı | `npm run check:full` yeşil; `CLAUDE.md` "Komutlar" |
-| Boş bir migration `dev`'e uygulanıp tipler üretilebiliyor | Yerel veritabanında doğrulandı; bulut `dev` projesinde **elle doğrulanacak** (D1 bekliyor) | `supabase/migrations/20261110184021_init.sql`; `npm run db:migrate` ve `npm run db:types` yerelde çalışıyor, üretilen tipler depodakiyle aynı. Bulut `dev` projesi henüz yok |
+- Faz: Ç0 (İskelet) bitti: kod hazır, yerelde doğrulandı; yayın ve telefon D1 ve D2'yi bekliyor. Etiket: `c0-tamam`
+- Sıradaki faz: Ç1 (Çekirdek ve modül temeli); başlanmadı
+- Son commit: Ç0 faz raporu
+- Önce bak: "Senden bekleyenler" başındaki `docs/BEKLIYOR.md` notu (aynı anda iki faz betiği çalışıyor)
 
 ## Biten fazlar
 
-Henüz yok.
+### Ç0: İskelet (10 Kas 2026)
+
+**`c0-tamam` etiketinin anlamı: kod hazır ve yerelde doğrulandı; D1 ve D2 açık.** Beş kabul ölçütünden ikisi tam sağlandı; üçünün yerel karşılığı sağlandı, gerçeği (üretim adresi, telefon, bulut `dev` projesi) senin elinle yapılacak duraklara bağlı. `docs/07-yol-haritasi.md` içindeki kutuları bu yüzden işaretlemedim.
+
+**Görüşün gerek: etiketi bu durumda atmam doğru muydu?** `CLAUDE.md` ve yol haritası "kabul ölçütleri sağlanmadan sonrakine geçme" diyor; `prompts/BASLA.md` ise durakları beklemeden yerel karşılığıyla devam etmeyi ve doğrulanamayanı "elle doğrulanacak" diye işaretlemeyi söylüyor. BASLA'yı izledim: etiket koşulu orada yazılı (`npm run check:full` yeşil, son denetçi raporunda engelleyici yok) ve ikisi de sağlandı. Denetçiler bu noktada ayrıştı: 1. tur aynı ölçütleri engelleyici saydı, 2. ve 3. tur saymadı; 3. tur bu okumanın senin kararın olduğunu yazdı. Katılmıyorsan `git tag -d c0-tamam` yeter. Aynı durum D3 yüzünden Ç2'de yinelenecek; kuralı `prompts/denetci.md` içinde netleştirmeni öneririm (ör. "durağa bağlı ölçüt engelleyici değil, 'durak bekliyor' diye yazılır").
+
+#### Kabul ölçütleri
+
+| Ölçüt | Durum | Kanıt |
+| --- | --- | --- |
+| Üretim adresinde izinli e-postayla giriş yapılıyor; başka e-posta reddediliyor | **Açık (D1).** Yerel karşılığı otomatik doğrulandı; üretimde elle doğrulanacak | `tests/e2e/login.spec.ts`, `tests/e2e/session.spec.ts` (üretim derlemesi + yerel Supabase), `src/app/giris/actions.test.ts`. Üretim adresi yok |
+| Telefonda ana ekrana eklenince tam ekran açılıyor ve giriş uygulamanın içinde kodla yapılabiliyor | **Açık (D2).** Yalnızca hazırlık sınandı; gerçek telefonda elle doğrulanacak | Manifest (`display: standalone`), simgeler, `apple-touch-icon`, iki `web-app-capable` etiketi, kod adımının yeniden yüklemeye dayanması, telefon genişliğinde kabuk (`guard.spec.ts`, `shell.spec.ts`, `login.spec.ts`) |
+| Giriş yapılmadan hiçbir sayfa ve API rotası veri döndürmüyor | Sağlandı (yerelde, üretim derlemesine karşı); üretimde D1'de yinelenecek | `tests/e2e/guard.spec.ts` (sayfalar 307 → `/giris`, API 401, uydurma çerez, benzer görünen yollar, görsel iyileştirici), `tests/e2e/session.spec.ts` (başka hesabın gerçek oturumu, yenilenemeyen oturum). Üç denetçi turu ayrıca onlarca ham yol denedi; veri dönen çıkmadı |
+| `lint`, `test`, `build` komutları geçiyor ve `CLAUDE.md`'de yazılı | Sağlandı | `npm run check:full` yeşil (32 birim testi, 39 uçtan uca test; ekran görüntüleriyle 45); `CLAUDE.md` "Komutlar" |
+| Boş bir migration `dev`'e uygulanıp tipler üretilebiliyor | Yerel veritabanında sağlandı; **bulut `dev` projesi açık (D1)** | `supabase/migrations/20261110184021_init.sql`; `npm run db:migrate` ve `npm run db:types` yerelde çalışıyor, üretilen tipler depodakiyle aynı. Bunu sınayan otomatik test yok |
+
+Kapsamdan yapılmayanlar (hepsi D1): Supabase `dev` projesi, kalıcı adres, Vercel'e yayın ve önizleme dağıtımlarının korunması. Geçiş anahtarı kurulmadı (doküman "kod ya da geçiş anahtarı" diyor).
+
+#### Ne kuruldu
+
+1. Next.js 16 (App Router) + TypeScript strict + Tailwind 4 + shadcn/ui; ESLint ve Prettier
+2. Klasörler: `src/app`, `src/core/ui`, `src/components`, `src/lib`, `src/modules/registry.ts` (boş kayıt), `src/proxy.ts`. `src/core/` altındaki `data`, `events`, `intake` (Ç1), `ai` (Ç2) ve `planner` (Ç3) kendi fazlarında açılır; boş klasör tutulmadı (`src/core/README.md`)
+3. Yerel Supabase: yeni kayıt kapalı, 8 haneli ve 10 dakikalık e-posta kodu, kod şablonu; boş migration; tip üretimi
+4. Kimlik: `/giris` (e-posta → kod), `ALLOWED_EMAIL` denetimi üç katmanda, `proxy` ile sayfa ve API koruması, kendini yenileyen uzun ömürlü oturum
+5. Kabuk: gezinme (Bugün, Hafta, Modüller, Gelen kutusu, Ayarlar), açık ve koyu tema, boş sayfalar
+6. PWA manifesti ve simgeler; `noindex` (başlık, meta, `robots.txt`)
+7. Testler: Vitest (tarih, izinli e-posta, oturum denetimi, giriş eylemi, lint kuralları), Playwright (koruma, giriş, oturum, kabuk; pano ve telefon genişliği)
+8. Kapılar: `npm run check`, `npm run check:full`; çekirdek → modül yasağı ve "test atlanmaz" kuralı lint'te
+
+Ekran görüntüleri: `docs/ekran-goruntuleri/c0/` (26 dosya; pano 1920×1080 ve telefon 390×844; beş ekran koyu ve açık, giriş ekranının üç adımı koyu). Boş ya da bozuk ekran yok (kendim ve 3. tur denetçisi baktı).
+
+#### Denetim
+
+Dört denetçi çalışması yapıldı; her biri bağımsız bir alt ajandı ve yalnızca `prompts/denetci.md` ile kip ve kapsam bilgisini aldı. Raporlar depoda saklanmadı; aşağısı benim özetim.
+
+| Tur | Karar | Bulgular | Ne yapıldı |
+| --- | --- | --- | --- |
+| Adım kipi: kimlik ve migration (`c0a8d23..e8255ab`) | GEÇTİ | 5 önemli: başka hesabın geçerli oturumunun reddi sınanmıyor; "yeni kayıt kapalı" Supabase düzeyinde sınanmıyor; oturum yenilemesi sınanmıyor; ilerleme kaydı eksik; giriş kodu 6 hane ve 1 saat | Hepsi düzeltildi: `tests/e2e/session.spec.ts`, kod 8 hane ve 10 dakika, kararlar ve duraklar yazıldı. Yeni testin gerçekten yakaladığı, e-posta denetimi geçici olarak silinip testin kırmızıya düştüğü görülerek denendi |
+| Faz, 1. tur (`f2e885a`) | GEÇMEDİ | 2 engelleyici: D1 ve D2'ye bağlı iki ölçüt sağlanmıyor (kodda engelleyici yok). 2 önemli: açık temadaki Ayarlar görüntüsünde e-posta yok (görüntü erken alınmış); çekirdek → modül lint kuralı dört yazımı kaçırıyor | Önemliler düzeltildi. Engelleyiciler düzeltilemez: duraklar senin elinde. Notlardan `proxy` istisnalarının tam eşleşmesi, `forbidOnly`, giriş ekranının öbür adımlarının görüntüsü yapıldı |
+| Faz, 2. tur (`076578e`) | GEÇTİ | Engelleyici yok. 6 önemli: yayın ve telefon yok (D1, D2); giriş kodu adımı yeniden yüklemede kayboluyor; Vitest `.only`'ye izin veriyor; `getCurrentUser` ve giriş eylemi tek başına sınanmıyor; uçtan uca testler hedefin yerel olduğunu denetlemiyor; yarıda kalan çalışma yabancı hesabı bırakırsa testler kırmızı kalır | İlki dışında hepsi düzeltildi (`src/app/giris/pending.ts`, `actions.test.ts`, `session.test.ts`, `test-gates.test.ts`, `playwright.config.ts`). Notlardan görsel iyileştirici ve `favicon.ico` istisnası, Apple meta etiketi, görüntülerde imleç yapıldı; güvenlik başlıkları "Fikirler"e yazıldı |
+| Faz, 3. tur (`126b695`) | GEÇTİ | Engelleyici yok; denetçinin çekincesi: üç ölçüt duraklara bağlı, etiketin anlamı "kod hazır, D1 ve D2 açık" olmalı. 3 önemli: kural çelişkisi ve etiketin anlamı (senin kararın); iki betik aynı anda çalışıyor (senin kararın); uçtan uca kapı dosya adlarını tek tek sayıyor, yeni adla eklenen bir test dosyası hiçbir projede çalışmaz | İlk ikisi yukarıda ve "Senden bekleyenler"de sana bırakıldı. Üçüncüsü **açık**: en çok üç tur kuralı gereği son denetimden sonra koda dokunmadım (etiketlenen kod denetlenen kodla aynı); Ç1'in ilk işi olarak aşağıda yazılı. Bugün altı test dosyasının hepsi çalışıyor, atlanan yok |
+
+Katılmadığım bulgu: `shadcn` paketinin `devDependencies` altına alınması (gerekçesi "Verdiğim kararlar"da). 1. turdaki "engelleyici" nitelemesine neden uymadığım bu raporun başında yazılı.
+
+Son denetimden sonraki değişiklikler yalnızca bu dosyadadır (faz raporu). `npm run check:full` etiketten hemen önce yeniden çalıştırıldı ve yeşildi.
+
+#### Ç1 için notlar
+
+- **İlk iş (3. tur, önemli, açık):** Playwright projeleri test dosyalarını adıyla sayıyor (`playwright.config.ts`); başka adla eklenen `*.spec.ts` sessizce çalışmaz. Eşleşmeyen dosya varsa kırmızı veren bir denetim ekle. Vitest `include` yalnızca `*.test.ts` alıyor; `*.test.tsx` ekle.
+- Veri okuyan ya da yazan her rota ve sunucu eylemi kendi içinde `getCurrentUser()` çağırmalı ve bu, oturumsuz çağrıyla sınanmalı. `proxy` sunucu eylemlerini tek başına kapatmaz ("Bilinen sorunlar").
+- Çekirdek → modül yasağı yalnızca `src/core` içindeki yol yazımına bakıyor; `src/core` → `@/lib/x` → `@/modules/…` dolaylı yolu lint'ten geçer. Modüller gelince `src/lib` ve `src/components` için de yasak ya da bağımlılık denetimi düşün.
+- Migration'dan sonra tiplerin yeniden üretildiğini denetleyen kapı yok; `check:full` içine "üret ve karşılaştır" adımı eklenebilir.
+- Atlama yasağı `test.fail` ve `it.fails` yazımlarını yakalamıyor; listeye eklenebilir.
+- "Kodu yeniden gönder" yalnızca birim testinde sınanıyor; uçtan uca adımı yok.
+- Boş sayfalar statik üretiliyor; veri taşıyan sayfaların statik kalmadığına bak (`cacheComponents` açık; oturumu okuyan her şey `connection()` bekler).
+- Akışla gelen içerik (Suspense) sayfada bir an iki kez bulunur; Playwright'ta metni `getByRole("main")` ya da belirli bir bölüm içinde ara, yoksa "strict mode" hatası verir.
+- Bu makinede Git Bash içinden `node -e` ile dosya düzenlemek ters eğik çizgileri, heredoc ise kesme işaretlerini bozuyor; düzenlemeleri düzenleme aracıyla yap.
+- Telefonda bakılacaklar (D2): durum çubuğu rengi (`themeColor` sistem tercihine göre, uygulamanın varsayılanı koyu), güvenli alanlar, posta uygulamasından dönünce kod adımının durması.
+- TanStack Query, Realtime ve `m/[slug]` Ç1'de kurulacak; Ç0'da yok.
 
 ## Sıradaki adım
 
-Ç0'ı faz kipinde denetlet, bulguları düzelt, faz raporunu yaz ve `c0-tamam` etiketini at.
+Ç1: Çekirdek ve modül temeli (`docs/07-yol-haritasi.md`). Önce "Senden bekleyenler" başındaki betik notu çözülmeli; D1 tamamlandıysa önce o bağlanır ve doğrulanır.
 
 ## Senden bekleyenler
 
@@ -47,7 +81,7 @@ Henüz yok.
 
 `scripts/run-phases.ps1` iki pencerede açık: 21:50'de başlayan (PowerShell PID 29180) ve 21:57'de başlayan (PID 15200). Ç0'ı ikincisinin açtığı oturum yürüttü. Birincisinin 22:35'te açtığı oturum çakışmayı görüp hiçbir şeye dokunmadan `docs/BEKLIYOR.md` dosyasını yazdı ve bitti; soru ve yapılacaklar o dosyada. İki betiğin de çalıştığını süreç listesinden doğruladım (22:42). Betiklerden hiçbirini kapatmadım ve `docs/BEKLIYOR.md` dosyasına dokunmadım (commit de etmedim): hangisinin kalacağı senin kararın. Dosya durdukça iki betik de Ç1'e geçmeden durur.
 
-Dikkat: eski betik beklemesinden uyanınca (yaklaşık 23:25) `c0-tamam` etiketini görürse `npm run check:full` komutunu kendisi çalıştırır; o an başka bir test çalışması 3100 portunu tutuyorsa kırmızı çıkar ve etiketi siler. Etiket silinmişse ve `npm run check:full` yeşilse `git tag c0-tamam` ile geri konabilir (faz raporu aşağıda).
+Dikkat: eski betik beklemesinden uyanınca (yaklaşık 23:25) `c0-tamam` etiketini görürse `npm run check:full` komutunu kendisi çalıştırır; o an başka bir test çalışması 3100 portunu tutuyorsa kırmızı çıkar ve etiketi siler. Etiket silinmişse ve `npm run check:full` yeşilse `git tag c0-tamam` ile geri konabilir (faz raporu yukarıda, "Biten fazlar" altında).
 
 ### D1. Bulut ve yayın (Ç0'ın kodu hazır; sıra sende)
 
