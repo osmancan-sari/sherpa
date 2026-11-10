@@ -1,0 +1,13 @@
+.next/
+node_modules/
+package-lock.json
+supabase/.temp/
+supabase/.branches/
+test-results/
+playwright-report/
+playwright/.auth/
+docs/
+prompts/
+CLAUDE.md
+README.md
+AGENTS.md

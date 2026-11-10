@@ -1,0 +1,2 @@
+-- Ç0: intentionally empty. Proves the migration flow (apply, then regenerate types).
+-- Core tables arrive in Ç1 (docs/03-veri-modeli.md); every table gets user_id and RLS.
