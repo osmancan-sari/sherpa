@@ -22,7 +22,9 @@ test("another e-mail address is rejected and gets no code", async ({ page }) => 
 
 test("a wrong code does not sign in", async ({ page }) => {
   const realCode = await requestCode(page);
-  const wrongCode = realCode === "000000" ? "111111" : "000000";
+  // Same length as the real one, one digit off.
+  const wrongCode = (realCode[0] === "0" ? "1" : "0") + realCode.slice(1);
+  expect(realCode).toMatch(/^\d{8}$/);
   await page.getByLabel("Giriş kodu").fill(wrongCode);
   await page.getByRole("button", { name: "Giriş yap" }).click();
 

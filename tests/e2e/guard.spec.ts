@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { SESSION_COOKIE } from "./supabase";
 
 // Acceptance: without signing in, no page and no API route returns data.
 
@@ -46,7 +47,7 @@ test("a made-up session cookie does not get in", async ({ browser, baseURL }) =>
     expires_at: Math.floor(Date.now() / 1000) + 3600,
     user: { id: "00000000-0000-0000-0000-000000000000", email: process.env.ALLOWED_EMAIL },
   });
-  await context.addCookies([{ name: "sb-127-auth-token", value: fakeSession, url: baseURL! }]);
+  await context.addCookies([{ name: SESSION_COOKIE, value: fakeSession, url: baseURL! }]);
 
   const api = await context.request.get("/api/me", { maxRedirects: 0 });
   expect(api.status()).toBe(401);

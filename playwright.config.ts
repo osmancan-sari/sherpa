@@ -29,9 +29,9 @@ export default defineConfig({
   projects: [
     { name: "setup", testMatch: /auth\.setup\.ts/ },
     {
-      // Signed-out behaviour: the guard and the login flow.
+      // The gate: signed-out behaviour, the login flow, sessions.
       name: "giris",
-      testMatch: /(guard|login)\.spec\.ts/,
+      testMatch: /(guard|login|session)\.spec\.ts/,
       dependencies: ["setup"],
       use: { viewport: { width: 1280, height: 800 } },
     },

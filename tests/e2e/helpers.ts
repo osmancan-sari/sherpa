@@ -4,7 +4,6 @@ import { expect, type Page } from "@playwright/test";
 const MAILPIT_URL = process.env.MAILPIT_URL ?? "http://127.0.0.1:54324";
 
 export const ALLOWED_EMAIL = requireEnv("ALLOWED_EMAIL");
-export const SUPABASE_URL = requireEnv("NEXT_PUBLIC_SUPABASE_URL");
 export const STORAGE_STATE = "playwright/.auth/user.json";
 
 function requireEnv(name: string): string {
@@ -40,7 +39,7 @@ export async function readLoginCode(email: string, timeoutMs = 15_000): Promise<
     if (message) {
       const response = await fetch(`${MAILPIT_URL}/api/v1/message/${message.ID}`);
       const { Text } = (await response.json()) as { Text: string };
-      const code = Text.match(/\b\d{6}\b/)?.[0];
+      const code = Text.match(/\b\d{8}\b/)?.[0];
       if (code) return code;
     }
     await new Promise((resolve) => setTimeout(resolve, 250));

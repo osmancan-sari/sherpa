@@ -26,6 +26,7 @@ export async function login(_previous: LoginState, formData: FormData): Promise<
 
   if (intent === "verify") {
     const token = String(formData.get("token") ?? "").replace(/\D/g, "");
+    // The code's length is set in Supabase (supabase/config.toml: otp_length); it is never under 6.
     if (token.length < 6) {
       return { step: "code", email, error: "Kodu eksiksiz yaz." };
     }

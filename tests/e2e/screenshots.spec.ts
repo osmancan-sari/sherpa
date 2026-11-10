@@ -22,8 +22,16 @@ for (const theme of ["dark", "light"] as const) {
     for (const screen of screens) {
       await page.goto(screen.path);
       await expect(page.getByRole("heading", { level: 1, name: screen.heading })).toBeVisible();
+      if (screen.name === "ayarlar") {
+        // The active theme is only known after hydration; wait for it before the picture.
+        await expect(
+          page.getByRole("group", { name: "Tema" }).locator("[aria-pressed=true]"),
+        ).toHaveCount(1);
+      }
       await page.screenshot({
         path: path.join(folder, `${testInfo.project.name}-${screen.name}-${theme}.png`),
+        // Finish colour transitions instead of catching them halfway.
+        animations: "disabled",
       });
     }
   });
@@ -42,6 +50,9 @@ test("login screen", async ({ browser }, testInfo) => {
   const page = await context.newPage();
   await page.goto("/giris");
   await expect(page.getByLabel("E-posta")).toBeVisible();
-  await page.screenshot({ path: path.join(folder, `${testInfo.project.name}-giris-dark.png`) });
+  await page.screenshot({
+    path: path.join(folder, `${testInfo.project.name}-giris-dark.png`),
+    animations: "disabled",
+  });
   await context.close();
 });

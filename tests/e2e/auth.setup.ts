@@ -1,6 +1,7 @@
 import { execFileSync } from "node:child_process";
 import { test as setup } from "@playwright/test";
-import { signIn, STORAGE_STATE, SUPABASE_URL } from "./helpers";
+import { signIn, STORAGE_STATE } from "./helpers";
+import { SUPABASE_URL } from "./supabase";
 
 setup("local stack is up and the user is signed in", async ({ page }) => {
   const health = await fetch(`${SUPABASE_URL}/auth/v1/health`).catch(() => null);
