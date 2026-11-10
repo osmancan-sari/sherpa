@@ -1,50 +1,63 @@
-# Baştan sona çekirdek: tek istem
+# Çekirdek: her faz için aynı istem
 
-Claude Code'a yalnızca şunu yaz:
+Her faz ayrı bir Claude Code sohbetinde yapılır. Yeni bir sohbet aç ve her seferinde yalnızca şunu yaz:
 
-> `prompts/BASLA.md` dosyasını oku ve oradaki görevi uygula.
+> `prompts/BASLA.md` dosyasını oku ve sıradaki fazı tamamla.
 
-Oturum kesilirse ya da bağlam dolarsa yeni oturumda şunu yaz:
-
-> `prompts/BASLA.md` ve `docs/ILERLEME.md` dosyalarını oku, kaldığın yerden devam et.
+Hangi fazın sırada olduğunu `docs/ILERLEME.md` söyler; istem hep aynıdır. Bir faz yarıda kalırsa (oturum kesildi, kullanım sınırı doldu) yeni sohbette yine aynı cümleyi yaz; kaldığı yerden devam eder.
 
 ---
 
 ## Görev
 
-Bu depodaki Sherpa uygulamasının **çekirdek hattını (Ç0–Ç5) baştan sona kur.** Kapsam ve kabul ölçütleri `docs/07-yol-haritasi.md` içinde.
+Bu depodaki Sherpa uygulamasının çekirdek hattı (Ç0–Ç5) faz faz kuruluyor. **Bu oturumda yalnızca bir faz yapacaksın:** `docs/ILERLEME.md` içindeki "Durum" ve "Sıradaki adım" bölümlerine bak; yarıda kalmış bir faz varsa onu bitir, yoksa sıradaki fazı baştan sona tamamla. Faz bitince dur; sonraki faza başlama.
 
-Modül hattına girme. `_sablon` ve `deneme` dışında hiçbir modül kurma; `docs/moduller/` altındaki dosyalar taslaktır ve ayrı oturumlarda tasarlanacak. Onlara yalnızca modül sözleşmesinin neye hizmet edeceğini anlamak için bak.
+Kapsam ve kabul ölçütleri `docs/07-yol-haritasi.md` içinde.
+
+Modül hattına girme. `_sablon` ve `deneme` dışında hiçbir modül kurma; `docs/moduller/` altındaki dosyalar taslaktır ve ayrı oturumlarda tasarlanacak.
 
 ## Önce oku
 
-`CLAUDE.md`, sonra `docs/01` – `docs/11` dosyalarının tamamı. Dokümanlar tek kaynaktır; onlarla çelişen bir şey yapma.
+Her oturumda: `CLAUDE.md`, `docs/ILERLEME.md`, `docs/07-yol-haritasi.md` (ilgili fazın bölümü). Sonra faza göre:
+
+| Faz | Okunacak dokümanlar |
+| --- | --- |
+| Ç0. İskelet | `docs/01-urun.md`, `docs/02-mimari.md`, `docs/11-yayin-ve-cihazlar.md` |
+| Ç1. Çekirdek ve modül temeli | `docs/03-veri-modeli.md`, `docs/06-modul-sozlesmesi.md`, `docs/05-arayuz.md`, `docs/02-mimari.md` |
+| Ç2. Yapay zeka geçidi | `docs/10-yapay-zeka.md`, `docs/06-modul-sozlesmesi.md`, `docs/03-veri-modeli.md` |
+| Ç3. Planlayıcı | `docs/04-planlayici.md`, `docs/05-arayuz.md`, `docs/10-yapay-zeka.md`, `docs/03-veri-modeli.md` |
+| Ç4. Pano ve telefon cilası | `docs/05-arayuz.md`, `docs/11-yayin-ve-cihazlar.md` |
+| Ç5. Claude köprüsü | `docs/02-mimari.md`, `docs/06-modul-sozlesmesi.md` |
+
+Dokümanlar tek kaynaktır; onlarla çelişen bir şey yapma. Önceki fazlarda yazılmış kodu da oku; üzerine kuracaksın.
 
 ## Nasıl çalışacaksın
 
-1. **Sırayla ilerle:** Ç0 → Ç1 → Ç2 → Ç3 → Ç4 → Ç5. Fazlar arasında benden onay bekleme.
-2. **Yerelde geliştir.** Veritabanı için Supabase'in yerel geliştirme ortamını kullan; bulut projeleri ve yayın bir duraktır (aşağıda). Böylece benden bir şey beklemeden ilerleyebilirsin.
-3. **Her fazda aynı döngü:** kısa plan (`docs/ILERLEME.md`'ye yaz) → uygula → test et → kabul ölçütlerini tek tek doğrula → `docs/ILERLEME.md`'yi güncelle → commit at ve fazı etiketle (`c0-tamam`, `c1-tamam`…).
-4. **Doğrulama.**
+1. **Tek faz, baştan sona.** Faz içinde benden onay bekleme; faz bitince dur.
+2. **Ortam.** Geliştirme makinesi Windows; komutları PowerShell'e uygun yaz. Satır sonları LF (`.gitattributes` hazır). Docker Desktop kurulu ve çalışıyor.
+3. **Yerelde geliştir.** Veritabanı için Supabase'in yerel geliştirme ortamını kullan; bulut projeleri ve yayın bir duraktır (aşağıda). Böylece benden bir şey beklemeden ilerleyebilirsin.
+4. **Fazın döngüsü:** kısa plan (`docs/ILERLEME.md`'ye yaz) → uygula → test et → kabul ölçütlerini tek tek doğrula → `docs/ILERLEME.md`'yi güncelle → commit at ve fazı etiketle (`c0-tamam`, `c1-tamam`…). Faz boyunca anlamlı adımlarda ara commit at ve `docs/ILERLEME.md`'yi güncel tut; oturum her an kesilebilir.
+5. **Doğrulama.**
    - Planlayıcı için birim testleri zorunlu; `docs/04-planlayici.md` içindeki test listesinin tamamı.
    - Kabul ölçütlerini mümkün olan her yerde uçtan uca testle doğrula (iki tarayıcı bağlamıyla eşitleme, giriş koruması, oturumlar vb.).
-   - Her fazın sonunda ana ekranların ekran görüntülerini pano genişliğinde ve telefon genişliğinde alıp `docs/ekran-goruntuleri/<faz>/` altına koy.
+   - Fazın sonunda ana ekranların ekran görüntülerini pano genişliğinde ve telefon genişliğinde alıp `docs/ekran-goruntuleri/<faz>/` altına koy.
    - Otomatik doğrulayamadığın ölçütü "elle doğrulanacak" olarak işaretle; doğrulanmış gibi yazma.
-5. **Ne zaman durup soracaksın.** Yalnızca şu durumlarda:
+   - Önceki fazların testleri de geçmeye devam etmeli.
+6. **Ne zaman durup soracaksın.** Yalnızca şu durumlarda:
    - Dokümanlar birbiriyle çelişiyor ya da bir karar veri modelini, iş zarfını ya da modül sözleşmesini değiştirecek.
    - Geri alınamaz ya da ücretli bir işlem gerekiyor.
    - Aynı sorunda üç farklı deneme başarısız oldu.
 
    Bunların dışındaki belirsizliklerde en makul yorumu seç, `docs/ILERLEME.md` içindeki "Verdiğim kararlar" listesine gerekçesiyle yaz ve devam et.
-6. **Duraklarda bekleme.** Aşağıdaki duraklar benim elimle yapılacak işlerdir. Durağa gelince ne gerektiğini "Senden bekleyenler" listesine adım adım yaz, yerel ya da sahte karşılığıyla devam et. Ben hazır olduğumda haber veririm; o zaman durağı tamamlarız.
-7. **Süreklilik.** Bu iş tek oturuma sığmaz. `docs/ILERLEME.md` her an güncel olsun: hangi fazdasın, ne bitti, sıradaki adım ne, hangi testler geçiyor. Yeni oturum yalnızca bu dosyayı okuyarak devam edebilmeli.
+7. **Duraklarda bekleme.** Aşağıdaki duraklar benim elimle yapılacak işlerdir. Durağa gelince ne gerektiğini "Senden bekleyenler" listesine adım adım yaz, yerel ya da sahte karşılığıyla devam et. Oturumun başında bu listeye bak: tamamladığımı söylediğim bir durak varsa önce onu bağla ve doğrula.
 8. **Kurallar.** `CLAUDE.md` içindeki mimari ve ürün kuralları. Paket sürümlerini ve API biçimlerini ezberden yazma; kurarken güncel resmi dokümana bak (Next.js, Supabase, Anthropic SDK, MCP). Sırları depoya koyma; `.env.example` tut. Fazın kapsamı dışında özellik ekleme; aklına geleni `docs/09-kararlar.md` altındaki "Fikirler" listesine yaz.
-9. **Modül arayüzleri için zemin.** Her modülün kendine özel arayüzü olacak (`docs/06-modul-sozlesmesi.md`, "Modül arayüzü"). Çekirdeği buna göre kur: modül kendi sayfasını, sekmelerini, alt sayfalarını ve tam ekran görünümlerini çekirdeğe dokunmadan ekleyebilmeli; ortak bileşen takımı bunun için yeterli olmalı. `deneme` modülünde bunların her birinden bir örnek bulunsun.
-10. **Bitiş.** Ç5'in sonunda dur ve bir kapanış raporu yaz (`docs/ILERLEME.md` sonuna):
-    - Her fazın kabul ölçütleri: otomatik doğrulananlar, benim elle doğrulamam gerekenler
+9. **Modül arayüzleri için zemin.** Her modülün kendine özel arayüzü olacak (`docs/06-modul-sozlesmesi.md`, "Modül arayüzü"). Çekirdeği buna göre kur: modül kendi sayfasını, sekmelerini, alt sayfalarını ve tam ekran görünümlerini çekirdeğe dokunmadan ekleyebilmeli. `deneme` modülünde bunların her birinden bir örnek bulunsun.
+10. **Fazın sonunda** `docs/ILERLEME.md`'ye faz raporunu yaz ve bana kısa bir özet ver:
+    - Kabul ölçütleri: otomatik doğrulananlar, benim elle doğrulamam gerekenler, sağlanamayanlar ve nedeni
     - Bekleyen duraklar ve her biri için yapmam gerekenler
-    - Çekirdekte gördüğün zayıflıklar ve riskler
-    - Modül tasarım oturumları için notlar: sözleşmede eksik ya da zor bulduğun yerler
+    - Bu fazda verdiğin kararlar
+    - Sonraki faz için notlar: dikkat edilmesi gereken yerler, bilinen sorunlar
+    - Ç5'in sonunda ayrıca: çekirdekte gördüğün zayıflıklar ve modül tasarım oturumları için notlar (sözleşmede eksik ya da zor bulduğun yerler)
 
 ## Duraklar
 
@@ -61,7 +74,7 @@ Modül hattına girme. `_sablon` ve `deneme` dışında hiçbir modül kurma; `d
 Dosya depoda hazır; başlıklarını koru:
 
 - **Durum:** hangi faz, hangi adım, son commit
-- **Biten fazlar:** her biri için kabul ölçütleri tablosu (otomatik / elle doğrulanacak / sağlanamadı ve nedeni)
+- **Biten fazlar:** her biri için faz raporu ve kabul ölçütleri tablosu
 - **Sıradaki adım:** tek cümle
 - **Senden bekleyenler:** duraklar ve her biri için adım adım yapılacaklar
 - **Verdiğim kararlar:** tarih, karar, gerekçe, etkilediği dosyalar

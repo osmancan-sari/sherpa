@@ -63,7 +63,7 @@ Paket sürümlerini ezberden yazma; kurarken güncel kararlı sürümü kullan v
 - Fazın kapsamı dışında özellik ekleme. Aklına gelen iyileştirmeyi `docs/09-kararlar.md` altındaki "Fikirler" listesine yaz.
 - Tasarımı henüz onaylanmamış modülleri kurma (`docs/moduller/` içinde "taslak" ya da "bekliyor" yazanlar).
 - Her fazın sonunda: testler geçer, `CLAUDE.md` komutları günceldir, `docs/ILERLEME.md` güncellenir.
-- Uzun, kesintisiz çalışmada kurallar `prompts/BASLA.md` içindedir: ne zaman durulur, duraklarda ne yapılır, ilerleme nasıl kaydedilir.
+- Her çekirdek fazı ayrı bir oturumda yapılır; bir oturumda tek faz. Kurallar `prompts/BASLA.md` içindedir: ne zaman durulur, duraklarda ne yapılır, ilerleme nasıl kaydedilir.
 
 ## Dil
 

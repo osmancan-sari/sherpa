@@ -10,11 +10,11 @@ Bu depo şu an yalnızca tasarım ve geliştirme dokümanlarını içerir. Kod, 
 
 1. Bu klasörü VS Code'da aç ve `git init` yap (depo özel olsun).
 2. Claude Code'u başlat ve izin modunu **Auto** yap (istem kutusunun altındaki mod göstergesinden). Böylece her komut için tek tek onay istemez.
-3. Şunu yaz: **`prompts/BASLA.md` dosyasını oku ve oradaki görevi uygula.**
-4. Claude Code çekirdeği baştan sona kurar ve ilerlemesini `docs/ILERLEME.md` dosyasına yazar. Senin elinle yapılacak işler (bulut projeleri, API anahtarı, telefon kurulumu, görsel onay) o dosyadaki "Senden bekleyenler" listesinde birikir; onları beklemeden ilerler.
-5. Oturum kesilirse yeni oturumda: **`prompts/BASLA.md` ve `docs/ILERLEME.md` dosyalarını oku, kaldığın yerden devam et.**
+3. Şunu yaz: **`prompts/BASLA.md` dosyasını oku ve sıradaki fazı tamamla.**
+4. Claude Code sıradaki fazı (ilk seferde Ç0) baştan sona kurar, ilerlemesini `docs/ILERLEME.md` dosyasına yazar ve faz bitince durur. Senin elinle yapılacak işler (bulut projeleri, API anahtarı, telefon kurulumu, görsel onay) o dosyadaki "Senden bekleyenler" listesinde birikir; onları beklemeden ilerler.
+5. Faz bitince raporu oku, **yeni bir sohbet aç** ve aynı cümleyi yaz. Ç0'dan Ç5'e altı faz, altı sohbet. Bir faz yarıda kesilirse de yeni sohbette aynı cümle yeterlidir; kaldığı yerden devam eder.
 
-Faz faz, her adımda onay vererek ilerlemek istersen `prompts/c0-…` – `c5-…` istemlerini sırayla kullan.
+Bir fazda plan onayı vererek adım adım ilerlemek istersen o fazın `prompts/c0-…` – `c5-…` istemini kullan.
 
 ## İki hat
 
@@ -40,9 +40,9 @@ Faz faz, her adımda onay vererek ilerlemek istersen `prompts/c0-…` – `c5-�
 | `docs/moduller/okul.md` | Okul modülünün tasarımı |
 | `docs/moduller/okul-ninova.md` | Ninova bağlantısı: deneme bulguları ve tasarım |
 | `docs/moduller/README.md` | Modül kataloğu ve diğer modüllerin taslakları |
-| `prompts/BASLA.md` | Çekirdeği baştan sona kurduran tek istem |
+| `prompts/BASLA.md` | Çekirdek fazlarının ortak istemi: her yeni sohbette sıradaki fazı kurdurur |
 | `docs/ILERLEME.md` | Claude Code'un tuttuğu ilerleme kaydı |
-| `prompts/c0-…` – `c5-…` | Aynı işi faz faz yaptırmak için istemler |
+| `prompts/c0-…` – `c5-…` | Aynı fazları plan onayıyla, adım adım yaptırmak için istemler |
 | `prompts/modul-tasarim-oturumu.md` | Yeni bir modülü tasarlamak için Claude sohbetine verilecek istem |
 | `prompts/claude-projesi-talimati.md` | Tasarım ve takip için açılacak Claude projesinin talimatı |
 
