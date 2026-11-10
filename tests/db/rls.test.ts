@@ -269,9 +269,9 @@ describe("row level security on every table", () => {
       await admin.from("sessions").select("ended_at").eq("id", ownerRows.sessions).single(),
     );
     expect(session.ended_at).toBeNull();
-    const module = ok(
+    const mod = ok(
       await admin.from("modules").select("status").eq("id", ownerRows.modules).single(),
     );
-    expect(module.status).toBe("active");
+    expect(mod.status).toBe("active");
   });
 });
