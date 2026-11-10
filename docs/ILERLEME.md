@@ -6,8 +6,9 @@ Bu dosyayı Claude Code günceller. Yeni bir oturum yalnızca bu dosyayı ve `pr
 
 - Faz: Ç0 (İskelet), sürüyor
 - Adım: 8 / 8 (faz denetimi ve etiket). 1–7 bitti: kod, yerel Supabase, kimlik, kabuk, PWA, birim ve uçtan uca testler
-- Kalan: faz kipinde denetim, bulguların düzeltilmesi, faz raporunun "Biten fazlar"a taşınması, `c0-tamam` etiketi
-- Son commit: faz denetimi 1. tur düzeltmeleri (lint kuralı, proxy istisnaları, ekran görüntüleri)
+- Kalan: faz denetiminin 3. (son) turu, faz raporunun "Biten fazlar"a yazılması, `c0-tamam` etiketi
+- Son commit: faz denetimi 2. tur düzeltmeleri (giriş adımının yeniden yüklemeye dayanması, test kapıları, oturum denetiminin birim testleri)
+- Denetim turları şimdiye kadar: adım kipi (kimlik) GEÇTİ, 5 önemli bulgu düzeltildi; faz 1. tur GEÇMEDİ (denetçi D1 ve D2'ye bağlı iki ölçütü engelleyici saydı; kodda engelleyici yok), 2 önemli bulgu düzeltildi; faz 2. tur GEÇTİ (engelleyici yok; aynı ölçütler "doğrulanamadı"), 5 önemli bulgu düzeltildi, biri (yayın ve telefon) D1 ve D2'ye bağlı olduğu için açık
 
 ### Ç0 planı
 
@@ -41,6 +42,12 @@ Henüz yok.
 Ç0'ı faz kipinde denetlet, bulguları düzelt, faz raporunu yaz ve `c0-tamam` etiketini at.
 
 ## Senden bekleyenler
+
+### Önce: aynı anda iki faz betiği çalışıyor (`docs/BEKLIYOR.md`)
+
+`scripts/run-phases.ps1` iki pencerede açık: 21:50'de başlayan (PowerShell PID 29180) ve 21:57'de başlayan (PID 15200). Ç0'ı ikincisinin açtığı oturum yürüttü. Birincisinin 22:35'te açtığı oturum çakışmayı görüp hiçbir şeye dokunmadan `docs/BEKLIYOR.md` dosyasını yazdı ve bitti; soru ve yapılacaklar o dosyada. İki betiğin de çalıştığını süreç listesinden doğruladım (22:42). Betiklerden hiçbirini kapatmadım ve `docs/BEKLIYOR.md` dosyasına dokunmadım (commit de etmedim): hangisinin kalacağı senin kararın. Dosya durdukça iki betik de Ç1'e geçmeden durur.
+
+Dikkat: eski betik beklemesinden uyanınca (yaklaşık 23:25) `c0-tamam` etiketini görürse `npm run check:full` komutunu kendisi çalıştırır; o an başka bir test çalışması 3100 portunu tutuyorsa kırmızı çıkar ve etiketi siler. Etiket silinmişse ve `npm run check:full` yeşilse `git tag c0-tamam` ile geri konabilir (faz raporu aşağıda).
 
 ### D1. Bulut ve yayın (Ç0'ın kodu hazır; sıra sende)
 
@@ -98,6 +105,11 @@ Benim yapacaklarım (D1 tamamlanınca): iki Supabase projesini açmak (bölge: F
 | 10 Kas 2026 | Çekirdek → modül yasağı yol kalıbıyla denetleniyor: `src/core` içinde, takma adla ya da göreli yazılmış ve içinde `modules` klasörü geçen her yol yasak (statik, dinamik `import()`, `require`) | Faz denetimi ilk kuralın dört yazımı kaçırdığını buldu. Bedeli: çekirdekte `modules` adında bir klasör açılamaz | `eslint.config.mjs`, `tests/unit/core-imports.test.ts` |
 | 10 Kas 2026 | `proxy` istisnaları tam yol eşleşmesi (manifest, simgeler, `robots.txt`, `favicon.ico`); benzer görünen yollar kapıdan geçer | Faz denetimi istisnaların ön ek gibi çalıştığını buldu | `src/proxy.ts`, `tests/e2e/guard.spec.ts` |
 | 10 Kas 2026 | Playwright'ta `.only` yerelde de yasak (`forbidOnly: true`) | Etiket kapısı yerelde çalışıyor; daraltılmış testle yeşil görünmesin | `playwright.config.ts` |
+| 10 Kas 2026 | Giriş kodu adımı cihazda 10 dakikalık bir çerezle hatırlanıyor (`sherpa-login`, yalnızca `/giris` yolu, `httpOnly`); giriş yapılınca ya da "Başka e-posta" denince silinir | Faz denetimi buldu: sayfa yeniden yüklenince form e-posta adımına dönüyor ve eldeki kod yazılamıyordu. Telefonda kurulu uygulama posta uygulamasından dönünce yeniden yüklenebilir; bulutta e-posta kotası da dar | `src/app/giris/pending.ts`, `actions.ts`, `page.tsx`, `login-form.tsx` |
+| 10 Kas 2026 | Test dosyalarında `only`, `skip`, `todo`, `fixme` lint hatası; Vitest'te `allowOnly: false` | BASLA: test atlanmaz, daraltılmaz. Kapı bunu kendisi yakalasın | `eslint.config.mjs`, `vitest.config.mts`, `tests/unit/test-gates.test.ts` |
+| 10 Kas 2026 | Uçtan uca testler yalnızca yerel Supabase'e karşı çalışır; `.env.local` başka bir adresi gösteriyorsa başlamaz | Testler servis anahtarıyla hesap açıp siliyor ve yabancı hesapla oturum üretiyor; D1'den sonra yanlışlıkla bulut projesine karşı çalışmasın | `playwright.config.ts` |
+| 10 Kas 2026 | Görsel iyileştirici (`/_next/image`) ve `favicon.ico` artık kapının arkasında | Oturumsuz hiçbir sayfa onları kullanmıyor; istisna listesi kısaldı | `src/proxy.ts`, `tests/e2e/guard.spec.ts` |
+| 10 Kas 2026 | `apple-mobile-web-app-capable` meta etiketi elle eklendi | Next.js yalnızca standart `mobile-web-app-capable` etiketini yazıyor; eski iOS sürümleri Apple'ınkini arar (D2'de tam ekran açılış) | `src/app/layout.tsx` |
 | 10 Kas 2026 | `shadcn` paketi `dependencies` altında kaldı (denetçi `devDependencies` önerdi) | `globals.css` derlemede `shadcn/tailwind.css` dosyasını içe aktarıyor; shadcn kurulumu paketi oraya kendisi koyuyor. Çalışma zamanına kod girmiyor | `package.json` |
 | 10 Kas 2026 | Dal adı şimdilik `master`; D1'de GitHub'a gönderilirken `main` yapılacak | Doküman "`main` → üretim" diyor; uzak depo yokken yeniden adlandırmanın acelesi yok, betik yalnızca etiketlere bakıyor | — |
 

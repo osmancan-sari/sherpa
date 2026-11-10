@@ -59,3 +59,5 @@ Kapsam dışı ama unutulmasın diye. Bir faza alınmadan kodlanmaz.
 - Ders klasörüne yeni dosya gelince Sherpa'ya sinyal
 - Haftalık özetin Cumartesi sabahı e-posta ya da bildirim olarak gelmesi
 - Alışveriş listesinin paylaşılması
+- Güvenlik başlıkları: `Content-Security-Policy`, `frame-ancestors`, `Referrer-Policy`, `X-Content-Type-Options` (Ç0 faz denetiminin notu; dokümanlarda istenmiyor)
+- Giriş ekranının açık temada görüntüsü ve geçiş anahtarıyla (passkey) giriş

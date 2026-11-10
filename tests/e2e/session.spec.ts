@@ -5,6 +5,7 @@ import {
   isLiveAccessToken,
   PUBLISHABLE_KEY,
   readSession,
+  removeUser,
   SESSION_COOKIE,
   sessionCookiesFor,
   SUPABASE_URL,
@@ -24,6 +25,8 @@ async function hold(context: BrowserContext, cookies: Cookie[], baseURL: string)
 
 test("a genuine session of another account is turned away", async ({ context, page, baseURL }) => {
   const admin = adminClient();
+  // An interrupted earlier run may have left the stranger behind.
+  await removeUser(STRANGER);
   const created = await admin.auth.admin.createUser({ email: STRANGER, email_confirm: true });
   expect(created.error).toBeNull();
 

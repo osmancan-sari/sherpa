@@ -5,6 +5,15 @@ import { defineConfig } from "@playwright/test";
 // Run them with `npm run test:e2e`, which builds first; the server below only starts that build.
 process.loadEnvFile(".env.local");
 
+// These tests create and delete accounts with the secret key and sign in as a stranger.
+// They are for the local stack only; refuse to start against anything else.
+const supabaseHost = new URL(process.env.NEXT_PUBLIC_SUPABASE_URL ?? "http://unset").hostname;
+if (!["127.0.0.1", "localhost"].includes(supabaseHost)) {
+  throw new Error(
+    `End-to-end tests only run against local Supabase; .env.local points at "${supabaseHost}".`,
+  );
+}
+
 const PORT = 3100;
 const baseURL = `http://127.0.0.1:${PORT}`;
 const storageState = "playwright/.auth/user.json";

@@ -43,6 +43,19 @@ const eslintConfig = defineConfig([
       ],
     },
   },
+  {
+    // Verification rule (prompts/BASLA.md): tests are never skipped or narrowed to get to green.
+    files: ["tests/**/*.{ts,tsx}", "src/**/*.test.{ts,tsx}"],
+    rules: {
+      "no-restricted-syntax": [
+        "error",
+        {
+          selector: "MemberExpression[property.name=/^(only|skip|todo|fixme|skipIf|runIf)$/]",
+          message: "Tests are not skipped or narrowed (only, skip, todo, fixme). Fix the test.",
+        },
+      ],
+    },
+  },
   globalIgnores([
     ".next/**",
     "out/**",

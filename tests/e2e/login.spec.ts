@@ -81,6 +81,59 @@ test("the allowed e-mail signs in with the code, stays signed in, and can sign o
   expect((await page.request.get("/api/me", { maxRedirects: 0 })).status()).toBe(401);
 });
 
+test("the code step survives a reload, as when the phone app comes back from the mailbox", async ({
+  page,
+}) => {
+  const code = await requestCode(page);
+
+  // Reloading, or opening the login page afresh, lands on the code step for the same address.
+  await page.reload();
+  await expect(page.getByLabel("Giriş kodu")).toBeVisible();
+  // Scoped to the page itself: while the form streams in, React briefly keeps a hidden copy.
+  await expect(
+    page.getByRole("main").getByText(`${ALLOWED_EMAIL} adresine gelen kodu yaz.`),
+  ).toBeVisible();
+  await page.goto("/");
+  await expect(page).toHaveURL(/\/giris$/);
+  await expect(page.getByLabel("Giriş kodu")).toBeVisible();
+
+  // The code sent before the reloads is the one that signs in.
+  await page.getByLabel("Giriş kodu").fill(code);
+  await page.getByRole("button", { name: "Giriş yap" }).click();
+  await expect(page.getByRole("heading", { name: "Bugün" })).toBeVisible();
+
+  // Once signed in, nothing of the login step is left on the device.
+  await page.goto("/ayarlar");
+  await page.getByRole("button", { name: "Çıkış yap" }).click();
+  await expect(page).toHaveURL(/\/giris$/);
+  await expect(page.getByLabel("E-posta")).toBeVisible();
+  await expect(page.getByLabel("Giriş kodu")).toHaveCount(0);
+});
+
+test("going back to the e-mail step sticks across a reload", async ({ page }) => {
+  await requestCode(page);
+  await page.getByRole("button", { name: "Başka e-posta" }).click();
+  await expect(page.getByLabel("E-posta")).toBeVisible();
+
+  await page.reload();
+  await expect(page.getByLabel("E-posta")).toBeVisible();
+  await expect(page.getByLabel("Giriş kodu")).toHaveCount(0);
+});
+
+test("a code step remembered for another address is ignored", async ({
+  context,
+  page,
+  baseURL,
+}) => {
+  await context.addCookies([
+    { name: "sherpa-login", value: "baskasi@ornek.test", url: `${baseURL}/giris` },
+  ]);
+  await page.goto("/giris");
+  await expect(page.getByLabel("E-posta")).toBeVisible();
+  await expect(page.getByLabel("Giriş kodu")).toHaveCount(0);
+  await expect(page.getByText("baskasi@ornek.test")).toHaveCount(0);
+});
+
 test("signing in again after signing out works (helper used by the other suites)", async ({
   page,
 }) => {

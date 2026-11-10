@@ -7,6 +7,8 @@ export default defineConfig({
   },
   test: {
     environment: "node",
+    // The gate runs locally, so a stray .only must fail here too, not just in CI.
+    allowOnly: false,
     include: ["src/**/*.test.ts", "tests/unit/**/*.test.ts"],
   },
 });

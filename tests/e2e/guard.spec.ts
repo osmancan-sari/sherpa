@@ -83,6 +83,11 @@ test("paths that merely look like the public files are still gated", async ({ re
     "/icons/a/b.png",
     "/icons/hafta",
     "/_next/staticx",
+    "/favicon.ico",
+    // The image optimizer could otherwise be asked to fetch app pages on a stranger's behalf.
+    "/_next/image?url=%2Ficons%2Ficon-192.png&w=64&q=75",
+    "/_next/image?url=%2Fhafta&w=64&q=75",
+    "/_next/imagex",
   ];
   for (const path of lookalikes) {
     const response = await request.get(path, { maxRedirects: 0 });

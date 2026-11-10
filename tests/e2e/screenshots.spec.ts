@@ -53,11 +53,14 @@ test("login screens", async ({ browser }, testInfo) => {
     baseURL: testInfo.project.use.baseURL,
   });
   const page = await context.newPage();
-  const shot = (name: string) =>
-    page.screenshot({
+  const shot = async (name: string) => {
+    // Move the pointer off the button it just clicked, so the picture shows the resting state.
+    await page.mouse.move(0, 0);
+    await page.screenshot({
       path: path.join(folder, `${testInfo.project.name}-${name}-dark.png`),
       animations: "disabled",
     });
+  };
 
   // Step one: the e-mail address.
   await page.goto("/giris");

@@ -1,5 +1,8 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { LoginForm } from "./login-form";
+import { readPendingLogin } from "./pending";
+import { initialLoginState, type LoginState } from "./state";
 
 export const metadata: Metadata = { title: "Giriş" };
 
@@ -13,8 +16,20 @@ export default function LoginPage() {
             E-postana tek kullanımlık bir kod gönderilir.
           </p>
         </div>
-        <LoginForm />
+        {/* The form starts on whichever step this device is at, which only the request knows. */}
+        <Suspense fallback={<div className="min-h-32" />}>
+          <LoginFormAtCurrentStep />
+        </Suspense>
       </div>
     </main>
   );
+}
+
+/** If a code was sent from this device and is still fresh, the form opens on the code step. */
+async function LoginFormAtCurrentStep() {
+  const pendingEmail = await readPendingLogin();
+  const initial: LoginState = pendingEmail
+    ? { step: "code", email: pendingEmail }
+    : initialLoginState;
+  return <LoginForm initial={initial} />;
 }

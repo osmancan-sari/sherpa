@@ -3,17 +3,20 @@
 import { redirect } from "next/navigation";
 import { isAllowedEmail, normalizeEmail } from "@/lib/auth/allowed-email";
 import { createClient } from "@/lib/supabase/server";
+import { forgetPendingLogin, rememberPendingLogin } from "./pending";
 import type { LoginState } from "./state";
 
 /**
  * One action for the whole login form. The `intent` field says which button was pressed:
- * `request` sends a code, `verify` checks it, `reset` goes back to the e-mail step.
+ * `request` sends a code, `resend` sends another, `verify` checks it,
+ * `reset` goes back to the e-mail step.
  */
 export async function login(_previous: LoginState, formData: FormData): Promise<LoginState> {
   const intent = String(formData.get("intent") ?? "request");
   const email = normalizeEmail(String(formData.get("email") ?? ""));
 
   if (intent === "reset") {
+    await forgetPendingLogin();
     return { step: "email" };
   }
 
@@ -35,6 +38,7 @@ export async function login(_previous: LoginState, formData: FormData): Promise<
     if (error) {
       return { step: "code", email, error: "Kod geçersiz ya da süresi dolmuş." };
     }
+    await forgetPendingLogin();
     redirect("/");
   }
 
@@ -48,9 +52,11 @@ export async function login(_previous: LoginState, formData: FormData): Promise<
       error.status === 429
         ? "Çok sık denendi. Biraz sonra yeniden dene."
         : "Kod gönderilemedi. Yeniden dene.";
-    return { step: "email", email, error: message };
+    // A resend that fails leaves the earlier code usable, so stay on the code step.
+    return { step: intent === "resend" ? "code" : "email", email, error: message };
   }
 
+  await rememberPendingLogin(email);
   return {
     step: "code",
     email,

@@ -75,6 +75,9 @@ test("the page links the manifest and the home-screen icon", async ({ page }) =>
     /manifest\.webmanifest/,
   );
   await expect(page.locator('link[rel="apple-touch-icon"]')).toHaveAttribute("href", /apple-icon/);
+  for (const name of ["mobile-web-app-capable", "apple-mobile-web-app-capable"]) {
+    await expect(page.locator(`meta[name="${name}"]`)).toHaveAttribute("content", "yes");
+  }
   await expect(page.locator("html")).toHaveAttribute("lang", "tr");
   await expect(page).toHaveTitle("Sherpa");
 });

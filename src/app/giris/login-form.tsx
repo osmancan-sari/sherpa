@@ -5,10 +5,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { login } from "./actions";
-import { initialLoginState } from "./state";
+import type { LoginState } from "./state";
 
-export function LoginForm() {
-  const [state, formAction, pending] = useActionState(login, initialLoginState);
+export function LoginForm({ initial }: { initial: LoginState }) {
+  const [state, formAction, pending] = useActionState(login, initial);
 
   if (state.step === "code") {
     return (

@@ -20,6 +20,8 @@ export const metadata: Metadata = {
   // Private app: never indexed (also sent as an X-Robots-Tag header and in robots.txt).
   robots: { index: false, follow: false },
   appleWebApp: { capable: true, title: "Sherpa", statusBarStyle: "default" },
+  // Next.js writes the standard "mobile-web-app-capable"; older iOS only knows this one.
+  other: { "apple-mobile-web-app-capable": "yes" },
   formatDetection: { telephone: false },
 };
 

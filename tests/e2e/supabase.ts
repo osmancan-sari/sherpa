@@ -25,6 +25,16 @@ export function adminClient() {
   });
 }
 
+/** Deletes the account with this address if there is one, e.g. left behind by an interrupted run. */
+export async function removeUser(email: string): Promise<void> {
+  const admin = adminClient();
+  const { data, error } = await admin.auth.admin.listUsers();
+  if (error) throw new Error(`Could not list users: ${error.message}`);
+  for (const user of data.users.filter((user) => user.email === email)) {
+    await admin.auth.admin.deleteUser(user.id);
+  }
+}
+
 /**
  * Signs the given account in straight against Supabase (no form, no mailbox) and returns
  * the cookies the app would hold for that session, written by the same library the app uses.
