@@ -6,6 +6,8 @@ Her faz ayrı bir Claude Code sohbetinde yapılır. Yeni bir sohbet aç ve her s
 
 Hangi fazın sırada olduğunu `docs/ILERLEME.md` söyler; istem hep aynıdır. Bir faz yarıda kalırsa (oturum kesildi, kullanım sınırı doldu) yeni sohbette yine aynı cümleyi yaz; kaldığı yerden devam eder.
 
+Fazları başında durmadan art arda çalıştırmak için (örneğin gece): PowerShell'de `powershell -ExecutionPolicy Bypass -File scripts\run-phases.ps1`. Betik her faz için yeni bir oturum açar; ayrıntı aşağıda "Gözetimsiz çalışma" bölümünde.
+
 ---
 
 ## Görev
@@ -37,19 +39,16 @@ Dokümanlar tek kaynaktır; onlarla çelişen bir şey yapma. Önceki fazlarda y
 2. **Ortam.** Geliştirme makinesi Windows; komutları PowerShell'e uygun yaz. Satır sonları LF (`.gitattributes` hazır). Docker Desktop kurulu ve çalışıyor.
 3. **Yerelde geliştir.** Veritabanı için Supabase'in yerel geliştirme ortamını kullan; bulut projeleri ve yayın bir duraktır (aşağıda). Böylece benden bir şey beklemeden ilerleyebilirsin.
 4. **Fazın döngüsü:** kısa plan (`docs/ILERLEME.md`'ye yaz) → uygula → test et → kabul ölçütlerini tek tek doğrula → `docs/ILERLEME.md`'yi güncelle → commit at ve fazı etiketle (`c0-tamam`, `c1-tamam`…). Faz boyunca anlamlı adımlarda ara commit at ve `docs/ILERLEME.md`'yi güncel tut; oturum her an kesilebilir.
-5. **Doğrulama.**
-   - Planlayıcı için birim testleri zorunlu; `docs/04-planlayici.md` içindeki test listesinin tamamı.
-   - Kabul ölçütlerini mümkün olan her yerde uçtan uca testle doğrula (iki tarayıcı bağlamıyla eşitleme, giriş koruması, oturumlar vb.).
-   - Fazın sonunda ana ekranların ekran görüntülerini pano genişliğinde ve telefon genişliğinde alıp `docs/ekran-goruntuleri/<faz>/` altına koy.
-   - Otomatik doğrulayamadığın ölçütü "elle doğrulanacak" olarak işaretle; doğrulanmış gibi yazma.
-   - Önceki fazların testleri de geçmeye devam etmeli.
+5. **Doğrulama.** Ayrıntısı aşağıda "Doğrulama düzeni" bölümünde; faz boyunca kesintisiz uygulanır, fazın sonuna bırakılmaz. Özeti: her adımda `npm run check`, riskli adımlardan sonra ve fazın sonunda bağımsız denetçi alt ajanı, etiketten önce `npm run check:full`.
 6. **Ne zaman durup soracaksın.** Yalnızca şu durumlarda:
    - Dokümanlar birbiriyle çelişiyor ya da bir karar veri modelini, iş zarfını ya da modül sözleşmesini değiştirecek.
    - Geri alınamaz ya da ücretli bir işlem gerekiyor.
    - Aynı sorunda üç farklı deneme başarısız oldu.
 
-   Bunların dışındaki belirsizliklerde en makul yorumu seç, `docs/ILERLEME.md` içindeki "Verdiğim kararlar" listesine gerekçesiyle yaz ve devam et.
+   Bunların dışındaki belirsizliklerde en makul yorumu seç, `docs/ILERLEME.md` içindeki "Verdiğim kararlar" listesine gerekçesiyle yaz ve devam et. Kararın benim zevkime ya da kullanım alışkanlığıma bağlı olduğunu düşünüyorsan (görünüm, metin, varsayılan değer gibi) satırı "görüşün gerek" diye işaretle; yine de durma, fazın sonunda bakarım.
 7. **Duraklarda bekleme.** Aşağıdaki duraklar benim elimle yapılacak işlerdir. Durağa gelince ne gerektiğini "Senden bekleyenler" listesine adım adım yaz, yerel ya da sahte karşılığıyla devam et. Oturumun başında bu listeye bak: tamamladığımı söylediğim bir durak varsa önce onu bağla ve doğrula.
+
+   Durakta bana düşen işi en aza indir. Komut satırından yapılabilen her şeyi (Supabase CLI ile proje bağlama ve şema aktarımı, Vercel CLI ile yayın ve ortam değişkenleri gibi) kendin yap; benden yalnızca senin yapamayacağın adımları iste: hesap açma, tarayıcıda giriş onayı, anahtar girme, telefonda deneme. Anahtarları sohbete yazmamı isteme; hangi dosyaya hangi adla gireceğimi söyle.
 8. **Kurallar.** `CLAUDE.md` içindeki mimari ve ürün kuralları. Paket sürümlerini ve API biçimlerini ezberden yazma; kurarken güncel resmi dokümana bak (Next.js, Supabase, Anthropic SDK, MCP). Sırları depoya koyma; `.env.example` tut. Fazın kapsamı dışında özellik ekleme; aklına geleni `docs/09-kararlar.md` altındaki "Fikirler" listesine yaz.
 9. **Modül arayüzleri için zemin.** Her modülün kendine özel arayüzü olacak (`docs/06-modul-sozlesmesi.md`, "Modül arayüzü"). Çekirdeği buna göre kur: modül kendi sayfasını, sekmelerini, alt sayfalarını ve tam ekran görünümlerini çekirdeğe dokunmadan ekleyebilmeli. `deneme` modülünde bunların her birinden bir örnek bulunsun.
 10. **Fazın sonunda** `docs/ILERLEME.md`'ye faz raporunu yaz ve bana kısa bir özet ver:
@@ -58,6 +57,52 @@ Dokümanlar tek kaynaktır; onlarla çelişen bir şey yapma. Önceki fazlarda y
     - Bu fazda verdiğin kararlar
     - Sonraki faz için notlar: dikkat edilmesi gereken yerler, bilinen sorunlar
     - Ç5'in sonunda ayrıca: çekirdekte gördüğün zayıflıklar ve modül tasarım oturumları için notlar (sözleşmede eksik ya da zor bulduğun yerler)
+
+## Doğrulama düzeni
+
+Üç katman vardır. Hiçbiri atlanmaz; "sonra bakarım" yoktur.
+
+**Kapı komutları.** `package.json` içinde iki komut bulunur; yoksa oturumun ilk işi olarak kur ve `CLAUDE.md`'deki komut listesine ekle:
+
+- `npm run check`: tip denetimi, lint, biçim denetimi, birim testleri. Hızlıdır.
+- `npm run check:full`: `check` + üretim derlemesi + uçtan uca testler.
+
+**1. Her adımda.**
+
+- Yeni davranışın testi aynı adımda yazılır. Planlayıcıda önce test, sonra kod; `docs/04-planlayici.md` içindeki test listesinin tamamı zorunludur.
+- Commit'ten önce `npm run check` çalışır. Kırmızıyken commit atılmaz, sonraki adıma geçilmez.
+- Önceki fazların testleri de geçmeye devam eder.
+- Testi yeşile getirmek için test silinmez, atlanmaz (`skip`, `only`), eşik gevşetilmez. Bir testi gerçekten değiştirmen gerekiyorsa gerekçesini "Verdiğim kararlar"a yaz.
+
+**Denetçi.** Kodu yazan oturumdan ayrı çalışan bir alt ajandır. Çağırmak için genel amaçlı bir alt ajan başlat ve ona yalnızca şunu söyle: "`prompts/denetci.md` dosyasını oku ve uygula. Kip: adım ya da faz. Kapsam: faz adı ya da commit aralığı." Ne yaptığını, neyi neden öyle yaptığını anlatma; denetçi depoya bakarak kendi sonucuna varmalı. Ön planda çalıştır ve raporunu bekle; rapor gelmeden ilerleme.
+
+**2. Riskli adımlardan sonra: bağımsız denetim.** Şu alanlara dokunan bir adım bitince denetçiyi "adım" kipinde çağır: veritabanı şeması ve migration, RLS ve kimlik, planlayıcı motoru, yapay zeka geçidi, iş zarfı ve modül sözleşmesi, cihazlar arası eşitleme. Engelleyici bulguyu sonraki adıma geçmeden düzelt.
+
+**3. Fazın sonunda.**
+
+1. Kabul ölçütlerini mümkün olan her yerde uçtan uca testle doğrula (iki tarayıcı bağlamıyla eşitleme, giriş koruması, oturumlar vb.).
+2. Ana ekranların ekran görüntülerini pano genişliğinde ve telefon genişliğinde alıp `docs/ekran-goruntuleri/<faz>/` altına koy; görüntülere kendin de bak, bozuk ya da boş ekranı düzelt.
+3. `npm run check:full` yeşil olmalı.
+4. Denetçiyi "faz" kipinde çağır.
+5. "Engelleyici" ve "önemli" bulguları düzelt, 3. ve 4. adımı yinele. En çok üç tur. Üçüncü turdan sonra hâlâ engelleyici bulgu varsa etiketi atma; "Ne zaman durup soracaksın" yolunu izle.
+6. Faz raporuna "Denetim" başlığı ekle: kaç tur sürdü, hangi bulgular çıktı, hangileri düzeltildi, hangileri neden açık kaldı.
+
+**Etiket koşulu.** `c0-tamam`… etiketi yalnızca `npm run check:full` yeşilse ve son denetçi raporunda engelleyici bulgu yoksa atılır.
+
+**Dürüstlük.** Otomatik doğrulayamadığın ölçütü "elle doğrulanacak" olarak işaretle; doğrulanmış gibi yazma. Denetçinin bir bulgusuna katılmıyorsan gerekçeni rapora yaz; sessizce geçme.
+
+**Önceki fazın denetimi.** Oturumun başında bir önceki fazın raporuna bak: "Denetim" başlığı yoksa (o faz bu düzenden önce bittiyse) yeni faza başlamadan önce o fazı "faz" kipinde denetlet ve bulguları düzelt.
+
+## Gözetimsiz çalışma
+
+`scripts/run-phases.ps1` fazları art arda, her birini yeni bir oturumda çalıştırır. Bu oturumlarda istem "unattended run" der; o zaman başında kimse yoktur ve şunlar geçerlidir:
+
+- Soru sorma, yanıt bekleme. "Ne zaman durup soracaksın" maddesindeki bir duruma düşersen soruyu `docs/BEKLIYOR.md` dosyasına yaz: ne sorduğun, seçenekler, senin önerin, hangi adımda kaldığın. `docs/ILERLEME.md`'yi güncelle, commit at ve oturumu bitir. Betik bu dosyayı görünce durur.
+- Oturumun başında `docs/BEKLIYOR.md` varsa ve içine yanıtımı yazmışsam yanıtı uygula, dosyayı sil ve devam et. Yanıt yoksa hiçbir şey yapmadan oturumu bitir.
+- Bir izin reddedilirse aynı işlemi yeniden deneme; başka bir yol bul, bulamazsan "Bilinen sorunlar"a yaz. İşlem faz için zorunluysa `docs/BEKLIYOR.md` yolunu izle.
+- Betik bir fazın bittiğini yalnızca etiketten (`c0-tamam`…) anlar. Etiketi "Etiket koşulu" sağlandıktan ve faz raporu yazıldıktan sonra at; daha önce atma. Etiket yoksa betik aynı fazı yeni oturumda sürdürür.
+- Betik etiketi görünce `npm run check:full` komutunu kendisi de çalıştırır. Kırmızıysa etiketi siler ve çıktının yazıldığı günlük dosyasını yeni oturuma bildirir; o oturumun ilk işi bunu düzeltmektir.
+- Arka planda açık süreç bırakma (geliştirme sunucusu, izleyici); oturum bitmeden kapat. Yerel Supabase kapsayıcıları açık kalabilir.
 
 ## Duraklar
 
