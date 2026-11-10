@@ -63,16 +63,17 @@ export async function listDuePrompts(db: Db, now: Date): Promise<Prompt[]> {
   );
 }
 
-export async function answerPrompt(db: Db, id: string, value: string): Promise<Prompt> {
-  return unwrap(
-    await db
-      .from("prompts")
-      .update({ status: "answered", answer: { value }, answered_at: new Date().toISOString() })
-      .eq("id", id)
-      .eq("status", "pending")
-      .select()
-      .single(),
-  );
+/** Records the answer. Returns null when the question was not pending any more. */
+export async function answerPrompt(db: Db, id: string, value: string): Promise<Prompt | null> {
+  const { data, error } = await db
+    .from("prompts")
+    .update({ status: "answered", answer: { value }, answered_at: new Date().toISOString() })
+    .eq("id", id)
+    .eq("status", "pending")
+    .select()
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  return data;
 }
 
 /** "Sonra": the question comes back in a few hours. */

@@ -39,7 +39,7 @@
 | `provenance` dördüncü değeri: `default` (Ç1) | Yapay zeka yokken yazılan sınırın ortası, sonradan yapay zeka ya da modül tarafından ezilebilmeli | İş zarfı, Ç2 `size` |
 | Tablolar arası başvurular `(id, user_id)` çiftiyle (Ç1) | Düz yabancı anahtar RLS'siz denetlenir; bir hesabın satırı başka hesabın satırına bağlanamasın | Veri modeli |
 | Modül arşivlenince gelecek blokları silinmez, `cancelled` olur (Ç1) | "Verisi silinmez" kuralı | Modül sözleşmesi |
-| Modül sözleşmesine eklenenler (Ç1): `ctx.ask`, `ctx.work`, `ctx.saveSettings`, `ctx.module`, `blocks` (yapılı blok kancası), `tables`, `ui.history`, `ModuleUiContext`; `area` nesne oldu; `nowCard` içeriği `detail` ve `links` | Sözleşme dokümanı bu noktaları "…" ile bırakmıştı; `deneme` modülü yazılırken netleşti | Bütün modüller |
+| Modül sözleşmesine eklenenler (Ç1): `ctx.ask`, `ctx.work`, `ctx.saveSettings`, `ctx.module`, `blocks` (yapılı blok kancası), `tables`, `ui.history`, `ModuleUiContext`; `area` nesne oldu; `nowCard` içeriği `detail` ve `links` | Sözleşme dokümanı bu noktaları "…" ile bırakmıştı; çekirdeğin veri katmanı ve `deneme` modülü için gerekli | Bütün modüller |
 | Olaylar yayınlandıkları yerde dağıtılır (ayrı tüketici yok); duraklatılmış modül olay almaz (Ç1) | Tek kullanıcı, tek yazan; kuyruk ve imleç gereksiz karmaşıklık | Modül sözleşmesi |
 | Planlayıcı gelene kadar kalemin oturum işi "Başla" anında üretilir (Ç1) | Kalemler oturumlara haftalık planda bölünür (Ç3); o zamana kadar kalem Bugün listesinden başlatılabilmeli, uzak kalemler de önceden bölünmemeli | Ç3 |
 

@@ -217,11 +217,13 @@ Zarfın kuralları (`src/core/contract/envelope.ts`, saf fonksiyonlar; yazma `sr
 
 - Zamanlar saat dilimi taşıyan ISO biçimindedir (`2026-11-12T10:00:00+03:00`). Boş alanlar `null` da yazılabilir.
 - `when` tek biçim taşır; biçim kaydın tablosunu belirler ve aynı `key` sonradan başka biçime çevrilemez.
+- `key` boşluk, virgül, süslü ayraç, tırnak ve ters eğik çizgi içeremez.
+- Biçimin kullanmadığı alan reddedilir, sessizce atılmaz: tekrar biçiminde toplam efor, sınır, önem, bağımlılık, çıktı ve `flex`; sabit zaman biçiminde efor, `fit`, önem, bağımlılık, çıktı, `flex` ve `meta`.
 - **Olgu alanları** (başlık, son tarih, en erken, çıktı, bağımlılıklar, `meta`, tekrar ve sabit zaman değerleri) her teklifte yazılır; boş gelen olgu da yazılır (son tarih kalkabilir). **Yargı alanları** (efor, oturum süresi, önem, enerji, bağlam, bölünebilirlik) yalnızca dolu geldiğinde yazılır.
 - Kullanıcının değiştirdiği alan hiçbir teklifte ezilmez; teklif o alanı `kept` içinde geri bildirir.
 - Efor boş ve `bounds` verilmişse sınırın ortası (5 dakikaya yuvarlanır) `default` kaynağıyla yazılır; var olan bir değerin üzerine yazılmaz. Sınır da yoksa efor boş kalır.
 - Teklif edilen kalem `active` açılır (`proposed` durumu yapay zekanın bölme önerileri içindir, Ç2).
-- `withdraw` hiçbir şeyi silmez: kalem ve açık oturum işleri `dropped`, ritim pasif, blok `cancelled` olur; bitmiş kayda dokunulmaz. Geri çekilen `key` yeniden teklif edilirse aynı kayıt geri gelir; kullanıcının kendi kapattığı kalem geri gelmez.
+- `withdraw` hiçbir şeyi silmez: kalem ve açık oturum işleri `dropped`, ritim pasif, blok `cancelled` olur; kalemde çalışan oturum varsa durdurulur; bitmiş kayda dokunulmaz. Geri çekilen `key` yeniden teklif edilirse aynı kayıt geri gelir; kullanıcının kendi kapattığı kayıt (kalem, ritim, blok) geri gelmez. Kimin kapattığı `provenance` içinde durum alanının kaynağı olarak tutulur.
 
 Akış:
 

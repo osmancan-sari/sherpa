@@ -4,6 +4,7 @@ import { check, type Db, type Prompt, type Provenance, unwrap, type WorkItem } f
 import { markUserEdited } from "@/core/contract/envelope";
 import { createModuleContext } from "./context";
 import { answerPrompt } from "./inbox";
+import { stopSessionsOnItem } from "./sessions";
 
 // The moments the core reports back to a module: a proposed work item was closed (`onOutcome`),
 // a question was answered (`core.prompt_answered`).
@@ -60,6 +61,7 @@ export async function closeWorkItem(
   const current = unwrap(await db.from("work_items").select("*").eq("id", itemId).single());
   if (current.status === "done" || current.status === "dropped") return current;
 
+  await stopSessionsOnItem(db, itemId);
   check(
     await db
       .from("tasks")
@@ -89,7 +91,12 @@ export async function closeWorkItem(
     const def = registry.get(mod.slug);
     if (def?.onOutcome) {
       const outcome = await measureOutcome(db, closed, result);
-      await def.onOutcome(outcome, createModuleContext({ db, registry, module: mod }));
+      try {
+        await def.onOutcome(outcome, createModuleContext({ db, registry, module: mod }));
+      } catch (error) {
+        // The item is closed either way; a module that cannot take the news does not undo it.
+        console.error(`onOutcome of module "${mod.slug}" failed`, error);
+      }
     }
   }
   return closed;
@@ -102,7 +109,9 @@ export async function answerModulePrompt(
   prompt: Prompt,
   value: string,
 ): Promise<void> {
-  await answerPrompt(db, prompt.id, value);
+  const answered = await answerPrompt(db, prompt.id, value);
+  // Answered already (on the other screen): the module has been told once, that is enough.
+  if (!answered) return;
   const mod = unwrap(await db.from("modules").select("slug").eq("id", prompt.module_id).single());
   await emitEvent({
     db,

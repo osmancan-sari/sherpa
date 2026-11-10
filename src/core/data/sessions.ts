@@ -41,6 +41,19 @@ export async function startSession(db: Db, target: SessionTarget): Promise<Sessi
   );
 }
 
+/**
+ * Stops a session that is running on one of a work item's sittings, so that closing the item
+ * never leaves a clock running on it and the time already spent is counted.
+ */
+export async function stopSessionsOnItem(db: Db, workItemId: string): Promise<void> {
+  const open = await getOpenSession(db);
+  if (!open?.task_id) return;
+  const task = unwrap(
+    await db.from("tasks").select("work_item_id").eq("id", open.task_id).single(),
+  );
+  if (task.work_item_id === workItemId) await endSession(db, open.id, "stopped");
+}
+
 /** Bitti ("done") or stop without finishing ("stopped"). */
 export async function endSession(
   db: Db,

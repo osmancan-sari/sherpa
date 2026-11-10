@@ -247,9 +247,33 @@ describe("sessions", () => {
     );
     const a = ok(await db.rpc("start_session", { p_work_item_id: big.id }));
     const b = ok(await db.rpc("start_session", { p_work_item_id: small.id }));
+    // Effort used up (or exceeded) but the item still open: a plain 45 again, not 5.
+    const spent = ok(
+      await db
+        .from("work_items")
+        .insert({
+          module_id: mod.id,
+          title: "Tükenen",
+          effort_total_minutes: 60,
+          effort_done_minutes: 80,
+        })
+        .select()
+        .single(),
+    );
+    const unknown = ok(
+      await db
+        .from("work_items")
+        .insert({ module_id: mod.id, title: "Bilinmeyen" })
+        .select()
+        .single(),
+    );
+    const c = ok(await db.rpc("start_session", { p_work_item_id: spent.id }));
+    const d = ok(await db.rpc("start_session", { p_work_item_id: unknown.id }));
     const tasks = ok(await db.from("tasks").select("id, est_minutes"));
     expect(tasks.find((row) => row.id === a.task_id)?.est_minutes).toBe(45);
     expect(tasks.find((row) => row.id === b.task_id)?.est_minutes).toBe(20);
+    expect(tasks.find((row) => row.id === c.task_id)?.est_minutes).toBe(45);
+    expect(tasks.find((row) => row.id === d.task_id)?.est_minutes).toBe(45);
   });
 
   it("finishing a rhythm session logs the rhythm once", async () => {

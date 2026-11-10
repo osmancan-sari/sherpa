@@ -6,7 +6,7 @@ Bu dosyayı Claude Code günceller. Yeni bir oturum yalnızca bu dosyayı ve `pr
 
 - Faz: **Ç1 (Çekirdek ve modül temeli) sürüyor.** Ç0 bitti (`c0-tamam`); yayın ve telefon D1 ve D2'yi bekliyor
 - Adım: 4 / 8 (aşağıdaki plan); 1, 2 ve 3 bitti
-- Son commit: iş zarfı, modül sözleşmesi ve veri katmanı
+- Son commit: zarf denetimi düzeltmeleri
 
 ### Ç1 planı
 
@@ -16,7 +16,7 @@ Her adımın sonunda `npm run check` ve commit; şema, RLS, iş zarfı ve eşitl
 | --- | --- | --- |
 | 1 | Kapılar: Playwright projeleri dosya adına bağlı kalmasın, Vitest `*.test.tsx`, veritabanı testleri için ayrı komut (`npm run test:db`) | bitti |
 | 2 | Migration: `docs/03-veri-modeli.md` çekirdek tabloları, RLS, oturum ve arşiv fonksiyonları, Realtime yayını; tipler; veritabanı testleri (RLS, kısıtlar) | bitti; denetim (adım kipi): 2 engelleyici ve 5 önemli bulgu düzeltildi |
-| 3 | Çekirdek veri katmanı (`src/core/data`), iş zarfı (`propose`, `withdraw`, `provenance`, `onOutcome`), olaylar, modül sözleşmesi tipleri ve kayıt, blok serisi üretimi | bitti (arayüz yok; 94 birim, 66 veritabanı testi) |
+| 3 | Çekirdek veri katmanı (`src/core/data`), iş zarfı (`propose`, `withdraw`, `provenance`, `onOutcome`), olaylar, modül sözleşmesi tipleri ve kayıt, blok serisi üretimi | bitti (arayüz yok); denetim (adım kipi): engelleyici yok, 8 önemli bulgu düzeltildi |
 | 4 | İstemci altyapısı: TanStack Query, Realtime, modül kaydı bağlamı. Bugün ekranı, hızlı giriş, gelen kutusu, oturumlar | sırada |
 | 5 | Modül arayüzü zemini: `ModulePageShell`, sekmeler, alt sayfalar, tam ekran, hızlı eylemler, modül ayarları, bileşen takımı. `_sablon` ve `deneme` | |
 | 6 | Ayarlar: modüller, sabit bloklar, dışa aktarım | |
@@ -87,7 +87,7 @@ Son denetimden sonraki değişiklikler yalnızca bu dosyadadır (faz raporu). `n
 
 ## Sıradaki adım
 
-Ç1: Çekirdek ve modül temeli (`docs/07-yol-haritasi.md`). Önce "Senden bekleyenler" başındaki betik notu çözülmeli; D1 tamamlandıysa önce o bağlanır ve doğrulanır.
+Ç1'in 4. adımı: istemci altyapısı (TanStack Query, Realtime, modül kaydı bağlamı), Bugün ekranı, hızlı giriş, gelen kutusu, oturumlar. Ayrıntı yukarıda "Ç1 planı" tablosunda.
 
 ## Senden bekleyenler
 
@@ -175,6 +175,10 @@ Benim yapacaklarım (D1 tamamlanınca): iki Supabase projesini açmak (bölge: F
 | 11 Kas 2026 | Ç1: bırakılmış bir bağımlılık bağlı kalemi tutmaz | Bırakılan kalem hiç bitmez; bağlı kalem sonsuza dek gizli kalırdı | `src/core/today/select.ts` |
 | 11 Kas 2026 | Ç1: hızlı girişte tarih ve süre yalnızca satırın sonundaki sözcüklerden okunur (`yarın`, `cuma`, `15.11`, `+3g`, `45dk`, `1s30dk`); haftanın günü bir sonraki o gündür. **Görüşün gerek** | Başlığın ortasındaki "cuma" başlığın parçası kalsın; kural öngörülebilir olsun | `src/core/intake/parse.ts` |
 | 11 Kas 2026 | Ç1: blok serileri 56 gün (8 hafta) ileriye üretilir; uygulama açılınca eksikler tamamlanır. Gece çalışan zamanlanmış iş D1'den sonra | Zamanlanmış iş Vercel'de çalışır (yayın durağı); o zamana kadar uygulamanın açılması yeterli | `src/core/data/blocks.ts`, `src/core/data/series.ts` |
+| 11 Kas 2026 | Ç1: çekirdek migration'ı (`20261110203434_core_tables.sql`) faz içinde iki kez yerinde düzenlendi (denetim düzeltmeleri) ve yerel veritabanı `db:reset` ile yeniden kuruldu. **D1'den sonra bu yasak:** bulut projesine uygulanmış migration değiştirilmez, yeni migration açılır | Henüz hiçbir bulut projesi yok; şemanın tek dosyada okunur kalması daha değerli. Faz etiketinden sonra da yeni migration açılır | `supabase/migrations/*` |
+| 11 Kas 2026 | Ç1: kimin kapattığı `provenance` içinde tutulur (`status`/`active` alanının kaynağı: `user` ya da `module`); yalnızca modülün geri çektiği kayıt yeniden teklifle geri gelir | Adım denetimi buldu: kullanıcı duruma bir kez dokunduysa geri çekilen kayıt bir daha geri gelmiyordu | `src/core/data/propose.ts`, `tests/db/envelope.test.ts` |
+| 11 Kas 2026 | Ç1: biçimin kullanmadığı zarf alanı reddedilir; `key` boşluk, virgül, ayraç, tırnak içeremez | Adım denetimi: sessizce yutulan alan modül yazarını yanıltır; `key` dizi süzgeçlerinin içinde taşınıyor | `src/core/contract/envelope.ts`, `docs/06-modul-sozlesmesi.md` |
+| 11 Kas 2026 | Ç1: kalem kapatılırken ya da geri çekilirken üzerinde çalışan oturum durdurulur ve süresi sayılır; `onOutcome` hata verirse kalem yine kapanır | Adım denetimi: açık oturum kapanmış kaleme bağlı kalıyordu | `src/core/data/outcome.ts`, `src/core/data/propose.ts` |
 
 ## Bilinen sorunlar
 

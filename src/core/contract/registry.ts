@@ -12,6 +12,7 @@ export function definitionProblems(def: ModuleDefinition): string[] {
   const say = (text: string) => problems.push(`${def.slug || "(no slug)"}: ${text}`);
 
   if (!SLUG.test(def.slug)) say("slug must be lower-case letters, digits and dashes");
+  if (def.slug === "core") say('the slug "core" is reserved for the core\'s own events');
   if (!def.name.trim()) say("name is empty");
   if (!/^#[0-9a-f]{6}$/i.test(def.color)) say("color must be a #rrggbb value");
 
@@ -23,6 +24,7 @@ export function definitionProblems(def: ModuleDefinition): string[] {
       say(`tab key "${tab.key}" is reserved`);
     }
     if (segments.has(tab.key)) say(`tab key "${tab.key}" is used twice`);
+    if (!tab.label.trim()) say(`tab "${tab.key}" has no label`);
     segments.add(tab.key);
   }
   for (const route of def.ui.routes ?? []) {

@@ -54,6 +54,8 @@ describe("createRegistry", () => {
     const cases: [Partial<ModuleDefinition>, RegExp][] = [
       [{ slug: "Okul" }, /slug must be/],
       [{ slug: "_sablon" }, /slug must be/],
+      [{ slug: "core", emits: [], tables: [] }, /reserved for the core/],
+      [{ ui: { tabs: [{ key: "a", label: " ", component: View }] } }, /has no label/],
       [{ name: "  " }, /name is empty/],
       [{ color: "mavi" }, /color must be/],
       [{ ui: { tabs: [] } }, /at least one tab/],

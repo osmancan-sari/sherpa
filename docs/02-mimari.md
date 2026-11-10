@@ -47,12 +47,15 @@ src/
       ai/                   enrich, extract, plan, replan, review
       mcp/                  Ç5
   core/                     modüllerden bağımsız çekirdek
-    planner/                saf fonksiyonlar + testler
-    ai/                     tek geçit: istemler, şemalar, bütçe, kayıt
+    planner/                saf fonksiyonlar + testler (Ç3)
+    ai/                     tek geçit: istemler, şemalar, bütçe, kayıt (Ç2)
+    contract/               modül sözleşmesi: tipler, kayıt, iş zarfının saf kuralları
     data/                   sorgular, mutasyonlar, realtime
     events/                 olay yayını ve abonelik
     intake/                 hızlı giriş, gelen kutusu, yönlendirme
+    today/                  planlayıcı gelene kadar Bugün ekranının saf seçim kuralları
     ui/                     NowCard, DayStrip, ModuleChip, QuickAdd...
+    testing/                testler için satır üreticileri
   modules/
     registry.ts             kayıtlı modüller
     okul/                   module.ts, queries.ts, rules.ts, components/, page.tsx

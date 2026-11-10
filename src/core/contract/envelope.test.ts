@@ -13,17 +13,23 @@ import type { WorkProposal } from "./types";
 
 const SOURCE = { type: "okul.assessment", id: "8f2c1d7e-3b4a-4c5d-9e6f-0a1b2c3d4e5f" };
 
+/** A deadline proposal by default; a recurrence or fixed-time one carries only what it is given. */
 function proposal(overrides: Partial<WorkProposal> = {}): WorkProposal {
+  const deadline = !overrides.when?.recurrence && !overrides.when?.fixed;
   return {
     schema: 1,
     key: "assessment:8f2c:prep",
     source: SOURCE,
     title: "BBF301E Midterm hazırlığı",
-    when: { due: "2026-11-12T10:00:00+03:00", hard: true },
-    effort: { bounds: { min: 120, max: 600 } },
-    fit: { energy: "deep", context: "desk" },
-    importance: 4,
-    meta: { course_code: "BBF301E" },
+    ...(deadline
+      ? {
+          when: { due: "2026-11-12T10:00:00+03:00", hard: true },
+          effort: { bounds: { min: 120, max: 600 } },
+          fit: { energy: "deep" as const, context: "desk" as const },
+          importance: 4 as const,
+          meta: { course_code: "BBF301E" },
+        }
+      : {}),
     ...overrides,
   };
 }
@@ -59,6 +65,11 @@ describe("parseProposal", () => {
     const bad: [string, unknown][] = [
       ["schema", { ...proposal(), schema: 2 }],
       ["key", { ...proposal(), key: "  " }],
+      ["key", { ...proposal(), key: "a,b" }],
+      ["key", { ...proposal(), key: 'a"b' }],
+      ["key", { ...proposal(), key: "a{b}" }],
+      ["key", { ...proposal(), key: "a b" }],
+      ["depends_on", { ...proposal(), depends_on: ["a,b"] }],
       ["title", { ...proposal(), title: "" }],
       ["source.id", { ...proposal(), source: { type: "x", id: "not-a-uuid" } }],
       ["when.due", { ...proposal(), when: { due: "cuma" } }],
@@ -106,6 +117,43 @@ describe("parseProposal", () => {
         }),
       ),
     ).toThrow(/after the deadline/);
+  });
+});
+
+describe("fields a form has no place for", () => {
+  const recurrence = { count: 2, period: "week" as const };
+  const fixed = { starts_at: "2026-11-12T09:00:00+03:00", ends_at: "2026-11-12T10:00:00+03:00" };
+
+  it("are refused instead of being dropped silently", () => {
+    const cases: [Partial<WorkProposal>, string][] = [
+      [{ when: { recurrence }, importance: 3 }, "importance: not used by a recurrence"],
+      [{ when: { recurrence }, effort: { total_minutes: 60 } }, "effort.total_minutes"],
+      [{ when: { recurrence }, effort: { bounds: { min: 1, max: 2 } } }, "effort.bounds"],
+      [{ when: { recurrence }, depends_on: ["a"] }, "depends_on"],
+      [{ when: { recurrence }, artifact: "x.pdf" }, "artifact"],
+      [{ when: { recurrence }, flex: { droppable: true } }, "flex"],
+      [{ when: { fixed }, effort: { session_minutes: 30 } }, "effort: not used by a fixed time"],
+      [{ when: { fixed }, fit: { energy: "deep" } }, "fit"],
+      [{ when: { fixed }, importance: 2 }, "importance"],
+      [{ when: { fixed }, meta: { a: 1 } }, "meta"],
+    ];
+    for (const [overrides, message] of cases) {
+      expect(() => parseProposal(proposal(overrides)), message).toThrow(message);
+    }
+  });
+
+  it("accepts what the form does use, and empty values", () => {
+    parseProposal(
+      proposal({
+        when: { recurrence },
+        effort: { session_minutes: 20 },
+        fit: { energy: "physical" },
+        meta: { a: 1 },
+        depends_on: [],
+        importance: null,
+      }),
+    );
+    parseProposal(proposal({ when: { fixed }, effort: {}, meta: {}, artifact: null }));
   });
 });
 
@@ -213,6 +261,37 @@ describe("mergeProposal", () => {
     const second = mergeProposal(stored, incomingFields(proposal()));
     expect(second.changed).toEqual([]);
     expect(second.patch).toEqual({});
+  });
+
+  it("sees the same proposal as the same, however the database spells it back", () => {
+    const source = { type: "okul.assessment", id: "8F2C1D7E-3B4A-4C5D-9E6F-0A1B2C3D4E5F" };
+    const meta = { course_code: "BBF301E", weight: 30, scope: "Hafta 1–6", nested: { b: 1, a: 2 } };
+    const first = mergeProposal(null, incomingFields(proposal({ source, meta })));
+    expect(first.patch.source_id).toBe("8f2c1d7e-3b4a-4c5d-9e6f-0a1b2c3d4e5f");
+
+    // jsonb comes back with its keys in another order.
+    const stored = {
+      values: {
+        ...first.patch,
+        meta: { scope: "Hafta 1–6", weight: 30, nested: { a: 2, b: 1 }, course_code: "BBF301E" },
+      },
+      provenance: first.provenance,
+    };
+    const second = mergeProposal(stored, incomingFields(proposal({ source, meta })));
+    expect(second.changed).toEqual([]);
+    expect(second.patch).toEqual({});
+
+    // A real difference inside meta is still a change; so is a different order in a list.
+    const edited = mergeProposal(
+      stored,
+      incomingFields(proposal({ source, meta: { ...meta, weight: 40 } })),
+    );
+    expect(edited.changed).toEqual(["meta"]);
+    const reordered = mergeProposal(
+      { values: { ...first.patch, depends_on_keys: ["b", "a"] }, provenance: first.provenance },
+      incomingFields(proposal({ source, meta, depends_on: ["a", "b"] })),
+    );
+    expect(reordered.changed).toEqual(["depends_on_keys"]);
   });
 
   it("follows the module when the source record changes", () => {

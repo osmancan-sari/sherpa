@@ -3,11 +3,13 @@ import { ProposalError } from "@/core/contract/envelope";
 import { createRegistry } from "@/core/contract/registry";
 import type { ModuleDefinition, Outcome, WorkProposal } from "@/core/contract/types";
 import { createModuleContext } from "@/core/data/context";
-import { activateModule, archiveModule } from "@/core/data/modules";
+import { activateModule, archiveModule } from "@/core/data/module-rows";
 import { answerModulePrompt, closeWorkItem } from "@/core/data/outcome";
 import { propose, withdraw } from "@/core/data/propose";
-import { endSession, startSession } from "@/core/data/sessions";
-import { updateWorkItem } from "@/core/data/work";
+import { cancelBlock, restoreBlock } from "@/core/data/blocks";
+import { emitEvent } from "@/core/events/bus";
+import { endSession, getOpenSession, startSession } from "@/core/data/sessions";
+import { logRhythm, updateRhythm, updateWorkItem } from "@/core/data/work";
 import type { AppEvent } from "@/core/types";
 import { adminDb, makeModule, ok, ownerDb, strangerDb, wipe } from "./helpers";
 
@@ -21,20 +23,32 @@ afterAll(wipe);
 
 const SOURCE = { type: "sinama.kayit", id: "8f2c1d7e-3b4a-4c5d-9e6f-0a1b2c3d4e5f" };
 
+/** A deadline proposal by default; a recurrence or fixed-time one carries only what it is given. */
 function prep(overrides: Partial<WorkProposal> = {}): WorkProposal {
+  const deadline = !overrides.when?.recurrence && !overrides.when?.fixed;
   return {
     schema: 1,
     key: "assessment:1:prep",
     source: SOURCE,
     title: "BBF301E Midterm hazırlığı",
-    when: { due: "2026-11-12T10:00:00+03:00", hard: true },
-    effort: { bounds: { min: 120, max: 600 } },
-    fit: { energy: "deep", context: "desk" },
-    importance: 4,
-    meta: { course_code: "BBF301E" },
+    ...(deadline
+      ? {
+          when: { due: "2026-11-12T10:00:00+03:00", hard: true },
+          effort: { bounds: { min: 120, max: 600 } },
+          fit: { energy: "deep" as const, context: "desk" as const },
+          importance: 4 as const,
+          // Several keys on purpose: the database returns jsonb keys in its own order.
+          meta: { course_code: "BBF301E", weight: 30, scope: "Hafta 1–6" },
+        }
+      : {}),
     ...overrides,
   };
 }
+
+const RECURRENCE = { recurrence: { count: 2, period: "week" as const } };
+const FIXED = {
+  fixed: { starts_at: "2099-11-12T10:00:00+03:00", ends_at: "2099-11-12T12:00:00+03:00" },
+};
 
 const items = async () => ok(await db.from("work_items").select("*").order("created_at"));
 
@@ -59,7 +73,7 @@ describe("propose", () => {
       context: "desk",
       source_type: "sinama.kayit",
       source_id: SOURCE.id,
-      meta: { course_code: "BBF301E" },
+      meta: { course_code: "BBF301E", weight: 30, scope: "Hafta 1–6" },
     });
     expect(Date.parse(item.due_at!)).toBe(Date.parse("2026-11-12T10:00:00+03:00"));
     expect(item.provenance).toMatchObject({
@@ -76,6 +90,16 @@ describe("propose", () => {
     const second = await propose(db, mod, prep());
     expect(second).toMatchObject({ id: first.id, created: false, changed: [], kept: [] });
     expect(await items()).toHaveLength(1);
+    // Nothing changed, so nothing was written: the row was not touched a second time.
+    const [untouched] = await items();
+    expect(untouched.updated_at).toBe(untouched.created_at);
+    // A source id in upper case is the same source.
+    const upper = await propose(
+      db,
+      mod,
+      prep({ source: { ...SOURCE, id: SOURCE.id.toUpperCase() } }),
+    );
+    expect(upper.changed).toEqual([]);
 
     // Even when both arrive at the same moment (two devices, a double tap).
     await wipe();
@@ -322,21 +346,75 @@ describe("withdraw", () => {
 
   it("quiets a rhythm and cancels a block", async () => {
     const mod = await makeModule(db);
-    await propose(db, mod, prep({ key: "r", when: { recurrence: { count: 2, period: "week" } } }));
-    await propose(
-      db,
-      mod,
-      prep({
-        key: "b",
-        when: {
-          fixed: { starts_at: "2026-11-12T10:00:00+03:00", ends_at: "2026-11-12T12:00:00+03:00" },
-        },
-      }),
-    );
+    await propose(db, mod, prep({ key: "r", when: RECURRENCE }));
+    await propose(db, mod, prep({ key: "b", when: FIXED }));
     await withdraw(db, mod, "r");
     await withdraw(db, mod, "b");
     expect(ok(await db.from("rhythms").select("active").single()).active).toBe(false);
     expect(ok(await db.from("blocks").select("status").single()).status).toBe("cancelled");
+  });
+
+  it("brings back a withdrawn rhythm and block too, and only what the module itself withdrew", async () => {
+    const mod = await makeModule(db);
+    const registry = createRegistry([]);
+    const rhythm = prep({ key: "r", when: RECURRENCE });
+    const block = prep({ key: "b", when: FIXED });
+    const first = { r: await propose(db, mod, rhythm), b: await propose(db, mod, block) };
+
+    await withdraw(db, mod, "r");
+    await withdraw(db, mod, "b");
+    expect(await propose(db, mod, rhythm)).toMatchObject({ id: first.r.id, changed: ["active"] });
+    expect(await propose(db, mod, block)).toMatchObject({ id: first.b.id, changed: ["status"] });
+    expect(ok(await db.from("rhythms").select("active").single()).active).toBe(true);
+    expect(ok(await db.from("blocks").select("status").single()).status).toBe("planned");
+
+    // What the user closed stays closed, whatever the module proposes afterwards.
+    await updateRhythm(db, first.r.id, { active: false });
+    await cancelBlock(db, first.b.id);
+    const item = await propose(db, mod, prep());
+    await closeWorkItem(db, registry, item.id, "dropped");
+
+    expect((await propose(db, mod, rhythm)).changed).toEqual([]);
+    expect((await propose(db, mod, block)).changed).toEqual([]);
+    expect((await propose(db, mod, prep())).changed).toEqual([]);
+    expect(ok(await db.from("rhythms").select("active").single()).active).toBe(false);
+    expect(ok(await db.from("blocks").select("status").single()).status).toBe("cancelled");
+    expect((await items())[0].status).toBe("dropped");
+  });
+
+  it("still comes back after the user has touched the status in between", async () => {
+    const mod = await makeModule(db);
+    const { id } = await propose(db, mod, prep());
+    // The user parks the item and takes it up again: the status field is now the user's.
+    await updateWorkItem(db, id, { status: "waiting" });
+    await updateWorkItem(db, id, { status: "active" });
+
+    await withdraw(db, mod, "assessment:1:prep");
+    expect((await items())[0].status).toBe("dropped");
+    const again = await propose(db, mod, prep());
+    expect(again).toMatchObject({ id, changed: ["status"] });
+    expect((await items())[0].status).toBe("active");
+
+    // The same for a block the user cancelled and restored before the module withdrew it.
+    const block = await propose(db, mod, prep({ key: "b", when: FIXED }));
+    await cancelBlock(db, block.id);
+    await restoreBlock(db, block.id);
+    await withdraw(db, mod, "b");
+    expect((await propose(db, mod, prep({ key: "b", when: FIXED }))).changed).toEqual(["status"]);
+  });
+
+  it("stops a session that is running on the withdrawn item", async () => {
+    const mod = await makeModule(db);
+    const { id } = await propose(db, mod, prep());
+    const session = await startSession(db, { workItemId: id });
+    await withdraw(db, mod, "assessment:1:prep");
+    expect(await getOpenSession(db)).toBeNull();
+    expect(
+      ok(await db.from("sessions").select("ended_at").eq("id", session.id).single()).ended_at,
+    ).not.toBeNull();
+    expect(ok(await db.from("tasks").select("status")).map((task) => task.status)).toEqual([
+      "dropped",
+    ]);
   });
 
   it("leaves finished work finished", async () => {
@@ -363,7 +441,7 @@ function recordingModule() {
     area: { slug: "saglik", name: "Sağlık" },
     chip: async () => ({ text: "", health: "ok" }),
     intake: [],
-    emits: ["sinama.bir_sey_oldu"],
+    emits: ["sinama.bir_sey_oldu", "sinama.patlar"],
     on: {
       "sinama.bir_sey_oldu": async (event) => {
         heard.push(event);
@@ -449,15 +527,58 @@ describe("what the core tells a module", () => {
         postponedCount: 0,
       },
     ]);
-    expect(ok(await db.from("tasks").select("status")).map((task) => task.status)).toEqual([
-      "done",
-    ]);
+    expect(
+      ok(await db.from("tasks").select("status").eq("work_item_id", id)).map((task) => task.status),
+    ).toEqual(["done"]);
+
+    // A clock that is still running on the item when it is closed is stopped and counted.
+    const late = await propose(db, mod, prep({ key: "gec", title: "Geç" }));
+    const running = await startSession(db, { workItemId: late.id });
+    ok(
+      await adminDb()
+        .from("sessions")
+        .update({ started_at: new Date(Date.now() - 30 * 60_000).toISOString() })
+        .eq("id", running.id)
+        .select("id")
+        .single(),
+    );
+    await closeWorkItem(db, registry, late.id, "dropped");
+    expect(await getOpenSession(db)).toBeNull();
+    expect(recorder.outcomes[1]).toMatchObject({
+      key: "gec",
+      result: "dropped",
+      spentMinutes: 30,
+      sessionCount: 1,
+    });
+    recorder.outcomes.pop();
 
     // Closing again reports nothing new, and a later proposal does not reopen it.
     await closeWorkItem(db, registry, id, "dropped");
     expect(recorder.outcomes).toHaveLength(1);
     await propose(db, mod, prep());
     expect((await items())[0].status).toBe("done");
+  });
+
+  it("closes the item even when the module cannot take the news", async () => {
+    const recorder = recordingModule();
+    const failing: ModuleDefinition = {
+      ...recorder.definition,
+      onOutcome: async () => {
+        throw new Error("module is broken");
+      },
+    };
+    const registry = createRegistry([failing]);
+    const mod = await activateModule(db, registry, failing);
+    const { id } = await propose(db, mod, prep());
+    const errors: unknown[] = [];
+    const original = console.error;
+    console.error = (...args: unknown[]) => errors.push(args);
+    try {
+      expect((await closeWorkItem(db, registry, id, "done")).status).toBe("done");
+    } finally {
+      console.error = original;
+    }
+    expect(errors).toHaveLength(1);
   });
 
   it("does not report on items the user made by hand", async () => {
@@ -488,6 +609,37 @@ describe("what the core tells a module", () => {
     // Only declared events may be published.
     await expect(ctx.emit("sinama.bildirilmemis")).rejects.toThrow(/does not declare/);
     await expect(ctx.emit("baska.olay")).rejects.toThrow(/does not declare/);
+  });
+
+  it("a listener that fails stops neither the other listeners nor the publisher", async () => {
+    const recorder = recordingModule();
+    const heardBySecond: string[] = [];
+    const second: ModuleDefinition = {
+      ...recordingModule().definition,
+      slug: "ikinci",
+      name: "İkinci",
+      emits: [],
+      area: undefined,
+      on: {
+        "sinama.patlar": async (event) => {
+          heardBySecond.push(event.type);
+        },
+      },
+    };
+    // The failing listener is registered first, so it runs first.
+    const registry = createRegistry([recorder.definition, second]);
+    const mod = await activateModule(db, registry, recorder.definition);
+    await activateModule(db, registry, second);
+
+    const result = await emitEvent({ db, registry, type: "sinama.patlar", moduleSlug: "sinama" });
+    expect(result.failures.map((failure) => failure.module)).toEqual(["sinama"]);
+    expect(String(result.failures[0].error)).toContain("listener failed");
+    expect(heardBySecond).toEqual(["sinama.patlar"]);
+
+    // Through the module's own context the publisher is not disturbed either.
+    await createModuleContext({ db, registry, module: mod }).emit("sinama.patlar");
+    expect(heardBySecond).toHaveLength(2);
+    expect(ok(await db.from("events").select("id"))).toHaveLength(2);
   });
 
   it("does not deliver events to a module that is paused or archived", async () => {
@@ -528,6 +680,8 @@ describe("what the core tells a module", () => {
     expect(prompt).toMatchObject({ kind: "attendance", status: "pending", subject_id: SOURCE.id });
 
     await answerModulePrompt(db, registry, prompt, "yes");
+    // Answered again from the other screen: nothing changes and the module is not told twice.
+    await answerModulePrompt(db, registry, prompt, "no");
     const answered = ok(await db.from("prompts").select("*").single());
     expect(answered).toMatchObject({ status: "answered", answer: { value: "yes" } });
     expect(recorder.heard.map((event) => [event.type, event.payload])).toEqual([
@@ -552,7 +706,7 @@ describe("what the core tells a module", () => {
     const ctx = createModuleContext({ db, registry, module: mod });
 
     await ctx.propose(prep());
-    await ctx.propose(prep({ key: "r", when: { recurrence: { count: 2, period: "week" } } }));
+    const rhythm = await ctx.propose(prep({ key: "r", when: RECURRENCE }));
     await propose(db, other, prep({ key: "baska" }));
     ok(await db.from("tasks").insert({ module_id: other.id, title: "Başka" }).select().single());
 
@@ -560,6 +714,20 @@ describe("what the core tells a module", () => {
     expect(await ctx.work.tasks()).toEqual([]);
     const [progress] = await ctx.work.rhythms();
     expect(progress).toMatchObject({ done: 0, target: 2, debt: 2 });
+
+    await logRhythm(db, rhythm.id, new Date());
+    const foreign = ok(
+      await db
+        .from("rhythms")
+        .insert({ module_id: other.id, title: "Başka", target_count: 1, period: "week" })
+        .select()
+        .single(),
+    );
+    await logRhythm(db, foreign.id, new Date());
+    expect((await ctx.work.rhythms())[0]).toMatchObject({ done: 1, debt: 1 });
+    const logs = await ctx.work.rhythmLogs("2000-01-01");
+    expect(logs.map((log) => log.rhythm_id)).toEqual([rhythm.id]);
+    expect(await ctx.work.rhythmLogs("2999-01-01")).toEqual([]);
 
     await ctx.saveSettings({ hedef: 3 });
     expect(

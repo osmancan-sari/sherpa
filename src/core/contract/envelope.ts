@@ -17,7 +17,12 @@ const instant = z.iso.datetime({ offset: true });
 const proposalSchema = z
   .object({
     schema: z.literal(1),
-    key: z.string().trim().min(1).max(200),
+    // No spaces, commas, braces, quotes or backslashes: keys travel inside array filters.
+    key: z
+      .string()
+      .min(1)
+      .max(200)
+      .regex(/^[^\s,{}"\\]+$/, "no spaces, commas, braces, quotes or backslashes"),
     source: z.object({ type: z.string().trim().min(1), id: z.guid() }),
     title: z.string().trim().min(1).max(300),
     when: z
@@ -55,7 +60,7 @@ const proposalSchema = z
       })
       .optional(),
     importance: z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(4)]).nullish(),
-    depends_on: z.array(z.string().trim().min(1)).optional(),
+    depends_on: z.array(z.string().regex(/^[^\s,{}"\\]+$/)).optional(),
     flex: z
       .object({ splittable: z.boolean().nullish(), droppable: z.boolean().nullish() })
       .optional(),
@@ -85,6 +90,45 @@ const proposalSchema = z
     }
     if (when.due && when.earliest && Date.parse(when.earliest) > Date.parse(when.due)) {
       ctx.addIssue({ code: "custom", path: ["when", "earliest"], message: "after the deadline" });
+    }
+    // A field the target table has no place for is a mistake in the module, not something to
+    // drop silently.
+    const given = (value: unknown) =>
+      value !== null &&
+      value !== undefined &&
+      !(Array.isArray(value) && value.length === 0) &&
+      !(typeof value === "object" && Object.keys(value as object).length === 0);
+    const unusable = (form: string, fields: [string, unknown][]) => {
+      for (const [field, value] of fields) {
+        if (given(value)) {
+          ctx.addIssue({
+            code: "custom",
+            path: field.split("."),
+            message: `not used by a ${form}`,
+          });
+        }
+      }
+    };
+    if (when.recurrence) {
+      unusable("recurrence", [
+        ["effort.total_minutes", proposal.effort?.total_minutes],
+        ["effort.bounds", proposal.effort?.bounds],
+        ["importance", proposal.importance],
+        ["depends_on", proposal.depends_on],
+        ["artifact", proposal.artifact],
+        ["flex", proposal.flex],
+      ]);
+    }
+    if (when.fixed) {
+      unusable("fixed time", [
+        ["effort", proposal.effort],
+        ["fit", proposal.fit],
+        ["importance", proposal.importance],
+        ["depends_on", proposal.depends_on],
+        ["artifact", proposal.artifact],
+        ["flex", proposal.flex],
+        ["meta", proposal.meta],
+      ]);
     }
     const bounds = proposal.effort?.bounds;
     if (bounds && bounds.min > bounds.max) {
@@ -155,7 +199,8 @@ export function incomingFields(proposal: WorkProposal): IncomingFields {
   const shared = {
     title: proposal.title.trim(),
     source_type: proposal.source.type,
-    source_id: proposal.source.id,
+    // The database spells uuids in lower case.
+    source_id: proposal.source.id.toLowerCase(),
   };
 
   if (when.recurrence) {
@@ -225,7 +270,21 @@ function same(a: unknown, b: unknown): boolean {
     const [x, y] = [Date.parse(a), Date.parse(b)];
     if (!Number.isNaN(x) && x === y && /^\d{4}-\d{2}-\d{2}T/.test(a)) return true;
   }
-  return JSON.stringify(a) === JSON.stringify(b);
+  return JSON.stringify(canonical(a)) === JSON.stringify(canonical(b));
+}
+
+/** The same value with object keys in a fixed order: jsonb columns come back re-ordered. */
+function canonical(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(canonical);
+  if (value !== null && typeof value === "object") {
+    const source = value as Record<string, unknown>;
+    return Object.fromEntries(
+      Object.keys(source)
+        .sort()
+        .map((key) => [key, canonical(source[key])]),
+    );
+  }
+  return value;
 }
 
 export type Stored = { values: Record<string, unknown>; provenance: Provenance } | null;

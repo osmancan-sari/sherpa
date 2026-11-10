@@ -72,7 +72,7 @@ export function parseDayWord(word: string, now: Date): string | null {
 /** `45dk`, `90dk`, `1s`, `1sa`, `2saat`, `1.5s`, `1s30dk` → minutes, or null. */
 export function parseDurationWord(word: string): number | null {
   const text = fold(word).replace(",", ".");
-  const match = text.match(/^(?:(\d+(?:\.\d+)?)(?:s|sa|saat))?(?:(\d+)(?:dk|d|dak|dakika))?$/);
+  const match = text.match(/^(?:(\d+(?:\.\d+)?)(?:s|sa|saat))?(?:(\d+)(?:dk|dak|dakika))?$/);
   if (!match || (match[1] === undefined && match[2] === undefined)) return null;
   const minutes = Math.round(Number(match[1] ?? 0) * 60) + Number(match[2] ?? 0);
   return minutes > 0 ? minutes : null;

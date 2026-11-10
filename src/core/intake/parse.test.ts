@@ -67,7 +67,7 @@ describe("parseDurationWord", () => {
   });
 
   it("refuses everything else", () => {
-    for (const word of ["45", "dk", "s", "0dk", "slayt", "5.11", "s30", ""]) {
+    for (const word of ["45", "dk", "s", "0dk", "slayt", "5.11", "s30", "3d", ""]) {
       expect(parseDurationWord(word), word).toBeNull();
     }
   });

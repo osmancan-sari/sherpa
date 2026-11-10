@@ -6,6 +6,7 @@ import {
 } from "@/core/contract/envelope";
 import type { ProposalResult, ProposalTarget } from "@/core/contract/types";
 import { check, DataError, type Db, type ModuleRow, type Provenance, unwrap } from "@/core/types";
+import { stopSessionsOnItem } from "./sessions";
 
 // The only way a module creates work (docs/06-modul-sozlesmesi.md): the core validates the
 // envelope, finds the record with the same key, and writes only what may be written.
@@ -17,6 +18,13 @@ const TABLE: Record<ProposalTarget, "work_items" | "rhythms" | "blocks"> = {
 };
 
 const UNIQUE_VIOLATION = "23505";
+
+/**
+ * Who closed a record is kept next to the other field sources: "user" when the user did it,
+ * this mark when the module took its proposal back. Only the module's own closing is undone
+ * by a new proposal.
+ */
+const WITHDRAWN = "module" as const;
 
 type Row = Record<string, unknown> & { id: string; provenance: unknown };
 
@@ -108,19 +116,22 @@ export async function propose(db: Db, mod: ModuleRow, input: unknown): Promise<P
       return { target, id: data.id, created: true, changed: merged.changed, kept: merged.kept };
     }
 
-    // A withdrawn record that is proposed again comes back, unless the user closed it.
+    // A record the module withdrew comes back when it is proposed again. One the user closed
+    // does not: `withdraw` leaves its own mark, and only that mark is undone here.
     const provenance = merged.provenance;
-    if (target === "work_item" && existing.status === "dropped" && provenance.status !== "user") {
-      patch.status = "active";
-      merged.changed.push("status");
-    }
-    if (target === "rhythm" && existing.active === false && provenance.active !== "user") {
-      patch.active = true;
-      merged.changed.push("active");
-    }
-    if (target === "block" && existing.status === "cancelled" && provenance.status !== "user") {
-      patch.status = "planned";
-      merged.changed.push("status");
+    const closedBy = target === "rhythm" ? provenance.active : provenance.status;
+    const closed =
+      target === "work_item"
+        ? existing.status === "dropped"
+        : target === "rhythm"
+          ? existing.active === false
+          : existing.status === "cancelled";
+    if (closed && closedBy === WITHDRAWN) {
+      const field = target === "rhythm" ? "active" : "status";
+      patch[field] = target === "work_item" ? "active" : target === "rhythm" ? true : "planned";
+      delete provenance[field];
+      patch.provenance = provenance;
+      merged.changed.push(field);
     }
 
     if (Object.keys(patch).length > 0) {
@@ -148,9 +159,15 @@ export async function propose(db: Db, mod: ModuleRow, input: unknown): Promise<P
  * already finished stays as it is.
  */
 export async function withdraw(db: Db, mod: ModuleRow, key: string): Promise<void> {
+  const mark = (row: Row, field: string) => ({
+    ...((row.provenance ?? {}) as Provenance),
+    [field]: WITHDRAWN,
+  });
+
   const item = await findByKey(db, "work_items", mod.id, key);
   if (item) {
     if (item.status !== "done" && item.status !== "dropped") {
+      await stopSessionsOnItem(db, item.id);
       check(
         await db
           .from("tasks")
@@ -158,17 +175,34 @@ export async function withdraw(db: Db, mod: ModuleRow, key: string): Promise<voi
           .eq("work_item_id", item.id)
           .in("status", ["todo", "doing", "waiting"]),
       );
-      check(await db.from("work_items").update({ status: "dropped" }).eq("id", item.id));
+      check(
+        await db
+          .from("work_items")
+          .update({ status: "dropped", provenance: mark(item, "status") })
+          .eq("id", item.id),
+      );
     }
     return;
   }
   const rhythm = await findByKey(db, "rhythms", mod.id, key);
   if (rhythm) {
-    check(await db.from("rhythms").update({ active: false }).eq("id", rhythm.id));
+    if (rhythm.active !== false) {
+      check(
+        await db
+          .from("rhythms")
+          .update({ active: false, provenance: mark(rhythm, "active") })
+          .eq("id", rhythm.id),
+      );
+    }
     return;
   }
   const block = await findByKey(db, "blocks", mod.id, key);
   if (block && block.status === "planned") {
-    check(await db.from("blocks").update({ status: "cancelled" }).eq("id", block.id));
+    check(
+      await db
+        .from("blocks")
+        .update({ status: "cancelled", provenance: mark(block, "status") })
+        .eq("id", block.id),
+    );
   }
 }

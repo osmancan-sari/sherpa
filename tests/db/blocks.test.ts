@@ -115,6 +115,20 @@ describe("a weekly series", () => {
     expect(new Date(blocks[1].starts_at).toISOString()).toBe("2026-11-23T07:00:00.000Z");
   });
 
+  it("does not rewrite a block of today that is already over", async () => {
+    // Thursdays 08:00 to 09:00; "now" is Thursday 10:40, so today's block has happened.
+    const thursdays = { ...mondays, weekday: 4, start_time: "08:00", end_time: "09:00" };
+    const series = await createSeries(db, thursdays, NOW);
+    const [today] = await seriesBlocks(series.id);
+    expect(today.occurrence_on).toBe(TODAY);
+
+    await updateSeries(db, series.id, { start_time: "15:00", end_time: "16:00" }, NOW);
+    const blocks = await seriesBlocks(series.id);
+    expect(blocks[0]).toMatchObject({ id: today.id, occurrence_on: TODAY });
+    expect(new Date(blocks[0].starts_at).toISOString()).toBe("2026-11-12T05:00:00.000Z");
+    expect(new Date(blocks[1].starts_at).toISOString()).toBe("2026-11-19T12:00:00.000Z");
+  });
+
   it("tops up the horizon as time passes, without touching what exists", async () => {
     const series = await createSeries(db, mondays, NOW);
     const before = await seriesBlocks(series.id);

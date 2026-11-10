@@ -92,7 +92,7 @@ Aynı bileşenler dikey sıralanır: TopBar, NowCard, UpNext, ModuleChips; DaySt
 
 Tek kutu, iki kullanım:
 
-1. **Yapılı:** Yazarken altta modül çipleri ve tür seçenekleri çıkar. `Tab` ile modül, ardından tarih ve süre seçilir. Tarihler doğal kısaltmalarla yazılabilir: `yarın`, `cuma`, `15.11`, `+3g`.
+1. **Yapılı:** Yazarken altta modül çipleri ve tür seçenekleri çıkar. `Tab` ile modül, ardından tarih ve süre seçilir. Tarihler doğal kısaltmalarla yazılabilir: `bugün`, `yarın`, `cuma`, `15.11`, `+3g` (gün), `+2h` (hafta). Süre de yazılabilir: `45dk`, `1s`, `1.5sa`, `1s30dk`. Bu sözcükler yalnızca satırın sonunda okunur; başlığın ortasındaki "cuma" başlıkta kalır. Haftanın günü, bir sonraki o gündür.
 2. **Serbest:** Hiçbir şey seçmeden `Enter`: metin gelen kutusuna düşer.
 
 Yapay zeka açıkken serbest metin gelen kutusunda beklemez: iş hemen varsayılanlarla görünür, birkaç saniye içinde modül, süre ve önem yerinde dolar. Yapay zekanın koyduğu değerler küçük bir işaretle ayırt edilir; üzerine gelince gerekçesi görünür, tıklayınca değiştirilir. Emin olmadığı girişler gelen kutusuna onay kartı olarak düşer.

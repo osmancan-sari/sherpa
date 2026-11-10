@@ -1,5 +1,9 @@
-// Registered modules. The core reaches modules only through this list and the module contract
-// (docs/06-modul-sozlesmesi.md); src/core never imports from src/modules (enforced by ESLint).
-//
-// Empty in Ç0. Ç1 adds the ModuleDefinition type, the `_sablon` template and the `deneme` module.
-export const modules = [] as const;
+import { createRegistry } from "@/core/contract/registry";
+import type { ModuleDefinition } from "@/core/contract/types";
+
+// Registered modules. The core reaches modules only through this registry and the module
+// contract (docs/06-modul-sozlesmesi.md); src/core never imports from src/modules (ESLint).
+// A definition that breaks the contract fails here, when the app starts and in the tests.
+const definitions: ModuleDefinition[] = [];
+
+export const registry = createRegistry(definitions);

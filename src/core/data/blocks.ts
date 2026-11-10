@@ -82,6 +82,8 @@ export async function syncSeriesBlocks(db: Db, series: BlockSeries, now: Date): 
       .delete()
       .eq("series_id", series.id)
       .gte("occurrence_on", today)
+      // A block of today that is already over happened; it is not rewritten.
+      .gt("ends_at", now.toISOString())
       .eq("status", "planned")
       .eq("provenance", "{}"),
   );
