@@ -83,7 +83,7 @@ Kural: `src/core/` hiçbir zaman `src/modules/*` içe aktarmaz.
 
 ## Canlı güncelleme
 
-- Realtime abonelikleri: `tasks`, `sessions`, `blocks`, `rhythm_logs`, `days`, `inbox_entries`, `events`.
+- Realtime abonelikleri: `tasks`, `sessions`, `blocks`, `rhythm_logs`, `days`, `inbox_entries`, `events`; ayrıca ekranda görünen öbür çekirdek tablolar: `modules`, `work_items`, `rhythms`, `block_series`, `prompts`, `settings`.
 - İkinci ekran sekmesi arka planda kalsa bile güncel kalmalı: görünürlük geri geldiğinde ve dakikada bir "şimdi" yeniden hesaplanır.
 
 ## Telefon

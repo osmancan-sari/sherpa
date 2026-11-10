@@ -10,6 +10,9 @@ Bu doküman çekirdek tabloları tanımlar. Modüllerin kendi tabloları kendi d
 - Enum'lar Postgres enum tipi olarak tanımlanır.
 - Silme yerine durum: işler `dropped`, modüller `archived` olur. Kalıcı silme yalnızca ayarlardan.
 - `source_type` + `source_id`: bir kaydı üreten modül kaydına geri bağlantı (örneğin bir hazırlık işi → `school_assessment`). Çekirdek bu alanları yorumlamaz, yalnızca taşır.
+- Tablolar arası başvurular `(id, user_id)` çiftiyle kurulur: bir satır yalnızca aynı hesabın satırına bağlanabilir (düz yabancı anahtar RLS'siz denetlenir).
+- `events` yalnızca eklenir ve okunur; `inbox_entries` silinemez (izinler de böyle verilir). Öbür tablolarda dört işlem de açıktır.
+- Aşağıda `null` yazmayan ama değeri sonradan dolan sütunlar (gün planı, haftalık taahhüt gibi planlayıcının yazdıkları) veritabanında boş geçilebilir; kayıt, değeri üreten faz gelmeden de açılabilmelidir.
 
 ## İş zarfı
 
@@ -41,8 +44,10 @@ Modüller çekirdek tablolara doğrudan yazmaz; çekirdeğe **iş zarfı** tekli
 - `key` teklifin kimliğidir: aynı `module + key` ile gelen teklif yeni kayıt açmaz, mevcut kaydı günceller.
 - `when` üç biçimden birini taşır: son tarih (`due`), tekrar (`recurrence`: `{count, period}`) ya da sabit zaman (`fixed`: `{starts_at, ends_at}`). Çekirdek bunları sırasıyla `work_items`, `rhythms` ve `blocks` tablolarına yazar.
 - Modül bildiği olguyu doldurur; bilmediğini `null` bırakır. Boş kalan yargı alanlarını (efor, oturum süresi, gerekirse önem ve enerji) yapay zeka doldurur (`size` çağrısı, bkz. `docs/10-yapay-zeka.md`). Modül `effort.bounds` ile sınır verebilir.
-- Her alanın kaynağı saklanır (`provenance`: `module`, `ai`, `user`). Kullanıcının değiştirdiği alanı ne modül ne yapay zeka ezer.
-- `depends_on` başka zarfların `key` değerleridir: bağımlılığı bitmeyen kalem planlanmaz.
+- Her alanın kaynağı saklanır (`provenance`: `module`, `ai`, `user`, `default`). Kullanıcının değiştirdiği alanı ne modül ne yapay zeka ezer. `default`, çekirdeğin yapay zeka yokken yazdığı değerdir (eforda sınırın ortası); modül ya da yapay zeka onu ezebilir.
+- `depends_on` başka zarfların `key` değerleridir: bağımlılığı bitmeyen kalem planlanmaz. Anahtarlar `depends_on_keys` içinde olduğu gibi saklanır; kayda çözülenler `depends_on` içindedir. Bağımlılık kendisinden sonra teklif edilirse çözüm o zaman tamamlanır.
+- `key` üç hedef tabloda da saklanır (`work_items`, `rhythms`, `blocks`); her birinde `(module_id, key)` tekildir.
+- `source.id` modülün kendi kaydının kimliğidir (`uuid`).
 - `artifact` kalemin çıktısına bağlantıdır (dosya yolu ya da adres).
 
 ## Tablolar
@@ -85,6 +90,7 @@ session_minutes int null               -- önerilen oturum uzunluğu
 importance smallint default 2
 energy enum(deep, light, physical), context enum(any, desk, home, campus, office, out, commute)
 depends_on uuid[] default '{}'
+depends_on_keys text[] default '{}'    -- zarftaki bağımlılık anahtarları; depends_on bunların kayda çözülmüş hali
 splittable boolean default true, droppable boolean default false
 artifact_url text null
 provenance jsonb default '{}'          -- { "effort_total_minutes": "ai", "due_at": "module", "importance": "user" }
@@ -95,6 +101,7 @@ meta jsonb default '{}'
 Kurallar:
 - `active` bir kalemin kalan eforu varsa ve haftası geldiyse en az bir `todo` oturum işi olmalı. Oturum işleri kalem haftalık plana girerken üretilir (bkz. `docs/04-planlayici.md`, "Plan ufukları").
 - Kalan efor = `effort_total_minutes − effort_done_minutes`; sıfıra inince kalem kullanıcıya "bitti mi?" diye sorulur, kendiliğinden kapanmaz.
+- Planlayıcı gelene kadar (Ç3) oturum işi, kalemde "Başla" denince o an üretilir: uzunluğu `session_minutes`, yoksa kalan eforun 45 dakikayı geçmeyen kısmı.
 
 ### tasks
 Tek oturumda biten iş.
@@ -124,6 +131,7 @@ done_at timestamptz null
 Tekrarlanan hedef. Belirli güne bağlı değildir.
 ```
 module_id -> modules
+key text null                 -- modül teklifinin kimliği; (module_id, key) tekil
 title text
 target_count int              -- dönem başına hedef
 period enum(day, week, month)
@@ -133,6 +141,9 @@ energy enum(deep, light, physical)
 context enum(any, desk, home, campus, office, out, commute)
 active boolean default true
 mode_targets jsonb null       -- { busy: 1, minimum: 0, holiday: 0 } gibi mod başına hedef
+provenance jsonb default '{}'
+source_type text null, source_id uuid null
+meta jsonb default '{}'
 ```
 
 ### rhythm_logs
@@ -162,17 +173,21 @@ source_type text null, source_id uuid null
 Somut sabit bloklar. Seriden üretilir ya da tek seferlik girilir.
 ```
 series_id uuid null -> block_series
+occurrence_on date null       -- serinin hangi günü için üretildi; blok taşınsa da değişmez
 module_id uuid null -> modules
+key text null                 -- modül teklifinin kimliği (zarfın `fixed` biçimi); (module_id, key) tekil
 title text
 kind enum(work, class, appointment, protected)
 starts_at timestamptz, ends_at timestamptz
 location text null
 travel_before_min int default 0, travel_after_min int default 0
+day_type enum(home, office, campus) null   -- seriden kopyalanır; günün tipini belirler
 status enum(planned, cancelled, done) default planned
+provenance jsonb default '{}' -- kullanıcının elle değiştirdiği alanlar
 source_type text null, source_id uuid null
-unique (series_id, starts_at)
+unique (series_id, occurrence_on)
 ```
-Seriden üretilen blok elle değiştirilebilir ya da iptal edilebilir; yeniden üretim elle değiştirilmiş bloğu ezmez.
+Seriden üretilen blok elle değiştirilebilir ya da iptal edilebilir; yeniden üretim elle değiştirilmiş bloğu ezmez. Tekillik başlangıç saatine değil serinin gününe bağlıdır: saati elle değiştirilen blok için eski saat yeniden üretilmez. İptal edilen blok silinmez (`cancelled`), böylece yeniden üretilmez.
 
 ### sessions
 Bir işe harcanan gerçek zaman.
@@ -185,7 +200,7 @@ started_at timestamptz
 ended_at timestamptz null
 measured boolean default true -- false ise öğrenmeye girmez
 ```
-Aynı anda en fazla bir açık oturum olur.
+Aynı anda en fazla bir açık oturum olur (tekil indeks). Oturumlar üç veritabanı fonksiyonuyla yürür, hepsi çağıranın yetkisiyle: `start_session` (iş, kalem, ritim ya da yalnızca başlıkla plansız iş; açık oturum varsa önce onu durdurur), `end_session` (`done`: iş biter ya da ritim kaydı düşer; `stopped`: iş havuza döner; iki durumda da süre kalemin `effort_done_minutes` değerine eklenir), `complete_task` (tek dokunuşla bitirme).
 
 ### days
 Günün planı ve sonucu. `(user_id, date)` tekil.

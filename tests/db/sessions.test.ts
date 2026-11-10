@@ -294,7 +294,7 @@ describe("sessions", () => {
 });
 
 describe("archiving a module", () => {
-  it("drops open work, quiets rhythms and closes series; nothing is deleted from the past", async () => {
+  it("drops open work, quiets rhythms, closes series and cancels coming blocks; nothing is deleted", async () => {
     const mod = await makeModule(db);
     const other = await makeModule(db, "diger", "Diğer");
     const today = ok(await db.rpc("istanbul_today"));
@@ -322,6 +322,13 @@ describe("archiving a module", () => {
         .select()
         .single(),
     );
+    const prompt = ok(
+      await db
+        .from("prompts")
+        .insert({ module_id: mod.id, kind: "attendance", question: "Derse girdin mi?" })
+        .select()
+        .single(),
+    );
     const series = ok(
       await db
         .from("block_series")
@@ -335,25 +342,42 @@ describe("archiving a module", () => {
         .select()
         .single(),
     );
+    const seriesBlock = (day: string, hour = "09") => ({
+      series_id: series.id,
+      occurrence_on: day,
+      title: "Ders",
+      starts_at: `${day}T${hour}:00:00+03:00`,
+      ends_at: `${day}T${Number(hour) + 1}:00:00+03:00`,
+    });
     ok(
       await db
         .from("blocks")
-        .insert([
-          {
-            series_id: series.id,
-            occurrence_on: "2026-01-05",
-            title: "Ders",
-            starts_at: "2026-01-05T09:00:00+03:00",
-            ends_at: "2026-01-05T10:00:00+03:00",
-          },
-          {
-            series_id: series.id,
-            occurrence_on: "2099-01-05",
-            title: "Ders",
-            starts_at: "2099-01-05T09:00:00+03:00",
-            ends_at: "2099-01-05T10:00:00+03:00",
-          },
-        ])
+        .insert(
+          [
+            seriesBlock("2026-01-05"),
+            seriesBlock("2099-01-05"),
+            // Moved by hand to the afternoon and given a place: still not deleted.
+            {
+              ...seriesBlock("2099-01-12", "14"),
+              location: "A101",
+              provenance: { starts_at: "user" },
+            },
+            {
+              module_id: mod.id,
+              title: "Tek seferlik",
+              starts_at: "2099-02-01T09:00:00+03:00",
+              ends_at: "2099-02-01T10:00:00+03:00",
+            },
+            {
+              module_id: other.id,
+              title: "Başka modül",
+              starts_at: "2099-02-01T12:00:00+03:00",
+              ends_at: "2099-02-01T13:00:00+03:00",
+            },
+          ],
+          // Rows of different shapes: let missing columns take their defaults, not null.
+          { defaultToNull: false },
+        )
         .select(),
     );
     const session = ok(await db.rpc("start_session", { p_task_id: open.id }));
@@ -371,12 +395,24 @@ describe("archiving a module", () => {
     expect(ok(await db.from("rhythms").select("active").eq("id", rhythm.id).single()).active).toBe(
       false,
     );
+    expect(ok(await db.from("prompts").select("status").eq("id", prompt.id).single()).status).toBe(
+      "expired",
+    );
     const closedSeries = ok(
       await db.from("block_series").select("valid_to").eq("id", series.id).single(),
     );
     expect(closedSeries.valid_to! < today).toBe(true);
-    const blocks = ok(await db.from("blocks").select("occurrence_on").eq("series_id", series.id));
-    expect(blocks.map((row) => row.occurrence_on)).toEqual(["2026-01-05"]);
+
+    const blocks = ok(
+      await db.from("blocks").select("title, occurrence_on, status, location").order("starts_at"),
+    );
+    expect(blocks).toEqual([
+      { title: "Ders", occurrence_on: "2026-01-05", status: "planned", location: null },
+      { title: "Ders", occurrence_on: "2099-01-05", status: "cancelled", location: null },
+      { title: "Ders", occurrence_on: "2099-01-12", status: "cancelled", location: "A101" },
+      { title: "Tek seferlik", occurrence_on: null, status: "cancelled", location: null },
+      { title: "Başka modül", occurrence_on: null, status: "planned", location: null },
+    ]);
     expect(
       ok(await db.from("sessions").select("ended_at").eq("id", session.id).single()).ended_at,
     ).not.toBeNull();

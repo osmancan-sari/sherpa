@@ -118,11 +118,11 @@ export type Database = {
         };
         Relationships: [
           {
-            foreignKeyName: "block_series_module_id_fkey";
-            columns: ["module_id"];
+            foreignKeyName: "block_series_module_id_user_id_fkey";
+            columns: ["module_id", "user_id"];
             isOneToOne: false;
             referencedRelation: "modules";
-            referencedColumns: ["id"];
+            referencedColumns: ["id", "user_id"];
           },
         ];
       };
@@ -196,18 +196,18 @@ export type Database = {
         };
         Relationships: [
           {
-            foreignKeyName: "blocks_module_id_fkey";
-            columns: ["module_id"];
+            foreignKeyName: "blocks_module_id_user_id_fkey";
+            columns: ["module_id", "user_id"];
             isOneToOne: false;
             referencedRelation: "modules";
-            referencedColumns: ["id"];
+            referencedColumns: ["id", "user_id"];
           },
           {
-            foreignKeyName: "blocks_series_id_fkey";
-            columns: ["series_id"];
+            foreignKeyName: "blocks_series_id_user_id_fkey";
+            columns: ["series_id", "user_id"];
             isOneToOne: false;
             referencedRelation: "block_series";
-            referencedColumns: ["id"];
+            referencedColumns: ["id", "user_id"];
           },
         ];
       };
@@ -469,11 +469,11 @@ export type Database = {
         };
         Relationships: [
           {
-            foreignKeyName: "modules_area_id_fkey";
-            columns: ["area_id"];
+            foreignKeyName: "modules_area_id_user_id_fkey";
+            columns: ["area_id", "user_id"];
             isOneToOne: false;
             referencedRelation: "areas";
-            referencedColumns: ["id"];
+            referencedColumns: ["id", "user_id"];
           },
         ];
       };
@@ -560,11 +560,11 @@ export type Database = {
         };
         Relationships: [
           {
-            foreignKeyName: "prompts_module_id_fkey";
-            columns: ["module_id"];
+            foreignKeyName: "prompts_module_id_user_id_fkey";
+            columns: ["module_id", "user_id"];
             isOneToOne: false;
             referencedRelation: "modules";
-            referencedColumns: ["id"];
+            referencedColumns: ["id", "user_id"];
           },
         ];
       };
@@ -599,18 +599,18 @@ export type Database = {
         };
         Relationships: [
           {
-            foreignKeyName: "rhythm_logs_rhythm_id_fkey";
-            columns: ["rhythm_id"];
+            foreignKeyName: "rhythm_logs_rhythm_id_user_id_fkey";
+            columns: ["rhythm_id", "user_id"];
             isOneToOne: false;
             referencedRelation: "rhythms";
-            referencedColumns: ["id"];
+            referencedColumns: ["id", "user_id"];
           },
           {
-            foreignKeyName: "rhythm_logs_session_id_fkey";
-            columns: ["session_id"];
+            foreignKeyName: "rhythm_logs_session_id_user_id_fkey";
+            columns: ["session_id", "user_id"];
             isOneToOne: false;
             referencedRelation: "sessions";
-            referencedColumns: ["id"];
+            referencedColumns: ["id", "user_id"];
           },
         ];
       };
@@ -681,11 +681,11 @@ export type Database = {
         };
         Relationships: [
           {
-            foreignKeyName: "rhythms_module_id_fkey";
-            columns: ["module_id"];
+            foreignKeyName: "rhythms_module_id_user_id_fkey";
+            columns: ["module_id", "user_id"];
             isOneToOne: false;
             referencedRelation: "modules";
-            referencedColumns: ["id"];
+            referencedColumns: ["id", "user_id"];
           },
         ];
       };
@@ -732,25 +732,25 @@ export type Database = {
         };
         Relationships: [
           {
-            foreignKeyName: "sessions_module_id_fkey";
-            columns: ["module_id"];
+            foreignKeyName: "sessions_module_id_user_id_fkey";
+            columns: ["module_id", "user_id"];
             isOneToOne: false;
             referencedRelation: "modules";
-            referencedColumns: ["id"];
+            referencedColumns: ["id", "user_id"];
           },
           {
-            foreignKeyName: "sessions_rhythm_id_fkey";
-            columns: ["rhythm_id"];
+            foreignKeyName: "sessions_rhythm_id_user_id_fkey";
+            columns: ["rhythm_id", "user_id"];
             isOneToOne: false;
             referencedRelation: "rhythms";
-            referencedColumns: ["id"];
+            referencedColumns: ["id", "user_id"];
           },
           {
-            foreignKeyName: "sessions_task_id_fkey";
-            columns: ["task_id"];
+            foreignKeyName: "sessions_task_id_user_id_fkey";
+            columns: ["task_id", "user_id"];
             isOneToOne: false;
             referencedRelation: "tasks";
-            referencedColumns: ["id"];
+            referencedColumns: ["id", "user_id"];
           },
         ];
       };
@@ -879,18 +879,18 @@ export type Database = {
         };
         Relationships: [
           {
-            foreignKeyName: "tasks_module_id_fkey";
-            columns: ["module_id"];
+            foreignKeyName: "tasks_module_id_user_id_fkey";
+            columns: ["module_id", "user_id"];
             isOneToOne: false;
             referencedRelation: "modules";
-            referencedColumns: ["id"];
+            referencedColumns: ["id", "user_id"];
           },
           {
-            foreignKeyName: "tasks_work_item_id_fkey";
-            columns: ["work_item_id"];
+            foreignKeyName: "tasks_work_item_id_user_id_fkey";
+            columns: ["work_item_id", "user_id"];
             isOneToOne: false;
             referencedRelation: "work_items";
-            referencedColumns: ["id"];
+            referencedColumns: ["id", "user_id"];
           },
         ];
       };
@@ -1056,18 +1056,18 @@ export type Database = {
         };
         Relationships: [
           {
-            foreignKeyName: "work_items_module_id_fkey";
-            columns: ["module_id"];
+            foreignKeyName: "work_items_module_id_user_id_fkey";
+            columns: ["module_id", "user_id"];
             isOneToOne: false;
             referencedRelation: "modules";
-            referencedColumns: ["id"];
+            referencedColumns: ["id", "user_id"];
           },
           {
-            foreignKeyName: "work_items_parent_id_fkey";
-            columns: ["parent_id"];
+            foreignKeyName: "work_items_parent_id_user_id_fkey";
+            columns: ["parent_id", "user_id"];
             isOneToOne: false;
             referencedRelation: "work_items";
-            referencedColumns: ["id"];
+            referencedColumns: ["id", "user_id"];
           },
         ];
       };

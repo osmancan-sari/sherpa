@@ -5,8 +5,8 @@ Bu dosyayı Claude Code günceller. Yeni bir oturum yalnızca bu dosyayı ve `pr
 ## Durum
 
 - Faz: **Ç1 (Çekirdek ve modül temeli) sürüyor.** Ç0 bitti (`c0-tamam`); yayın ve telefon D1 ve D2'yi bekliyor
-- Adım: 1 / 8 (aşağıdaki plan)
-- Son commit: Ç1 planı
+- Adım: 3 / 8 (aşağıdaki plan); 1 ve 2 bitti, denetlendi
+- Son commit: şema denetimi düzeltmeleri
 
 ### Ç1 planı
 
@@ -14,9 +14,9 @@ Her adımın sonunda `npm run check` ve commit; şema, RLS, iş zarfı ve eşitl
 
 | # | Adım | Durum |
 | --- | --- | --- |
-| 1 | Kapılar: Playwright projeleri dosya adına bağlı kalmasın, Vitest `*.test.tsx`, veritabanı testleri için ayrı komut (`npm run test:db`) | sırada |
-| 2 | Migration: `docs/03-veri-modeli.md` çekirdek tabloları, RLS, oturum ve arşiv fonksiyonları, Realtime yayını; tipler; veritabanı testleri (RLS, kısıtlar) | |
-| 3 | Çekirdek veri katmanı (`src/core/data`), iş zarfı (`propose`, `withdraw`, `provenance`, `onOutcome`), olaylar, modül sözleşmesi tipleri ve kayıt, blok serisi üretimi | |
+| 1 | Kapılar: Playwright projeleri dosya adına bağlı kalmasın, Vitest `*.test.tsx`, veritabanı testleri için ayrı komut (`npm run test:db`) | bitti |
+| 2 | Migration: `docs/03-veri-modeli.md` çekirdek tabloları, RLS, oturum ve arşiv fonksiyonları, Realtime yayını; tipler; veritabanı testleri (RLS, kısıtlar) | bitti; denetim (adım kipi): 2 engelleyici ve 5 önemli bulgu düzeltildi |
+| 3 | Çekirdek veri katmanı (`src/core/data`), iş zarfı (`propose`, `withdraw`, `provenance`, `onOutcome`), olaylar, modül sözleşmesi tipleri ve kayıt, blok serisi üretimi | sırada |
 | 4 | İstemci altyapısı: TanStack Query, Realtime, modül kaydı bağlamı. Bugün ekranı, hızlı giriş, gelen kutusu, oturumlar | |
 | 5 | Modül arayüzü zemini: `ModulePageShell`, sekmeler, alt sayfalar, tam ekran, hızlı eylemler, modül ayarları, bileşen takımı. `_sablon` ve `deneme` | |
 | 6 | Ayarlar: modüller, sabit bloklar, dışa aktarım | |
@@ -158,8 +158,20 @@ Benim yapacaklarım (D1 tamamlanınca): iki Supabase projesini açmak (bölge: F
 | 10 Kas 2026 | `apple-mobile-web-app-capable` meta etiketi elle eklendi | Next.js yalnızca standart `mobile-web-app-capable` etiketini yazıyor; eski iOS sürümleri Apple'ınkini arar (D2'de tam ekran açılış) | `src/app/layout.tsx` |
 | 10 Kas 2026 | `shadcn` paketi `dependencies` altında kaldı (denetçi `devDependencies` önerdi) | `globals.css` derlemede `shadcn/tailwind.css` dosyasını içe aktarıyor; shadcn kurulumu paketi oraya kendisi koyuyor. Çalışma zamanına kod girmiyor | `package.json` |
 | 10 Kas 2026 | Dal adı şimdilik `master`; D1'de GitHub'a gönderilirken `main` yapılacak | Doküman "`main` → üretim" diyor; uzak depo yokken yeniden adlandırmanın acelesi yok, betik yalnızca etiketlere bakıyor | — |
+| 10 Kas 2026 | Ç1: veritabanı testleri ayrı komut (`npm run test:db`), `check:full` içinde; iki geçici hesapla (`db-owner`, `db-stranger`) yerel Supabase'e gerçek oturumla bağlanır | RLS, kısıt ve fonksiyonlar uygulamanın gördüğü haliyle sınansın; `check` hızlı ve Docker'sız kalsın | `vitest.db.config.mts`, `tests/db/*`, `package.json` |
+| 10 Kas 2026 | Ç1: Playwright'ta `pano` projesi öbür projelerin almadığı her `*.spec.ts` dosyasını çalıştırır; iki genişlikte çalışacak dosyalar `*.both.spec.ts` adını alır. `shell.spec.ts` → `shell.both.spec.ts` (içerik aynı) | Ç0 denetiminin açık bulgusu: adıyla sayılmayan test dosyası sessizce çalışmıyordu | `playwright.config.ts`, `tests/e2e/shell.both.spec.ts` |
+| 10 Kas 2026 | Ç1: tablolar arası başvurular `(id, user_id)` çiftiyle | Adım denetimi buldu: düz yabancı anahtar RLS'siz denetlendiği için başka bir hesap kendi satırını bu hesabın modülüne bağlayıp `key` tekilliğini kilitleyebiliyordu | migration, `docs/03-veri-modeli.md`, `tests/db/constraints.test.ts` |
+| 10 Kas 2026 | Ç1: `events` yalnızca eklenir ve okunur, `inbox_entries` silinemez; bu, izinlerle de uygulanır | Doküman: "Yalnızca eklenir", "Hiç silinmez" | migration, `tests/db/rls.test.ts` |
+| 10 Kas 2026 | Ç1: oturumlar veritabanı fonksiyonlarıyla (`start_session`, `end_session`, `complete_task`), çağıranın yetkisiyle. Yeni oturum açık olanı durdurur; biten ya da bırakılmış işte oturum açılmaz; bekleyen iş başlatılınca bekleme biter | Birkaç tabloya dokunan işlem tek adımda olsun; "aynı anda tek açık oturum" iki cihazda da tutsun | migration, `tests/db/sessions.test.ts` |
+| 10 Kas 2026 | Ç1: zarfın `key` değeri `rhythms` ve `blocks` tablolarında da var; ikisi de `provenance` taşır. `work_items.depends_on_keys` eklendi. `provenance` değerlerine `default` eklendi | Doküman `key` ve `provenance` alanlarını yalnızca `work_items` için sayıyordu; ritim ve blok teklifleri de tekrar edilebilir olmalı | migration, `docs/03-veri-modeli.md`, `docs/09-kararlar.md` |
+| 10 Kas 2026 | Ç1: seri bloklarında tekillik `(series_id, occurrence_on)`; doküman `(series_id, starts_at)` diyordu | Saati elle değiştirilen blok için eski saat yeniden üretilmesin | migration, `docs/03-veri-modeli.md` |
+| 10 Kas 2026 | Ç1: modül arşivlenince gelecek blokları `cancelled` olur, silinmez | Adım denetimi buldu: ilk hal siliyordu; sözleşme "verisi silinmez" diyor | migration, `tests/db/sessions.test.ts` |
+| 10 Kas 2026 | Ç1: Realtime yayını dokümandaki 7 tabloya ek olarak `modules`, `work_items`, `rhythms`, `block_series`, `prompts`, `settings` tablolarını da kapsar | Bunlar da ekranda görünüyor; öbür cihazda eskimesinler | migration, `docs/02-mimari.md` |
+| 10 Kas 2026 | Ç1: planlayıcı yokken kalemin oturum işi "Başla" anında üretilir (uzunluk `session_minutes`, yoksa kalan eforun en çok 45 dakikası) | Kalemler Ç3'te haftalık planda bölünecek; o zamana kadar başlatılabilmeli, uzak kalemler de önceden bölünmemeli | migration (`start_session`), `docs/03-veri-modeli.md` |
 
 ## Bilinen sorunlar
+
+- Ç1, adım 2: `b87e5fb` commit'i lint kırmızıyken atıldı (komut zincirinde çıkış kodu yutuldu); 21 saniye sonra `6439e65` ile düzeltildi. O andan beri kapı komutları `pipefail` ile çalıştırılıyor.
 
 - Bulut yok: üretim adresi, bulut `dev` ve `prod` projeleri, gerçek e-posta gönderimi ve Vercel önizleme koruması D1'e kadar sınanamıyor. Yerel `config.toml` yalnızca yerel Supabase'i yönetir; aynı kimlik ayarları D1'de bulut projelerine aktarılıp `session.spec.ts` içindeki "yeni kayıt kapalı" sınamaları orada yinelenmeli.
 - Uçtan uca testlerde sunucu günlüğüne iki kez `AuthApiError: Refresh token is not valid` düşer. Beklenen bir çıktıdır ("yenilenemeyen oturum kapatılır" testi sahte yenileme belirteci gönderir); hata değildir.

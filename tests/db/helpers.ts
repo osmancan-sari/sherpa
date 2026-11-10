@@ -76,7 +76,7 @@ export const CORE_TABLES = [
 ] as const;
 
 /** Module tables (not part of the core) that also hold test rows. */
-export const MODULE_TABLES = ["deneme_items"] as const;
+export const MODULE_TABLES: readonly string[] = [];
 
 /** Removes everything the two test accounts own. */
 export async function wipe(): Promise<void> {
@@ -86,10 +86,7 @@ export async function wipe(): Promise<void> {
       .from(table as (typeof CORE_TABLES)[number])
       .delete()
       .in("user_id", [ownerId(), strangerId()]);
-    // A module table that has not been migrated yet is not an error here.
-    if (error && error.code !== "PGRST205") {
-      throw new Error(`Could not clear ${table}: ${error.message}`);
-    }
+    if (error) throw new Error(`Could not clear ${table}: ${error.message}`);
   }
 }
 

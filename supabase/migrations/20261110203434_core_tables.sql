@@ -4,6 +4,8 @@
 --   id, user_id (default auth.uid()), created_at, updated_at (trigger)
 --   row level security: user_id = auth.uid()
 --   no access for the anonymous role
+-- A row may only point at rows of the same account: references between tables are written as
+-- (id, user_id) pairs, because a plain foreign key is checked without row level security.
 
 -- ---------------------------------------------------------------------------------------------
 -- Enums
@@ -58,6 +60,7 @@ $$;
 create table public.areas (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null default auth.uid() references auth.users (id) on delete cascade,
+  unique (id, user_id),
   slug text not null,
   name text not null,
   sort int not null default 0,
@@ -69,11 +72,12 @@ create table public.areas (
 create table public.modules (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null default auth.uid() references auth.users (id) on delete cascade,
+  unique (id, user_id),
   slug text not null,
   name text not null,
   kind public.module_kind not null default 'lifelong',
   status public.module_status not null default 'active',
-  area_id uuid references public.areas (id) on delete set null,
+  area_id uuid,
   weight numeric not null default 1,
   weekly_floor_minutes int not null default 0 check (weekly_floor_minutes >= 0),
   color text not null default '#737373',
@@ -85,14 +89,16 @@ create table public.modules (
   sort int not null default 0,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
-  unique (user_id, slug)
+  unique (user_id, slug),
+  foreign key (area_id, user_id) references public.areas (id, user_id) on delete set null (area_id)
 );
 
 create table public.work_items (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null default auth.uid() references auth.users (id) on delete cascade,
-  module_id uuid not null references public.modules (id) on delete cascade,
-  parent_id uuid references public.work_items (id) on delete cascade,
+  unique (id, user_id),
+  module_id uuid not null,
+  parent_id uuid,
   key text,
   title text not null check (length(btrim(title)) > 0),
   status public.work_item_status not null default 'active',
@@ -118,15 +124,18 @@ create table public.work_items (
   meta jsonb not null default '{}',
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
-  unique (module_id, key)
+  unique (module_id, key),
+  foreign key (module_id, user_id) references public.modules (id, user_id) on delete cascade,
+  foreign key (parent_id, user_id) references public.work_items (id, user_id) on delete cascade
 );
 create index work_items_user_status_idx on public.work_items (user_id, status);
 
 create table public.tasks (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null default auth.uid() references auth.users (id) on delete cascade,
-  module_id uuid not null references public.modules (id) on delete cascade,
-  work_item_id uuid references public.work_items (id) on delete cascade,
+  unique (id, user_id),
+  module_id uuid not null,
+  work_item_id uuid,
   title text not null check (length(btrim(title)) > 0),
   kind public.task_kind not null default 'task',
   -- A task is one sitting. Anything longer is a work item (total effort + sessions).
@@ -146,7 +155,9 @@ create table public.tasks (
   ai jsonb,
   done_at timestamptz,
   created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
+  updated_at timestamptz not null default now(),
+  foreign key (module_id, user_id) references public.modules (id, user_id) on delete cascade,
+  foreign key (work_item_id, user_id) references public.work_items (id, user_id) on delete cascade
 );
 create index tasks_user_status_idx on public.tasks (user_id, status);
 create index tasks_work_item_idx on public.tasks (work_item_id);
@@ -154,7 +165,8 @@ create index tasks_work_item_idx on public.tasks (work_item_id);
 create table public.rhythms (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null default auth.uid() references auth.users (id) on delete cascade,
-  module_id uuid not null references public.modules (id) on delete cascade,
+  unique (id, user_id),
+  module_id uuid not null,
   key text,
   title text not null check (length(btrim(title)) > 0),
   target_count int not null check (target_count > 0),
@@ -171,13 +183,15 @@ create table public.rhythms (
   meta jsonb not null default '{}',
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
-  unique (module_id, key)
+  unique (module_id, key),
+  foreign key (module_id, user_id) references public.modules (id, user_id) on delete cascade
 );
 
 create table public.block_series (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null default auth.uid() references auth.users (id) on delete cascade,
-  module_id uuid references public.modules (id) on delete set null,
+  unique (id, user_id),
+  module_id uuid,
   title text not null check (length(btrim(title)) > 0),
   kind public.block_kind not null default 'work',
   weekday smallint not null check (weekday between 1 and 7),
@@ -193,17 +207,18 @@ create table public.block_series (
   source_id uuid,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
-  check (end_time > start_time)
+  check (end_time > start_time),
+  foreign key (module_id, user_id) references public.modules (id, user_id) on delete set null (module_id)
 );
 
 create table public.blocks (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null default auth.uid() references auth.users (id) on delete cascade,
-  series_id uuid references public.block_series (id) on delete cascade,
+  series_id uuid,
   -- The day of the series this block was generated for. It stays put when the block is moved,
   -- so regenerating the series never brings the original time back.
   occurrence_on date,
-  module_id uuid references public.modules (id) on delete set null,
+  module_id uuid,
   key text,
   title text not null check (length(btrim(title)) > 0),
   kind public.block_kind not null default 'appointment',
@@ -222,23 +237,29 @@ create table public.blocks (
   check (ends_at > starts_at),
   check ((series_id is null) = (occurrence_on is null)),
   unique (series_id, occurrence_on),
-  unique (module_id, key)
+  unique (module_id, key),
+  foreign key (series_id, user_id) references public.block_series (id, user_id) on delete cascade,
+  foreign key (module_id, user_id) references public.modules (id, user_id) on delete set null (module_id)
 );
 create index blocks_user_starts_idx on public.blocks (user_id, starts_at);
 
 create table public.sessions (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null default auth.uid() references auth.users (id) on delete cascade,
-  task_id uuid references public.tasks (id) on delete set null,
-  rhythm_id uuid references public.rhythms (id) on delete set null,
-  module_id uuid references public.modules (id) on delete set null,
+  unique (id, user_id),
+  task_id uuid,
+  rhythm_id uuid,
+  module_id uuid,
   title text,
   started_at timestamptz not null default now(),
   ended_at timestamptz,
   measured boolean not null default true,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
-  check (ended_at is null or ended_at >= started_at)
+  check (ended_at is null or ended_at >= started_at),
+  foreign key (task_id, user_id) references public.tasks (id, user_id) on delete set null (task_id),
+  foreign key (rhythm_id, user_id) references public.rhythms (id, user_id) on delete set null (rhythm_id),
+  foreign key (module_id, user_id) references public.modules (id, user_id) on delete set null (module_id)
 );
 -- At most one open session at a time.
 create unique index sessions_one_open_idx on public.sessions (user_id) where ended_at is null;
@@ -248,11 +269,13 @@ create index sessions_task_idx on public.sessions (task_id);
 create table public.rhythm_logs (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null default auth.uid() references auth.users (id) on delete cascade,
-  rhythm_id uuid not null references public.rhythms (id) on delete cascade,
+  rhythm_id uuid not null,
   done_on date not null default public.istanbul_today(),
-  session_id uuid references public.sessions (id) on delete set null,
+  session_id uuid,
   created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
+  updated_at timestamptz not null default now(),
+  foreign key (rhythm_id, user_id) references public.rhythms (id, user_id) on delete cascade,
+  foreign key (session_id, user_id) references public.sessions (id, user_id) on delete set null (session_id)
 );
 create index rhythm_logs_rhythm_idx on public.rhythm_logs (rhythm_id, done_on);
 
@@ -329,7 +352,7 @@ create index inbox_entries_user_status_idx on public.inbox_entries (user_id, sta
 create table public.prompts (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null default auth.uid() references auth.users (id) on delete cascade,
-  module_id uuid not null references public.modules (id) on delete cascade,
+  module_id uuid not null,
   kind text not null,
   question text not null,
   options jsonb not null default '[]',
@@ -340,7 +363,8 @@ create table public.prompts (
   answer jsonb,
   answered_at timestamptz,
   created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
+  updated_at timestamptz not null default now(),
+  foreign key (module_id, user_id) references public.modules (id, user_id) on delete cascade
 );
 create index prompts_user_status_idx on public.prompts (user_id, status, ask_after);
 
@@ -486,7 +510,7 @@ begin
     if p_outcome = 'done' then
       update public.tasks
          set status = 'done', done_at = s.ended_at
-       where id = s.task_id and status <> 'done'
+       where id = s.task_id and status in ('todo', 'doing', 'waiting')
        returning work_item_id into v_work_item;
     else
       update public.tasks set status = 'todo' where id = s.task_id and status = 'doing';
@@ -552,6 +576,9 @@ begin
     if v_item.id is null then
       raise exception 'work item not found' using errcode = 'P0002';
     end if;
+    if v_item.status in ('done', 'dropped') then
+      raise exception 'this work item is closed' using errcode = '22023';
+    end if;
     -- Reuse an open sitting of this item if there is one; otherwise create the next.
     select * into v_task from public.tasks
      where work_item_id = v_item.id and status in ('todo', 'doing')
@@ -574,10 +601,15 @@ begin
     if v_task.id is null then
       raise exception 'task not found' using errcode = 'P0002';
     end if;
+    if v_task.status in ('done', 'dropped') then
+      raise exception 'this task is closed' using errcode = '22023';
+    end if;
   end if;
 
   if v_task.id is not null then
-    update public.tasks set status = 'doing' where id = v_task.id and status in ('todo', 'waiting');
+    -- Starting a task that was waiting on something means the wait is over.
+    update public.tasks set status = 'doing', waiting_on = null, follow_up_on = null
+     where id = v_task.id and status in ('todo', 'waiting');
     v_module := v_task.module_id;
   elsif p_rhythm_id is not null then
     select module_id into v_module from public.rhythms where id = p_rhythm_id;
@@ -611,7 +643,7 @@ begin
 
   update public.tasks
      set status = 'done', done_at = coalesce(done_at, now())
-   where id = p_task_id and status <> 'done';
+   where id = p_task_id and status in ('todo', 'doing', 'waiting');
 
   select * into t from public.tasks where id = p_task_id;
   if t.id is null then
@@ -622,7 +654,7 @@ end;
 $$;
 
 -- Archiving a module (docs/06-modul-sozlesmesi.md): its open work is dropped, its series close,
--- its rhythms go quiet. Nothing is deleted except future blocks nobody has touched.
+-- its rhythms go quiet, its coming blocks are cancelled. Nothing is deleted.
 create function public.archive_module(p_module_id uuid)
 returns public.modules
 language plpgsql
@@ -654,12 +686,12 @@ begin
 
   update public.block_series set valid_to = v_today - 1
    where module_id = p_module_id and (valid_to is null or valid_to >= v_today);
-  delete from public.blocks b
-   using public.block_series bs
+  update public.blocks b set status = 'cancelled'
+    from public.block_series bs
    where b.series_id = bs.id and bs.module_id = p_module_id
-     and b.occurrence_on >= v_today and b.status = 'planned';
+     and b.status = 'planned' and b.ends_at > now();
   update public.blocks set status = 'cancelled'
-   where module_id = p_module_id and series_id is null and status = 'planned' and starts_at > now();
+   where module_id = p_module_id and series_id is null and status = 'planned' and ends_at > now();
 
   return m;
 end;

@@ -34,6 +34,12 @@
 | Hızlı model girişler, planlama modeli günlük plan için; aylık 5 $ sınır | Maliyetin çoğu planlamada; günde bir çağrı yeter | Yalnızca ayar |
 | Notion aktarımı JSON dosyalarından | Uygulamada Notion API anahtarı gerekmez | Yalnızca aktarım betiği |
 | İki Supabase projesi (dev, prod) | Migration'ları güvenle denemek için | — |
+| Zarfın `key` değeri üç hedef tabloda da saklanır; `rhythms` ve `blocks` da `provenance` taşır (Ç1) | `key` ile tekrar edilebilirlik ve "kullanıcının değiştirdiği ezilmez" kuralı ritim ve blok teklifleri için de geçerli | Veri modeli, iş zarfı |
+| Seri bloklarında tekillik `(series_id, occurrence_on)` (Ç1; önceki tasarım `(series_id, starts_at)`) | Saati elle değiştirilen blok için eski saat yeniden üretilmesin | Veri modeli |
+| `provenance` dördüncü değeri: `default` (Ç1) | Yapay zeka yokken yazılan sınırın ortası, sonradan yapay zeka ya da modül tarafından ezilebilmeli | İş zarfı, Ç2 `size` |
+| Tablolar arası başvurular `(id, user_id)` çiftiyle (Ç1) | Düz yabancı anahtar RLS'siz denetlenir; bir hesabın satırı başka hesabın satırına bağlanamasın | Veri modeli |
+| Modül arşivlenince gelecek blokları silinmez, `cancelled` olur (Ç1) | "Verisi silinmez" kuralı | Modül sözleşmesi |
+| Planlayıcı gelene kadar kalemin oturum işi "Başla" anında üretilir (Ç1) | Kalemler oturumlara haftalık planda bölünür (Ç3); o zamana kadar kalem Bugün listesinden başlatılabilmeli, uzak kalemler de önceden bölünmemeli | Ç3 |
 
 ## Açık sorular
 

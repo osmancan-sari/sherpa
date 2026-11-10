@@ -40,13 +40,14 @@ Paket sürümlerini ezberden yazma; kurarken güncel kararlı sürümü kullan v
 | Komut | Ne yapar |
 | --- | --- |
 | `npm run check` | Kapı: tip denetimi, lint, biçim denetimi, birim testleri. Her commit'ten önce |
-| `npm run check:full` | `check` + üretim derlemesi + uçtan uca testler. Faz etiketinden önce |
+| `npm run check:full` | `check` + veritabanı testleri + üretim derlemesi + uçtan uca testler. Faz etiketinden önce |
 | `npm run dev` | Geliştirme sunucusu, `http://127.0.0.1:3210` |
 | `npm run build` / `npm run start` | Üretim derlemesi / derlemeyi 3210'da çalıştır |
 | `npm run typecheck` | Rota tiplerini üretir (`next typegen`), sonra `tsc --noEmit` |
 | `npm run lint` | ESLint (çekirdek → modül içe aktarım yasağı dahil) |
 | `npm run format` / `npm run format:check` | Prettier: yaz / denetle |
 | `npm run test` / `npm run test:watch` | Vitest birim testleri |
+| `npm run test:db` | Veritabanı testleri: RLS, kısıtlar, fonksiyonlar, iş zarfı (yerel Supabase ister) |
 | `npm run test:e2e` | Derler, sonra Playwright (3100 portu, yerel Supabase ve Mailpit ister) |
 | `npm run db:start` / `db:stop` / `db:status` | Yerel Supabase (Docker) |
 | `npm run db:new -- <ad>` | Yeni migration dosyası |

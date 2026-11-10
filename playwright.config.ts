@@ -22,7 +22,7 @@ const storageState = "playwright/.auth/user.json";
 // into docs/ekran-goruntuleri/<folder>/. Off by default so normal runs leave docs untouched.
 const shots = Boolean(process.env.SHERPA_SHOTS);
 
-const GATE_SPECS = /(guard|login|session)\.spec\.ts$/;
+const GATE_SPECS = /(^|[\\/])(guard|login|session)\.spec\.ts$/;
 const BOTH_SPECS = /\.both\.spec\.ts$/;
 const SHOT_SPECS = /screenshots\.spec\.ts$/;
 
