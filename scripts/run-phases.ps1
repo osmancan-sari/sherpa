@@ -8,6 +8,7 @@
 #   - every phase up to -LastPhase has its git tag (c0-tamam ... c5-tamam), or
 #   - docs/BEKLIYOR.md exists (Claude Code left a question for you), or
 #   - a phase is still unfinished after -MaxAttempts sessions.
+# Only one copy may run at a time (logs/runner.pid).
 #
 # A phase is "done" only when its tag exists. An unfinished phase is continued in a new session.
 # After a session sets the tag, this script runs "npm run check:full" itself. If that fails,
@@ -33,6 +34,21 @@ if (-not (Get-Command claude -ErrorAction SilentlyContinue)) {
 # Logs stay out of git.
 New-Item -ItemType Directory -Force logs | Out-Null
 if (-not (Test-Path 'logs/.gitignore')) { Set-Content -Path 'logs/.gitignore' -Value '*' -Encoding ascii }
+
+# Only one runner at a time: two runners would start two sessions in the same folder.
+$lockFile = 'logs/runner.pid'
+if (Test-Path $lockFile) {
+  $oldPid = (Get-Content $lockFile -ErrorAction SilentlyContinue | Select-Object -First 1) -as [int]
+  if ($oldPid -and $oldPid -ne $PID) {
+    $other = Get-Process -Id $oldPid -ErrorAction SilentlyContinue
+    if ($other -and $other.ProcessName -match 'powershell|pwsh') {
+      Write-Host "Another runner seems to be running already (PowerShell PID $oldPid). Stop it first (Ctrl+C in its window)."
+      Write-Host 'If you are sure no runner is running, delete logs\runner.pid and start again.'
+      exit 4
+    }
+  }
+}
+Set-Content -Path $lockFile -Value $PID -Encoding ascii
 
 # Keep the PC awake while this script runs. The effect ends when the script ends.
 try {

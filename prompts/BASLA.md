@@ -40,12 +40,13 @@ Dokümanlar tek kaynaktır; onlarla çelişen bir şey yapma. Önceki fazlarda y
 3. **Yerelde geliştir.** Veritabanı için Supabase'in yerel geliştirme ortamını kullan; bulut projeleri ve yayın bir duraktır (aşağıda). Böylece benden bir şey beklemeden ilerleyebilirsin.
 4. **Fazın döngüsü:** kısa plan (`docs/ILERLEME.md`'ye yaz) → uygula → test et → kabul ölçütlerini tek tek doğrula → `docs/ILERLEME.md`'yi güncelle → commit at ve fazı etiketle (`c0-tamam`, `c1-tamam`…). Faz boyunca anlamlı adımlarda ara commit at ve `docs/ILERLEME.md`'yi güncel tut; oturum her an kesilebilir.
 5. **Doğrulama.** Ayrıntısı aşağıda "Doğrulama düzeni" bölümünde; faz boyunca kesintisiz uygulanır, fazın sonuna bırakılmaz. Özeti: her adımda `npm run check`, riskli adımlardan sonra ve fazın sonunda bağımsız denetçi alt ajanı, etiketten önce `npm run check:full`.
-6. **Ne zaman durup soracaksın.** Yalnızca şu durumlarda:
-   - Dokümanlar birbiriyle çelişiyor ya da bir karar veri modelini, iş zarfını ya da modül sözleşmesini değiştirecek.
-   - Geri alınamaz ya da ücretli bir işlem gerekiyor.
-   - Aynı sorunda üç farklı deneme başarısız oldu.
-
-   Bunların dışındaki belirsizliklerde en makul yorumu seç, `docs/ILERLEME.md` içindeki "Verdiğim kararlar" listesine gerekçesiyle yaz ve devam et. Kararın benim zevkime ya da kullanım alışkanlığıma bağlı olduğunu düşünüyorsan (görünüm, metin, varsayılan değer gibi) satırı "görüşün gerek" diye işaretle; yine de durma, fazın sonunda bakarım.
+6. **Kararları sen ver; beni bekleme.** Bu proje benim müdahalem olmadan ilerlemeli.
+   - **Teknik kararlar senindir.** Mimari ayrıntı, kütüphane seçimi, veri modeli ve sözleşme ayrıntısı, hata çözümü, test yaklaşımı, araç ve ortam sorunları: en doğru bulduğun yolu seç, uygula ve `docs/ILERLEME.md` içindeki "Verdiğim kararlar" listesine gerekçesiyle yaz. Sorma, onay bekleme.
+   - **Dokümanlar çelişiyorsa ya da bir doküman olduğu gibi uygulanamıyorsa** en doğru bulduğun yorumu seç; ilgili dokümanı ve `docs/09-kararlar.md` dosyasını aynı commit'te güncelle ki dokümanlar tek kaynak olarak kalsın.
+   - **Tasarımsal kararlar** (görünüm, yerleşim, metin, akış, varsayılan değer gibi zevkime ya da kullanım alışkanlığıma bağlı olanlar): en iyi yorumunla ilerle ve satırı "görüşün gerek" diye işaretle. Fazın sonunda bakarım; değiştirmek istediğim olursa sonraki oturumda düzeltilir. Bunun için de bekleme.
+   - **Bir sorun üç farklı denemede çözülmediyse** başka bir yaklaşıma geç ya da o parçayı çalışan en küçük haliyle bırak; durumu "Bilinen sorunlar"a yaz ve fazın geri kalanına devam et.
+   - **Ücretli ya da geri alınamaz işlemi yapma** (para harcayan bir şey, depo dışında veri silme, buluttaki veriyi bozabilecek bir işlem, git geçmişini zorla yeniden yazma). Onu atla, "Senden bekleyenler" listesine yaz ve geri kalanla devam et.
+   - **Durmak son çaredir.** Yalnızca faz hiçbir yönden ilerleyemiyorsa ve kendi başına düzeltemiyorsan dur (örneğin Docker çalışmıyor, disk dolu, Claude Code girişi düşmüş). O zaman ne olduğunu ve benden tam olarak ne gerektiğini yaz.
 7. **Duraklarda bekleme.** Aşağıdaki duraklar benim elimle yapılacak işlerdir. Durağa gelince ne gerektiğini "Senden bekleyenler" listesine adım adım yaz, yerel ya da sahte karşılığıyla devam et. Oturumun başında bu listeye bak: tamamladığımı söylediğim bir durak varsa önce onu bağla ve doğrula.
 
    Durakta bana düşen işi en aza indir. Komut satırından yapılabilen her şeyi (Supabase CLI ile proje bağlama ve şema aktarımı, Vercel CLI ile yayın ve ortam değişkenleri gibi) kendin yap; benden yalnızca senin yapamayacağın adımları iste: hesap açma, tarayıcıda giriş onayı, anahtar girme, telefonda deneme. Anahtarları sohbete yazmamı isteme; hangi dosyaya hangi adla gireceğimi söyle.
@@ -84,7 +85,7 @@ Dokümanlar tek kaynaktır; onlarla çelişen bir şey yapma. Önceki fazlarda y
 2. Ana ekranların ekran görüntülerini pano genişliğinde ve telefon genişliğinde alıp `docs/ekran-goruntuleri/<faz>/` altına koy; görüntülere kendin de bak, bozuk ya da boş ekranı düzelt.
 3. `npm run check:full` yeşil olmalı.
 4. Denetçiyi "faz" kipinde çağır.
-5. "Engelleyici" ve "önemli" bulguları düzelt, 3. ve 4. adımı yinele. En çok üç tur. Üçüncü turdan sonra hâlâ engelleyici bulgu varsa etiketi atma; "Ne zaman durup soracaksın" yolunu izle.
+5. "Engelleyici" ve "önemli" bulguları düzelt, 3. ve 4. adımı yinele. En çok üç tur. Üçüncü turdan sonra hâlâ engelleyici bulgu varsa etiketi atma: bulguları ve denediklerini `docs/ILERLEME.md`'ye yaz, commit at ve oturumu bitir. Sonraki oturum taze bağlamla aynı fazı sürdürür.
 6. Faz raporuna "Denetim" başlığı ekle: kaç tur sürdü, hangi bulgular çıktı, hangileri düzeltildi, hangileri neden açık kaldı.
 
 **Etiket koşulu.** `c0-tamam`… etiketi yalnızca `npm run check:full` yeşilse ve son denetçi raporunda engelleyici bulgu yoksa atılır.
@@ -97,9 +98,11 @@ Dokümanlar tek kaynaktır; onlarla çelişen bir şey yapma. Önceki fazlarda y
 
 `scripts/run-phases.ps1` fazları art arda, her birini yeni bir oturumda çalıştırır. Bu oturumlarda istem "unattended run" der; o zaman başında kimse yoktur ve şunlar geçerlidir:
 
-- Soru sorma, yanıt bekleme. "Ne zaman durup soracaksın" maddesindeki bir duruma düşersen soruyu `docs/BEKLIYOR.md` dosyasına yaz: ne sorduğun, seçenekler, senin önerin, hangi adımda kaldığın. `docs/ILERLEME.md`'yi güncelle, commit at ve oturumu bitir. Betik bu dosyayı görünce durur.
-- Oturumun başında `docs/BEKLIYOR.md` varsa ve içine yanıtımı yazmışsam yanıtı uygula, dosyayı sil ve devam et. Yanıt yoksa hiçbir şey yapmadan oturumu bitir.
-- Bir izin reddedilirse aynı işlemi yeniden deneme; başka bir yol bul, bulamazsan "Bilinen sorunlar"a yaz. İşlem faz için zorunluysa `docs/BEKLIYOR.md` yolunu izle.
+- Soru sorma, yanıt bekleme. Kararları "Kararları sen ver" maddesine göre kendin ver.
+- `docs/BEKLIYOR.md` yalnızca o maddedeki son çare içindir: faz hiçbir yönden ilerleyemiyorsa ne olduğunu, benden tam olarak ne gerektiğini ve hangi adımda kaldığını bu dosyaya yaz, `docs/ILERLEME.md`'yi güncelle, commit at ve oturumu bitir. Betik bu dosyayı görünce durur. Teknik ya da tasarımsal bir karar için bu dosyayı yazma.
+- Oturumun başında `docs/BEKLIYOR.md` varsa: sorun artık geçerli değilse (ortam düzelmiş, ben yanıt yazmışım) dosyayı sil ve devam et; hâlâ geçerliyse hiçbir şey yapmadan oturumu bitir.
+- Bir izin reddedilirse aynı işlemi yeniden deneme; başka bir yol bul, bulamazsan "Bilinen sorunlar"a yaz ve devam et.
+- Aynı klasörde başka bir oturumun çalıştığını görürsen (dosyalar sen dokunmadan değişiyor, commit'ler geliyor) hiçbir şeye dokunmadan oturumu bitir; `docs/BEKLIYOR.md` yazma. Betik artık aynı anda tek kopya çalışır.
 - Betik bir fazın bittiğini yalnızca etiketten (`c0-tamam`…) anlar. Etiketi "Etiket koşulu" sağlandıktan ve faz raporu yazıldıktan sonra at; daha önce atma. Etiket yoksa betik aynı fazı yeni oturumda sürdürür.
 - Betik etiketi görünce `npm run check:full` komutunu kendisi de çalıştırır. Kırmızıysa etiketi siler ve çıktının yazıldığı günlük dosyasını yeni oturuma bildirir; o oturumun ilk işi bunu düzeltmektir.
 - Arka planda açık süreç bırakma (geliştirme sunucusu, izleyici); oturum bitmeden kapat. Yerel Supabase kapsayıcıları açık kalabilir.

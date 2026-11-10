@@ -4,10 +4,24 @@ Bu dosyayı Claude Code günceller. Yeni bir oturum yalnızca bu dosyayı ve `pr
 
 ## Durum
 
-- Faz: Ç0 (İskelet) bitti: kod hazır, yerelde doğrulandı; yayın ve telefon D1 ve D2'yi bekliyor. Etiket: `c0-tamam`
-- Sıradaki faz: Ç1 (Çekirdek ve modül temeli); başlanmadı
-- Son commit: Ç0 faz raporu
-- Önce bak: "Senden bekleyenler" başındaki `docs/BEKLIYOR.md` notu (aynı anda iki faz betiği çalışıyor)
+- Faz: **Ç1 (Çekirdek ve modül temeli) sürüyor.** Ç0 bitti (`c0-tamam`); yayın ve telefon D1 ve D2'yi bekliyor
+- Adım: 1 / 8 (aşağıdaki plan)
+- Son commit: Ç1 planı
+
+### Ç1 planı
+
+Her adımın sonunda `npm run check` ve commit; şema, RLS, iş zarfı ve eşitleme adımlarından sonra denetçi (adım kipi).
+
+| # | Adım | Durum |
+| --- | --- | --- |
+| 1 | Kapılar: Playwright projeleri dosya adına bağlı kalmasın, Vitest `*.test.tsx`, veritabanı testleri için ayrı komut (`npm run test:db`) | sırada |
+| 2 | Migration: `docs/03-veri-modeli.md` çekirdek tabloları, RLS, oturum ve arşiv fonksiyonları, Realtime yayını; tipler; veritabanı testleri (RLS, kısıtlar) | |
+| 3 | Çekirdek veri katmanı (`src/core/data`), iş zarfı (`propose`, `withdraw`, `provenance`, `onOutcome`), olaylar, modül sözleşmesi tipleri ve kayıt, blok serisi üretimi | |
+| 4 | İstemci altyapısı: TanStack Query, Realtime, modül kaydı bağlamı. Bugün ekranı, hızlı giriş, gelen kutusu, oturumlar | |
+| 5 | Modül arayüzü zemini: `ModulePageShell`, sekmeler, alt sayfalar, tam ekran, hızlı eylemler, modül ayarları, bileşen takımı. `_sablon` ve `deneme` | |
+| 6 | Ayarlar: modüller, sabit bloklar, dışa aktarım | |
+| 7 | `scripts/seed-demo.ts`, uçtan uca testler (iki cihaz eşitlemesi dahil), ekran görüntüleri | |
+| 8 | `check:full`, faz denetimi, düzeltmeler, faz raporu, etiket | |
 
 ## Biten fazlar
 
@@ -77,11 +91,9 @@ Son denetimden sonraki değişiklikler yalnızca bu dosyadadır (faz raporu). `n
 
 ## Senden bekleyenler
 
-### Önce: aynı anda iki faz betiği çalışıyor (`docs/BEKLIYOR.md`)
+### Kapandı: aynı anda iki faz betiği (10 Kas 2026, 23:25)
 
-`scripts/run-phases.ps1` iki pencerede açık: 21:50'de başlayan (PowerShell PID 29180) ve 21:57'de başlayan (PID 15200). Ç0'ı ikincisinin açtığı oturum yürüttü. Birincisinin 22:35'te açtığı oturum çakışmayı görüp hiçbir şeye dokunmadan `docs/BEKLIYOR.md` dosyasını yazdı ve bitti; soru ve yapılacaklar o dosyada. İki betiğin de çalıştığını süreç listesinden doğruladım (22:42). Betiklerden hiçbirini kapatmadım ve `docs/BEKLIYOR.md` dosyasına dokunmadım (commit de etmedim): hangisinin kalacağı senin kararın. Dosya durdukça iki betik de Ç1'e geçmeden durur.
-
-Dikkat: eski betik beklemesinden uyanınca (yaklaşık 23:25) `c0-tamam` etiketini görürse `npm run check:full` komutunu kendisi çalıştırır; o an başka bir test çalışması 3100 portunu tutuyorsa kırmızı çıkar ve etiketi siler. Etiket silinmişse ve `npm run check:full` yeşilse `git tag c0-tamam` ile geri konabilir (faz raporu yukarıda, "Biten fazlar" altında).
+21:50'de başlatılan eski betik penceresi kapatıldı ve `docs/BEKLIYOR.md` silindi; kararı ben verdim (yeni betik kalsın). Betiğe aynı anda ikinci kez çalışmayı engelleyen bir kilit eklendi (`logs/runner.pid`). Bu konuda yapılacak bir şey yok; `c0-tamam` etiketi yerinde.
 
 ### D1. Bulut ve yayın (Ç0'ın kodu hazır; sıra sende)
 
