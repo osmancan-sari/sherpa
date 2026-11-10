@@ -19,13 +19,15 @@ Yeni modül `src/modules/_sablon/` kopyalanarak başlar.
 
 ## Tanım
 
+Tiplerin tamamı `src/core/contract/types.ts` içindedir; modül oradan içe aktarır. Aşağısı özetidir.
+
 ```ts
 export type ModuleDefinition = {
-  slug: string
+  slug: string                       // küçük harf, rakam, tire
   name: string
   kind: 'lifelong' | 'term' | 'until_goal'
-  area?: string
-  color: string
+  area?: { slug: string; name: string }
+  color: string                      // #rrggbb
 
   // 1. Ana ekrana ne verir
   chip: (ctx: ModuleContext) => Promise<ChipData>          // tek satır durum + sağlık
@@ -34,9 +36,10 @@ export type ModuleDefinition = {
 
   // 2. Hangi girişleri kabul eder
   intake: IntakeType[]
+  blocks?: StructuredBlockHandler[]                         // yapıştırılan yapılı bloklar (`sherpa` bloğu)
 
   // 3. Olaylar
-  emits: string[]                                           // yayınladığı olay türleri
+  emits: string[]                                           // yayınladığı olay türleri; '<slug>.' ile başlar
   on?: Record<string, (event: AppEvent, ctx: ModuleContext) => Promise<void>>
 
   // 4. Hayat moduna tepki
@@ -48,6 +51,16 @@ export type ModuleDefinition = {
   // 6. Yaşam döngüsü
   onActivate?: (ctx: ModuleContext) => Promise<void>
   onArchive?: (ctx: ModuleContext) => Promise<void>
+
+  // İş zarfı
+  sizingHints?: string
+  onOutcome?: (o: Outcome, ctx: ModuleContext) => Promise<void>
+
+  // Modülün kendi tabloları; '<slug>_' ile başlar. "Tümünü dışa aktar" bunları da alır
+  tables?: string[]
+
+  // Arayüz (aşağıda)
+  ui: ModuleUi
 }
 
 type ChipData = {
@@ -55,12 +68,25 @@ type ChipData = {
   health: 'ok' | 'attention' | 'behind'
 }
 
+type NowCardContent = {
+  detail?: string                    // başlığın altında tek satır: tam olarak ne çalışılacak
+  links?: { label: string; href: string }[]   // çekirdeğin eylemlerine ek bağlantılar
+}
+
+type Alert = { key: string; text: string; action?: { label: string; href: string } }
+
 type IntakeType = {
   key: string                        // 'assessment', 'grade', 'weigh_in'
   label: string                      // hızlı girişte görünen ad
-  fields: FieldSpec[]                // ad, tür, zorunlu mu, varsayılan
+  fields: FieldSpec[]                // ad, etiket, tür (text, number, date, select), zorunlu mu, varsayılan
   examples: string[]                 // yönlendirici için örnek cümleler
   handle: (values: Record<string, unknown>, ctx: ModuleContext) => Promise<void>
+}
+
+type StructuredBlockHandler = {
+  key: string
+  match: (payload: unknown) => boolean       // bu blok bana mı ait?
+  handle: (payload: unknown, ctx: ModuleContext) => Promise<void>
 }
 
 type ModeBehavior = {
@@ -68,7 +94,16 @@ type ModeBehavior = {
   floorMultiplier: number            // tabanın ne kadarı korunur (0–1)
   note?: string                      // modülün bu modda ne yaptığı (kullanıcıya gösterilir)
 }
+
+type ModuleReport = {
+  metrics: { label: string; value: string }[]
+  suggestions: string[]              // en fazla 2
+}
 ```
+
+Kayıt: `src/modules/registry.ts` tanımları `createRegistry` ile toplar. Sözleşmeye uymayan tanım (geçersiz `slug`, yinelenen sekme anahtarı, başka modülün adıyla başlayan olay ya da tablo gibi) uygulama açılırken ve testlerde hata verir; arayüzde bir yerde sessizce bozulmaz.
+
+Modülün satırı: tanım modülün ne yapabildiğini, `modules` tablosundaki satır kullanılıp kullanılmadığını ve ayarlarını söyler. Satır, modül Ayarlar'dan ilk kez etkinleştirilince tanımdan açılır. Tanımı olmayan satır da geçerlidir (örnek veri, kodu kaldırılmış modül): çipi ve sayfası çekirdeğin varsayılanlarıyla görünür.
 
 ## Yedi bağlantı noktası
 
@@ -98,15 +133,25 @@ Her modülün kendine özel bir arayüzü vardır; modüller birbirine benzemek 
 | Bileşen takımı | Tablo (satır içi düzenleme, süzgeç), zaman çizelgesi, ızgara, çizgi ve çubuk grafik, sayı adımlayıcı, seçim çipleri, zamanlayıcı, boş ve hata durumları | Bunları kullanır; yetmediği yerde kendi bileşenini yazar |
 
 ```ts
-  // ModuleDefinition'a eklenir
-  ui: {
-    tabs: { key: string; label: string; component: ComponentType }[]
-    routes?: { path: string; component: ComponentType }[]        // /m/<slug>/ altında
-    fullscreen?: { key: string; label: string; component: ComponentType }[]
-    actions?: { key: string; label: string; run: (ctx: ModuleContext) => void }[]
-    settings?: ComponentType
-  }
+type ModuleUi = {
+  tabs: { key: string; label: string; component: ComponentType<ModuleViewProps> }[]   // en az bir; ilki varsayılan
+  routes?: { path: string; title?: string; component: ComponentType<ModuleViewProps> }[]   // /m/<slug>/ altında; 'kayit/:id'
+  fullscreen?: { key: string; label: string; component: ComponentType<ModuleViewProps> }[] // /m/<slug>/tam/<key>
+  actions?: { key: string; label: string; run: (ctx: ModuleUiContext) => void | Promise<void> }[]
+  settings?: ComponentType
+  history?: ComponentType            // 4. bölge; yoksa çekirdek haftalık harcanan süreyi gösterir
+}
+
+type ModuleViewProps = { params: Record<string, string> }   // alt sayfalarda ':id' gibi parçalar
+
+// Ekran bileşenleri bağlama `useModule()` ile ulaşır (src/core/ui/module/ModuleProvider).
+type ModuleUiContext = ModuleContext & {
+  openIntake: (key: string) => void  // hızlı girişi modülün bir giriş türünde açar
+  navigate: (path: string) => void   // /m/<slug>/ altında bir yola gider
+}
 ```
+
+Adresler: `/m/<slug>` ilk sekmeyi, `/m/<slug>/<sekme>` adı verilen sekmeyi açar; öbür yollar `routes` ile eşlenir. `tam` parçası çekirdeğe ayrılmıştır: sekme ya da alt sayfa bu adı alamaz.
 
 Kurallar: modül arayüzü çekirdeğin tasarım dilini (tipografi, renk, aralık, tema) kullanır; kendi bileşenleri de bu dile uyar. Pano ve telefon yerleşimlerinin ikisinde de çalışır. Çekirdekteki bir ekranı değiştirmez; yalnızca kendisine ayrılan yerlere içerik verir.
 
@@ -116,20 +161,30 @@ Modülün iş üretmesinin tek yolu budur. Zarfın alanları `docs/03-veri-model
 
 ```ts
 type ModuleContext = {
+  module: ModuleRow                                        // modülün satırı: kimliği, durumu, ayarları
+  db: Db                                                   // modülün kendi tablolarına erişim
+  now: () => Date
   propose: (p: WorkProposal) => Promise<ProposalResult>   // oluşturur ya da aynı key ile günceller
   withdraw: (key: string) => Promise<void>                 // kaynak kayıt silinince
-  emit: (type: string, payload: unknown) => Promise<void>
-  // ... modülün kendi tablolarına erişim
+  emit: (type: string, payload?: object) => Promise<void>  // yalnızca `emits` içinde bildirdiği türler
+  ask: (prompt: PromptRequest) => Promise<void>            // olay sorusu; yanıt `core.prompt_answered` olayıyla gelir
+  work: {                                                  // modülün çekirdekteki işleri (yalnızca okuma)
+    items: () => Promise<WorkItem[]>
+    tasks: () => Promise<Task[]>
+    rhythms: () => Promise<RhythmProgress[]>               // dönem içi yapılan, hedef, borç
+    rhythmLogs: (sinceDay: string) => Promise<RhythmLog[]>
+  }
+  saveSettings: (settings: object) => Promise<void>        // modules.settings
 }
 
 type WorkProposal = {
   schema: 1
   key: string                          // modül içinde tekil ve kalıcı
-  source: { type: string; id: string }
+  source: { type: string; id: string } // id: modülün kendi kaydının kimliği (uuid)
   title: string
-  when: { due?: string; hard?: boolean; earliest?: string }
-      | { recurrence: { count: number; period: 'day' | 'week' | 'month'; floor?: number } }
-      | { fixed: { starts_at: string; ends_at: string; location?: string } }
+  when?: { due?: string; hard?: boolean; earliest?: string }
+       | { recurrence: { count: number; period: 'day' | 'week' | 'month'; floor?: number } }
+       | { fixed: { starts_at: string; ends_at: string; location?: string } }
   effort?: { total_minutes?: number; session_minutes?: number; bounds?: { min: number; max: number } }
   fit?: { energy?: Energy; context?: Context }
   importance?: 1 | 2 | 3 | 4
@@ -138,14 +193,44 @@ type WorkProposal = {
   artifact?: string
   meta?: Record<string, unknown>       // modüle özel; çekirdek yorumlamaz, yapay zekaya bağlam olarak verir
 }
+
+type ProposalResult = {
+  target: 'work_item' | 'rhythm' | 'block'
+  id: string
+  created: boolean                     // bu key için ilk kayıt mı
+  changed: string[]                    // bu teklifin değiştirdiği alanlar
+  kept: string[]                       // teklifin değiştirmek istediği ama kullanıcının sahip olduğu alanlar
+}
+
+type Outcome = {
+  key: string
+  source: { type: string | null; id: string | null }
+  result: 'done' | 'dropped'
+  estimatedMinutes: number | null
+  spentMinutes: number
+  sessionCount: number
+  postponedCount: number               // "Ertele" Ç3'te gelene kadar 0
+}
 ```
+
+Zarfın kuralları (`src/core/contract/envelope.ts`, saf fonksiyonlar; yazma `src/core/data/propose.ts`):
+
+- Zamanlar saat dilimi taşıyan ISO biçimindedir (`2026-11-12T10:00:00+03:00`). Boş alanlar `null` da yazılabilir.
+- `when` tek biçim taşır; biçim kaydın tablosunu belirler ve aynı `key` sonradan başka biçime çevrilemez.
+- **Olgu alanları** (başlık, son tarih, en erken, çıktı, bağımlılıklar, `meta`, tekrar ve sabit zaman değerleri) her teklifte yazılır; boş gelen olgu da yazılır (son tarih kalkabilir). **Yargı alanları** (efor, oturum süresi, önem, enerji, bağlam, bölünebilirlik) yalnızca dolu geldiğinde yazılır.
+- Kullanıcının değiştirdiği alan hiçbir teklifte ezilmez; teklif o alanı `kept` içinde geri bildirir.
+- Efor boş ve `bounds` verilmişse sınırın ortası (5 dakikaya yuvarlanır) `default` kaynağıyla yazılır; var olan bir değerin üzerine yazılmaz. Sınır da yoksa efor boş kalır.
+- Teklif edilen kalem `active` açılır (`proposed` durumu yapay zekanın bölme önerileri içindir, Ç2).
+- `withdraw` hiçbir şeyi silmez: kalem ve açık oturum işleri `dropped`, ritim pasif, blok `cancelled` olur; bitmiş kayda dokunulmaz. Geri çekilen `key` yeniden teklif edilirse aynı kayıt geri gelir; kullanıcının kendi kapattığı kalem geri gelmez.
 
 Akış:
 
 1. Modül bildiği olguları doldurup `propose` çağırır.
 2. Çekirdek zarfı doğrular ve kaydeder. Boş kalan yargı alanları için yapay zekanın `size` çağrısı yapılır; modülün `sizingHints` metni ve `meta` bağlam olarak gider.
 3. Kaynak kayıt değişince modül aynı `key` ile yeniden `propose` eder. Kalem henüz haftaya taahhüt edilmediyse sessizce güncellenir; edildiyse değişiklik kullanıcıya tek satırla bildirilir ("Midterm bir gün öne alındı, plan güncellendi").
-4. Kalem bitince çekirdek modüle sonucu bildirir (`onOutcome`): harcanan süre, kaç oturum, ertelenme sayısı. Modül bunu kendi tahmin ipuçlarını düzeltmek için kullanabilir.
+4. Kullanıcı kalemi kapatınca (bitti ya da bırakıldı) çekirdek modüle sonucu bildirir (`onOutcome`): harcanan süre, kaç oturum, ertelenme sayısı. Modül bunu kendi tahmin ipuçlarını düzeltmek için kullanabilir.
+
+**Olaylar.** `emit` olayı `events` tablosuna yazar ve yayınlandığı yerde, o türü dinleyen etkin modüllerin `on` işleyicilerine sırayla verir. Duraklatılmış ve arşivlenmiş modül olay almaz. Bir işleyicinin hatası öbürlerini ve yayınlayanı durdurmaz. Çekirdeğin kendi olayları `core.` ile başlar; bugün tek tanesi vardır: `core.prompt_answered` (`{ module, kind, subject_type, subject_id, value }`).
 
 `ModuleDefinition`'a iki alan eklenir:
 

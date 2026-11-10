@@ -1,0 +1,215 @@
+import type {
+  Block,
+  BlockSeries,
+  ModuleRow,
+  Rhythm,
+  RhythmLog,
+  Session,
+  Task,
+  WorkItem,
+} from "@/core/types";
+
+// Row factories for unit tests: a complete row with sensible values, overridden where the test
+// cares. Not used by the app.
+
+let counter = 0;
+/** A stable, readable, valid uuid per call. */
+export function testId(): string {
+  counter += 1;
+  return `00000000-0000-4000-8000-${String(counter).padStart(12, "0")}`;
+}
+
+const STAMP = "2026-11-10T09:00:00+00:00";
+export const USER_ID = "11111111-1111-4111-8111-111111111111";
+export const MODULE_ID = "22222222-2222-4222-8222-222222222222";
+
+export function moduleRow(overrides: Partial<ModuleRow> = {}): ModuleRow {
+  return {
+    id: MODULE_ID,
+    user_id: USER_ID,
+    slug: "deneme",
+    name: "Deneme",
+    kind: "lifelong",
+    status: "active",
+    area_id: null,
+    weight: 1,
+    weekly_floor_minutes: 0,
+    color: "#737373",
+    starts_on: null,
+    ends_on: null,
+    end_condition: null,
+    mode_behavior: {},
+    settings: {},
+    sort: 0,
+    created_at: STAMP,
+    updated_at: STAMP,
+    ...overrides,
+  };
+}
+
+export function task(overrides: Partial<Task> = {}): Task {
+  return {
+    id: testId(),
+    user_id: USER_ID,
+    module_id: MODULE_ID,
+    work_item_id: null,
+    title: "İş",
+    kind: "task",
+    est_minutes: 30,
+    due_at: null,
+    planned_date: null,
+    energy: "light",
+    context: "any",
+    importance: 2,
+    status: "todo",
+    waiting_on: null,
+    follow_up_on: null,
+    position: null,
+    source_type: null,
+    source_id: null,
+    meta: {},
+    ai: null,
+    done_at: null,
+    created_at: STAMP,
+    updated_at: STAMP,
+    ...overrides,
+  };
+}
+
+export function workItem(overrides: Partial<WorkItem> = {}): WorkItem {
+  return {
+    id: testId(),
+    user_id: USER_ID,
+    module_id: MODULE_ID,
+    parent_id: null,
+    key: null,
+    title: "Kalem",
+    status: "active",
+    due_at: null,
+    due_is_hard: false,
+    earliest_at: null,
+    effort_total_minutes: null,
+    effort_done_minutes: 0,
+    session_minutes: null,
+    importance: 2,
+    energy: null,
+    context: null,
+    depends_on: [],
+    depends_on_keys: [],
+    splittable: true,
+    droppable: false,
+    artifact_url: null,
+    provenance: {},
+    ai: null,
+    source_type: null,
+    source_id: null,
+    meta: {},
+    created_at: STAMP,
+    updated_at: STAMP,
+    ...overrides,
+  };
+}
+
+export function rhythm(overrides: Partial<Rhythm> = {}): Rhythm {
+  return {
+    id: testId(),
+    user_id: USER_ID,
+    module_id: MODULE_ID,
+    key: null,
+    title: "Ritim",
+    target_count: 2,
+    period: "week",
+    floor_count: 0,
+    est_minutes: 15,
+    energy: "light",
+    context: "any",
+    active: true,
+    mode_targets: null,
+    provenance: {},
+    source_type: null,
+    source_id: null,
+    meta: {},
+    created_at: STAMP,
+    updated_at: STAMP,
+    ...overrides,
+  };
+}
+
+export function rhythmLog(rhythmId: string, doneOn: string): RhythmLog {
+  return {
+    id: testId(),
+    user_id: USER_ID,
+    rhythm_id: rhythmId,
+    done_on: doneOn,
+    session_id: null,
+    created_at: STAMP,
+    updated_at: STAMP,
+  };
+}
+
+export function block(overrides: Partial<Block> = {}): Block {
+  return {
+    id: testId(),
+    user_id: USER_ID,
+    series_id: null,
+    occurrence_on: null,
+    module_id: null,
+    key: null,
+    title: "Blok",
+    kind: "appointment",
+    starts_at: "2026-11-12T06:00:00+00:00",
+    ends_at: "2026-11-12T07:00:00+00:00",
+    location: null,
+    travel_before_min: 0,
+    travel_after_min: 0,
+    day_type: null,
+    status: "planned",
+    provenance: {},
+    source_type: null,
+    source_id: null,
+    created_at: STAMP,
+    updated_at: STAMP,
+    ...overrides,
+  };
+}
+
+export function blockSeries(overrides: Partial<BlockSeries> = {}): BlockSeries {
+  return {
+    id: testId(),
+    user_id: USER_ID,
+    module_id: null,
+    title: "Ders",
+    kind: "class",
+    weekday: 1,
+    start_time: "09:00:00",
+    end_time: "11:00:00",
+    location: null,
+    travel_before_min: 0,
+    travel_after_min: 0,
+    day_type: null,
+    valid_from: "2026-11-01",
+    valid_to: null,
+    source_type: null,
+    source_id: null,
+    created_at: STAMP,
+    updated_at: STAMP,
+    ...overrides,
+  };
+}
+
+export function session(overrides: Partial<Session> = {}): Session {
+  return {
+    id: testId(),
+    user_id: USER_ID,
+    task_id: null,
+    rhythm_id: null,
+    module_id: null,
+    title: null,
+    started_at: "2026-11-12T07:00:00+00:00",
+    ended_at: null,
+    measured: true,
+    created_at: STAMP,
+    updated_at: STAMP,
+    ...overrides,
+  };
+}

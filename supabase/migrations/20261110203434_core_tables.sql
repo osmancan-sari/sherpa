@@ -585,10 +585,13 @@ begin
      order by position nulls last, created_at
      limit 1;
     if v_task.id is null then
-      v_minutes := coalesce(
-        v_item.session_minutes,
-        least(45, greatest(5, coalesce(v_item.effort_total_minutes - v_item.effort_done_minutes, 45)))
-      );
+      -- The item's own session length; else what is left of the effort, 45 minutes at most.
+      -- With no effort known, or none left, a plain 45.
+      v_minutes := v_item.effort_total_minutes - v_item.effort_done_minutes;
+      if v_minutes is null or v_minutes <= 0 then
+        v_minutes := 45;
+      end if;
+      v_minutes := coalesce(v_item.session_minutes, least(45, greatest(5, v_minutes)));
       insert into public.tasks (module_id, work_item_id, title, est_minutes, due_at, energy, context, importance)
       values (
         v_item.module_id, v_item.id, v_item.title, least(90, greatest(5, v_minutes)), v_item.due_at,

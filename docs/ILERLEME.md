@@ -5,8 +5,8 @@ Bu dosyayı Claude Code günceller. Yeni bir oturum yalnızca bu dosyayı ve `pr
 ## Durum
 
 - Faz: **Ç1 (Çekirdek ve modül temeli) sürüyor.** Ç0 bitti (`c0-tamam`); yayın ve telefon D1 ve D2'yi bekliyor
-- Adım: 3 / 8 (aşağıdaki plan); 1 ve 2 bitti, denetlendi
-- Son commit: şema denetimi düzeltmeleri
+- Adım: 4 / 8 (aşağıdaki plan); 1, 2 ve 3 bitti
+- Son commit: iş zarfı, modül sözleşmesi ve veri katmanı
 
 ### Ç1 planı
 
@@ -16,8 +16,8 @@ Her adımın sonunda `npm run check` ve commit; şema, RLS, iş zarfı ve eşitl
 | --- | --- | --- |
 | 1 | Kapılar: Playwright projeleri dosya adına bağlı kalmasın, Vitest `*.test.tsx`, veritabanı testleri için ayrı komut (`npm run test:db`) | bitti |
 | 2 | Migration: `docs/03-veri-modeli.md` çekirdek tabloları, RLS, oturum ve arşiv fonksiyonları, Realtime yayını; tipler; veritabanı testleri (RLS, kısıtlar) | bitti; denetim (adım kipi): 2 engelleyici ve 5 önemli bulgu düzeltildi |
-| 3 | Çekirdek veri katmanı (`src/core/data`), iş zarfı (`propose`, `withdraw`, `provenance`, `onOutcome`), olaylar, modül sözleşmesi tipleri ve kayıt, blok serisi üretimi | sırada |
-| 4 | İstemci altyapısı: TanStack Query, Realtime, modül kaydı bağlamı. Bugün ekranı, hızlı giriş, gelen kutusu, oturumlar | |
+| 3 | Çekirdek veri katmanı (`src/core/data`), iş zarfı (`propose`, `withdraw`, `provenance`, `onOutcome`), olaylar, modül sözleşmesi tipleri ve kayıt, blok serisi üretimi | bitti (arayüz yok; 94 birim, 66 veritabanı testi) |
+| 4 | İstemci altyapısı: TanStack Query, Realtime, modül kaydı bağlamı. Bugün ekranı, hızlı giriş, gelen kutusu, oturumlar | sırada |
 | 5 | Modül arayüzü zemini: `ModulePageShell`, sekmeler, alt sayfalar, tam ekran, hızlı eylemler, modül ayarları, bileşen takımı. `_sablon` ve `deneme` | |
 | 6 | Ayarlar: modüller, sabit bloklar, dışa aktarım | |
 | 7 | `scripts/seed-demo.ts`, uçtan uca testler (iki cihaz eşitlemesi dahil), ekran görüntüleri | |
@@ -168,6 +168,13 @@ Benim yapacaklarım (D1 tamamlanınca): iki Supabase projesini açmak (bölge: F
 | 10 Kas 2026 | Ç1: modül arşivlenince gelecek blokları `cancelled` olur, silinmez | Adım denetimi buldu: ilk hal siliyordu; sözleşme "verisi silinmez" diyor | migration, `tests/db/sessions.test.ts` |
 | 10 Kas 2026 | Ç1: Realtime yayını dokümandaki 7 tabloya ek olarak `modules`, `work_items`, `rhythms`, `block_series`, `prompts`, `settings` tablolarını da kapsar | Bunlar da ekranda görünüyor; öbür cihazda eskimesinler | migration, `docs/02-mimari.md` |
 | 10 Kas 2026 | Ç1: planlayıcı yokken kalemin oturum işi "Başla" anında üretilir (uzunluk `session_minutes`, yoksa kalan eforun en çok 45 dakikası) | Kalemler Ç3'te haftalık planda bölünecek; o zamana kadar başlatılabilmeli, uzak kalemler de önceden bölünmemeli | migration (`start_session`), `docs/03-veri-modeli.md` |
+| 11 Kas 2026 | Ç1: iş zarfının mantığı saf fonksiyonlarda (`src/core/contract/envelope.ts`: doğrulama, alan eşleme, birleştirme), yazma ayrı (`src/core/data/propose.ts`). Doğrulama `zod` ile | Kural (kullanıcının alanı ezilmez, varsayılan gerçek değeri ezmez) veritabanısız sınanabilsin; Ç2'nin çıktı şemaları da aynı kütüphaneyi kullanır | `src/core/contract/*`, `src/core/data/propose.ts` |
+| 11 Kas 2026 | Ç1: olgu alanları her teklifte yazılır (boş gelen de), yargı alanları yalnızca dolu gelince. Teklif edilen kalem `active` açılır. Geri çekilen kalem yeniden teklif edilince geri gelir; kullanıcının kapattığı gelmez | Doküman "bilmediğini boş bırakır" diyor ama son tarihin kalkması gibi olgu değişiklikleri de yansımalı | `src/core/contract/envelope.ts`, `docs/06-modul-sozlesmesi.md` |
+| 11 Kas 2026 | Ç1: çekirdeğin veri fonksiyonları Supabase istemcisini parametre alır; tarayıcıda da sunucuda da aynı kod çalışır. Modül bağlamı (`createModuleContext`) da öyle | Planlayıcı ve arayüz tarayıcıda, köprü ve zamanlanmış işler sunucuda aynı kuralları kullanacak | `src/core/data/*` |
+| 11 Kas 2026 | Ç1: olaylar yayınlandıkları yerde, dinleyen etkin modüllere sırayla verilir; ayrı bir tüketici süreci yok | Tek kullanıcı; kuyruk ve imleç gereksiz. Bedeli: yayınlayan cihaz kapanırsa dinleyici çalışmaz (olay kaydı durur) | `src/core/events/bus.ts` |
+| 11 Kas 2026 | Ç1: bırakılmış bir bağımlılık bağlı kalemi tutmaz | Bırakılan kalem hiç bitmez; bağlı kalem sonsuza dek gizli kalırdı | `src/core/today/select.ts` |
+| 11 Kas 2026 | Ç1: hızlı girişte tarih ve süre yalnızca satırın sonundaki sözcüklerden okunur (`yarın`, `cuma`, `15.11`, `+3g`, `45dk`, `1s30dk`); haftanın günü bir sonraki o gündür. **Görüşün gerek** | Başlığın ortasındaki "cuma" başlığın parçası kalsın; kural öngörülebilir olsun | `src/core/intake/parse.ts` |
+| 11 Kas 2026 | Ç1: blok serileri 56 gün (8 hafta) ileriye üretilir; uygulama açılınca eksikler tamamlanır. Gece çalışan zamanlanmış iş D1'den sonra | Zamanlanmış iş Vercel'de çalışır (yayın durağı); o zamana kadar uygulamanın açılması yeterli | `src/core/data/blocks.ts`, `src/core/data/series.ts` |
 
 ## Bilinen sorunlar
 

@@ -1,0 +1,174 @@
+import {
+  incomingFields,
+  mergeProposal,
+  parseProposal,
+  proposalTarget,
+} from "@/core/contract/envelope";
+import type { ProposalResult, ProposalTarget } from "@/core/contract/types";
+import { check, DataError, type Db, type ModuleRow, type Provenance, unwrap } from "@/core/types";
+
+// The only way a module creates work (docs/06-modul-sozlesmesi.md): the core validates the
+// envelope, finds the record with the same key, and writes only what may be written.
+
+const TABLE: Record<ProposalTarget, "work_items" | "rhythms" | "blocks"> = {
+  work_item: "work_items",
+  rhythm: "rhythms",
+  block: "blocks",
+};
+
+const UNIQUE_VIOLATION = "23505";
+
+type Row = Record<string, unknown> & { id: string; provenance: unknown };
+
+async function findByKey(
+  db: Db,
+  table: (typeof TABLE)[ProposalTarget],
+  moduleId: string,
+  key: string,
+) {
+  const { data, error } = await db
+    .from(table)
+    .select("*")
+    .eq("module_id", moduleId)
+    .eq("key", key)
+    .maybeSingle();
+  if (error) throw new DataError(error.message, error.code);
+  return data as Row | null;
+}
+
+/** Resolves dependency keys to the ids of the module's work items that exist so far. */
+async function resolveDependencies(db: Db, moduleId: string, keys: string[]): Promise<string[]> {
+  if (keys.length === 0) return [];
+  const rows = unwrap(
+    await db.from("work_items").select("id, key").eq("module_id", moduleId).in("key", keys),
+  );
+  return keys.flatMap((key) => rows.filter((row) => row.key === key).map((row) => row.id));
+}
+
+/** A new item may be the dependency others were waiting for: fill it in on their side. */
+async function resolveDependents(db: Db, moduleId: string, key: string): Promise<void> {
+  const waiting = unwrap(
+    await db
+      .from("work_items")
+      .select("id, depends_on_keys")
+      .eq("module_id", moduleId)
+      .contains("depends_on_keys", [key]),
+  );
+  for (const item of waiting) {
+    const depends_on = await resolveDependencies(db, moduleId, item.depends_on_keys);
+    check(await db.from("work_items").update({ depends_on }).eq("id", item.id));
+  }
+}
+
+/**
+ * Creates the work a proposal describes, or updates the record that already carries its key.
+ * The same proposal sent twice leaves one record. A field the user changed is kept.
+ */
+export async function propose(db: Db, mod: ModuleRow, input: unknown): Promise<ProposalResult> {
+  const proposal = parseProposal(input);
+  const target = proposalTarget(proposal);
+  const table = TABLE[target];
+  const incoming = incomingFields(proposal);
+
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const existing = await findByKey(db, table, mod.id, proposal.key);
+
+    // The key belongs to one kind of record for good; a module that changes its mind about
+    // the kind has to withdraw the old one under a new key.
+    if (!existing) {
+      for (const other of Object.values(TABLE).filter((name) => name !== table)) {
+        if (await findByKey(db, other, mod.id, proposal.key)) {
+          throw new DataError(
+            `key "${proposal.key}" already belongs to a record in ${other}; it cannot become a ${target}`,
+          );
+        }
+      }
+    }
+
+    const stored = existing
+      ? { values: existing, provenance: (existing.provenance ?? {}) as Provenance }
+      : null;
+    const merged = mergeProposal(stored, incoming);
+    const patch: Record<string, unknown> = { ...merged.patch };
+
+    if (target === "work_item" && ("depends_on_keys" in patch || !existing)) {
+      patch.depends_on = await resolveDependencies(db, mod.id, proposal.depends_on ?? []);
+    }
+
+    if (!existing) {
+      const { data, error } = await db
+        .from(table)
+        .insert({ ...patch, module_id: mod.id, key: proposal.key } as never)
+        .select("id")
+        .single();
+      // Two proposals of the same new key at once: the other one won; go round and update.
+      if (error?.code === UNIQUE_VIOLATION && attempt === 0) continue;
+      if (error) throw new DataError(error.message, error.code);
+      if (target === "work_item") await resolveDependents(db, mod.id, proposal.key);
+      return { target, id: data.id, created: true, changed: merged.changed, kept: merged.kept };
+    }
+
+    // A withdrawn record that is proposed again comes back, unless the user closed it.
+    const provenance = merged.provenance;
+    if (target === "work_item" && existing.status === "dropped" && provenance.status !== "user") {
+      patch.status = "active";
+      merged.changed.push("status");
+    }
+    if (target === "rhythm" && existing.active === false && provenance.active !== "user") {
+      patch.active = true;
+      merged.changed.push("active");
+    }
+    if (target === "block" && existing.status === "cancelled" && provenance.status !== "user") {
+      patch.status = "planned";
+      merged.changed.push("status");
+    }
+
+    if (Object.keys(patch).length > 0) {
+      check(
+        await db
+          .from(table)
+          .update(patch as never)
+          .eq("id", existing.id),
+      );
+    }
+    return {
+      target,
+      id: existing.id,
+      created: false,
+      changed: merged.changed,
+      kept: merged.kept,
+    };
+  }
+  throw new DataError(`could not save proposal "${proposal.key}"`);
+}
+
+/**
+ * Takes a proposal back (its source record is gone). Nothing is deleted: the work item and its
+ * open sittings are dropped, the rhythm goes quiet, the block is cancelled. A record that is
+ * already finished stays as it is.
+ */
+export async function withdraw(db: Db, mod: ModuleRow, key: string): Promise<void> {
+  const item = await findByKey(db, "work_items", mod.id, key);
+  if (item) {
+    if (item.status !== "done" && item.status !== "dropped") {
+      check(
+        await db
+          .from("tasks")
+          .update({ status: "dropped" })
+          .eq("work_item_id", item.id)
+          .in("status", ["todo", "doing", "waiting"]),
+      );
+      check(await db.from("work_items").update({ status: "dropped" }).eq("id", item.id));
+    }
+    return;
+  }
+  const rhythm = await findByKey(db, "rhythms", mod.id, key);
+  if (rhythm) {
+    check(await db.from("rhythms").update({ active: false }).eq("id", rhythm.id));
+    return;
+  }
+  const block = await findByKey(db, "blocks", mod.id, key);
+  if (block && block.status === "planned") {
+    check(await db.from("blocks").update({ status: "cancelled" }).eq("id", block.id));
+  }
+}
