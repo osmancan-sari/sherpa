@@ -1,12 +1,16 @@
 import "server-only";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import { connection } from "next/server";
 import type { Database } from "./database.types";
 import { supabaseEnv } from "./env";
 
 /** Supabase client for Server Components, Server Actions and Route Handlers. */
 export async function createClient() {
   const cookieStore = await cookies();
+  // The session is checked against the current time, so wait for a real request:
+  // with Cache Components, nothing that reads the session may be prerendered or prefetched.
+  await connection();
   const { url, key } = supabaseEnv();
 
   return createServerClient<Database>(url, key, {

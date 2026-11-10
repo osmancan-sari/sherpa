@@ -2,7 +2,7 @@
 
 Bütün hayat alanlarındaki işleri tek havuzda toplayan ve her an sıradaki doğru işi gösteren kişisel, modüler planlama uygulaması. Masaüstünde ikinci ekranda açık durur, telefondan da kullanılır.
 
-Bu depo şu an yalnızca tasarım ve geliştirme dokümanlarını içerir. Kod, Claude Code ile faz faz yazılacak.
+Depo tasarım dokümanlarını ve Claude Code ile faz faz yazılan kodu içerir. Hangi fazın bittiği ve sırada ne olduğu `docs/ILERLEME.md` içindedir; komutlar `CLAUDE.md` içindedir.
 
 ## Başlarken
 
@@ -50,4 +50,4 @@ Bir fazda plan onayı vererek adım adım ilerlemek istersen o fazın `prompts/c
 
 - Çekirdek tasarımı tamam; açık sorular `docs/09-kararlar.md` içinde (hiçbiri Ç0 ve Ç1'i engellemez).
 - Modüller taslak; Okul modülü ayrıntılı taslak (Ninova ve hazırlık dokümanları dahil), bekleyen kararlar `docs/moduller/okul-ninova.md` içinde.
-- Kod: başlanmadı.
+- Kod: çekirdek hattı sürüyor; güncel durum `docs/ILERLEME.md` içinde.

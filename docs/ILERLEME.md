@@ -5,8 +5,9 @@ Bu dosyayı Claude Code günceller. Yeni bir oturum yalnızca bu dosyayı ve `pr
 ## Durum
 
 - Faz: Ç0 (İskelet), sürüyor
-- Adım: 1 / 8 (Next.js kurulumu)
-- Son commit: —
+- Adım: 8 / 8 (kabul ölçütleri, denetim, faz raporu). 1–7 bitti: kod, yerel Supabase, kimlik, kabuk, PWA, birim ve uçtan uca testler yeşil
+- Kalan: kimlik adımının bağımsız denetimi, ekran görüntüleri, faz denetimi, faz raporu, `c0-tamam` etiketi
+- Son commit: kapı komutları (`check`, `check:full`) ve uçtan uca testler
 
 ### Ç0 planı
 
