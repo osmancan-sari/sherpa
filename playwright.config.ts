@@ -18,7 +18,8 @@ export default defineConfig({
   // One worker: the tests share one mailbox and one user.
   workers: 1,
   fullyParallel: false,
-  forbidOnly: Boolean(process.env.CI),
+  // The phase gate runs locally, so a stray .only must fail here too, not just in CI.
+  forbidOnly: true,
   reporter: [["list"]],
   use: {
     baseURL,

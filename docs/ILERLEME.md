@@ -7,12 +7,12 @@ Bu dosyayı Claude Code günceller. Yeni bir oturum yalnızca bu dosyayı ve `pr
 - Faz: Ç0 (İskelet), sürüyor
 - Adım: 8 / 8 (faz denetimi ve etiket). 1–7 bitti: kod, yerel Supabase, kimlik, kabuk, PWA, birim ve uçtan uca testler
 - Kalan: faz kipinde denetim, bulguların düzeltilmesi, faz raporunun "Biten fazlar"a taşınması, `c0-tamam` etiketi
-- Son commit: kimlik adımı denetiminin düzeltmeleri (oturum testleri, 8 haneli ve 10 dakikalık giriş kodu) ve Ç0 ekran görüntüleri
+- Son commit: faz denetimi 1. tur düzeltmeleri (lint kuralı, proxy istisnaları, ekran görüntüleri)
 
 ### Ç0 planı
 
 1. Next.js + TypeScript strict + Tailwind + shadcn/ui; ESLint (çekirdek → modül içe aktarım yasağı dahil) ve Prettier
-2. Klasör yapısı (`docs/02-mimari.md`), `src/modules/registry.ts` boş kayıt
+2. Klasör yapısı (`docs/02-mimari.md`), `src/modules/registry.ts` boş kayıt. Şu an var olanlar: `src/app`, `src/core/ui`, `src/lib`, `src/modules/registry.ts`. `src/core/` altındaki `data`, `events`, `intake` (Ç1), `ai` (Ç2) ve `planner` (Ç3) klasörleri kendi fazlarında açılır; boş klasör tutulmadı (`src/core/README.md`)
 3. Yerel Supabase (`supabase init`, `config.toml`: yeni kayıt kapalı, e-posta kodu şablonu), boş migration, tip üretimi
 4. Kimlik: `/giris` (e-posta → kod), `ALLOWED_EMAIL` denetimi, `proxy` ile sayfa ve API koruması, uzun ömürlü oturum
 5. Uygulama kabuğu: gezinme (Bugün, Hafta, Modüller, Gelen kutusu, Ayarlar), açık ve koyu tema, boş sayfalar
@@ -95,6 +95,9 @@ Benim yapacaklarım (D1 tamamlanınca): iki Supabase projesini açmak (bölge: F
 | 10 Kas 2026 | `check` = tip + lint + biçim + birim testleri; `check:full` = `check` + derleme + uçtan uca. `typecheck` önce rota tiplerini üretir (`next typegen`) | BASLA "Doğrulama düzeni"; temiz bir kopyada da tip denetimi çalışsın | `package.json` |
 | 10 Kas 2026 | Ekran görüntüleri yalnızca `SHERPA_SHOTS=<faz>` verilince alınır | Her test çalışması `docs/` altını değiştirmesin | `tests/e2e/screenshots.spec.ts`, `playwright.config.ts` |
 | 10 Kas 2026 | Test değişikliği: "yanlış kod" testi artık gerçek kodla aynı uzunlukta, tek hanesi farklı bir kod deniyor; kod okuyan yardımcı 8 hane arıyor | Kod uzunluğu 6'dan 8'e çıktı; test gevşetilmedi, yeni uzunluğa uyduruldu | `tests/e2e/login.spec.ts`, `tests/e2e/helpers.ts` |
+| 10 Kas 2026 | Çekirdek → modül yasağı yol kalıbıyla denetleniyor: `src/core` içinde, takma adla ya da göreli yazılmış ve içinde `modules` klasörü geçen her yol yasak (statik, dinamik `import()`, `require`) | Faz denetimi ilk kuralın dört yazımı kaçırdığını buldu. Bedeli: çekirdekte `modules` adında bir klasör açılamaz | `eslint.config.mjs`, `tests/unit/core-imports.test.ts` |
+| 10 Kas 2026 | `proxy` istisnaları tam yol eşleşmesi (manifest, simgeler, `robots.txt`, `favicon.ico`); benzer görünen yollar kapıdan geçer | Faz denetimi istisnaların ön ek gibi çalıştığını buldu | `src/proxy.ts`, `tests/e2e/guard.spec.ts` |
+| 10 Kas 2026 | Playwright'ta `.only` yerelde de yasak (`forbidOnly: true`) | Etiket kapısı yerelde çalışıyor; daraltılmış testle yeşil görünmesin | `playwright.config.ts` |
 | 10 Kas 2026 | `shadcn` paketi `dependencies` altında kaldı (denetçi `devDependencies` önerdi) | `globals.css` derlemede `shadcn/tailwind.css` dosyasını içe aktarıyor; shadcn kurulumu paketi oraya kendisi koyuyor. Çalışma zamanına kod girmiyor | `package.json` |
 | 10 Kas 2026 | Dal adı şimdilik `master`; D1'de GitHub'a gönderilirken `main` yapılacak | Doküman "`main` → üretim" diyor; uzak depo yokken yeniden adlandırmanın acelesi yok, betik yalnızca etiketlere bakıyor | — |
 
@@ -103,4 +106,6 @@ Benim yapacaklarım (D1 tamamlanınca): iki Supabase projesini açmak (bölge: F
 - Bulut yok: üretim adresi, bulut `dev` ve `prod` projeleri, gerçek e-posta gönderimi ve Vercel önizleme koruması D1'e kadar sınanamıyor. Yerel `config.toml` yalnızca yerel Supabase'i yönetir; aynı kimlik ayarları D1'de bulut projelerine aktarılıp `session.spec.ts` içindeki "yeni kayıt kapalı" sınamaları orada yinelenmeli.
 - Uçtan uca testlerde sunucu günlüğüne iki kez `AuthApiError: Refresh token is not valid` düşer. Beklenen bir çıktıdır ("yenilenemeyen oturum kapatılır" testi sahte yenileme belirteci gönderir); hata değildir.
 - Girişten sonra tarayıcıda oturum çerezinin yanında birkaç `…-code-verifier` çerezi kalıyor (Supabase istemcisinin PKCE akışından). Kod akışında kullanılmıyorlar; birikip birikmediğine bakılmadı. Giriş cihaz başına bir kez yapıldığı için sorun beklenmiyor; Ç4'te oturum davranışı elden geçirilirken bakılacak.
-- `(app)` altındaki sayfalar korumayı `proxy`'den alıyor; yerleşimde ayrıca oturum denetimi yok (Ç0'da sayfalarda veri yok). Ç1'den itibaren veri okuyan ya da yazan her rota ve sunucu eylemi `getCurrentUser()` çağırmalı; RLS ayrıca korur.
+- `(app)` altındaki sayfalar korumayı `proxy`'den alıyor; yerleşimde ayrıca oturum denetimi yok (Ç0'da sayfalarda veri yok). `proxy` sunucu eylemlerini tek başına kapatmaz: `/giris` oturumsuz açık olduğu için başka bir sayfaya ait eylem o yoldan çağrılabilir (bugün tek eylem "çıkış yap", zararsız). Ç1'den itibaren veri okuyan ya da yazan her rota ve sunucu eylemi kendi içinde `getCurrentUser()` çağırmalı ve bu, oturumsuz çağrıyla sınanmalı; RLS ayrıca korur.
+- Boş sayfalar (`/`, `/hafta`, `/m`, `/gelen`) statik üretiliyor ve paylaşımlı önbellek başlığıyla dönüyor (`s-maxage`). Yerelde `proxy` her isteğin önünde çalışıyor; Vercel'de de önbelleğin önünde çalıştığı D1'de sınanacak. Ç1'de veri taşıyan sayfaların statik kalmadığı denetlenecek.
+- Adresi bilen biri Supabase'in açık ucundan doğrudan giriş kodu isteyebilir (form denetimi bu yolu kapatmaz). Giremez (kod gerekir), ama e-posta kotasını tüketip girişi geciktirebilir. Bulut projesinde hız sınırlarına D1'de bakılacak.

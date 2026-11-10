@@ -3,6 +3,13 @@ import nextVitals from "eslint-config-next/core-web-vitals";
 import nextTs from "eslint-config-next/typescript";
 import prettier from "eslint-config-prettier/flat";
 
+// A project path (alias or relative) with a "modules" folder anywhere in it.
+const CORE_TO_MODULES = "^(@/|\\.{1,2}/)(.*/)?modules(/|$)";
+// The same pattern inside an esquery /regex/ literal, where "/" has to be escaped.
+const CORE_TO_MODULES_ESQUERY = CORE_TO_MODULES.replaceAll("/", "\\/");
+const CORE_TO_MODULES_MESSAGE =
+  "src/core must not import from src/modules. Use the module contract (docs/06-modul-sozlesmesi.md).";
+
 const eslintConfig = defineConfig([
   ...nextVitals,
   ...nextTs,
@@ -10,18 +17,28 @@ const eslintConfig = defineConfig([
   {
     // Architecture rule (CLAUDE.md): the core never knows the modules.
     // Modules attach to the core only through the contract and src/modules/registry.ts.
+    // Inside src/core, no project path (alias or relative) may pass through a "modules" folder,
+    // however it is spelled: "@/modules/x", "../../modules/x", "./../../modules/x",
+    // "../../../src/modules/x", "@/core/../modules/x". Static, dynamic and require() alike.
     files: ["src/core/**/*.{ts,tsx,mts,js,jsx,mjs}"],
     rules: {
       "no-restricted-imports": [
         "error",
+        { patterns: [{ regex: CORE_TO_MODULES, message: CORE_TO_MODULES_MESSAGE }] },
+      ],
+      "no-restricted-syntax": [
+        "error",
         {
-          patterns: [
-            {
-              regex: "^(@/modules|(\\.\\./)+modules)(/|$)",
-              message:
-                "src/core must not import from src/modules. Use the module contract (docs/06-modul-sozlesmesi.md).",
-            },
-          ],
+          selector: `ImportExpression > Literal[value=/${CORE_TO_MODULES_ESQUERY}/]`,
+          message: CORE_TO_MODULES_MESSAGE,
+        },
+        {
+          selector: `ImportExpression > TemplateLiteral > TemplateElement:first-child[value.raw=/${CORE_TO_MODULES_ESQUERY}/]`,
+          message: CORE_TO_MODULES_MESSAGE,
+        },
+        {
+          selector: `CallExpression[callee.name="require"] > Literal[value=/${CORE_TO_MODULES_ESQUERY}/]`,
+          message: CORE_TO_MODULES_MESSAGE,
         },
       ],
     },

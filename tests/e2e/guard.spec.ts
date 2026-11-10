@@ -72,6 +72,25 @@ test("only what the phone needs to install the app is public", async ({ request 
   expect((await request.get("/apple-icon.png")).status()).toBe(200);
 });
 
+test("paths that merely look like the public files are still gated", async ({ request }) => {
+  const lookalikes = [
+    "/icon.pngx",
+    "/icon.png/hafta",
+    "/apple-icon.png.txt",
+    "/favicon.icox",
+    "/robots.txt/x",
+    "/manifest.webmanifest/x",
+    "/icons/a/b.png",
+    "/icons/hafta",
+    "/_next/staticx",
+  ];
+  for (const path of lookalikes) {
+    const response = await request.get(path, { maxRedirects: 0 });
+    expect(response.status(), path).toBe(307);
+    expect(new URL(response.headers()["location"], "http://x").pathname, path).toBe("/giris");
+  }
+});
+
 test("the app asks not to be indexed", async ({ request, page }) => {
   const robots = await request.get("/robots.txt");
   expect(await robots.text()).toMatch(/Disallow: \/\s*$/m);

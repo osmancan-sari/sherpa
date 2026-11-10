@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { ALLOWED_EMAIL } from "./helpers";
 
 // The signed-in shell, run once at second-screen width ("pano") and once at phone width ("telefon").
 
@@ -58,6 +59,10 @@ test("dark is the default theme; light can be chosen and is remembered", async (
 
   await page.reload();
   await expect(html).not.toHaveClass(/dark/);
+  // The account line streams in after the shell, in either theme.
+  await expect(page.locator("section", { hasText: "Hesap" }).getByRole("paragraph")).toHaveText(
+    ALLOWED_EMAIL,
+  );
 
   await page.getByRole("button", { name: "Koyu" }).click();
   await expect(html).toHaveClass(/dark/);
