@@ -22,6 +22,10 @@ const storageState = "playwright/.auth/user.json";
 // into docs/ekran-goruntuleri/<folder>/. Off by default so normal runs leave docs untouched.
 const shots = Boolean(process.env.SHERPA_SHOTS);
 
+const GATE_SPECS = /(guard|login|session)\.spec\.ts$/;
+const BOTH_SPECS = /\.both\.spec\.ts$/;
+const SHOT_SPECS = /screenshots\.spec\.ts$/;
+
 export default defineConfig({
   testDir: "tests/e2e",
   // One worker: the tests share one mailbox and one user.
@@ -36,26 +40,33 @@ export default defineConfig({
     timezoneId: "Europe/Istanbul",
     trace: "retain-on-failure",
   },
+  // Every *.spec.ts file runs somewhere without being listed here: "pano" takes whatever the
+  // other projects do not claim, so a new spec file can never be silently left out.
+  //   guard, login, session     -> "giris" (signed-out behaviour; no stored session)
+  //   *.both.spec.ts            -> "pano" and "telefon"
+  //   everything else           -> "pano"
+  //   screenshots.spec.ts       -> both, but only when SHERPA_SHOTS is set
   projects: [
     { name: "setup", testMatch: /auth\.setup\.ts/ },
     {
       // The gate: signed-out behaviour, the login flow, sessions.
       name: "giris",
-      testMatch: /(guard|login|session)\.spec\.ts/,
+      testMatch: GATE_SPECS,
       dependencies: ["setup"],
       use: { viewport: { width: 1280, height: 800 } },
     },
     {
       // Second screen.
       name: "pano",
-      testMatch: shots ? /(shell|screenshots)\.spec\.ts/ : /shell\.spec\.ts/,
+      testMatch: /\.spec\.ts$/,
+      testIgnore: shots ? [GATE_SPECS] : [GATE_SPECS, SHOT_SPECS],
       dependencies: ["setup"],
       use: { storageState, viewport: { width: 1920, height: 1080 } },
     },
     {
       // Phone.
       name: "telefon",
-      testMatch: shots ? /(shell|screenshots)\.spec\.ts/ : /shell\.spec\.ts/,
+      testMatch: shots ? [BOTH_SPECS, SHOT_SPECS] : BOTH_SPECS,
       dependencies: ["setup"],
       use: {
         storageState,
