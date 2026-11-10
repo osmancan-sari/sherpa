@@ -5,8 +5,8 @@ Bu dosyayı Claude Code günceller. Yeni bir oturum yalnızca bu dosyayı ve `pr
 ## Durum
 
 - Faz: **Ç1 (Çekirdek ve modül temeli) sürüyor.** Ç0 bitti (`c0-tamam`); yayın ve telefon D1 ve D2'yi bekliyor
-- Adım: 4 / 8 (aşağıdaki plan); 1, 2 ve 3 bitti
-- Son commit: zarf denetimi düzeltmeleri
+- Adım: 5 / 8 (aşağıdaki plan); 1–4 bitti
+- Son commit: istemci altyapısı, Bugün ekranı, hızlı giriş, gelen kutusu
 
 ### Ç1 planı
 
@@ -17,8 +17,8 @@ Her adımın sonunda `npm run check` ve commit; şema, RLS, iş zarfı ve eşitl
 | 1 | Kapılar: Playwright projeleri dosya adına bağlı kalmasın, Vitest `*.test.tsx`, veritabanı testleri için ayrı komut (`npm run test:db`) | bitti |
 | 2 | Migration: `docs/03-veri-modeli.md` çekirdek tabloları, RLS, oturum ve arşiv fonksiyonları, Realtime yayını; tipler; veritabanı testleri (RLS, kısıtlar) | bitti; denetim (adım kipi): 2 engelleyici ve 5 önemli bulgu düzeltildi |
 | 3 | Çekirdek veri katmanı (`src/core/data`), iş zarfı (`propose`, `withdraw`, `provenance`, `onOutcome`), olaylar, modül sözleşmesi tipleri ve kayıt, blok serisi üretimi | bitti (arayüz yok); denetim (adım kipi): engelleyici yok, 8 önemli bulgu düzeltildi |
-| 4 | İstemci altyapısı: TanStack Query, Realtime, modül kaydı bağlamı. Bugün ekranı, hızlı giriş, gelen kutusu, oturumlar | sırada |
-| 5 | Modül arayüzü zemini: `ModulePageShell`, sekmeler, alt sayfalar, tam ekran, hızlı eylemler, modül ayarları, bileşen takımı. `_sablon` ve `deneme` | |
+| 4 | İstemci altyapısı: TanStack Query, Realtime, modül kaydı bağlamı. Bugün ekranı, hızlı giriş, gelen kutusu, oturumlar | bitti (63 uçtan uca test; iki cihaz eşitlemesi dahil) |
+| 5 | Modül arayüzü zemini: `ModulePageShell`, sekmeler, alt sayfalar, tam ekran, hızlı eylemler, modül ayarları, bileşen takımı. `_sablon` ve `deneme` | sırada |
 | 6 | Ayarlar: modüller, sabit bloklar, dışa aktarım | |
 | 7 | `scripts/seed-demo.ts`, uçtan uca testler (iki cihaz eşitlemesi dahil), ekran görüntüleri | |
 | 8 | `check:full`, faz denetimi, düzeltmeler, faz raporu, etiket | |
@@ -87,7 +87,7 @@ Son denetimden sonraki değişiklikler yalnızca bu dosyadadır (faz raporu). `n
 
 ## Sıradaki adım
 
-Ç1'in 4. adımı: istemci altyapısı (TanStack Query, Realtime, modül kaydı bağlamı), Bugün ekranı, hızlı giriş, gelen kutusu, oturumlar. Ayrıntı yukarıda "Ç1 planı" tablosunda.
+Ç1'in 5. adımı: modül arayüzü zemini (`ModulePageShell`, sekmeler, alt sayfalar, tam ekran, hızlı eylemler, modül ayarları, bileşen takımı), `_sablon` ve `deneme` modülleri. Ayrıntı yukarıda "Ç1 planı" tablosunda.
 
 ## Senden bekleyenler
 
@@ -179,6 +179,13 @@ Benim yapacaklarım (D1 tamamlanınca): iki Supabase projesini açmak (bölge: F
 | 11 Kas 2026 | Ç1: kimin kapattığı `provenance` içinde tutulur (`status`/`active` alanının kaynağı: `user` ya da `module`); yalnızca modülün geri çektiği kayıt yeniden teklifle geri gelir | Adım denetimi buldu: kullanıcı duruma bir kez dokunduysa geri çekilen kayıt bir daha geri gelmiyordu | `src/core/data/propose.ts`, `tests/db/envelope.test.ts` |
 | 11 Kas 2026 | Ç1: biçimin kullanmadığı zarf alanı reddedilir; `key` boşluk, virgül, ayraç, tırnak içeremez | Adım denetimi: sessizce yutulan alan modül yazarını yanıltır; `key` dizi süzgeçlerinin içinde taşınıyor | `src/core/contract/envelope.ts`, `docs/06-modul-sozlesmesi.md` |
 | 11 Kas 2026 | Ç1: kalem kapatılırken ya da geri çekilirken üzerinde çalışan oturum durdurulur ve süresi sayılır; `onOutcome` hata verirse kalem yine kapanır | Adım denetimi: açık oturum kapanmış kaleme bağlı kalıyordu | `src/core/data/outcome.ts`, `src/core/data/propose.ts` |
+| 11 Kas 2026 | Ç1: veri tarayıcıda okunur ve yazılır (Supabase istemcisi + RLS), TanStack Query ile; sayfaların sunucu kısmı yalnızca statik kabuktur. Veriye ve saate bağlı her ekran parçası yalnızca tarayıcıda çizilir (`ClientOnly`) | Planlayıcı tarayıcıda çalışacak, Realtime sorguları geçersiz kılacak (mimari dokümanı); `cacheComponents` açıkken saat ve oturum önceden üretilemez. Ç0 notundaki "veri taşıyan sayfa statik kalmasın" kaygısı böylece kalkıyor: statik kabukta veri yok | `src/core/app/*`, `src/core/ui/ClientOnly.tsx`, `src/app/(app)/providers.tsx` |
+| 11 Kas 2026 | Ç1: tablo başına tek sorgu (`["core", tablo]`); Realtime o tabloyu ve modüllerin hesapladığı her şeyi (`["module", …]`) geçersiz kılar. Güvenlik ağı: pencere öne gelince, ağ dönünce, dakikada bir, bağlantı yeniden kurulunca hepsi | `docs/11-yayin-ve-cihazlar.md`, "Eşitleme" 1 ve 2. Veri küçük; ince ayarlı geçersiz kılma erken | `src/core/app/CoreProvider.tsx`, `src/core/app/hooks.ts` |
+| 11 Kas 2026 | Ç1: tek saat (`useNow`): 30 saniyede bir, pencere öne gelince ve her veri değişiminde yeniden okunur; geçen süre sunucunun `started_at` değerinden hesaplanır | Doküman: "şimdi" dakikada bir ve her veri değişiminde yeniden hesaplanır; cihazlar kendi sayaçlarını tutmaz | `src/core/app/clock.ts` |
+| 11 Kas 2026 | Ç1: çekirdek modül kaydını içe aktarmaz; `src/app/(app)/providers.tsx` kaydı `CoreProvider`'a verir | Mimari kural: çekirdek modülleri tanımaz | `src/app/(app)/providers.tsx`, `src/core/app/CoreProvider.tsx` |
+| 11 Kas 2026 | Ç1: hızlı girişte `Tab` modüller arasında gezer (hiçbiri → birinci → … → hiçbiri), `Enter` kaydeder; alttaki alanlara ok tuşuyla ya da dokunarak inilir. Telefonda tek bir yüzen "Yeni giriş" düğmesi her ekranda durur. **Görüşün gerek** | Doküman: "`Tab` ile modül"; giriş en çok 2 dokunuş ya da tek cümle | `src/core/ui/QuickAdd.tsx`, `src/app/(app)/layout.tsx` |
+| 11 Kas 2026 | Ç1: Bugün ekranının ilk hali: solda büyük "şimdi" kartı (çalışan oturum → süren sabit blok → listenin başı → boş), sağda sıradakiler, altta günün blokları ve modül çipleri. "Durdur" (bitirmeden bırak), "Bugün bitenler" ve "Geri al" eklendi. **Görüşün gerek** | Kapsam "basit şimdi kartı" diyor; yanlışlıkla başlatılan ya da bitirilen iş geri alınabilmeli. Ertele ve Takıldım Ç3'te | `src/core/ui/today/*` |
+| 11 Kas 2026 | Ç1: uçtan uca testlerde her test boş hesapla başlar (`tests/e2e/fixtures.ts`); `shell.both.spec.ts` da bu `test`'i kullanır (tek değişen satır içe aktarım) | Testler aynı hesabı paylaşıyor; sıra ve önceki çalışmadan kalan veri sonucu etkilemesin | `tests/e2e/fixtures.ts`, `tests/e2e/data.ts`, `tests/e2e/shell.both.spec.ts` |
 
 ## Bilinen sorunlar
 

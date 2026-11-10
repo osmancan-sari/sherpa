@@ -1,9 +1,5 @@
-import { EmptyState, PageShell } from "@/core/ui/PageShell";
+import { TodayScreen } from "@/core/ui/today/TodayScreen";
 
 export default function TodayPage() {
-  return (
-    <PageShell title="Bugün">
-      <EmptyState>Bugün için planlanan bir şey yok.</EmptyState>
-    </PageShell>
-  );
+  return <TodayScreen />;
 }

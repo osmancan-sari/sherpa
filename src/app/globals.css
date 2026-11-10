@@ -131,3 +131,20 @@
     @apply font-sans;
   }
 }
+
+/* Status colours carry three meanings only: on track, attention, behind (docs/05-arayuz.md).
+   There is no red "overdue" label; "behind" is a warm tone, not an alarm. */
+:root {
+  --health-attention: oklch(0.55 0.13 75);
+  --health-behind: oklch(0.52 0.16 40);
+}
+.dark {
+  --health-attention: oklch(0.82 0.13 85);
+  --health-behind: oklch(0.76 0.14 50);
+}
+.health-attention {
+  color: var(--health-attention);
+}
+.health-behind {
+  color: var(--health-behind);
+}

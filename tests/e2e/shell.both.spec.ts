@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures";
 import { ALLOWED_EMAIL } from "./helpers";
 
 // The signed-in shell, run once at second-screen width ("pano") and once at phone width ("telefon").

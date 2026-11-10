@@ -1,0 +1,246 @@
+"use client";
+
+import Link from "next/link";
+import { useMemo, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { useDismissEntry, useRouteEntry } from "@/core/app/actions";
+import { type KnownModule, useInbox, useModules, useNow } from "@/core/app/hooks";
+import { dueAtEndOfDay, parseQuickText } from "@/core/intake/parse";
+import {
+  type InboxEntry,
+  TASK_DEFAULT_MINUTES,
+  TASK_MAX_MINUTES,
+  TASK_MIN_MINUTES,
+} from "@/core/types";
+import { dayKey, istanbulInstant } from "@/lib/date";
+import { cn } from "@/lib/utils";
+import { ClientOnly } from "../ClientOnly";
+import { EmptyState, PageShell } from "../PageShell";
+import { QuickAddButton } from "../QuickAdd";
+
+// Inbox: entries that have not been routed yet. Without the AI (Ç2) the user routes them by
+// hand: one touch to open "işe çevir" or "bloğa çevir", one to confirm; or "sil".
+
+export function InboxScreen() {
+  return (
+    <PageShell title="Gelen kutusu">
+      <ClientOnly>
+        <InboxBody />
+      </ClientOnly>
+    </PageShell>
+  );
+}
+
+function InboxBody() {
+  const inbox = useInbox();
+  const { modules } = useModules();
+  const active = modules.filter(({ row }) => row.status === "active");
+  const entries = inbox.data ?? [];
+
+  return (
+    <>
+      {inbox.isLoading ? null : entries.length === 0 ? (
+        <EmptyState>Gelen kutusu boş.</EmptyState>
+      ) : (
+        <ul className="flex flex-col gap-3">
+          {entries.map((entry) => (
+            <EntryRow key={entry.id} entry={entry} modules={active} />
+          ))}
+        </ul>
+      )}
+      <div>
+        <QuickAddButton />
+      </div>
+    </>
+  );
+}
+
+type Mode = "idle" | "task" | "block";
+
+function EntryRow({ entry, modules }: { entry: InboxEntry; modules: KnownModule[] }) {
+  const now = useNow();
+  const dismiss = useDismissEntry();
+  const route = useRouteEntry();
+  const [mode, setMode] = useState<Mode>("idle");
+
+  const parsed = useMemo(() => parseQuickText(entry.raw_text, now), [entry.raw_text, now]);
+  const [moduleSlug, setModuleSlug] = useState<string | null>(null);
+  const [day, setDay] = useState(parsed.dueDay ?? "");
+  const [minutes, setMinutes] = useState(
+    String(Math.min(parsed.minutes ?? TASK_DEFAULT_MINUTES, TASK_MAX_MINUTES)),
+  );
+  const [blockDay, setBlockDay] = useState(parsed.dueDay ?? dayKey(now));
+  const [startTime, setStartTime] = useState("10:00");
+  const [endTime, setEndTime] = useState("11:00");
+
+  const chosen =
+    modules.find(({ row }) => row.slug === moduleSlug) ??
+    (modules.length === 1 ? modules[0] : undefined);
+  const minutesValue = Number(minutes);
+  const taskReady =
+    chosen !== undefined && minutesValue >= TASK_MIN_MINUTES && minutesValue <= TASK_MAX_MINUTES;
+  const blockReady = blockDay !== "" && endTime > startTime;
+
+  const toTask = () => {
+    if (!chosen || !taskReady) return;
+    route.mutate({
+      entryId: entry.id,
+      module: chosen.row.slug,
+      task: {
+        id: crypto.randomUUID(),
+        module_id: chosen.row.id,
+        title: parsed.title,
+        est_minutes: minutesValue,
+        due_at: day ? dueAtEndOfDay(day) : null,
+      },
+    });
+  };
+
+  const toBlock = () => {
+    if (!blockReady) return;
+    route.mutate({
+      entryId: entry.id,
+      block: {
+        id: crypto.randomUUID(),
+        title: parsed.title,
+        starts_at: istanbulInstant(blockDay, startTime).toISOString(),
+        ends_at: istanbulInstant(blockDay, endTime).toISOString(),
+      },
+    });
+  };
+
+  return (
+    <li className="border-border flex flex-col gap-3 rounded-xl border p-4">
+      <p className="break-words whitespace-pre-wrap">{entry.raw_text}</p>
+
+      {mode === "idle" ? (
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" className="h-11 md:h-9" onClick={() => setMode("task")}>
+            İşe çevir
+          </Button>
+          <Button variant="outline" className="h-11 md:h-9" onClick={() => setMode("block")}>
+            Bloğa çevir
+          </Button>
+          <Button
+            variant="ghost"
+            className="h-11 md:h-9"
+            onClick={() => dismiss.mutate(entry.id)}
+            aria-label={`Sil: ${entry.raw_text}`}
+          >
+            Sil
+          </Button>
+        </div>
+      ) : null}
+
+      {mode === "task" ? (
+        <div className="flex flex-col gap-3">
+          {modules.length === 0 ? (
+            <p className="text-muted-foreground text-sm">
+              İşin bir modülü olmalı.{" "}
+              <Link href="/ayarlar/moduller" className="underline underline-offset-4">
+                Modüller Ayarlar’dan açılır.
+              </Link>
+            </p>
+          ) : (
+            <div role="group" aria-label="Modül" className="flex flex-wrap gap-2">
+              {modules.map(({ row }) => (
+                <button
+                  key={row.id}
+                  type="button"
+                  aria-pressed={chosen?.row.id === row.id}
+                  onClick={() => setModuleSlug(row.slug)}
+                  className={cn(
+                    "border-border focus-visible:ring-ring/50 flex h-11 items-center gap-2 rounded-full border px-4 text-sm outline-none focus-visible:ring-3 md:h-9 md:px-3",
+                    chosen?.row.id === row.id
+                      ? "bg-foreground text-background border-transparent"
+                      : "hover:bg-muted",
+                  )}
+                >
+                  <span
+                    aria-hidden
+                    className="size-2 rounded-full"
+                    style={{ backgroundColor: row.color }}
+                  />
+                  {row.name}
+                </button>
+              ))}
+            </div>
+          )}
+          <div className="flex flex-wrap items-end gap-3">
+            <Labelled label="Tarih">
+              <Input
+                type="date"
+                value={day}
+                onChange={(event) => setDay(event.target.value)}
+                className="h-11 w-44 md:h-9"
+              />
+            </Labelled>
+            <Labelled label="Süre (dk)">
+              <Input
+                type="number"
+                inputMode="numeric"
+                min={TASK_MIN_MINUTES}
+                max={TASK_MAX_MINUTES}
+                step={5}
+                value={minutes}
+                onChange={(event) => setMinutes(event.target.value)}
+                className="h-11 w-28 md:h-9"
+              />
+            </Labelled>
+            <Button className="h-11 md:h-9" disabled={!taskReady} onClick={toTask}>
+              Kaydet
+            </Button>
+            <Button variant="ghost" className="h-11 md:h-9" onClick={() => setMode("idle")}>
+              Vazgeç
+            </Button>
+          </div>
+        </div>
+      ) : null}
+
+      {mode === "block" ? (
+        <div className="flex flex-wrap items-end gap-3">
+          <Labelled label="Gün">
+            <Input
+              type="date"
+              value={blockDay}
+              onChange={(event) => setBlockDay(event.target.value)}
+              className="h-11 w-44 md:h-9"
+            />
+          </Labelled>
+          <Labelled label="Başlangıç">
+            <Input
+              type="time"
+              value={startTime}
+              onChange={(event) => setStartTime(event.target.value)}
+              className="h-11 w-32 md:h-9"
+            />
+          </Labelled>
+          <Labelled label="Bitiş">
+            <Input
+              type="time"
+              value={endTime}
+              onChange={(event) => setEndTime(event.target.value)}
+              className="h-11 w-32 md:h-9"
+            />
+          </Labelled>
+          <Button className="h-11 md:h-9" disabled={!blockReady} onClick={toBlock}>
+            Kaydet
+          </Button>
+          <Button variant="ghost" className="h-11 md:h-9" onClick={() => setMode("idle")}>
+            Vazgeç
+          </Button>
+        </div>
+      ) : null}
+    </li>
+  );
+}
+
+function Labelled({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <label className="flex flex-col gap-1.5 text-sm">
+      <span className="text-muted-foreground">{label}</span>
+      {children}
+    </label>
+  );
+}
