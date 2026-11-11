@@ -19,7 +19,8 @@ const PRICES: Record<string, Price> = {
   },
   "claude-sonnet-5-5": { input: 2, output: 10 },
   "claude-opus-5-5": { input: 4, output: 20 },
-  // The fake provider of the tests: priced like the fast model so the budget is exercised.
+  // The fake provider of the tests: each tier priced like the real model of that tier, so the
+  // budget is exercised the way it will be with a key.
   "fake-fast": { input: 0.1, output: 0.5 },
   "fake-plan": { input: 2, output: 10 },
 };

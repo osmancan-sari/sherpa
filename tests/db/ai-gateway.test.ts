@@ -4,7 +4,7 @@ import { type EnrichInput, enrichSpec } from "@/core/ai/calls/enrich";
 import { fakeProvider } from "@/core/ai/fake";
 import { type AiCallSpec, runAiCall } from "@/core/ai/gateway";
 import type { AiConfig, AiProvider } from "@/core/ai/types";
-import { ok, ownerDb, strangerDb, wipe } from "./helpers";
+import { adminDb, ok, ownerDb, strangerDb, wipe } from "./helpers";
 
 // The single AI gateway against the real database: what it logs, what it costs, when it does
 // not call at all, and that an answer outside the schema is never handed back.
@@ -288,6 +288,28 @@ describe("no call at all", () => {
       reason: "disabled",
     });
     expect(asked).toHaveLength(0);
+  });
+
+  it("when switched off, even for a question it had answered before", async () => {
+    const { provider, calls: asked } = counting();
+    const deps = { db, config: config(provider) };
+    expect(await runAiCall(deps, enrichSpec, input("Kitap oku"))).toMatchObject({ status: "ok" });
+    ok(await db.from("settings").insert({ ai_enabled: false }).select().single());
+    expect(await runAiCall(deps, enrichSpec, input("Kitap oku"))).toEqual({
+      status: "skipped",
+      reason: "disabled",
+    });
+    expect(asked).toHaveLength(1);
+  });
+
+  it("when the checks cannot be read, instead of throwing or calling unchecked", async () => {
+    // The secret key has no user: the spending function refuses to answer.
+    const { provider, calls: asked } = counting();
+    expect(
+      await runAiCall({ db: adminDb(), config: config(provider) }, enrichSpec, input("x")),
+    ).toEqual({ status: "skipped", reason: "check_failed" });
+    expect(asked).toHaveLength(0);
+    expect(await calls()).toHaveLength(0);
   });
 
   it("when the budget is 0", async () => {

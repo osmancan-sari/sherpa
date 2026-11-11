@@ -9,8 +9,12 @@ import { type AiProvider, ProviderError, type ProviderRequest } from "./types";
  * Retries are off: the gateway's timeout is the whole wait, and a failed call simply means the
  * work goes on without AI.
  */
-export function anthropicProvider(apiKey: string): AiProvider {
-  const client = new Anthropic({ apiKey, maxRetries: 0 });
+export function anthropicProvider(
+  apiKey: string,
+  /** Only for tests: answers the HTTP requests instead of the network. */
+  options: { fetch?: typeof fetch } = {},
+): AiProvider {
+  const client = new Anthropic({ apiKey, maxRetries: 0, fetch: options.fetch });
 
   return {
     name: "anthropic",

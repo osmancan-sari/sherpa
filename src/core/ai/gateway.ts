@@ -63,18 +63,24 @@ export async function runAiCall<T>(
   if (!model) return { status: "skipped", reason: "no_model" };
   if (!hasPrice(model)) return { status: "skipped", reason: "no_price" };
 
-  const settings = await readAiSettings(db);
-  if (!settings.enabled) return { status: "skipped", reason: "disabled" };
+  // The checks read the database. If one cannot be read (no session, the database is down),
+  // no call is made: an unchecked budget is not a budget.
+  let fp: string;
+  try {
+    const settings = await readAiSettings(db);
+    if (!settings.enabled) return { status: "skipped", reason: "disabled" };
 
-  const fp = await fingerprint({ kind: spec.kind, model, version: spec.version, input });
-  if (options.reuse !== false) {
-    const earlier = await findEarlierAnswer(db, spec, fp);
-    if (earlier) return { status: "ok", reused: true, ...earlier };
-  }
+    fp = await fingerprint({ kind: spec.kind, model, version: spec.version, input });
+    if (options.reuse !== false) {
+      const earlier = await findEarlierAnswer(db, spec, fp);
+      if (earlier) return { status: "ok", reused: true, ...earlier };
+    }
 
-  const now = new Date();
-  if (!withinBudget(await spentThisMonth(db, now), settings.budgetUsd)) {
-    return { status: "skipped", reason: "budget" };
+    if (!withinBudget(await spentThisMonth(db, new Date()), settings.budgetUsd)) {
+      return { status: "skipped", reason: "budget" };
+    }
+  } catch {
+    return { status: "skipped", reason: "check_failed" };
   }
 
   const log = (row: {

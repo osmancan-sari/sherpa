@@ -18,18 +18,45 @@ const AI_SDK_PATTERN = {
   message: "Only src/core/ai may use the AI provider's SDK. Call the gateway (runAiCall).",
 };
 const AI_GATEWAY = "src/core/ai/**";
+// Inside an esquery /regex/ literal "/" has to be escaped.
+const AI_SDK_ESQUERY = "^@anthropic-ai\\/";
 
+/**
+ * The dynamic spellings of a forbidden import (`import("…")`, `import(`…`)`, `require("…")`),
+ * which no-restricted-imports does not see.
+ */
+function dynamicImports(esquery, message) {
+  return [
+    { selector: `ImportExpression > Literal[value=/${esquery}/]`, message },
+    {
+      selector: `ImportExpression > TemplateLiteral > TemplateElement:first-child[value.raw=/${esquery}/]`,
+      message,
+    },
+    { selector: `CallExpression[callee.name="require"] > Literal[value=/${esquery}/]`, message },
+  ];
+}
+const CORE_TO_MODULES_SYNTAX = dynamicImports(CORE_TO_MODULES_ESQUERY, CORE_TO_MODULES_MESSAGE);
+const AI_SDK_SYNTAX = dynamicImports(AI_SDK_ESQUERY, AI_SDK_PATTERN.message);
+
+// Architecture rules (CLAUDE.md), static and dynamic imports alike:
+// - The core never knows the modules. Modules attach to the core only through the contract and
+//   src/modules/registry.ts. Inside src/core, no project path (alias or relative) may pass
+//   through a "modules" folder, however it is spelled: "@/modules/x", "../../modules/x",
+//   "./../../modules/x", "../../../src/modules/x", "@/core/../modules/x".
+// - Only the AI gateway (src/core/ai) imports the provider's SDK.
+// A later block that sets the same rule replaces it for the files it matches, so each block
+// below lists every pattern that applies to its files. (Test files get the test rule's
+// no-restricted-syntax instead; their static imports stay covered.)
 const eslintConfig = defineConfig([
   ...nextVitals,
   ...nextTs,
   prettier,
   {
-    // Outside the core: only the AI SDK rule. (A later block that sets the same rule replaces
-    // it, so the core blocks below repeat this pattern.)
     files: ["src/**/*.{ts,tsx,mts,js,jsx,mjs}", "scripts/**/*.{ts,mts,js,mjs}"],
     ignores: ["src/core/**"],
     rules: {
       "no-restricted-imports": ["error", { patterns: [AI_SDK_PATTERN] }],
+      "no-restricted-syntax": ["error", ...AI_SDK_SYNTAX],
     },
   },
   {
@@ -37,38 +64,14 @@ const eslintConfig = defineConfig([
     ignores: [AI_GATEWAY],
     rules: {
       "no-restricted-imports": ["error", { patterns: [CORE_TO_MODULES_PATTERN, AI_SDK_PATTERN] }],
+      "no-restricted-syntax": ["error", ...CORE_TO_MODULES_SYNTAX, ...AI_SDK_SYNTAX],
     },
   },
   {
     files: [AI_GATEWAY],
     rules: {
       "no-restricted-imports": ["error", { patterns: [CORE_TO_MODULES_PATTERN] }],
-    },
-  },
-  {
-    // Architecture rule (CLAUDE.md): the core never knows the modules.
-    // Modules attach to the core only through the contract and src/modules/registry.ts.
-    // Inside src/core, no project path (alias or relative) may pass through a "modules" folder,
-    // however it is spelled: "@/modules/x", "../../modules/x", "./../../modules/x",
-    // "../../../src/modules/x", "@/core/../modules/x". Static, dynamic and require() alike.
-    // (The import half of this rule is in the blocks above, together with the AI SDK rule.)
-    files: ["src/core/**/*.{ts,tsx,mts,js,jsx,mjs}"],
-    rules: {
-      "no-restricted-syntax": [
-        "error",
-        {
-          selector: `ImportExpression > Literal[value=/${CORE_TO_MODULES_ESQUERY}/]`,
-          message: CORE_TO_MODULES_MESSAGE,
-        },
-        {
-          selector: `ImportExpression > TemplateLiteral > TemplateElement:first-child[value.raw=/${CORE_TO_MODULES_ESQUERY}/]`,
-          message: CORE_TO_MODULES_MESSAGE,
-        },
-        {
-          selector: `CallExpression[callee.name="require"] > Literal[value=/${CORE_TO_MODULES_ESQUERY}/]`,
-          message: CORE_TO_MODULES_MESSAGE,
-        },
-      ],
+      "no-restricted-syntax": ["error", ...CORE_TO_MODULES_SYNTAX],
     },
   },
   {

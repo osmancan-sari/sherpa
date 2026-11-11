@@ -122,6 +122,32 @@ describe("only the AI gateway imports the provider's SDK", () => {
     }
   });
 
+  it("rejects dynamic imports and require of the SDK outside the gateway", async () => {
+    const snippets = [
+      'export const load = () => import("@anthropic-ai/sdk");\n',
+      "export const load = (p: string) => import(`@anthropic-ai/${p}`);\n",
+      'export const sdk = require("@anthropic-ai/sdk");\n',
+    ];
+    for (const filePath of ["src/lib/example.ts", "src/core/data/example.ts", "scripts/x.ts"]) {
+      for (const snippet of snippets) {
+        const errors = await restrictedImportErrors(snippet, filePath);
+        expect(errors, `${filePath}: ${snippet}`).toHaveLength(1);
+        expect(errors[0]).toContain("Only src/core/ai may use the AI provider's SDK");
+      }
+    }
+    expect(await restrictedImportErrors(snippets[0], "src/core/ai/example.ts")).toHaveLength(0);
+    // The module rule's dynamic half still holds in the core and in the gateway.
+    for (const filePath of ["src/core/data/example.ts", "src/core/ai/example.ts"]) {
+      expect(
+        await restrictedImportErrors(
+          'export const load = () => import("@/modules/registry");\n',
+          filePath,
+        ),
+        filePath,
+      ).toHaveLength(1);
+    }
+  });
+
   it("keeps the module rule in the core next to the SDK rule", async () => {
     const errors = await restrictedImportErrors(
       'import Anthropic from "@anthropic-ai/sdk";\nimport { m } from "@/modules/registry";\nexport const x = [Anthropic, m];\n',

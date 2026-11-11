@@ -75,7 +75,9 @@ export type SkipReason =
   /** Switched off in the settings. */
   | "disabled"
   /** This month's spending has reached the budget (a budget of 0 switches the AI off). */
-  | "budget";
+  | "budget"
+  /** The switch, an earlier answer or the spending could not be read; no call without them. */
+  | "check_failed";
 
 /** Why a call that was made gave nothing usable. Each of these is an `ai_calls` row… */
 export type FailReason =
