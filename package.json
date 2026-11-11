@@ -24,7 +24,7 @@
     "db:reset": "supabase db reset",
     "db:types": "supabase gen types typescript --local > src/lib/supabase/database.types.ts && prettier --write src/lib/supabase/database.types.ts",
     "db:types:check": "node scripts/check-db-types.mjs",
-    "db:push": "supabase db push",
+    "db:push": "supabase db push --remote",
     "db:user": "node --env-file=.env.local scripts/create-user.mjs",
     "db:seed": "tsx scripts/seed-demo.ts",
     "ai:eval": "tsx --conditions=react-server scripts/ai-eval/run.ts",

@@ -27,3 +27,6 @@ data/notion-export/
 .DS_Store
 *.pem
 npm-debug.log*
+
+# Vercel CLI link (D1)
+.vercel

@@ -147,7 +147,8 @@ max_catalogs = 2
 
 # Store vector embeddings in S3 for large and durable datasets
 [storage.vector]
-enabled = true
+# Not used by the app; off so `config push` does not switch it on in the cloud.
+enabled = false
 max_buckets = 10
 max_indexes = 5
 
@@ -424,3 +425,14 @@ enabled = true
 # formatted with uppercase keywords, indent 2, max width 180, trailing commas,
 # and column/key alignment. Set to "null" to emit raw, unformatted SQL.
 # format_options = "{\"keywordCase\":\"upper\",\"indent\":2,\"maxWidth\":180,\"commaStyle\":\"trailing\"}"
+
+# Cloud projects (D1). `supabase config push` sends the settings above to the linked project;
+# a block below overrides them for that project only.
+[remotes.dev]
+project_id = "pjcbnldkfdwfrrjdtacz"
+
+[remotes.prod]
+project_id = "jqqvfdjrkpxbklocsqvq"
+
+[remotes.prod.auth]
+site_url = "https://sherpa-private.vercel.app"

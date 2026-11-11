@@ -55,7 +55,7 @@ Paket sürümlerini ezberden yazma; kurarken güncel kararlı sürümü kullan v
 | `npm run db:reset` | Yerel veritabanını sıfırlar ve bütün migration'ları baştan uygular |
 | `npm run db:types` | Yerel şemadan `src/lib/supabase/database.types.ts` üretir |
 | `npm run db:types:check` | Depodaki tiplerin yerel şemayla aynı olduğunu denetler (`check:full` içinde) |
-| `npm run db:push` | Migration'ları bağlı bulut projesine uygular (`supabase link` sonrası) |
+| `npm run db:push` | Migration'ları bağlı bulut projesine uygular (`supabase link` sonrası; bağlı proje `sherpa-dev`). Üretim için önce `dev`, sonra `npx supabase db push --remote=<prod ref>` |
 | `npm run db:user` | `ALLOWED_EMAIL` hesabını oluşturur (yeni kayıt kapalı; hesap yalnızca böyle açılır) |
 | `npm run db:seed` | Yerel hesaba örnek veri yazar (sahte modüller, kalemler, ritimler, bloklar). Hesap doluysa `npm run db:seed -- --reset`. Yalnızca yerel Supabase |
 | `npm run ai:eval` | Yapay zeka kalite denetimi: `scripts/ai-eval/cases.json` örnekleri gerçek modelle (`-- --fake` ile sahte sağlayıcıyla), yerel hesap üzerinden geçitten; rapor yazdırır. İstem ya da model değişince |

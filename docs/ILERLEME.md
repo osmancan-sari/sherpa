@@ -5,7 +5,7 @@ Bu dosyayı Claude Code günceller. Yeni bir oturum yalnızca bu dosyayı ve `pr
 ## Durum
 
 - Faz: **Ç2 (Yapay zeka geçidi) sürüyor** (başlangıç 11 Kas 2026). Ç0 ve Ç1 bitti (`c0-tamam`, `c1-tamam`); yayın ve telefon D1 ve D2'yi bekliyor. D3 (`ANTHROPIC_API_KEY`) verilmedi: faz sahte sağlayıcıyla geliştiriliyor
-- Adım: Ç2 planı aşağıda; 5. adım bitti, 6. adım (uçtan uca testler, ekran görüntüleri) sırada. Araya kullanıcının isteğiyle D1 (bulut ve yayın) girdi
+- Adım: Ç2 planı aşağıda; 5. adım bitti, 6. adım (uçtan uca testler, ekran görüntüleri) sırada. Araya kullanıcının isteğiyle D1 girdi: bulut projeleri, şema ve üretim yayını hazır; GitHub'a gönderme ve e-posta göndericisi (SMTP) kullanıcıyı bekliyor ("Senden bekleyenler" → D1)
 - Son commit: Ç2 adım 5
 
 ### Ç2 planı
@@ -181,37 +181,38 @@ Denetçinin 14. notu doğru: 5. ve 6. adımlar ile örnek veri tek commit'te (`9
 
 21:50'de başlatılan eski betik penceresi kapatıldı ve `docs/BEKLIYOR.md` silindi; kararı ben verdim (yeni betik kalsın). Betiğe aynı anda ikinci kez çalışmayı engelleyen bir kilit eklendi (`logs/runner.pid`). Bu konuda yapılacak bir şey yok; `c0-tamam` etiketi yerinde.
 
-### D1. Bulut ve yayın: tamamlandı (11 Kas 2026, 08:35; benim payım bitti, sıra sende)
+### D1. Bulut ve yayın: büyük ölçüde bağlandı (11 Kas 2026, 21:20); senden iki şey bekleniyor
 
-**Durum (11 Kas 2026, 12:45): senin payın tamam, benim payım gözetimsiz oturumda yapılamadı. Bulutta hiçbir şey açılmadı, hiçbir şey gönderilmedi.** Ç1 etiketlendikten sonra bağlantıya başladım. Girişler yerinde (Supabase CLI: `mealprep-easy` kuruluşu, içinde proje yok; Vercel CLI: giriş yapılmış; `gh` kurulu değil). İlk adımda (`supabase projects create sherpa-dev`) oturumun izin düzeni komutu reddetti: gözetimsiz çalışmada gerçek dünyada kaynak açan işlemlere izin verilmiyor. Kural gereği yeniden denemedim ve başka yoldan dolanmadım.
+Senin isteğinle, başında durduğun oturumda bağlandı. Supabase'te ücretsiz planlı `sherpa` kuruluşu kullanıldı.
 
-Ayrıca doğrulayamadığım bir şey: `mealprep-easy` kuruluşunun planı. CLI planı göstermiyor. Ücretsiz plandaysa iki proje ücretsiz; ücretli bir plandaysa her yeni proje ücret çıkarır. Aşağıdaki yollardan birini seçmeden önce Supabase panosunda kuruluşun planına bak.
+**Yapılanlar**
 
-Senden gereken (birini seç):
+| Ne | Durum |
+| --- | --- |
+| Supabase `sherpa-dev` (`pjcbnldkfdwfrrjdtacz`) ve `sherpa-prod` (`jqqvfdjrkpxbklocsqvq`), Frankfurt (`eu-central-1`), ücretsiz boy | açıldı, ikisi de sağlıklı |
+| Bütün migration'lar (6) önce `dev`'e sonra `prod`'a | uygulandı |
+| Kimlik ayarları (`supabase config push`): yeni kayıt kapalı, kod 10 dakika, onay e-postası yok, TOTP kapalı; `prod`'un site adresi `https://sherpa-private.vercel.app` (`config.toml` içinde `[remotes.prod]`) | uygulandı. **E-posta şablonu uygulanamadı**, aşağıda 2. madde |
+| `ALLOWED_EMAIL` hesabı | iki projede açıldı (`scripts/create-user.mjs`) |
+| Vercel projesi `sherpa-private` (`vercel.json` ile Next.js), ortam değişkenleri: Production → `sherpa-prod`, Preview → `sherpa-dev` (+ `deneme` modülü); gizli anahtar "Secret" olarak | kuruldu |
+| Üretim yayını `https://sherpa-private.vercel.app` (komut satırından, `npx vercel deploy --prod`) | çalışıyor |
+| Dışarıdan sınama: `/`, `/gelen` → `/giris` (307); `/api/me`, `/api/export`, `/api/ai/status`, `POST /api/ai/enrich` → 401; `/manifest.webmanifest`, `/robots.txt`, `/giris` → 200; dağıtıma özel adres Vercel girişine yönleniyor (302, önizleme koruması açık) | geçti |
+| Anahtarlar ve parolalar | yalnızca depo dışı dosyalarda: `.env.d1` (veritabanı parolaları, proje kimlikleri), `.env.cloud-dev`, `.env.cloud-prod` (adres ve anahtarlar); `.vercelignore` bunların yüklenmesini engeller |
 
-1. **Başında durduğun bir oturum (önerilen).** VS Code'da Claude Code'u aç ve "`docs/ILERLEME.md` içindeki D1'i bağla" yaz; izin sorularını tek tek onayla. Sıra aşağıdaki "Benim yapacaklarım" listesidir; yaklaşık yarım saat sürer ve sonunda üretim adresinde giriş kodunu senin yazman gerekir.
-2. **Gözetimsiz devam etsin istiyorsan** `.claude/settings.json` içinde şu komutlara izin ver: `npx supabase projects create`, `npx supabase link`, `npx supabase db push`, `npx supabase config push`, `npx vercel`, `git push`. Sonra bu paragrafın başına "izin verildi" yaz; sıradaki oturum bağlantıyı yapar.
+**Senden gereken**
 
-**Gözetimsiz oturumlar için not:** bu paragrafta "izin verildi" yazmıyorsa D1'i yeniden deneme; yerel Supabase ile devam et.
-
-Supabase ve Vercel girişleri yapıldı (`npx supabase login`, `npx vercel login`), GitHub'da özel `sherpa` deposu açıldı, `.env.d1` dolduruldu. Vercel'de proje elle kurulmadı; kurulumu sen komut satırından yap. Aşağıdaki "Benim yapacaklarım" listesi artık yapılabilir.
-
-O zamana kadar her şey yerel Supabase ile çalışıyor. Aşağıdakileri yapınca yeni oturumda geri kalanını (projeleri açma, şema ve kimlik ayarlarını aktarma, hesabı oluşturma, Vercel ortam değişkenleri, yayın, üretimde giriş ve koruma denemesi) ben komut satırından yaparım.
-
-1. **Supabase.** Hesabın yoksa aç (ücretsiz plan yeter; iki proje hakkı gerekiyor: `sherpa-dev` ve `sherpa-prod`). İki adımlı doğrulamayı aç. Sonra depo klasöründe PowerShell'de `npx supabase login` yaz ve tarayıcıda onayla.
-2. **Vercel.** Hesabın yoksa aç (Hobby planı yeter), iki adımlı doğrulamayı aç. PowerShell'de `npx vercel login` yaz ve tarayıcıda onayla.
-3. **GitHub.** Özel (private) ve boş bir `sherpa` deposu aç; adresini aşağıdaki dosyaya yaz. Depoyu Vercel'e bağlamak için Vercel'in GitHub uygulamasına bu depo için izin vermen istenecek (tarayıcıda bir onay).
-4. **Bilgiler.** Depo kökünde `.env.d1` adında bir dosya aç (`.env*` deseni sayesinde depoya girmez) ve şunları yaz:
+1. **GitHub'a gönderme izni.** `git remote add origin https://github.com/osmancan-sari/sherpa.git` ve `git push` oturumun izin denetiminde reddedildi; dal da bu yüzden hâlâ `master`. Ya bu oturumda "GitHub'a gönder" de ve izin sorusunu onayla, ya da PowerShell'de kendin çalıştır:
    ```
-   ALLOWED_EMAIL=giriş yapacağın e-posta
-   SHERPA_ADDRESS=kalıcı adres (örnek: sherpa-xxxx.vercel.app ya da kendi alan adın)
-   GITHUB_REPO=https://github.com/<kullanıcı>/sherpa
+   git branch -m master main
+   git remote add origin https://github.com/osmancan-sari/sherpa.git
+   git push -u origin main --tags
    ```
-   - `ALLOWED_EMAIL` Supabase hesabının e-postasıyla aynı olursa en kolayı: bildiğim kadarıyla Supabase'in hazır e-posta göndericisi yalnızca kuruluş üyelerinin adreslerine gönderir ve saatte birkaç e-postayla sınırlıdır (kurulumda güncel dokümandan doğrulayacağım). Başka bir adres istersen ayrıca bir SMTP hizmeti gerekir; adımlarını o zaman yazarım.
-   - Kalıcı adres telefona kurulumdan önce kesinleşmeli; sonradan değişirse telefondaki uygulama yeniden kurulur.
-5. Bu maddenin başlığına "tamamlandı" yaz.
+   Gönderildikten sonra Vercel projesini depoya bağlarım (`vercel git connect`; tarayıcıda Vercel'in GitHub uygulamasına bu depo için bir onay istenebilir). O zamana kadar yayın komut satırından yapılır.
+2. **Giriş kodunun e-postası.** Supabase'in ücretsiz katmanı, kendi e-posta göndericisiyle şablon değiştirmeye izin vermiyor ("Email template modification is not available for free tier projects using the default email provider"). Hazır şablon kod yerine bağlantı gönderir; uygulama kodla giriş ister (`docs/11-yayin-ve-cihazlar.md`, "Giriş yöntemi"). Bu yüzden **üretimde giriş henüz çalışmaz**. Çözüm ücretsiz bir SMTP göndericisi. Önerim Resend (ücretsiz katman günde 100 e-posta):
+   - resend.com'da `ALLOWED_EMAIL` adresinle hesap aç (alan adı doğrulamadan yalnızca hesabın kendi adresine gönderebilir; tek kullanıcı için yeter), iki adımlı doğrulamayı aç.
+   - Bir API anahtarı oluştur ve sohbete yazmadan `.env.d1` dosyasına `RESEND_API_KEY=...` satırı olarak ekle.
+   - Bana "SMTP hazır" de. Ben `config.toml`'a SMTP ayarını (anahtar ortam değişkeninden) ekleyip şablonla birlikte iki projeye gönderirim ve üretimde girişi seninle denerim: e-postanı yazarsın, gelen 8 haneli kodu uygulamaya girersin.
 
-Benim yapacaklarım (D1 tamamlanınca): iki Supabase projesini açmak (bölge: Frankfurt), migration'ı önce `dev`'e sonra `prod`'a uygulamak, kimlik ayarlarını aktarmak (yeni kayıt kapalı, 8 haneli ve 10 dakikalık kod, kod şablonu), `ALLOWED_EMAIL` hesabını oluşturmak, dalı `main` yapıp GitHub'a göndermek, Vercel projesini bağlamak ve ortam değişkenlerini girmek, yayınlamak, önizleme dağıtımlarının korumasını doğrulamak, üretim adresinde giriş ve koruma sınamalarını yinelemek. Bu işlemlerin ücretsiz katmanda kalması bekleniyor; ücret çıkaran bir adım görürsem durup sorarım.
+Not: Supabase'in hazır göndericisi saatte 2 e-postayla sınırlı; SMTP bağlanınca bu sınır kalkar.
 
 ### D2. Telefon (D1'den sonra)
 
@@ -365,6 +366,11 @@ Benim yapacaklarım (D1 tamamlanınca): iki Supabase projesini açmak (bölge: F
 | 11 Kas 2026 | Ç2: `scripts/ai-eval/cases.json` 30 örneği elle yazıldı (Okul, Beslenme, Ev, Sağlık ve modülsüz satırlar; 11 Kasım 2026 çarşamba gününe göre). **Görüşün gerek:** doküman "kullanıcının gerçek girişlerinden" diyor; gerçek girişler biriktikçe değiştirilmeli | Henüz gerçek giriş yok | `scripts/ai-eval/cases.json` |
 | 11 Kas 2026 | Ç2: örnek veri yapay zekanın payını sahte sağlayıcıyla gerçek akışlardan yazar; ara sınav hazırlığı yapay zekasız hâliyle (sınırın ortası), DL ara raporu yapay zekanın tahminiyle kalır. **Test değişikliği:** `tests/db/seed.test.ts` gelen kutusu sayısını 2'den 3'e çıkardı (onay kartı) ve yapay zekanın yazdıklarını denetliyor | Ekran görüntülerinde ve elle denemede işaretler, kart ve kullanım görünsün | `scripts/demo-data.ts`, `tests/db/seed.test.ts` |
 | 11 Kas 2026 | Ç2: sahte sağlayıcı modülü satırdaki bütün sözcükle eşler ("ödev" "Ev" modülünü seçmez) | Alt dize eşleşmesi yanlış yönlendiriyordu | `src/core/ai/fake.ts` |
+| 11 Kas 2026 | D1: bulut projelerinin kimlikleri ve `prod`'un site adresi `supabase/config.toml` içinde `[remotes.dev]`, `[remotes.prod]` bloklarında; `config push` `prod`'a kendi adresini gönderir. Kimlik ayarları `--remote=<ref>` ile gönderilir; bağlı proje `dev` | Ayarlar depoda dursun, iki proje aynı kaynaktan kurulsun | `supabase/config.toml` |
+| 11 Kas 2026 | D1: `storage.vector` kapatıldı (yerelde de) | Uygulama kullanmıyor; `config push` bulutta açacaktı ve ücret koşulu belirsizdi | `supabase/config.toml` |
+| 11 Kas 2026 | D1: Vercel projesi `vercel.json` ile Next.js'e sabitlendi; `.vercelignore` `.env*` dosyalarının ve yerel çıktıların yüklenmesini engeller (kök yollar `/` ile: `data` tek başına `src/core/data`'yı da dışarıda bırakıyordu) | Komut satırından açılan projede çerçeve "Other" kalıyordu ve site 404 veriyordu; anahtarlar asla yüklenmesin | `vercel.json`, `.vercelignore` |
+| 11 Kas 2026 | D1: önizleme ortamı `sherpa-dev`'e ve `deneme` modülüne bağlı; üretim `sherpa-prod`'a, `deneme` kapalı | Önizlemede gerçek veri olmasın | Vercel ortam değişkenleri |
+| 11 Kas 2026 | D1: giriş kodunun şablonu ücretsiz katmanda Supabase'in hazır göndericisiyle değiştirilemiyor; SMTP göndericisi (öneri: Resend) gerekiyor. **Senden bekleniyor** | Hazır şablon kod göndermiyor | `docs/11-yayin-ve-cihazlar.md` |
 
 ## Bilinen sorunlar
 

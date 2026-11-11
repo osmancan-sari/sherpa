@@ -37,6 +37,8 @@ Sihirli bağlantı **kullanılmaz**: telefonda ana ekrana eklenen uygulamanın d
 
 Oturum uzun ömürlüdür; yenileme belirteci kendiliğinden yenilenir. Hedef: her cihazda bir kez giriş.
 
+Kodu taşıyan e-posta şablonu (`supabase/templates/magic_link.html`) bulutta yalnızca özel bir SMTP göndericisiyle uygulanabilir: Supabase'in ücretsiz katmanı, kendi hazır göndericisiyle şablon değiştirmeye izin vermez ve hazır şablon kod yerine bağlantı gönderir. Gönderici olarak ücretsiz katmanı yeten bir hizmet (ör. Resend) kullanılır; anahtarı yalnızca ortam değişkenindedir.
+
 ## Adres
 
 Uygulama telefona kurulmadan önce kalıcı adres belirlenir (özel alan adı ya da sabit bir `vercel.app` adresi). Adres değişirse telefondaki uygulama yeniden kurulur ve yeniden giriş yapılır.
@@ -89,6 +91,7 @@ Tek kaynak Supabase'dir; cihazlarda kalıcı ayrı veri yoktur.
 ## Ortamlar ve maliyet
 
 - İki ortam: `dev` (deneme) ve `prod` (kullanıcının gerçek verisi). Şema değişiklikleri önce `dev`'de denenir.
+- Supabase: `sherpa-dev` ve `sherpa-prod` (Frankfurt, ücretsiz katman). Vercel: `sherpa-private`; üretim `https://sherpa-private.vercel.app` (`sherpa-prod`), önizlemeler `sherpa-dev`'e bağlıdır ve Vercel girişiyle korunur.
 - Beklenen aylık maliyet: barındırma ve veritabanı için ücretsiz katmanlar yeterli olmalı; yapay zeka yaklaşık 2 $; alan adı isteğe bağlı.
 - Kurulum sırasında güncel plan koşullarına bakılır: ücretsiz katmanda zamanlanmış iş sıklığı, kullanılmayan projenin duraklatılması, canlı bağlantı sınırları. Sherpa'nın ihtiyacı küçüktür (tek kullanıcı, günde birkaç zamanlanmış iş), ama `dev` projesi uzun süre kullanılmazsa duraklayabilir.
 - Yedek: veritabanının günlük yedeği ve ayarlardaki "Tümünü dışa aktar".

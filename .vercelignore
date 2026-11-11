@@ -1,0 +1,13 @@
+# What `vercel deploy` must never upload from this folder (D1). Secrets stay on the machine;
+# Vercel gets its values from the project's environment variables. Paths with a leading slash
+# are the root only ("data" alone would also match src/core/data).
+.env*
+!.env.example
+/.vercel
+/.next
+/node_modules
+/logs
+/test-results
+/playwright-report
+/supabase/.temp
+/data
