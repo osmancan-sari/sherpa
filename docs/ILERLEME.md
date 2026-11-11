@@ -5,8 +5,8 @@ Bu dosyayı Claude Code günceller. Yeni bir oturum yalnızca bu dosyayı ve `pr
 ## Durum
 
 - Faz: **Ç3 (Planlayıcı) sürüyor** (başlangıç 11 Kas 2026, gece; kullanıcı bu gece için "bir oturumda tek faz" kuralını esnetti, Ç2 ile aynı oturumda). Ç0, Ç1, Ç2 bitti (`c0-tamam`, `c1-tamam`, `c2-tamam`); D1 ve D2 tamamlandı; D3 (`ANTHROPIC_API_KEY`) bekliyor, yapay zeka sahte sağlayıcıyla
-- Adım: Ç3 planı aşağıda; 1–5. adım bitti; 6. adım (Hafta ekranı) sırada
-- Son commit: Ç3 adım 5
+- Adım: Ç3 planı aşağıda; 1–6. adım bitti; 4–6. adımların denetimi sürüyor, 7. adım (yapay zeka) sırada
+- Son commit: Ç3 adım 6
 
 ### Ç3 planı
 
@@ -19,7 +19,7 @@ Her adımın sonunda `npm run check` ve commit; şema, planlayıcı motoru ve ya
 | 3 | Veri katmanı: günün kaydı (ilk dokunuş, otomatik plan, günün 3 işi, kapanış), haftanın taahhüdü ve oturum işleri, hayat modu dönemleri, öğrenilen değerler; Ertele, Takıldım, bekleyen iş ve takip; plan bekçisi (gün ve hafta değişince); veritabanı testleri | bitti; denetim (adım kipi): GEÇTİ, 5 önemli bulgu düzeltildi (aşağıda): `src/core/data/planning.ts` (gün kaydı, kapanış, Ertele, bekleme ve takip, haftanın kaydı ve oturum işleri, hayat modları, öğrenilenler), `src/core/data/keep.ts` (`keepWeek`: taahhüt, tetikleyiciyle yeniden taahhüt, yeni kalemi ekleme, haftanın başında öğrenme), `src/core/app/PlanKeeper.tsx` (uygulama açıkken hafta ve gün kendiliğinden kurulur), kancalar (`useTodayPlan`, `useDeviceContext`). Aynı kalemin açık iki oturum işi aynı sırayı paylaşamaz (tekil indeks). Testler: `tests/db/planning.test.ts` 17, birim +2, `tests/e2e/planner.spec.ts` 1 |
 | 4 | Bugün ekranı `plan.now` durumlarıyla: TopBar, NowCard (öneri, çalışan, blok, soru, tamam, gece, geri dönüş), UpNext, DayStrip, AlertBar, "neden?", "X dk'm var", "Yeniden planla", Ertele, Takıldım, klavye | bitti: `src/core/ui/today/` (`TodayScreen`, `NowCard`, `DayParts`: TopBar, DayStrip, AlertBar, "X dk'm var"), `src/core/app/plan-actions.ts` (Ertele, Takıldım ve üç yolu, bekleme, takip, "Devam ediyorum", Yeniden planla), tuşlar `Space`, `E`, `X`, `R`; uzayan oturumun sorusu ve cevapsız kapanışı (`close_unanswered_session`, `sessions.confirmed_at`, `src/core/planner/overrun.ts`). Testler: `tests/e2e/planner.spec.ts` 11, `sync.spec.ts` +1 (blok eklenince plan anında), `overrun.test.ts` 3, `planning.test.ts` +2. Adım denetimi 5. ve 6. adımla birlikte |
 | 5 | Akşam kapanışı (`/kapanis`) | bitti: `/kapanis` (`src/core/ui/closing/ClosingScreen.tsx`), `useCloseDay`, Bugün'de "Günü kapat". Test: `planner.spec.ts` +1 (beş adım, yarının kaydı, gelen kutusu, gece), korumalı sayfalar listesine `/kapanis` |
-| 6 | Hafta ekranı: 7 günlük şerit, kapasite çubuğu, haftanın kalemleri ve modül payları, hayat modu, 8 haftalık yük | bekliyor |
+| 6 | Hafta ekranı: 7 günlük şerit, kapasite çubuğu, haftanın kalemleri ve modül payları, hayat modu, 8 haftalık yük | bitti: `src/core/ui/week/WeekScreen.tsx`, `useSetLifeMode`, `useRecommitWeek`. Test: `planner.spec.ts` +1. Denetim (adım kipi, 4–6. adım) sırada |
 | 7 | Yapay zeka: `plan`, `replan`, `week`, `month`, `review` (geçitten; sahte sağlayıcıya yanıtları); motor öneriyi denetler | bekliyor |
 | 8 | Örnek veri, uçtan uca testler, ekran görüntüleri, dokümanlar | bekliyor |
 | 9 | `check:full`, faz denetimi, düzeltmeler, faz raporu, etiket | bekliyor |
@@ -442,6 +442,7 @@ Adımlar:
 | 12 Kas 2026 | Ç3: uzayan oturum için `sessions.confirmed_at` sütunu ve `close_unanswered_session` fonksiyonu 1. adımın migration'ına eklendi (gönderilmemişti) | "Devam" cevabı her ekranda bilinmeli; kapanış tek işlemde (oturum, iş, kalemin eforu) | `supabase/migrations/20261111202959_planner.sql` |
 | 12 Kas 2026 | Ç3: **Test değişikliği:** iş bitince "Bugün için planlanan bir şey yok" yerine "Bugün tamam" beklenir (`sync.spec.ts`, `work-sessions.spec.ts`); "1 iş bitti" yerine "Bugün n/m" (`work-sessions.spec.ts`); `edit-work.spec.ts` sıra testinde iş yarın teslim ve önem 4 (sıra artık skorla), kalemin bütün açık oturum işleri yeni adı izler; "Bugün" başlığı tam eşleşmeyle aranır (`helpers.ts`, `login.spec.ts`: ekranda artık "Bugün tamam" başlığı da var) | Ç3'ün kendisi: bitiş çizgisi (kural 4), skorla sıralama, haftanın oturum işleri | `tests/e2e/` |
 | 12 Kas 2026 | Ç3: 4. adımın denetimi 5. ve 6. adımla (akşam kapanışı, Hafta ekranı) birlikte yapılır | Üçü de arayüz adımı; 4. adımın şema değişikliği küçük (bir sütun, bir fonksiyon) ve testli | — |
+| 12 Kas 2026 | Ç3: **Test değişikliği:** `shell.both.spec.ts` Hafta ekranının boş metni olarak "Bu hafta için taahhüt edilen kalem yok." bekler | Hafta ekranı Ç3'te kuruldu; eski metin yer tutucuydu | `tests/e2e/shell.both.spec.ts` |
 | 11 Kas 2026 | D1: bulut projelerinin kimlikleri ve `prod`'un site adresi `supabase/config.toml` içinde `[remotes.dev]`, `[remotes.prod]` bloklarında; `config push` `prod`'a kendi adresini gönderir. Kimlik ayarları `--remote=<ref>` ile gönderilir; bağlı proje `dev` | Ayarlar depoda dursun, iki proje aynı kaynaktan kurulsun | `supabase/config.toml` |
 | 11 Kas 2026 | D1: `storage.vector` kapatıldı (yerelde de) | Uygulama kullanmıyor; `config push` bulutta açacaktı ve ücret koşulu belirsizdi | `supabase/config.toml` |
 | 11 Kas 2026 | D1: Vercel projesi `vercel.json` ile Next.js'e sabitlendi; `.vercelignore` `.env*` dosyalarının ve yerel çıktıların yüklenmesini engeller (kök yollar `/` ile: `data` tek başına `src/core/data`'yı da dışarıda bırakıyordu) | Komut satırından açılan projede çerçeve "Other" kalıyordu ve site 404 veriyordu; anahtarlar asla yüklenmesin | `vercel.json`, `.vercelignore` |

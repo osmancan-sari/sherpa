@@ -5,7 +5,7 @@ import { ALLOWED_EMAIL } from "./helpers";
 
 const screens = [
   { label: "Bugün", path: "/", empty: "Bugün için planlanan bir şey yok." },
-  { label: "Hafta", path: "/hafta", empty: "Bu hafta için henüz bir şey yok." },
+  { label: "Hafta", path: "/hafta", empty: "Bu hafta için taahhüt edilen kalem yok." },
   { label: "Modüller", path: "/m", empty: "Henüz modül yok." },
   { label: "Gelen kutusu", path: "/gelen", empty: "Gelen kutusu boş." },
   { label: "Ayarlar", path: "/ayarlar", empty: null },

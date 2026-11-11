@@ -135,6 +135,8 @@ Yönlendirilmemiş girişlerin listesi. Her satırda: metin, önerilen modül (v
 - Hayat modu seçimi burada yapılır (tarih aralığıyla).
 - Önümüzdeki 4–6 haftanın yük görünümü: hafta başına son tarih sayısı ve ağırlığı.
 
+Ç3'teki hali: üstte 7 gün (blokların ilk üçü ve günün kullanılabilir süresi; geçen günler "geçti"), kapasite çubuğu (modül renkleriyle istenen süre, kapasitenin çizgisi; aşınca tehlikedeki son tarihler), "Haftanın kalemleri" (taahhüt edilen kalemler, bu haftaki payın ne kadarı işlendi) ve modül payları, hayat modu (mod, başlangıç, bitiş; çakışan dönemler kırpılır, "Normal" aralığı temizler), önümüzdeki 8 haftanın yükü (istenen / kapasite, son tarihler), "Haftayı yeniden kur" (kullanıcının isteği; taahhüt baştan kurulur). **Görüşün gerek** (yerleşim, 8 hafta).
+
 ## Modül sayfası iskeleti
 
 Her modül sayfası aynı 5 bölgeyi kullanır; çekirdek `ModulePageShell` bileşenini sağlar, modül içini doldurur.

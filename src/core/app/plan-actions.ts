@@ -1,17 +1,19 @@
 "use client";
 
+import { keepWeek } from "@/core/data/keep";
 import {
   answerFollowUp,
   closeDay,
   deferTask,
   saveDayPlan,
+  setLifeMode,
   skipToday,
   waitOnTask,
 } from "@/core/data/planning";
 import { confirmSession, endSession } from "@/core/data/sessions";
 import { createTask } from "@/core/data/work";
 import { buildPlan, type Candidate, isFinished, type PlanInput } from "@/core/planner";
-import type { Session, Task } from "@/core/types";
+import type { LifeMode, LifeModePeriod, Session, Task } from "@/core/types";
 import { shiftDay } from "@/lib/date";
 import { SAVE_FAILED, useNotify } from "@/core/ui/Notices";
 import { keys, list, useCoreMutation } from "./hooks";
@@ -138,6 +140,25 @@ export function useAnswerFollowUp() {
         ),
       },
     ],
+    onError,
+  });
+}
+
+/** A life mode for a range of days (Hafta). A change of mode commits the week again. */
+export function useSetLifeMode() {
+  const onError = useFailureNotice();
+  return useCoreMutation({
+    mutate: (db, input: { mode: LifeMode; from: string; to: string; existing: LifeModePeriod[] }) =>
+      setLifeMode(db, input, input.existing),
+    onError,
+  });
+}
+
+/** "Haftayı yeniden kur": the user's request is a trigger of its own. */
+export function useRecommitWeek() {
+  const onError = useFailureNotice();
+  return useCoreMutation({
+    mutate: (db, now: Date) => keepWeek(db, now, { force: true }),
     onError,
   });
 }

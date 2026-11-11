@@ -366,3 +366,46 @@ test("the evening closing: what was done, tomorrow's three, what is on the mind,
   ]);
   await expect(page.getByRole("region", { name: "Şimdi" })).toContainText("Yarın ilk iş: Yarın A");
 });
+
+test("the week: the days, the capacity, the week's items, the life mode and the coming weeks", async ({
+  page,
+}) => {
+  const mod = await seedModule();
+  await insert("work_items", {
+    module_id: mod.id,
+    title: "Haftanın raporu",
+    effort_total_minutes: 120,
+    due_at: at(2 * 24 * 60),
+  });
+  await page.goto("/");
+  await waitFor(
+    () => rows("week_plans"),
+    (list) => list.length === 1,
+  );
+  await page.goto("/hafta");
+  await expect(
+    page.getByRole("region", { name: "Haftanın günleri" }).getByRole("listitem"),
+  ).toHaveCount(7);
+  await expect(page.getByRole("region", { name: "Kapasite" })).toContainText("kullanılabilir");
+  const items = page.getByRole("region", { name: "Haftanın kalemleri" });
+  await expect(items).toContainText("Haftanın raporu");
+  await expect(items).toContainText("0 dk / 2 sa bu hafta");
+  await expect(
+    page.getByRole("region", { name: "Önümüzdeki haftalar" }).getByRole("listitem"),
+  ).toHaveCount(8);
+
+  // Busy mode from today: the week is committed again in it, and Today shows the mode.
+  const mode = page.getByRole("region", { name: "Hayat modu" });
+  await mode.getByLabel("Mod").selectOption("busy");
+  await mode.getByRole("button", { name: "Kaydet" }).click();
+  await expect(page.getByRole("status")).toHaveText("Hayat modu kaydedildi.");
+  await waitFor(
+    () => rows("week_plans"),
+    (list) => list[0]?.life_mode === "busy",
+    10_000,
+  );
+  await page.getByRole("button", { name: "Haftayı yeniden kur" }).click();
+  await expect(page.getByRole("status")).toHaveText("Hafta yeniden kuruldu.");
+  await page.goto("/");
+  await expect(page.getByRole("link", { name: "Hayat modu: Yoğun" })).toBeVisible();
+});
