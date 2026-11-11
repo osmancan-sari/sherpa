@@ -127,6 +127,7 @@ source_type text null, source_id uuid null
 meta jsonb default '{}'       -- modüle özel küçük veriler
 ai jsonb null                 -- yapay zekanın koyduğu alanlar, güven ve gerekçe; kullanıcının değiştirdikleri
 done_at timestamptz null
+defer_count int default 0     -- "Ertele" ile kaç kez ertelendi; 3 olunca planlayıcı uyarır
 ```
 90 dakikadan uzun iş kaydedilemez; arayüz iş kalemine çevirmeyi önerir (toplam efor + oturumlar).
 
@@ -230,6 +231,8 @@ module_budgets jsonb          -- { "okul": 720, "ev": 90 } dakika
 capacity_minutes int          -- haftanın kullanılabilir süresi
 plan_source enum(closing, ai, auto)
 reasons jsonb null
+life_mode enum(normal, busy, minimum, holiday) null   -- taahhüdün yapıldığı mod; mod değişince hafta yeniden kurulur
+shares jsonb default '{}'     -- { "<kalem id>": 180 } kalemin bu haftaya düşen eforu (dakika)
 ```
 
 ### horizon_reviews

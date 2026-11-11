@@ -19,6 +19,12 @@ export type AppEvent = Tables<"events">;
 export type Settings = Tables<"settings">;
 export type AiCall = Tables<"ai_calls">;
 export type AiFeedback = Tables<"ai_feedback">;
+export type DayRow = Tables<"days">;
+export type WeekPlanRow = Tables<"week_plans">;
+export type LifeModePeriod = Tables<"life_mode_periods">;
+export type PlannerStatRow = Tables<"planner_stats">;
+export type WeeklyReview = Tables<"weekly_reviews">;
+export type HorizonReview = Tables<"horizon_reviews">;
 
 export type Energy = Enums<"energy_kind">;
 export type Context = Enums<"context_kind">;

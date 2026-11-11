@@ -70,6 +70,7 @@ export function task(overrides: Partial<Task> = {}): Task {
     meta: {},
     ai: null,
     done_at: null,
+    defer_count: 0,
     created_at: STAMP,
     updated_at: STAMP,
     ...overrides,

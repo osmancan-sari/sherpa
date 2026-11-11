@@ -4,9 +4,25 @@ Bu dosyayı Claude Code günceller. Yeni bir oturum yalnızca bu dosyayı ve `pr
 
 ## Durum
 
-- Faz: **Ç2 (Yapay zeka geçidi) bitti** (11 Kas 2026, `c2-tamam`; faz denetimi iki tur). Ç0, Ç1, Ç2 bitti; D1 (bulut ve yayın) ve D2 (telefon) tamamlandı. D3 (`ANTHROPIC_API_KEY`) verilmedi: Ç2 sahte sağlayıcıyla geliştirildi ve sınandı, gerçek modelle ölçüm D3'ü bekliyor
-- Sıradaki: Ç3 (Planlayıcı). Kullanıcı bu gece için "bir oturumda tek faz" kuralını esnetti; Ç3 aynı oturumda başlıyor
-- Son commit: Ç2 faz denetimi düzeltmeleri ve faz raporu
+- Faz: **Ç3 (Planlayıcı) sürüyor** (başlangıç 11 Kas 2026, gece; kullanıcı bu gece için "bir oturumda tek faz" kuralını esnetti, Ç2 ile aynı oturumda). Ç0, Ç1, Ç2 bitti (`c0-tamam`, `c1-tamam`, `c2-tamam`); D1 ve D2 tamamlandı; D3 (`ANTHROPIC_API_KEY`) bekliyor, yapay zeka sahte sağlayıcıyla
+- Adım: Ç3 planı aşağıda; 1. adım bitti, 2. adım (planlayıcı motoru) sürüyor
+- Son commit: Ç2 faz raporu ve etiketi
+
+### Ç3 planı
+
+Her adımın sonunda `npm run check` ve commit; şema, planlayıcı motoru ve yapay zeka adımlarından sonra denetçi (adım kipi). Planlayıcıda önce test, sonra kod; `docs/04-planlayici.md` içindeki test listesinin tamamı.
+
+| # | Adım | Durum |
+| --- | --- | --- |
+| 1 | Migration: `tasks.defer_count` (ertelenme sayısı), `week_plans.life_mode` ve `shares` (kalem başına haftanın payı), planlayıcı tabloları canlı yayına; tipler; veritabanı testleri | bitti (`20261111202959_planner.sql`; `constraints.test.ts` +2). Adım denetimi 2. adımla birlikte |
+| 2 | Planlayıcı motoru `src/core/planner/` (saf): yuvalar, adaylar, skor, süzgeçler, zorunlular, `buildPlan`, `pickForMinutes`, "şimdi" durumları, uyarılar; `loadByWeek`, `commitWeek`, oturumlara bölme, plan istikrarı; öğrenme (tahmin ve kapasite çarpanları); girdinin satırlardan kurulması | bekliyor |
+| 3 | Veri katmanı: günün kaydı (ilk dokunuş, otomatik plan, günün 3 işi, kapanış), haftanın taahhüdü ve oturum işleri, hayat modu dönemleri, öğrenilen değerler; Ertele, Takıldım, bekleyen iş ve takip; plan bekçisi (gün ve hafta değişince); veritabanı testleri | bekliyor |
+| 4 | Bugün ekranı `plan.now` durumlarıyla: TopBar, NowCard (öneri, çalışan, blok, soru, tamam, gece, geri dönüş), UpNext, DayStrip, AlertBar, "neden?", "X dk'm var", "Yeniden planla", Ertele, Takıldım, klavye | bekliyor |
+| 5 | Akşam kapanışı (`/kapanis`) | bekliyor |
+| 6 | Hafta ekranı: 7 günlük şerit, kapasite çubuğu, haftanın kalemleri ve modül payları, hayat modu, 8 haftalık yük | bekliyor |
+| 7 | Yapay zeka: `plan`, `replan`, `week`, `month`, `review` (geçitten; sahte sağlayıcıya yanıtları); motor öneriyi denetler | bekliyor |
+| 8 | Örnek veri, uçtan uca testler, ekran görüntüleri, dokümanlar | bekliyor |
+| 9 | `check:full`, faz denetimi, düzeltmeler, faz raporu, etiket | bekliyor |
 
 ### Ç2 planı
 
@@ -21,21 +37,6 @@ Her adımın sonunda `npm run check` ve commit; şema, geçit ve zarf adımları
 | 5 | `scripts/ai-eval/`, dokümanlar, örnek veri | bitti: `npm run ai:eval` (`src/core/ai/eval.ts`, `scripts/ai-eval/`: 30 örnek, geçitten yerel hesapla; `-- --fake` ile denendi, ikinci çalıştırma 30 yanıtı yeniden kullandı), örnek veri yapay zekanın payını sahte sağlayıcıyla gerçek akışlardan yazar (işaretli iş, onay kartı, sınır içinde efor), `scripts/local-user.ts` (yerel hesap girişi, `db:seed` ile ortak). Gerçek modelle ilk ölçüm D3'ü bekliyor |
 | 6 | Uçtan uca testler (sahte sağlayıcılı ve sağlayıcısız sunucu), ekran görüntüleri | bitti: Playwright aynı derlemeyi iki sunucuda çalıştırır (3100 sağlayıcısız, 3101 `SHERPA_AI_FAKE=1`), `yapay-zeka` projesi `*.ai.spec.ts` dosyalarını 3101'de koşar. `tests/e2e/yapay-zeka.ai.spec.ts` 9 test: serbest satır → işaretli iş, emin olunmayan → kart ve onay, şemaya uymayan → hiçbir şey, bütçe 0, boş efor → sınır içinde tahmin ve düzeltme, bölme, metinden çıkarma, kullanım tablosu, sağlayıcısız sunucuda her şeyin çalışması. Toplam 121 uçtan uca test yeşil. Ekran görüntüleri `docs/ekran-goruntuleri/c2/` (yeni: `yz-gerekce`, `yz-duzenleme`, `modul-deneme-metin`) |
 | 7 | `check:full`, faz denetimi, düzeltmeler, faz raporu, etiket | bitti: faz denetimi 1. turda GEÇTİ (ayrıntı "Biten fazlar" → Ç2) |
-
-### Ç1 planı
-
-Her adımın sonunda `npm run check` ve commit; şema, RLS, iş zarfı ve eşitleme adımlarından sonra denetçi (adım kipi).
-
-| # | Adım | Durum |
-| --- | --- | --- |
-| 1 | Kapılar: Playwright projeleri dosya adına bağlı kalmasın, Vitest `*.test.tsx`, veritabanı testleri için ayrı komut (`npm run test:db`) | bitti |
-| 2 | Migration: `docs/03-veri-modeli.md` çekirdek tabloları, RLS, oturum ve arşiv fonksiyonları, Realtime yayını; tipler; veritabanı testleri (RLS, kısıtlar) | bitti; denetim (adım kipi): 2 engelleyici ve 5 önemli bulgu düzeltildi |
-| 3 | Çekirdek veri katmanı (`src/core/data`), iş zarfı (`propose`, `withdraw`, `provenance`, `onOutcome`), olaylar, modül sözleşmesi tipleri ve kayıt, blok serisi üretimi | bitti (arayüz yok); denetim (adım kipi): engelleyici yok, 8 önemli bulgu düzeltildi |
-| 4 | İstemci altyapısı: TanStack Query, Realtime, modül kaydı bağlamı. Bugün ekranı, hızlı giriş, gelen kutusu, oturumlar | bitti (63 uçtan uca test; iki cihaz eşitlemesi dahil) |
-| 5 | Modül arayüzü zemini: `ModulePageShell`, sekmeler, alt sayfalar, tam ekran, hızlı eylemler, modül ayarları, bileşen takımı. `_sablon` ve `deneme` | bitti (`deneme-module.spec.ts` 13 test, `module-page.both.spec.ts` iki genişlikte 2 test) |
-| 6 | Ayarlar: modüller, sabit bloklar, dışa aktarım | bitti (`settings.spec.ts`, `tests/db/blocks.test.ts` içinde dışa aktarım) |
-| 7 | `scripts/seed-demo.ts`, elle düzenleme arayüzü (iş, kalem, ritim, blok, seri), ekran görüntüleri | bitti; 5–7. adımların denetimi (adım kipi, `cac1403..a4281f3`): engelleyici yok, 7 önemli bulgu; ayrıntı faz raporunda |
-| 8 | `check:full`, faz denetimi, düzeltmeler, faz raporu, etiket | bitti; faz denetimi üç tur (üçü de GEÇTİ, engelleyici yok), ardından 3. tur düzeltmelerinin adım denetimi (GEÇTİ) |
 
 ## Biten fazlar
 
@@ -231,7 +232,7 @@ Adım denetimleri:
 
 ## Sıradaki adım
 
-Ç3 (Planlayıcı): `docs/04-planlayici.md`, `docs/05-arayuz.md` (Bugün, Hafta), `docs/03-veri-modeli.md` (planlayıcı tabloları) ve `docs/10-yapay-zeka.md` (planlama çağrıları) okunarak başlanır. Planı "Durum" altına yazılır.
+Ç3'ün planındaki ilk "bekliyor" adımı.
 
 ## Senden bekleyenler
 

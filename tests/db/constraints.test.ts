@@ -272,3 +272,31 @@ describe("closed work stays closed", () => {
     expect(after).toMatchObject({ status: "todo", waiting_on: null, follow_up_on: null });
   });
 });
+
+describe("the planner's columns (Ç3)", () => {
+  it("counts how often a task was put off, never below zero", async () => {
+    const mod = await makeModule(db);
+    const task = ok(
+      await db.from("tasks").insert({ module_id: mod.id, title: "İş" }).select().single(),
+    );
+    expect(task.defer_count).toBe(0);
+    const below = await db.from("tasks").update({ defer_count: -1 }).eq("id", task.id);
+    expect(below.error?.code).toBe(CHECK);
+  });
+
+  it("keeps the life mode and the item shares of a week's commitment", async () => {
+    const week = ok(
+      await db.from("week_plans").insert({ week_start: "2026-11-16" }).select().single(),
+    );
+    expect(week).toMatchObject({ life_mode: null, shares: {} });
+    const busy = ok(
+      await db
+        .from("week_plans")
+        .update({ life_mode: "busy", shares: { a: 90 } })
+        .eq("id", week.id)
+        .select()
+        .single(),
+    );
+    expect(busy).toMatchObject({ life_mode: "busy", shares: { a: 90 } });
+  });
+});

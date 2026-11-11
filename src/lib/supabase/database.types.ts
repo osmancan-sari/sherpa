@@ -943,6 +943,7 @@ export type Database = {
           ai: Json | null;
           context: Database["public"]["Enums"]["context_kind"];
           created_at: string;
+          defer_count: number;
           done_at: string | null;
           due_at: string | null;
           energy: Database["public"]["Enums"]["energy_kind"];
@@ -969,6 +970,7 @@ export type Database = {
           ai?: Json | null;
           context?: Database["public"]["Enums"]["context_kind"];
           created_at?: string;
+          defer_count?: number;
           done_at?: string | null;
           due_at?: string | null;
           energy?: Database["public"]["Enums"]["energy_kind"];
@@ -994,6 +996,7 @@ export type Database = {
           ai?: Json | null;
           context?: Database["public"]["Enums"]["context_kind"];
           created_at?: string;
+          defer_count?: number;
           done_at?: string | null;
           due_at?: string | null;
           energy?: Database["public"]["Enums"]["energy_kind"];
@@ -1038,9 +1041,11 @@ export type Database = {
           committed: string[];
           created_at: string;
           id: string;
+          life_mode: Database["public"]["Enums"]["life_mode"] | null;
           module_budgets: NonNullable<Json>;
           plan_source: Database["public"]["Enums"]["plan_source"] | null;
           reasons: Json | null;
+          shares: NonNullable<Json>;
           updated_at: string;
           user_id: string;
           week_start: string;
@@ -1051,9 +1056,11 @@ export type Database = {
           committed?: string[];
           created_at?: string;
           id?: string;
+          life_mode?: Database["public"]["Enums"]["life_mode"] | null;
           module_budgets?: NonNullable<Json>;
           plan_source?: Database["public"]["Enums"]["plan_source"] | null;
           reasons?: Json | null;
+          shares?: NonNullable<Json>;
           updated_at?: string;
           user_id?: string;
           week_start: string;
@@ -1063,9 +1070,11 @@ export type Database = {
           committed?: string[];
           created_at?: string;
           id?: string;
+          life_mode?: Database["public"]["Enums"]["life_mode"] | null;
           module_budgets?: NonNullable<Json>;
           plan_source?: Database["public"]["Enums"]["plan_source"] | null;
           reasons?: Json | null;
+          shares?: NonNullable<Json>;
           updated_at?: string;
           user_id?: string;
           week_start?: string;
@@ -1268,6 +1277,7 @@ export type Database = {
           ai: Json | null;
           context: Database["public"]["Enums"]["context_kind"];
           created_at: string;
+          defer_count: number;
           done_at: string | null;
           due_at: string | null;
           energy: Database["public"]["Enums"]["energy_kind"];
