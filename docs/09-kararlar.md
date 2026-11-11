@@ -58,6 +58,10 @@
 | Ç1'in Bugün ekranında geçici olarak "Durdur", "Bugün bitenler" ve "Geri al" vardır (Ç1) | Ertele ve Takıldım Ç3'te geliyor; o zamana kadar yanlışlıkla başlatılan ya da bitirilen iş geri alınabilmeli | `docs/05-arayuz.md` "Ç1 ara hali"; Ç3'te yeniden bakılır |
 | Açık oturum işi kalemin adını, son tarihini, önemini, enerji ve bağlamını, doluysa oturum süresini izler; veritabanı tetikleyicisi günceller (Ç1) | Durdurulmuş oturum işi listede kalemin yerine geçiyor; kalem değişince eski ad ve tarihle sıralanıyordu. Tek yerde ve aynı işlemde çözülsün; Ç3'te oturum işleri kendi adını taşıyacaksa yeniden bakılır | Veri modeli, Ç3 |
 | Zarf tanımadığı alanı reddeder (iç nesneler dahil); örnekteki `module` alanı kaldırıldı (Ç1) | Yanlış yazılmış alan sessizce atılınca iş son tarihsiz ya da eforsuz açılıyordu; yapılı bloklar ve Ç5 köprüsü tip denetiminden geçmeyen girdi verir | İş zarfı, Ç2 ve Ç5 |
+| `ai_calls` ve `ai_feedback` yalnızca eklenir ve okunur (Ç2) | Ayın harcaması kayıt değiştirilerek küçültülemesin | Yapay zeka geçidi |
+| `ai_calls` çağrının girdi özetini (`fingerprint`) ve doğrulanmış çıktısını (`output`) saklar; aynı girdi yeniden sorulmaz, önceki çıktı kullanılır (Ç2) | Kural 10 (istikrar) ayrı bir önbellek tablosu olmadan sağlansın | Yapay zeka geçidi |
+| `work_items` modülün önerdiği efor sınırını saklar (`effort_min_minutes`, `effort_max_minutes`) (Ç2) | `size` sunucuda, teklif yazıldıktan sonra çalışır; tahminini sınırın içinde tutmak için sınırı veriden okur | Veri modeli, iş zarfı |
+| Aylık bütçe 0 ya da daha büyüktür; 0 o ay yapay zekayı kapatır (Ç2) | Bütçe sınırı kapatma düğmesi olarak da çalışsın | Ayarlar |
 
 ## Açık sorular
 

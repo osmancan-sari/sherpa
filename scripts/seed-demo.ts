@@ -31,6 +31,8 @@ const TABLES = [
   "life_mode_periods",
   "weekly_reviews",
   "planner_stats",
+  "ai_feedback",
+  "ai_calls",
   "settings",
   "modules",
   "areas",

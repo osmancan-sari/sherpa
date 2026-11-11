@@ -9,7 +9,8 @@ const FILE = "src/lib/supabase/database.types.ts";
 const generated = execFileSync("npx", ["supabase", "gen", "types", "typescript", "--local"], {
   encoding: "utf8",
   shell: true,
-  stdio: ["ignore", "pipe", "ignore"],
+  // The CLI's own errors (local Supabase not running, …) stay visible.
+  stdio: ["ignore", "pipe", "inherit"],
   maxBuffer: 64 * 1024 * 1024,
 });
 

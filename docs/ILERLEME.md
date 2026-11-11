@@ -5,8 +5,8 @@ Bu dosyayı Claude Code günceller. Yeni bir oturum yalnızca bu dosyayı ve `pr
 ## Durum
 
 - Faz: **Ç2 (Yapay zeka geçidi) sürüyor** (başlangıç 11 Kas 2026). Ç0 ve Ç1 bitti (`c0-tamam`, `c1-tamam`); yayın ve telefon D1 ve D2'yi bekliyor. D3 (`ANTHROPIC_API_KEY`) verilmedi: faz sahte sağlayıcıyla geliştiriliyor
-- Adım: Ç2 planı aşağıda; 1. adım (şema) sürüyor
-- Son commit: Ç2 planı
+- Adım: Ç2 planı aşağıda; 1. adım (şema) bitti ve denetlendi, 2. adım (geçit) sırada
+- Son commit: Ç2 adım 1 denetim düzeltmeleri
 
 ### Ç2 planı
 
@@ -14,7 +14,7 @@ Her adımın sonunda `npm run check` ve commit; şema, geçit ve zarf adımları
 
 | # | Adım | Durum |
 | --- | --- | --- |
-| 1 | Migration: `ai_calls`, `ai_feedback` (RLS, yalnızca eklenir), `work_items` efor sınırı sütunları, aylık harcama ve kullanım fonksiyonları; tipler; dışa aktarım ve test listeleri; veritabanı testleri | sürüyor |
+| 1 | Migration: `ai_calls`, `ai_feedback` (RLS, yalnızca eklenir), `work_items` efor sınırı sütunları, aylık harcama ve kullanım fonksiyonları; tipler; dışa aktarım ve test listeleri; veritabanı testleri | bitti (`49fa181`); denetim (adım kipi): GEÇTİ, engelleyici yok, 2 önemli bulgu (kararlar ve ilerleme kaydı yazılmamıştı) düzeltildi. Notlardan örnek verinin sıfırlama listesi ve tip kapısının hata çıktısı düzeltildi; kapının şema farkında kırmızıya düştüğü bir kez elle denendi. Kalan notlar sonraki adımlara: harcama fonksiyonları oturumsuz çağrıda ya da boş tarihte hata versin (2), SDK içe aktarımı yalnızca `src/core/ai/` içinde (2), zarf efor sınırını sütunlara yazsın (3), `ai_calls` canlı yayında olsun mu (4) |
 | 2 | Geçit (`src/core/ai/`): sağlayıcı arayüzü (Anthropic, sahte), fiyat tablosu, bütçe, çıktı şemaları, istemler, zaman aşımı, kayıt; birim ve veritabanı testleri | bekliyor |
 | 3 | Çağrılar ve rotalar: `enrich`, `size`, `decompose`, `extract`; zarfın sınırı saklaması; `/api/ai/*`; düzeltmelerin `ai_feedback`'e düşmesi | bekliyor |
 | 4 | Arayüz: hızlı giriş ve gelen kutusu onay kartı, yapay zeka işareti ve gerekçesi, kalemi adımlara bölme, `deneme` için metinden çıkarma, Ayarlar'da kullanım ve maliyet | bekliyor |
@@ -324,6 +324,12 @@ Benim yapacaklarım (D1 tamamlanınca): iki Supabase projesini açmak (bölge: F
 | 11 Kas 2026 | Ç1: Bugün ekranındaki "Durdur", "Bugün bitenler" ve "Geri al" dokümana "Ç1 ara hali" olarak yazıldı; Ç3'te kart yeniden kurulurken kalıp kalmayacaklarına bakılır. **Görüşün gerek** | Faz denetimi (2. tur): kodda olup dokümanda olmayan davranış | `docs/05-arayuz.md`, `docs/09-kararlar.md` |
 | 11 Kas 2026 | Ç1: açık oturum işi kalemini izler (ad, son tarih, önem, enerji, bağlam; kalemde oturum süresi doluysa süre de); bunu veritabanı tetikleyicisi yapar (`sync_open_sittings`, yeni migration; çağıranın yetkisiyle çalışır). Bitmiş ve bırakılmış oturum işleri eski değerleriyle kalır. Bu migration adım denetiminden sonra bir kez yerinde düzenlendi (oturum süresi eklendi); etiketten sonra yerinde düzenleme yok | Faz denetimi (3. tur): durdurulmuş oturum işi listede kalemin yerine geçiyor, kalem değişince eski ad ve tarihle sıralanıyordu. Tetikleyici: kalemi değiştiren iki yol (kullanıcı düzenlemesi, modül teklifi) ve ileride gelecekler tek yerde, aynı işlemde çözülsün; ekranın her okuyanı aynı değeri görsün. Ç3'te oturum işleri kendi adını taşıyacaksa (ör. "2. oturum") yeniden bakılır | `supabase/migrations/20261111092223_open_sittings_follow_item.sql`, `docs/03-veri-modeli.md`, `tests/db/sessions.test.ts`, `tests/e2e/edit-work.spec.ts` |
 | 11 Kas 2026 | Ç1: zarf tanımadığı alanı reddeder (iç nesneler dahil; `meta` serbest). **Test değişikliği:** `envelope.test.ts` içindeki "dokümandaki zarf" örneğinden üst düzey `module: "okul"` alanı çıkarıldı; dokümandaki örnekten de çıkarıldı (sözleşmedeki tipte hiç yoktu, modül bağlamdan bilinir) | Faz denetimi (3. tur): yanlış yazılmış alan sessizce atılıyor, iş son tarihsiz ya da eforsuz açılıyordu. Yapılı bloklar ve Ç5 köprüsü tip denetiminden geçmeyen girdi verir | `src/core/contract/envelope.ts`, `src/core/contract/envelope.test.ts`, `docs/03-veri-modeli.md`, `docs/06-modul-sozlesmesi.md` |
+| 11 Kas 2026 | Ç2: `ai_calls` ve `ai_feedback` yalnızca eklenir ve okunur; izinler de böyle (`update` ve `delete` verilmedi) | Ayın harcaması kayıt değiştirilerek küçültülemesin; düzeltme kaydı da bir geçmiştir | `supabase/migrations/20261111095040_ai_gateway.sql`, `docs/10-yapay-zeka.md`, `tests/db/ai-tables.test.ts` |
+| 11 Kas 2026 | Ç2: `ai_calls` dokümandaki sütunlara ek olarak `fingerprint` (çağrı girdisinin kısa özeti) ve `output` (doğrulanmış çıktı) taşır; aynı tür ve özetle başarılı bir satır varsa geçit sağlayıcıya gitmez, o çıktıyı kullanır. Sağlayıcıya hiç gitmeyen istek satır üretmez | `docs/10-yapay-zeka.md` kural 10: "aynı girdi için önceki sonuç kullanılır". Ayrı bir önbellek tablosu yerine kayıt tablosunun kendisi | migration, `docs/10-yapay-zeka.md` |
+| 11 Kas 2026 | Ç2: `work_items` modülün önerdiği efor sınırını saklar (`effort_min_minutes`, `effort_max_minutes`; ikisi birlikte dolu ya da boş, min ≤ max) | `size` teklif yazıldıktan sonra sunucuda çalışır; tahminini sınırın içinde tutmak için sınırı veriden okuyabilmeli. Zarfın bu sütunlara yazması 3. adımda | migration, `docs/03-veri-modeli.md` |
+| 11 Kas 2026 | Ç2: aylık bütçe 0 ya da daha büyük olmalı; 0 o ay yapay zekayı kapatır | Kabul ölçütü "bütçe sınırı 0 yapılınca çağrı yapılmıyor"; eksi değer anlamsız | migration (`settings_ai_budget_check`) |
+| 11 Kas 2026 | Ç2: aylık harcama ve kullanım veritabanında toplanır (`ai_spend_since`, `ai_usage_since`, çağıranın yetkisiyle); ay İstanbul saatiyle ayın ilk günü 00:00'da başlar | Bir ayın satırları API'nin tek sayfasına sığmayabilir; toplam RLS'den geçsin | migration, `docs/10-yapay-zeka.md` |
+| 11 Kas 2026 | Ç2: tip kapısı (`npm run db:types:check`, `check:full` içinde): depodaki tipler yerel şemadan üretilenle aynı değilse kırmızı | Ç0'dan beri açık not: migration'dan sonra tiplerin yeniden üretildiğini denetleyen bir şey yoktu. Kapının farkı yakaladığı bir kez elle denendi (dosyaya satır ekleyince çıkış kodu 1) | `scripts/check-db-types.mjs`, `package.json`, `CLAUDE.md` |
 
 ## Bilinen sorunlar
 
@@ -342,7 +348,8 @@ Benim yapacaklarım (D1 tamamlanınca): iki Supabase projesini açmak (bölge: F
 - İptal edilip geri alınan seri bloğu "kullanıcı dokundu" işaretini taşımaya devam eder; serinin saati sonradan değişirse bu blok eski saatinde kalır. Testi yok.
 - Telefonda yüzen "Yeni giriş" düğmesi, listenin o an ekranın altına denk gelen satırındaki "Bitti" işaretini örter (kaydırınca erişilir); Ç4 telefon cilasında ele alınacak.
 - "Ayrılan süre doldu. Bitti mi?" kartında "Başka bir şey yapıyorum" yok (yalnızca Bitti ve Devam et); Ç3'te kart yeniden kurulurken.
-- Migration'dan sonra tiplerin yeniden üretildiğini denetleyen kapı hâlâ yok (Ç0 notu). Faz denetçileri elle karşılaştırdı: depodaki tipler şemayla aynı.
+- Vitest, oturumun çalışma klasörü küçük harfli sürücüyle (`d:\Projects\sherpa`) verilince kendini iki kez yüklüyor ve her test dosyası `Cannot read properties of undefined (reading 'config')` hatasıyla düşüyor (en basit test de; `npm ci` düzeltmiyor). Komutlar `D:\Projects\sherpa` (büyük harf) üzerinden çalıştırılınca sorun yok. Kod hatası değil; ortam notu.
+- `ai_calls` tablosuna oturum açmış istemci doğrudan satır yazabiliyor (maliyet ve `created_at` dahil); "her çağrı geçitten kaydedilir" kuralı veritabanında zorlanmıyor. Tek kullanıcılı uygulamada kendi bütçesini kendisi bozabilir yalnızca; kabul edildi (Ç2, 1. adım denetimi notu).
 - Kalem "Bitti" ile kapanınca açık oturum işi de biter ve "Bugün bitenler"e düşer; oradaki "Geri al" oturum işini açar, kalem kapalı kalır (kapalı kalemin işi Bugün'e döner). Kod okumasıyla bulundu (3. tur notu), çalıştırılarak doğrulanmadı; Ç3'te "Bugün bitenler" yeniden ele alınırken düzeltilecek.
 - Durdurulmuş oturum işi kalemin yerine geçtiği sürece "Ayrılan süre doldu. Bitti mi?" sorulmaz (kart kalemi değil oturum işini görür); Ç3'te kart yeniden kurulurken.
 - Açık oturum işi Bugün listesinde kalemin `earliest_at`, bağımlılık ve durum denetimlerinden geçmez (bunlar yalnızca açık oturum işi olmayan kaleme uygulanır): durdurulmuş oturum işi varken kalem ileri bir başlangıç ya da yeni bir bağımlılık alırsa iş listede kalır. Oturum işi kalemin kaynağındaki (`source_type`, `source_id`) değişikliği de izlemez. İkisi de kod okumasıyla bulundu (son adım denetiminin notları); Ç3'te oturum işleri haftalık planda üretilirken ele alınacak.
