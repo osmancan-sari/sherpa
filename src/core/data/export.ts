@@ -24,6 +24,8 @@ export const CORE_EXPORT_TABLES = [
   "weekly_reviews",
   "planner_stats",
   "settings",
+  "ai_calls",
+  "ai_feedback",
 ] as const;
 
 export const EXPORT_FORMAT = 1;

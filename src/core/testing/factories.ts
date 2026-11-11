@@ -90,6 +90,8 @@ export function workItem(overrides: Partial<WorkItem> = {}): WorkItem {
     earliest_at: null,
     effort_total_minutes: null,
     effort_done_minutes: 0,
+    effort_min_minutes: null,
+    effort_max_minutes: null,
     session_minutes: null,
     importance: 2,
     energy: null,

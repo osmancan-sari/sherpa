@@ -56,6 +56,14 @@ const SAMPLES: Record<string, (ids: Record<string, string>) => Row> = {
   weekly_reviews: () => ({ week_start: "2026-11-09" }),
   planner_stats: () => ({ key: "capacity:home:evening", value: 0.7 }),
   settings: () => ({}),
+  ai_calls: () => ({ kind: "enrich", model: "claude-haiku-5-5", ok: true, cost_usd: 0.0002 }),
+  ai_feedback: () => ({
+    module_slug: "okul",
+    kind: "enrich",
+    input_summary: "sunum slaytları",
+    ai_value: { est_minutes: 45 },
+    user_value: { est_minutes: 30 },
+  }),
   deneme_items: () => ({ title: "Deneme kaydı" }),
 };
 
@@ -73,8 +81,8 @@ const ORDER = [
 ];
 
 /** Tables whose rows are never changed or removed by design; the grants say so too. */
-const NO_UPDATE = new Set(["events"]);
-const NO_DELETE = new Set(["events", "inbox_entries"]);
+const NO_UPDATE = new Set(["events", "ai_calls", "ai_feedback"]);
+const NO_DELETE = new Set(["events", "inbox_entries", "ai_calls", "ai_feedback"]);
 
 async function exposedTables(): Promise<string[]> {
   const key = process.env.SUPABASE_SECRET_KEY!;
@@ -119,7 +127,7 @@ describe("row level security on every table", () => {
   afterAll(wipe);
 
   it("covers every table the API exposes", () => {
-    expect(tables.length).toBeGreaterThanOrEqual(19);
+    expect(tables.length).toBeGreaterThanOrEqual(21);
     const missing = tables.filter((table) => !SAMPLES[table]);
     expect(missing, "add a sample row for these tables in tests/db/rls.test.ts").toEqual([]);
   });
@@ -226,6 +234,16 @@ describe("row level security on every table", () => {
       .delete()
       .eq("id", ownerRows.inbox_entries);
     expect(inboxDelete.error?.code).toBe("42501");
+    for (const table of ["ai_calls", "ai_feedback"] as const) {
+      const change = await ownerDb()
+        .from(table)
+        .update({ kind: "changed" })
+        .eq("id", ownerRows[table])
+        .select("id");
+      expect(change.error?.code, table).toBe("42501");
+      const removal = await ownerDb().from(table).delete().eq("id", ownerRows[table]);
+      expect(removal.error?.code, table).toBe("42501");
+    }
 
     // The owner can still change an inbox entry's status.
     const routed = ok(

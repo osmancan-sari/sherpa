@@ -40,7 +40,7 @@ Paket sürümlerini ezberden yazma; kurarken güncel kararlı sürümü kullan v
 | Komut | Ne yapar |
 | --- | --- |
 | `npm run check` | Kapı: tip denetimi, lint, biçim denetimi, birim testleri. Her commit'ten önce |
-| `npm run check:full` | `check` + veritabanı testleri + üretim derlemesi + uçtan uca testler. Faz etiketinden önce |
+| `npm run check:full` | `check` + tip üretimi denetimi + veritabanı testleri + üretim derlemesi + uçtan uca testler. Faz etiketinden önce |
 | `npm run dev` | Geliştirme sunucusu, `http://127.0.0.1:3210` |
 | `npm run build` / `npm run start` | Üretim derlemesi / derlemeyi 3210'da çalıştır |
 | `npm run typecheck` | Rota tiplerini üretir (`next typegen`), sonra `tsc --noEmit` |
@@ -54,6 +54,7 @@ Paket sürümlerini ezberden yazma; kurarken güncel kararlı sürümü kullan v
 | `npm run db:migrate` | Bekleyen migration'ları yerel veritabanına uygular |
 | `npm run db:reset` | Yerel veritabanını sıfırlar ve bütün migration'ları baştan uygular |
 | `npm run db:types` | Yerel şemadan `src/lib/supabase/database.types.ts` üretir |
+| `npm run db:types:check` | Depodaki tiplerin yerel şemayla aynı olduğunu denetler (`check:full` içinde) |
 | `npm run db:push` | Migration'ları bağlı bulut projesine uygular (`supabase link` sonrası) |
 | `npm run db:user` | `ALLOWED_EMAIL` hesabını oluşturur (yeni kayıt kapalı; hesap yalnızca böyle açılır) |
 | `npm run db:seed` | Yerel hesaba örnek veri yazar (sahte modüller, kalemler, ritimler, bloklar). Hesap doluysa `npm run db:seed -- --reset`. Yalnızca yerel Supabase |

@@ -17,6 +17,8 @@ export type InboxEntry = Tables<"inbox_entries">;
 export type Prompt = Tables<"prompts">;
 export type AppEvent = Tables<"events">;
 export type Settings = Tables<"settings">;
+export type AiCall = Tables<"ai_calls">;
+export type AiFeedback = Tables<"ai_feedback">;
 
 export type Energy = Enums<"energy_kind">;
 export type Context = Enums<"context_kind">;

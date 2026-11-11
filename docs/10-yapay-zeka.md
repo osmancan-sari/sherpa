@@ -82,13 +82,15 @@ Maliyetin neredeyse tamamı planlama çağrılarındadır. Bu yüzden:
 
 ```
 ai_calls
-  kind text                     -- enrich, extract, plan, replan, review
+  kind text                     -- enrich, size, decompose, extract; Ç3'ten itibaren plan, replan, week, month, review
   model text
   input_tokens int, output_tokens int
   cost_usd numeric
   ok boolean, error text null
   duration_ms int
   subject_type text null, subject_id uuid null
+  fingerprint text null         -- çağrının kendi girdisinin kısa özeti (kural 10: aynı girdi yeniden sorulmaz)
+  output jsonb null             -- başarılı çağrının doğrulanmış çıktısı
 
 ai_feedback
   module_slug text
@@ -96,6 +98,10 @@ ai_feedback
   input_summary text            -- örnek olarak kullanılacak kısa girdi
   ai_value jsonb, user_value jsonb
 ```
+
+İki tablo da `events` gibi yalnızca eklenir ve okunur (izinler de böyle verilir): ayın harcaması kayıt değiştirilerek küçültülemez. Sağlayıcıya ulaşan her çağrı bir satırdır; başarısız olan da (zaman aşımı, şemaya uymayan çıktı) kaydedilir. Sağlayıcıya hiç gitmeyen istek (anahtar yok, yapay zeka kapalı, bütçe dolu, aynı girdinin önceki sonucu kullanıldı) satır üretmez.
+
+Aylık toplam veritabanında hesaplanır (`ai_spend_since`, `ai_usage_since`; çağıranın yetkisiyle): bir ayın satırları API'nin tek sayfasına sığmayabilir. Ay, İstanbul saatine göre ayın ilk günü 00:00'da başlar.
 
 `tasks.ai` alanı (jsonb):
 

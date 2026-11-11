@@ -23,6 +23,101 @@ export type Database = {
   };
   public: {
     Tables: {
+      ai_calls: {
+        Row: {
+          cost_usd: number;
+          created_at: string;
+          duration_ms: number;
+          error: string | null;
+          fingerprint: string | null;
+          id: string;
+          input_tokens: number;
+          kind: string;
+          model: string;
+          ok: boolean;
+          output: Json | null;
+          output_tokens: number;
+          subject_id: string | null;
+          subject_type: string | null;
+          updated_at: string;
+          user_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          cost_usd?: number;
+          created_at?: string;
+          duration_ms?: number;
+          error?: string | null;
+          fingerprint?: string | null;
+          id?: string;
+          input_tokens?: number;
+          kind: string;
+          model: string;
+          ok: boolean;
+          output?: Json | null;
+          output_tokens?: number;
+          subject_id?: string | null;
+          subject_type?: string | null;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Update: {
+          cost_usd?: number;
+          created_at?: string;
+          duration_ms?: number;
+          error?: string | null;
+          fingerprint?: string | null;
+          id?: string;
+          input_tokens?: number;
+          kind?: string;
+          model?: string;
+          ok?: boolean;
+          output?: Json | null;
+          output_tokens?: number;
+          subject_id?: string | null;
+          subject_type?: string | null;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
+      ai_feedback: {
+        Row: {
+          ai_value: NonNullable<Json>;
+          created_at: string;
+          id: string;
+          input_summary: string;
+          kind: string;
+          module_slug: string;
+          updated_at: string;
+          user_id: string;
+          user_value: NonNullable<Json>;
+        };
+        ComputedFields: never;
+        Insert: {
+          ai_value: NonNullable<Json>;
+          created_at?: string;
+          id?: string;
+          input_summary: string;
+          kind: string;
+          module_slug: string;
+          updated_at?: string;
+          user_id?: string;
+          user_value: NonNullable<Json>;
+        };
+        Update: {
+          ai_value?: NonNullable<Json>;
+          created_at?: string;
+          id?: string;
+          input_summary?: string;
+          kind?: string;
+          module_slug?: string;
+          updated_at?: string;
+          user_id?: string;
+          user_value?: NonNullable<Json>;
+        };
+        Relationships: [];
+      };
       areas: {
         Row: {
           created_at: string;
@@ -1018,6 +1113,8 @@ export type Database = {
           due_is_hard: boolean;
           earliest_at: string | null;
           effort_done_minutes: number;
+          effort_max_minutes: number | null;
+          effort_min_minutes: number | null;
           effort_total_minutes: number | null;
           energy: Database["public"]["Enums"]["energy_kind"] | null;
           id: string;
@@ -1049,6 +1146,8 @@ export type Database = {
           due_is_hard?: boolean;
           earliest_at?: string | null;
           effort_done_minutes?: number;
+          effort_max_minutes?: number | null;
+          effort_min_minutes?: number | null;
           effort_total_minutes?: number | null;
           energy?: Database["public"]["Enums"]["energy_kind"] | null;
           id?: string;
@@ -1079,6 +1178,8 @@ export type Database = {
           due_is_hard?: boolean;
           earliest_at?: string | null;
           effort_done_minutes?: number;
+          effort_max_minutes?: number | null;
+          effort_min_minutes?: number | null;
           effort_total_minutes?: number | null;
           energy?: Database["public"]["Enums"]["energy_kind"] | null;
           id?: string;
@@ -1119,6 +1220,19 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
+      ai_spend_since: { Args: { p_since: string }; Returns: number };
+      ai_usage_since: {
+        Args: { p_since: string };
+        Returns: {
+          calls: number;
+          cost_usd: number;
+          failed: number;
+          input_tokens: number;
+          kind: string;
+          model: string;
+          output_tokens: number;
+        }[];
+      };
       archive_module: {
         Args: { p_module_id: string };
         Returns: {

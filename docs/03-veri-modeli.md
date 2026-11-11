@@ -11,7 +11,7 @@ Bu doküman çekirdek tabloları tanımlar. Modüllerin kendi tabloları kendi d
 - Silme yerine durum: işler `dropped`, modüller `archived` olur. Kalıcı silme yalnızca ayarlardan.
 - `source_type` + `source_id`: bir kaydı üreten modül kaydına geri bağlantı (örneğin bir hazırlık işi → `school_assessment`). Çekirdek bu alanları yorumlamaz, yalnızca taşır.
 - Tablolar arası başvurular `(id, user_id)` çiftiyle kurulur: bir satır yalnızca aynı hesabın satırına bağlanabilir (düz yabancı anahtar RLS'siz denetlenir).
-- `events` yalnızca eklenir ve okunur; `inbox_entries` silinemez (izinler de böyle verilir). Öbür tablolarda dört işlem de açıktır.
+- `events`, `ai_calls` ve `ai_feedback` yalnızca eklenir ve okunur; `inbox_entries` silinemez (izinler de böyle verilir). Öbür tablolarda dört işlem de açıktır.
 - Aşağıda `null` yazmayan ama değeri sonradan dolan sütunlar (gün planı, haftalık taahhüt gibi planlayıcının yazdıkları) veritabanında boş geçilebilir; kayıt, değeri üreten faz gelmeden de açılabilmelidir.
 
 ## İş zarfı
@@ -85,6 +85,7 @@ due_at timestamptz null, due_is_hard boolean default false
 earliest_at timestamptz null
 effort_total_minutes int null          -- toplam efor; uzak ufukta kapasite hesabı bununla yapılır
 effort_done_minutes int default 0      -- biten oturumlardan
+effort_min_minutes int null, effort_max_minutes int null   -- zarfın `effort.bounds` değeri; yapay zekanın tahmini bu aralıkta kalır
 session_minutes int null               -- önerilen oturum uzunluğu
 importance smallint default 2
 energy enum(deep, light, physical), context enum(any, desk, home, campus, office, out, commute)
@@ -303,11 +304,11 @@ slot jsonb                    -- { deep_min: 45, deep_max: 90, light_min: 15, br
 default_day_type enum(home, office, campus)
 return_after_days int default 3
 ai_enabled boolean default true
-ai_monthly_budget_usd numeric default 5
+ai_monthly_budget_usd numeric default 5   -- 0: yapay zeka o ay kapalı; eksi olamaz
 ```
 
 ### ai_calls, ai_feedback
-Yapay zeka çağrılarının kaydı ve kullanıcı düzeltmeleri. Tanımları `docs/10-yapay-zeka.md` içinde.
+Yapay zeka çağrılarının kaydı ve kullanıcı düzeltmeleri. Tanımları `docs/10-yapay-zeka.md` içinde. İkisi de yalnızca eklenir.
 
 ## Türetilen değerler (tablo değil)
 
