@@ -14,6 +14,7 @@ Aşağıdaki adımlarla boş bir modül yaklaşık 15 dakikada sayfasıyla birli
    - `export const sablon` → `export const ev`
    - `slug: "sablon"` → `slug: "ev"` (küçük harf, rakam, tire; klasör adıyla aynı)
    - `name`, `kind`, `color` değerlerini yaz
+   - İlk teklifini yazarken `rules.ts` içindeki `source.type: "sablon.kayit"` değerini kendi adınla değiştir (`ev.kayit`); boş modülün çalışması için gerekmez
 3. **Kaydet.** `src/modules/registry.ts` içinde tanımı içe aktar ve listeye ekle:
    ```ts
    import { ev } from "./ev/module";

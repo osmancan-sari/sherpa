@@ -55,6 +55,7 @@
 | Seri bitirilince gelecek blokları silinir (elle değiştirilmiş ve iptal edilmiş olanlar dahil); modül arşivinde ise `cancelled` olur (Ç1) | Seri kullanıcının kendi kaldırdığı bir kuraldır, blokları onun türevidir; arşivde ise "verisi silinmez" geçerli | Veri modeli |
 | Modülün çekirdekten içe aktarabileceği yollar kapalı bir listedir ve testle denetlenir (`tests/unit/modules.test.ts`); `@/lib/supabase/database.types` listeye eklendi (Ç1) | Listede olmayan bir çekirdek dosyası (ör. `@/core/data/*`) modüle çekirdek tablolara zarfsız yazma yolu açardı | Modül sözleşmesi |
 | Şablonun yalnızca adı değiştirilmiş bir kopyası (`sablon-kopya`) `deneme` ile aynı anahtarın arkasında kaydolur (Ç1) | "Şablondan kopyalanan modül çalışır" ölçütü kalıcı bir uçtan uca testle sınansın; üretimde kaydolmaz | Yerel geliştirmede modül listesinde "Şablon kopyası" görünür |
+| Ç1'in Bugün ekranında geçici olarak "Durdur", "Bugün bitenler" ve "Geri al" vardır (Ç1) | Ertele ve Takıldım Ç3'te geliyor; o zamana kadar yanlışlıkla başlatılan ya da bitirilen iş geri alınabilmeli | `docs/05-arayuz.md` "Ç1 ara hali"; Ç3'te yeniden bakılır |
 
 ## Açık sorular
 

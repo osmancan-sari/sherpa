@@ -76,6 +76,13 @@ Geniş ekranda tek sayfa, kaydırma yok:
 - **Takıldım:** Oturumu kapatır ve üç seçenek sunar: adımı küçült (yeni bir iş yaz), birini bekliyorum (bekliyor durumuna al), bugün değil (ertele).
 - **Başka bir şey yapıyorum:** Tek satırlık giriş açar; yazılan şey için plansız oturum başlar. Modül seçimi isteğe bağlı.
 
+**Ç1 ara hali (planlayıcı gelene kadar).** Kart yalnızca `suggest`, `running`, `block` ve boş durumlarını bilir; Ertele ve Takıldım Ç3'te gelir. Onların yerine geçici olarak şunlar vardır:
+
+- **Durdur** (çalışan kartta): oturumu işi bitirmeden kapatır; geçen süre sayılır, iş havuza döner. Yanlışlıkla başlatılan iş için.
+- **Bugün bitenler:** ekranın altında bugün biten işlerin sayısı ve listesi; her satırda **Geri al** (yanlışlıkla bitirilen iş havuza döner).
+
+Ç3'te kart `plan.now` durumlarına göre yeniden kurulurken bu üçünün kalıp kalmayacağına bakılır.
+
 ### Klavye (ikinci ekran)
 
 | Tuş | Eylem |

@@ -101,17 +101,75 @@ describe("module boundaries", () => {
     expect(folders).toEqual(expect.arrayContaining(["_sablon", "deneme"]));
   });
 
-  it.each(folders)("%s imports no other module", (folder) => {
+  /** Every path a source file imports: from "…", import("…"), require("…"), import "…". */
+  function importTargets(source: string): string[] {
+    return [
+      ...source.matchAll(/from\s+["']([^"']+)["']/g),
+      ...source.matchAll(/import\(\s*["']([^"']+)["']/g),
+      ...source.matchAll(/require\(\s*["']([^"']+)["']/g),
+      ...source.matchAll(/import\s+["']([^"']+)["']/g),
+    ].map((match) => match[1]);
+  }
+
+  /**
+   * Whether an import of a file in a module's folder points at the modules folder outside that
+   * module: another module, or the registry. Relative paths are resolved, so "../deneme/rules"
+   * from a module's root file counts as much as "@/modules/deneme/rules".
+   */
+  function leavesItsModule(file: string, target: string, folder: string): boolean {
+    const own = path.resolve(modulesRoot, folder);
+    let resolved: string;
+    if (target.startsWith("@/modules")) {
+      resolved = path.resolve(modulesRoot, `.${target.slice("@/modules".length)}`);
+    } else if (target.startsWith(".")) {
+      resolved = path.resolve(path.dirname(file), target);
+    } else {
+      return false;
+    }
+    return resolved !== own && !resolved.startsWith(own + path.sep);
+  }
+
+  it.each(folders)("%s imports no other module and nothing outside its folder", (folder) => {
     for (const file of sourceFiles(path.join(modulesRoot, folder))) {
-      const source = readFileSync(file, "utf8");
-      const imports = [...source.matchAll(/from\s+"([^"]+)"/g)].map((match) => match[1]);
-      for (const target of imports) {
-        // Its own folder (relative), the core, the shared library and components are fine.
-        const other = /^@\/modules\/([^/]+)/.exec(target)?.[1];
-        expect(other === undefined || other === folder, `${file} imports ${target}`).toBe(true);
-        expect(target.startsWith("../../"), `${file} leaves its folder: ${target}`).toBe(false);
+      for (const target of importTargets(readFileSync(file, "utf8"))) {
+        // The core, the shared library and components go by their "@/…" names and are checked
+        // against the allow list below; everything relative stays inside the module's folder.
+        expect(leavesItsModule(file, target, folder), `${file} imports ${target}`).toBe(false);
       }
     }
+  });
+
+  it("the check catches every way of writing a path to another module", () => {
+    const root = path.join(modulesRoot, "_sablon", "module.ts");
+    const nested = path.join(modulesRoot, "_sablon", "components", "View.tsx");
+    for (const [file, target] of [
+      [root, "../deneme/queries"],
+      [root, "../registry"],
+      [root, "@/modules/deneme/module"],
+      [root, "@/modules/registry"],
+      [root, "../../core/data/work"],
+      [root, ".."],
+      [nested, "../../deneme/rules"],
+      [nested, "../../../lib/supabase/client"],
+    ]) {
+      expect(leavesItsModule(file, target, "_sablon"), `${file} → ${target}`).toBe(true);
+    }
+    for (const [file, target] of [
+      [root, "./rules"],
+      [root, "./components/View"],
+      [nested, "../rules"],
+      [nested, "./Other"],
+      [root, "@/modules/_sablon/rules"],
+      [root, "@/core/contract/types"],
+      [root, "react"],
+    ]) {
+      expect(leavesItsModule(file, target, "_sablon"), `${file} → ${target}`).toBe(false);
+    }
+    expect(importTargets(`import a from "./a";\nimport './b';\nconst c = import("./c");`)).toEqual([
+      "./a",
+      "./c",
+      "./b",
+    ]);
   });
 
   // docs/06-modul-sozlesmesi.md, "Modül çekirdekten neyi içe aktarabilir". A new entry here
@@ -131,16 +189,13 @@ describe("module boundaries", () => {
 
   it.each(folders)("%s imports from the core only what the contract allows", (folder) => {
     for (const file of sourceFiles(path.join(modulesRoot, folder))) {
-      const source = readFileSync(file, "utf8");
-      const targets = [
-        ...source.matchAll(/from\s+["']([^"']+)["']/g),
-        ...source.matchAll(/import\(\s*["']([^"']+)["']/g),
-        ...source.matchAll(/require\(\s*["']([^"']+)["']/g),
-      ].map((match) => match[1]);
-      for (const target of targets) {
-        // Its own files, and packages from node_modules, are the module's own business.
-        if (target.startsWith("./") || target.startsWith("../")) continue;
+      for (const target of importTargets(readFileSync(file, "utf8"))) {
+        // Its own files (kept inside its folder by the test above) and packages from
+        // node_modules are the module's own business.
+        if (target.startsWith(".")) continue;
         if (!target.startsWith("@/")) continue;
+        // Its own folder by its long name.
+        if (target.startsWith(`@/modules/${folder}/`)) continue;
         const allowed = ALLOWED.includes(target) || target.startsWith("@/components/ui/");
         expect(allowed, `${file} imports ${target}`).toBe(true);
       }

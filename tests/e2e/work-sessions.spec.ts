@@ -338,6 +338,57 @@ test("a read that fails is not shown as an empty day", async ({ page }) => {
   );
 });
 
+test("a write that fails is taken back on the screen and said so", async ({ page }) => {
+  const mod = await seedModule();
+  await insert("tasks", [
+    { module_id: mod.id, title: "Birinci iş", due_at: at(60) },
+    { module_id: mod.id, title: "İkinci iş" },
+  ]);
+  await page.goto("/");
+  const now = page.getByRole("region", { name: "Şimdi" });
+  const upcoming = page.getByRole("region", { name: "Sıradakiler" });
+  await expect(now.getByRole("heading")).toHaveText("Birinci iş");
+  await expect(upcoming.getByRole("listitem")).toHaveText([/İkinci iş/]);
+
+  // Every write of these two buttons fails, a moment after it was sent: long enough to see
+  // that the screen had already changed.
+  const WRITES = "**/rest/v1/rpc/**";
+  await page.route(WRITES, async (route) => {
+    await new Promise((resolve) => setTimeout(resolve, 1_500));
+    await route.abort();
+  });
+  const failed = page
+    .getByRole("status")
+    .filter({ hasText: "Kaydedilemedi. Değişiklik geri alındı." });
+
+  // "Bitti" in the list: the row goes at once, and comes back when the write fails.
+  await upcoming.getByRole("button", { name: "Bitti: İkinci iş" }).click();
+  await expect(upcoming.getByRole("listitem")).toHaveCount(0);
+  await expect(page.getByRole("main")).toContainText("1 iş bitti");
+  await expect(failed).toBeVisible();
+  await expect(upcoming.getByRole("listitem")).toHaveText([/İkinci iş/]);
+  await expect(page.getByRole("main")).not.toContainText("1 iş bitti");
+  expect((await rows("tasks")).map((task) => task.status)).toEqual(["todo", "todo"]);
+
+  // "Başla" on the card: the clock shows at once, and the card goes back to the offer.
+  await now.getByRole("button", { name: "Başla" }).click();
+  await expect(now.getByRole("button", { name: "Bitti" })).toBeVisible();
+  await expect(now.getByRole("button", { name: "Başla" })).toBeVisible();
+  await expect(now.getByRole("button", { name: "Bitti" })).toHaveCount(0);
+  await expect(failed).toBeVisible();
+  expect(await rows("sessions")).toEqual([]);
+  expect((await rows("tasks")).map((task) => task.status)).toEqual(["todo", "todo"]);
+
+  // Once writes go through again, the same tap works.
+  await page.unroute(WRITES);
+  await now.getByRole("button", { name: "Başla" }).click();
+  await expect(now.getByRole("button", { name: "Bitti" })).toBeVisible();
+  await waitFor(
+    () => rows("sessions"),
+    (list) => list.length === 1,
+  );
+});
+
 test("a work item whose planned effort is used up asks; 'Devam et' goes on with it", async ({
   page,
 }) => {

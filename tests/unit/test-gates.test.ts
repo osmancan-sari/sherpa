@@ -17,7 +17,17 @@ const body = '("x", () => {\n  expect(1).toBe(1);\n});\n';
 
 describe("tests cannot be skipped or narrowed", () => {
   it("rejects only, skip, todo and fixme in unit and end-to-end tests", async () => {
-    const calls = ["it.only", "it.skip", "test.only", "test.skip", "describe.skip", "test.fixme"];
+    const calls = [
+      "it.only",
+      "it.skip",
+      "test.only",
+      "test.skip",
+      "describe.skip",
+      "test.fixme",
+      // A test that is expected to fail is a skipped test with a green mark.
+      "it.fails",
+      "test.fail",
+    ];
     for (const filePath of ["src/lib/example.test.ts", "tests/e2e/example.spec.ts"]) {
       for (const call of calls) {
         const errors = await gateErrors(
@@ -25,7 +35,7 @@ describe("tests cannot be skipped or narrowed", () => {
           filePath,
         );
         expect(errors, `${call} in ${filePath}`).toHaveLength(1);
-        expect(errors[0]).toContain("Tests are not skipped or narrowed");
+        expect(errors[0]).toContain("Tests are not skipped, narrowed or expected to fail");
       }
     }
   });
