@@ -124,16 +124,21 @@ function AiSettingsBody() {
           </span>
         </p>
         {(usage.data ?? []).length > 0 ? (
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[28rem] text-sm">
+          <div>
+            {/* On a phone: call, count and cost; the rest from the small breakpoint up. */}
+            <table className="w-full text-sm">
               <caption className="sr-only">Bu ayın yapay zeka çağrıları</caption>
               <thead className="text-muted-foreground text-left">
                 <tr>
                   <th className="py-1 pr-3 font-normal">Çağrı</th>
-                  <th className="py-1 pr-3 font-normal">Model</th>
+                  <th className="hidden py-1 pr-3 font-normal sm:table-cell">Model</th>
                   <th className="py-1 pr-3 text-right font-normal">Sayı</th>
-                  <th className="py-1 pr-3 text-right font-normal">Başarısız</th>
-                  <th className="py-1 pr-3 text-right font-normal">Belirteç</th>
+                  <th className="hidden py-1 pr-3 text-right font-normal sm:table-cell">
+                    Başarısız
+                  </th>
+                  <th className="hidden py-1 pr-3 text-right font-normal sm:table-cell">
+                    Belirteç
+                  </th>
                   <th className="py-1 text-right font-normal">Maliyet</th>
                 </tr>
               </thead>
@@ -141,10 +146,10 @@ function AiSettingsBody() {
                 {usage.data!.map((row) => (
                   <tr key={`${row.kind}-${row.model}`} className="border-border border-t">
                     <td className="py-1 pr-3">{KIND[row.kind] ?? row.kind}</td>
-                    <td className="py-1 pr-3 break-all">{row.model}</td>
+                    <td className="hidden py-1 pr-3 break-all sm:table-cell">{row.model}</td>
                     <td className="py-1 pr-3 text-right">{row.calls}</td>
-                    <td className="py-1 pr-3 text-right">{row.failed}</td>
-                    <td className="py-1 pr-3 text-right">
+                    <td className="hidden py-1 pr-3 text-right sm:table-cell">{row.failed}</td>
+                    <td className="hidden py-1 pr-3 text-right sm:table-cell">
                       {(row.inputTokens + row.outputTokens).toLocaleString("tr-TR")}
                     </td>
                     <td className="py-1 text-right">{usd(row.costUsd)}</td>

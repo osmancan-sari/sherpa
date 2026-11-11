@@ -283,5 +283,7 @@ describe("split", () => {
     expect(rows[1].row.due_at).toBe(parent.due_at);
     expect(rows[1].dependsOnRefs).toEqual(["a"]);
     expect(readMark(rows[0].row.ai)!.fields.effort_total_minutes.reason).toBe("sırayla");
+    // Written in one go, the pieces still read back in their order.
+    expect(rows[0].row.created_at < rows[1].row.created_at).toBe(true);
   });
 });

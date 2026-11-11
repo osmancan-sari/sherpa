@@ -244,7 +244,8 @@ export function incomingFields(proposal: WorkProposal): IncomingFields {
     ["droppable", proposal.flex?.droppable],
   ]);
   if (!("effort_total_minutes" in estimates)) {
-    // No AI in this phase: an empty effort gets the middle of the bounds (Ç2 replaces it).
+    // An empty effort gets the middle of the bounds; the AI's `size` call replaces it when
+    // there is an AI (docs/10-yapay-zeka.md), and without one the middle stays.
     const midpoint = effortMidpoint(proposal.effort?.bounds);
     if (midpoint !== null) {
       estimates.effort_total_minutes = { value: midpoint, source: "default" };

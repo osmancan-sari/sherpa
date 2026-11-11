@@ -4,9 +4,9 @@ Bu dosyayı Claude Code günceller. Yeni bir oturum yalnızca bu dosyayı ve `pr
 
 ## Durum
 
-- Faz: **Ç2 (Yapay zeka geçidi) sürüyor** (başlangıç 11 Kas 2026). Ç0 ve Ç1 bitti (`c0-tamam`, `c1-tamam`); yayın ve telefon D1 ve D2'yi bekliyor. D3 (`ANTHROPIC_API_KEY`) verilmedi: faz sahte sağlayıcıyla geliştiriliyor
-- Adım: Ç2 planı aşağıda; 6. adım bitti, 7. adım (`check:full`, faz denetimi, rapor, etiket) sırada. Araya kullanıcının isteğiyle D1 ve D2 girdi, ikisi de tamamlandı (üretimde kodla giriş, telefonda ana ekran uygulaması ve eşitleme çalışıyor)
-- Son commit: Ç2 adım 5
+- Faz: **Ç2 (Yapay zeka geçidi) bitti** (11 Kas 2026, `c2-tamam`). Ç0, Ç1, Ç2 bitti; D1 (bulut ve yayın) ve D2 (telefon) tamamlandı. D3 (`ANTHROPIC_API_KEY`) verilmedi: Ç2 sahte sağlayıcıyla geliştirildi ve sınandı, gerçek modelle ölçüm D3'ü bekliyor
+- Sıradaki: Ç3 (Planlayıcı). Kullanıcı bu gece için "bir oturumda tek faz" kuralını esnetti; Ç3 aynı oturumda başlıyor
+- Son commit: Ç2 faz denetimi düzeltmeleri ve faz raporu
 
 ### Ç2 planı
 
@@ -20,7 +20,7 @@ Her adımın sonunda `npm run check` ve commit; şema, geçit ve zarf adımları
 | 4 | Arayüz: hızlı giriş ve gelen kutusu onay kartı, yapay zeka işareti ve gerekçesi, kalemi adımlara bölme, `deneme` için metinden çıkarma, Ayarlar'da kullanım ve maliyet | bitti: `src/core/ui/ai/` (`AiMarks`: satırlarda işaret ve gerekçe, düzenleme formunda alan altı gerekçe; `Splits`: "Adımlara böl" ve modül sayfasında "Böl / Bölme"), gelen kutusunda öneri kartı ("Onayla", modül değiştirilebilir), Ayarlar → Yapay zeka (açık/kapalı, aylık sınır, durum, bu ayın çağrıları ve maliyeti), Bugün'de bütçe dolunca tek satır, sözleşmeye `ctx.extract`, `deneme`'de okuyucu ve `/m/deneme/metin` sayfası, sahte sağlayıcının genel `extract` yanıtı. Testler: `tests/db/ai-flows.test.ts` 26. Uçtan uca sınama 6. adımda |
 | 5 | `scripts/ai-eval/`, dokümanlar, örnek veri | bitti: `npm run ai:eval` (`src/core/ai/eval.ts`, `scripts/ai-eval/`: 30 örnek, geçitten yerel hesapla; `-- --fake` ile denendi, ikinci çalıştırma 30 yanıtı yeniden kullandı), örnek veri yapay zekanın payını sahte sağlayıcıyla gerçek akışlardan yazar (işaretli iş, onay kartı, sınır içinde efor), `scripts/local-user.ts` (yerel hesap girişi, `db:seed` ile ortak). Gerçek modelle ilk ölçüm D3'ü bekliyor |
 | 6 | Uçtan uca testler (sahte sağlayıcılı ve sağlayıcısız sunucu), ekran görüntüleri | bitti: Playwright aynı derlemeyi iki sunucuda çalıştırır (3100 sağlayıcısız, 3101 `SHERPA_AI_FAKE=1`), `yapay-zeka` projesi `*.ai.spec.ts` dosyalarını 3101'de koşar. `tests/e2e/yapay-zeka.ai.spec.ts` 9 test: serbest satır → işaretli iş, emin olunmayan → kart ve onay, şemaya uymayan → hiçbir şey, bütçe 0, boş efor → sınır içinde tahmin ve düzeltme, bölme, metinden çıkarma, kullanım tablosu, sağlayıcısız sunucuda her şeyin çalışması. Toplam 121 uçtan uca test yeşil. Ekran görüntüleri `docs/ekran-goruntuleri/c2/` (yeni: `yz-gerekce`, `yz-duzenleme`, `modul-deneme-metin`) |
-| 7 | `check:full`, faz denetimi, düzeltmeler, faz raporu, etiket | bekliyor |
+| 7 | `check:full`, faz denetimi, düzeltmeler, faz raporu, etiket | bitti: faz denetimi 1. turda GEÇTİ (ayrıntı "Biten fazlar" → Ç2) |
 
 ### Ç1 planı
 
@@ -171,9 +171,66 @@ Denetçinin 14. notu doğru: 5. ve 6. adımlar ile örnek veri tek commit'te (`9
 - Yeni migration her zaman yeni dosyadır; `c1-tamam` etiketinden sonra var olan migration yerinde düzenlenmez.
 - Açık kalan Ç1 notları "Bilinen sorunlar"da toplu duruyor; Ç2'nin dokunduğu yerlerde (hızlı giriş, gelen kutusu, düzenleme pencereleri) fırsat olursa kapatılabilir: düzenleme penceresinde kaleme çevirme önerisi, elle iş kalemi ekleme, tip üretimi kapısı.
 
+### Ç2: Yapay zeka geçidi (11 Kas 2026)
+
+Anahtar (D3) verilmedi. Bütün yollar sahte sağlayıcıyla (`SHERPA_AI_FAKE=1`, yalnızca yerel Supabase) ve sağlayıcısız sunucuyla sınandı; gerçek modelin eşlemesi (yapılı çıktı, ret, kesilme, API hatası) anahtarsız, test `fetch`'iyle sınanıyor (`anthropic.test.ts`). Gerçek modelle hız, kalite ve maliyet D3'ten sonra `npm run ai:eval` ile ölçülecek.
+
+#### Kabul ölçütleri
+
+| Ölçüt | Durum | Kanıt |
+| --- | --- | --- |
+| "Sunum slaytları cuma" yazınca iş birkaç saniye içinde doğru modül, süre, önem ve son tarihle oluşuyor; yapay zekanın koyduğu değerler işaretli | Sağlandı (sahte sağlayıcıyla). "Cuma" kullanıcının yazdığı gün olduğu için son tarih işaretsiz (kural 4; **Görüşün gerek**, "Verdiğim kararlar"). **Gerçek modelle süre ve isabet D3'te ölçülecek** | `yapay-zeka.ai.spec.ts` ("a free line becomes work…": 10 sn içinde iş, `module_id`, `est_minutes`, `importance` işaretli, `due_at` dolu, gerekçe satırda ve formda), `tests/db/ai-flows.test.ts` |
+| Eforu boş gelen iş zarfı yapay zekanın tahminiyle doluyor, gerekçesi görünüyor | Sağlandı (sahte) | `yapay-zeka.ai.spec.ts` ("an envelope with an empty effort…": 155 dk, modülün sınırı içinde, gerekçe satırda ve formda), `ai-flows.test.ts` (sınıra kırpma, `default` kaynağı, kapsam değişince yeniden sorma) |
+| Kullanıcının düzelttiği alan sonraki teklif ve çağrılarda ezilmiyor; düzeltme `ai_feedback`'e düşüyor | Sağlandı | `yapay-zeka.ai.spec.ts` (`enrich` düzeltmesi; `size` düzeltmesi ve sonraki teklif), `ai-flows.test.ts`; `size` `user` ve `module` kaynaklı alanı sormaz (`src/core/ai/flows/size.ts`) |
+| Anahtar yokken serbest giriş gelen kutusuna düşüyor, zarflar sınırın ortasıyla doluyor, uygulama hatasız çalışıyor | Sağlandı | `yapay-zeka.ai.spec.ts` ("without any provider…", 3100 sunucusu: 135 dk, `default`, giriş `new`, `ai_calls` boş, sayfada yakalanmamış hata yok), `ai-flows.test.ts` |
+| Bütçe sınırı 0 yapılınca çağrı yapılmıyor; her çağrı `ai_calls`'ta maliyetiyle görünüyor | Sağlandı (sahte; maliyet gerçek modelin fiyatıyla hesaplanır) | `yapay-zeka.ai.spec.ts` ("with the budget at 0…", "settings show this month's calls…"), `ai-flows.test.ts`, `tests/db/ai-gateway.test.ts` |
+| Şemaya uymayan model çıktısı veriye yazılmıyor (testle) | Sağlandı | `yapay-zeka.ai.spec.ts` (`[ai:invalid]`: `ok: false`, `output` boş, giriş `new`), `ai-flows.test.ts`, `src/core/ai/ai.test.ts` |
+
+Kapsamdan eksik kalan: planlama çağrıları (`plan`, `week`, `month`, `review`, `replan`) bu fazda kurulmadı, Ç3'ün işi. Kalite örnekleri (`scripts/ai-eval/cases.json`) kullanıcının gerçek girişlerinden değil, elle yazıldı (**Görüşün gerek**).
+
+#### Ne kuruldu
+
+1. Şema: `ai_calls` (her çağrının kaydı, maliyet, önceki yanıt için özet ve çıktı), `ai_feedback` (düzeltmeler), `work_items` efor sınırı sütunları, aylık harcama ve kullanım fonksiyonları; ikisi de yalnızca eklenir (adım 1)
+2. Geçit `src/core/ai/`: tek giriş `runAiCall`; sağlayıcı arayüzü (Anthropic, sahte), fiyat tablosu, ayar ve bütçe denetimi, aynı sorunun önceki yanıtı, zaman aşımı, Zod doğrulaması, kayıt. Yapay zeka hatası hiçbir zaman fırlatılmaz (adım 2)
+3. Akışlar ve rotalar: `enrich` (serbest satır → iş, iş kalemi ya da onay kartı), `size` (boş yargı alanları, sınıra kırpılır), `decompose` (öneri alt kalemler), `extract` (modülün okuyucusu); `/api/ai/*`; düzeltmeler `ai_feedback`'e (adım 3)
+4. Arayüz: yapay zeka işareti ve gerekçesi (satırda ve formda), gelen kutusunda öneri kartı, "Adımlara böl" ve bölme önerileri, Ayarlar → Yapay zeka (açık/kapalı, aylık sınır, harcama, çağrı tablosu), bütçe dolunca Bugün'de tek satır; sözleşmeye `extractors` ve `ctx.extract`, `deneme`'de metinden çıkarma (adım 4)
+5. `npm run ai:eval` (30 örnek, geçitten), örnek veride yapay zekanın payı (adım 5)
+6. Uçtan uca: aynı derleme iki sunucuda (3100 sağlayıcısız, 3101 sahte sağlayıcılı) (adım 6)
+
+Testler: 179 birim, 139 veritabanı, 115 uçtan uca (`npm run check:full` yeşil; ekran görüntüsü çekimiyle 6 fazlası, 121). Ekran görüntüleri: `docs/ekran-goruntuleri/c2/` (pano 1920 genişlik, telefon 390×844; yeni: `yz-gerekce`, `yz-duzenleme`, `modul-deneme-metin`). Ayarlar görüntüleri sağlayıcısız sunucuda alındı: durum satırı "API anahtarı yok" der, çağrı tablosundaki `fake-fast` satırları örnek verinin sahte sağlayıcıyla yazdığı çağrılardır.
+
+#### Denetim
+
+Faz denetimi (bağımsız alt ajan; yalnızca `prompts/denetci.md`, kip ve kapsam verildi):
+
+| Tur | Karar | Bulgular | Ne yapıldı |
+| --- | --- | --- | --- |
+| Faz, 1. tur (`7cf0705`) | GEÇTİ | Engelleyici yok. 2 önemli: (1) telefonda gerekçe kutusu ekranın solundan taşıyor, metin kesik (ekran görüntüsünden); (2) bu dosyanın "Durum", "Sıradaki adım" ve "Bilinen sorunlar" bölümleri eskimiş (D1 ve D2 hem bekliyor hem bitti). 8 not: telefonda çağrı tablosunun iki sütunu yana kaydırmadan görünmüyor; Ayarlar görüntüleri hem "anahtar yok" diyor hem çağrı listeliyor; `decompose`'un tetikleyicisi dokümanda iki yerde farklı; eskimiş kod yorumu (`envelope.ts`); zaman aşımında satır 0 maliyetle yazılıyor; "hatasız" ölçütünü sayfa hatasıyla denetleyen test yok; 4. adım sözleşmeyi değiştirdi ama adım denetimi yapılmadı; istemci `ai_calls`'a doğrudan yazabiliyor | (1) Kutu pencereye göre konumlanır ve ekrana sığacak biçimde kaydırılır (`AiMarks.tsx`); sayfa kayınca kapanır; testi: telefon genişliğinde kutu kenarlardan 16 px içeride (`yapay-zeka.ai.spec.ts`). (2) Bölümler bu raporla düzeltildi. Notlar: çağrı tablosu telefonda çağrı, sayı ve maliyetle sınırlı; Ayarlar görüntüsünün durumu yukarıda yazıldı; `docs/10` 28. satır kodla aynı; yorum düzeltildi; sağlayıcısız testte yakalanmamış sayfa hatası olmadığı bekleniyor. Zaman aşımı maliyeti D3'ten sonra Console harcamasıyla karşılaştırılacak (karar kayıtlı); `ai_calls` yazma izni "Bilinen sorunlar"da, Ç5 köprüsünde yeniden bakılacak. 4. adımın denetimi ayrıca yapılmadı; sözleşme değişikliği (`ctx.extract`, `extractors`) faz denetiminde dokümanla ve kodla karşılaştırıldı, sorun bulunmadı |
+
+Düzeltmelerden sonraki tam koşuda iki şey daha çıktı ve düzeltildi: gerekçe kutusunun tıklamayla gelen kaydırmada kapanması (kutu artık kaydırmayla birlikte yer değiştirir) ve bölme önerisinin parçalarının rastgele sırayla görünmesi (tek yazmada aynı anda oluştukları için; her parçanın oluşturma anı sırasına göre bir milisaniye ayrılır, `flows.test.ts`). Gerçek kullanımda da olabilecek bir hataydı.
+
+Denetçinin doğrulayamadıkları: gerçek sağlayıcının hiçbir yolu (D3); API'nin Zod şemasındaki sınırları (`min`, `max`, dizi üst sınırı, tarih kalıbı) yapılı çıktıda kabul edip etmediği; Ç2 migration'larının bulut projelerinde olduğu (D1'de 6 migration iki projeye de gönderildi).
+
+Adım denetimleri:
+
+| Denetim | Karar | Bulgular | Ne yapıldı |
+| --- | --- | --- | --- |
+| Adım 1: şema | GEÇTİ | Engelleyici yok, 2 önemli (kararlar ve ilerleme kaydı yazılmamıştı) | Düzeltildi (`3f535d7`) |
+| Adım 2: geçit | GEÇTİ | Engelleyici yok, 2 önemli (SDK yasağı dinamik içe aktarımı kaçırıyordu; gerçek sağlayıcının eşlemesi sınanmıyordu) | Düzeltildi (`f2fdbce`) |
+| Adım 3: akışlar, rotalar, zarf | GEÇTİ | Engelleyici yok, 3 önemli, 7 not | Hepsi düzeltildi (`dc1fbf2`) |
+
+#### Ç3 için notlar
+
+- **Planlama çağrıları geçide hazır.** `runAiCall` planlama modelini (`AI_MODEL_PLAN`, `effort: medium`, 30 sn) taşır; Ç3'ün `plan`/`week`/`review` çağrıları yeni bir `spec` (tür, sürüm, istem, Zod şeması) olarak `src/core/ai/calls/` altına eklenir, akışı `src/core/ai/flows/` altına. Sahte sağlayıcıya (`src/core/ai/fake.ts`) her yeni tür için bir yanıt eklenmeli; yoksa uçtan uca testler o yolu sınayamaz.
+- **Motor yapay zekasız da doğru plan kurar** (kural 3): Ç3'ün kabul ölçütleri anahtarsız çalışmalı; yapay zekanın planı motorun taban planının üzerine yalnızca öneridir.
+- **Bölünmüş kalem Bugün'de görünmez**: açık (`active`/`waiting`) alt kalemi olan kalem kapsayıcıdır (`todayCandidates`); planlayıcının aday listesi de aynı kuralı izlemeli. `proposed` alt kalemler hiçbir listeye girmez.
+- **Efor sınırı** (`effort_min_minutes`, `effort_max_minutes`) ve kaynağı (`provenance`: `module`, `ai`, `user`, `default`) her kalemde var; `loadByWeek` toplam eforu bu sütunlardan okur.
+- **Canlı bağlantı yükü**: uzun uçtan uca koşularda Realtime iletileri düşebiliyor; ekranın tahmini beklediği yerlerde tarayıcı yanıt gelince ayrıca yeniden okur. Arka arkaya iki tam koşu arasında yaklaşık bir dakika beklenmeli.
+- Kapı süresi: `check:full` yaklaşık 6 dakika (iki sunucu).
+
 ## Sıradaki adım
 
-Ç2 (Yapay zeka geçidi): yeni oturumda `docs/10-yapay-zeka.md`, `docs/06-modul-sozlesmesi.md` ve `docs/03-veri-modeli.md` okunarak başlanır. D3 (`ANTHROPIC_API_KEY`) verilmediyse sahte sağlayıcıyla geliştirilir.
+Ç3 (Planlayıcı): `docs/04-planlayici.md`, `docs/05-arayuz.md` (Bugün, Hafta), `docs/03-veri-modeli.md` (planlayıcı tabloları) ve `docs/10-yapay-zeka.md` (planlama çağrıları) okunarak başlanır. Planı "Durum" altına yazılır.
 
 ## Senden bekleyenler
 
@@ -218,13 +275,13 @@ Adımlar:
 4. Uygulamayı kapatıp yeniden aç: giriş istememeli.
 5. Sonucu (çalıştı ya da nerede takıldı) buraya yaz.
 
-### D3. Yapay zeka anahtarı (Ç2'nin başında)
+### D3. Yapay zeka anahtarı: bekliyor
 
-Ç2 sahte sağlayıcıyla geliştirilip sınanır; gerçek çağrılar için:
+Ç2 sahte sağlayıcıyla geliştirilip sınandı; gerçek çağrılar için:
 
 1. Anthropic Console'da bir API anahtarı aç (ücretli; aylık sınır `docs/10-yapay-zeka.md` içinde 5 $ olarak tasarlandı, Console'da ayrıca harcama sınırı koyabilirsin).
 2. Anahtarı sohbete yazma; depo kökündeki `.env.local` dosyasına `ANTHROPIC_API_KEY=...` satırı olarak ekle (`.env*` depoya girmez). Aynı dosyaya modelleri de yaz: `AI_MODEL_FAST=claude-haiku-5-5` ve `AI_MODEL_PLAN=claude-sonnet-5-5` (`.env.example` içinde hazır).
-3. Bu başlığa "tamamlandı" yaz. Ç2 oturumu gerçek çağrı gerektiren testleri o zaman çalıştırır.
+3. Bu başlığa "tamamlandı" yaz. Sonraki oturum `npm run ai:eval` ile gerçek modeli ölçer (isabet, süre, maliyet) ve "Sunum slaytları cuma" ölçütünü gerçek modelle dener.
 
 ### Ç1'den sana kalanlar (elle doğrulanacak)
 
@@ -401,10 +458,9 @@ Adımlar:
 - Ç1'de 5. ve 6. adımlar tek commit'te geldi (`9486fea`) ve adım denetimi 7. adımdan sonra yapıldı (önceki oturum kullanım sınırında commit'siz kaldı).
 - Ç1, adım 2: `b87e5fb` commit'i lint kırmızıyken atıldı (komut zincirinde çıkış kodu yutuldu); 21 saniye sonra `6439e65` ile düzeltildi. O andan beri kapı komutları `pipefail` ile çalıştırılıyor.
 
-- **D1 bağlantısı gözetimsiz oturumda yapılamıyor** (11 Kas 2026): bulut projesi açan komut izin düzenince reddedildi; ayrıntı ve senden gereken "Senden bekleyenler" → D1 altında. O zamana kadar her şey yerel Supabase ile sürüyor.
-- Bulut yok: üretim adresi, bulut `dev` ve `prod` projeleri, gerçek e-posta gönderimi ve Vercel önizleme koruması D1'e kadar sınanamıyor. Yerel `config.toml` yalnızca yerel Supabase'i yönetir; aynı kimlik ayarları D1'de bulut projelerine aktarılıp `session.spec.ts` içindeki "yeni kayıt kapalı" sınamaları orada yinelenmeli.
+- Bulutta "yeni kayıt kapalı" ve kod ayarları `config diff` ile dosyayla aynı görüldü ve dışarıdan sınandı (D1); `session.spec.ts` içindeki sınamalar yalnızca yerelde koşar.
 - Uçtan uca testlerde sunucu günlüğüne iki kez `AuthApiError: Refresh token is not valid` düşer. Beklenen bir çıktıdır ("yenilenemeyen oturum kapatılır" testi sahte yenileme belirteci gönderir); hata değildir.
 - Girişten sonra tarayıcıda oturum çerezinin yanında birkaç `…-code-verifier` çerezi kalıyor (Supabase istemcisinin PKCE akışından). Kod akışında kullanılmıyorlar; birikip birikmediğine bakılmadı. Giriş cihaz başına bir kez yapıldığı için sorun beklenmiyor; Ç4'te oturum davranışı elden geçirilirken bakılacak.
 - `(app)` altındaki sayfalar korumayı `proxy`'den alıyor; yerleşimde ayrıca oturum denetimi yok (Ç0'da sayfalarda veri yok). `proxy` sunucu eylemlerini tek başına kapatmaz: `/giris` oturumsuz açık olduğu için başka bir sayfaya ait eylem o yoldan çağrılabilir (bugün tek eylem "çıkış yap", zararsız). Ç1'den itibaren veri okuyan ya da yazan her rota ve sunucu eylemi kendi içinde `getCurrentUser()` çağırmalı ve bu, oturumsuz çağrıyla sınanmalı; RLS ayrıca korur.
-- Boş sayfalar (`/`, `/hafta`, `/m`, `/gelen`) statik üretiliyor ve paylaşımlı önbellek başlığıyla dönüyor (`s-maxage`). Yerelde `proxy` her isteğin önünde çalışıyor; Vercel'de de önbelleğin önünde çalıştığı D1'de sınanacak. Ç1'de veri taşıyan sayfaların statik kalmadığı denetlenecek.
-- Adresi bilen biri Supabase'in açık ucundan doğrudan giriş kodu isteyebilir (form denetimi bu yolu kapatmaz). Giremez (kod gerekir), ama e-posta kotasını tüketip girişi geciktirebilir. Bulut projesinde hız sınırlarına D1'de bakılacak.
+- Boş sayfalar (`/`, `/hafta`, `/m`, `/gelen`) statik üretiliyor ve paylaşımlı önbellek başlığıyla dönüyor (`s-maxage`). Yerelde `proxy` her isteğin önünde çalışıyor; Vercel'de oturumsuz `/` ve `/gelen` isteğinin `/giris`'e yönlendiği D1'de dışarıdan görüldü. Ç1'de veri taşıyan sayfaların statik kalmadığı denetlenecek.
+- Adresi bilen biri Supabase'in açık ucundan doğrudan giriş kodu isteyebilir (form denetimi bu yolu kapatmaz). Giremez (kod gerekir), ama e-posta kotasını tüketip girişi geciktirebilir. Bulutta kod e-postası saatte en çok 10 (D1, `config.toml`).

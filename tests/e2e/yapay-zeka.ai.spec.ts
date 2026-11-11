@@ -82,6 +82,18 @@ test("a free line becomes work of the right module within seconds, its values ma
   await expect(row.getByRole("note")).toContainText("Süre: benzer işlere göre");
   await expect(row.getByRole("note")).toContainText("Modül: tek etkin modül");
 
+  // On a phone the mark sits near the left edge; the panel still stays on the screen.
+  await page.keyboard.press("Escape");
+  await expect(row.getByRole("note")).toBeHidden();
+  await page.setViewportSize({ width: 390, height: 844 });
+  await row.getByRole("button", { name: "Yapay zekanın koyduğu değerler" }).click();
+  await expect(row.getByRole("note")).toBeVisible();
+  const box = (await row.getByRole("note").boundingBox())!;
+  expect(box.x).toBeGreaterThanOrEqual(16);
+  expect(box.x + box.width).toBeLessThanOrEqual(390 - 16);
+  await page.keyboard.press("Escape");
+  await page.setViewportSize({ width: 1920, height: 1080 });
+
   // In the form the reason stands under the field until the user changes it; the change is a
   // correction, recorded, and the AI's mark leaves that field.
   await row.getByRole("button", { name: "Düzenle: Sunum slaytları" }).click();
@@ -314,6 +326,9 @@ test("settings show this month's calls and what they cost", async ({ page }) => 
 test("without any provider every feature works: lines wait in the inbox, efforts take the middle", async ({
   page,
 }) => {
+  // "Without errors" is taken literally: no uncaught error on any page of this test.
+  const errors: string[] = [];
+  page.on("pageerror", (error) => errors.push(error.message));
   await activateDeneme(page, WITHOUT_AI);
   await page.goto(`${WITHOUT_AI}/ayarlar`);
   await expect(page.getByTestId("ai-state")).toHaveText(/API anahtarı yok/);
@@ -342,4 +357,5 @@ test("without any provider every feature works: lines wait in the inbox, efforts
   const card = page.getByRole("listitem").filter({ hasText: "Sunum slaytları cuma" });
   await expect(card.getByRole("button", { name: "İşe çevir" })).toBeVisible();
   await expect(card.getByText("Öneri:")).toHaveCount(0);
+  expect(errors).toEqual([]);
 });

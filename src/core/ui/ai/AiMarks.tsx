@@ -1,7 +1,7 @@
 "use client";
 
 import { Sparkles } from "lucide-react";
-import { useEffect, useId, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { aiField, currentMark, readMark } from "@/core/ai/marks";
 import type { Task, WorkItem } from "@/core/types";
 import { cn } from "@/lib/utils";
@@ -66,8 +66,32 @@ export function AiBadge({
 }) {
   const notes = aiNotesOf(row);
   const [open, setOpen] = useState(false);
+  const [place, setPlace] = useState<{ top: number; left: number; width: number } | null>(null);
   const panelId = useId();
   const ref = useRef<HTMLSpanElement>(null);
+
+  // The panel is placed against the window, not the row: on a phone the mark sits near the
+  // left edge and a panel hung from it would run off the screen. It follows the mark when the
+  // page scrolls or the window changes size.
+  const measure = useCallback(() => {
+    if (!ref.current) return;
+    const rect = ref.current.getBoundingClientRect();
+    const gutter = 16;
+    const width = Math.min(288, window.innerWidth - 2 * gutter);
+    const wanted = align === "right" ? rect.right - width : rect.left;
+    const left = Math.max(gutter, Math.min(wanted, window.innerWidth - gutter - width));
+    setPlace({ top: rect.bottom + 4, left, width });
+  }, [align]);
+
+  useEffect(() => {
+    if (!open) return;
+    window.addEventListener("resize", measure);
+    window.addEventListener("scroll", measure, true);
+    return () => {
+      window.removeEventListener("resize", measure);
+      window.removeEventListener("scroll", measure, true);
+    };
+  }, [open, measure]);
 
   useEffect(() => {
     if (!open) return;
@@ -99,19 +123,20 @@ export function AiBadge({
         aria-controls={panelId}
         aria-label="Yapay zekanın koyduğu değerler"
         title={summary}
-        onClick={() => setOpen((value) => !value)}
+        onClick={() => {
+          if (!open) measure();
+          setOpen(!open);
+        }}
         className="text-muted-foreground hover:text-foreground focus-visible:ring-ring/50 inline-flex size-6 items-center justify-center rounded-md outline-none focus-visible:ring-3"
       >
         <Sparkles aria-hidden className="size-3.5" />
       </button>
-      {open ? (
+      {open && place ? (
         <span
           id={panelId}
           role="note"
-          className={cn(
-            "bg-popover text-popover-foreground border-border absolute top-full z-30 mt-1 flex w-72 max-w-[calc(100vw-2rem)] flex-col gap-1 rounded-lg border p-3 text-left text-sm font-normal shadow-lg",
-            align === "right" ? "right-0" : "left-0",
-          )}
+          style={{ top: place.top, left: place.left, width: place.width }}
+          className="bg-popover text-popover-foreground border-border fixed z-30 flex flex-col gap-1 rounded-lg border p-3 text-left text-sm font-normal shadow-lg"
         >
           <span className="text-muted-foreground text-xs">Yapay zeka koydu; kalemle değişir.</span>
           {notes.map((note) => (

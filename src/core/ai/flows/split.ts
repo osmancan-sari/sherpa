@@ -31,7 +31,7 @@ export type SplitSource = {
 /** The child rows of a split, without ids. Pure, so the shape can be tested. */
 export function splitRows(parent: WorkItem, steps: SplitStep[], source: SplitSource) {
   const parentDue = parent.due_at ? Date.parse(parent.due_at) : null;
-  return steps.map((step) => {
+  return steps.map((step, index) => {
     let dueAt = step.due ? dueAtEndOfDay(step.due) : null;
     // A piece is never due after the whole: the model was told so, the data makes sure.
     if (dueAt && parentDue !== null && Date.parse(dueAt) > parentDue) dueAt = parent.due_at;
@@ -71,6 +71,9 @@ export function splitRows(parent: WorkItem, steps: SplitStep[], source: SplitSou
         context: parent.context,
         provenance: toJson(provenance),
         ai: toJson(mark),
+        // One write makes every piece at the same instant; a millisecond apart, they read
+        // back in their order everywhere (lists sort by creation).
+        created_at: new Date(source.now.getTime() + index).toISOString(),
       },
     };
   });

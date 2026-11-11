@@ -25,7 +25,7 @@ Sherpa'nın arkasında, bütün işleri gören ve zamanı planlayan bir yapay ze
 | --- | --- | --- | --- | --- |
 | `enrich` | Her hızlı girişte | hızlı | Metin, modüllerin `intake` kataloğu, benzer 5 geçmiş işin gerçek süresi, bugünün tarihi | Modül, tür, başlık, süre, enerji, bağlam, önem, son tarih; gerekiyorsa adımlar; her alan için güven |
 | `size` | Bir modül, yargı alanları boş bir iş zarfı teklif ettiğinde; kalemin kapsamı değişince | hızlı | Zarf (`meta` dahil), modülün `sizingHints` metni, aynı modülün benzer bitmiş kalemlerinin gerçek süreleri | Toplam efor, oturum uzunluğu, gerekiyorsa önem ve enerji; güven ve gerekçe |
-| `decompose` | Kullanıcı bir hedef ya da büyük bir kalem eklediğinde | planlama | Hedef, son tarih, modül bağlamı | Alt kalemler, sıra ve bağımlılıklar, her birinin kaba eforu |
+| `decompose` | Kullanıcı bir kalemde "adımlara böl" dediğinde (hedefler Ç4'te) | planlama | Hedef, son tarih, modül bağlamı | Alt kalemler, sıra ve bağımlılıklar, her birinin kaba eforu |
 | `extract` | Ninova duyurusu ya da yapıştırılan metin geldiğinde | hızlı | Metin, yayın tarihi, dersin açık değerlendirmeleri | Değerlendirme önerisi: hangi kalem, tarih, saat, yer, kapsam |
 | `plan` | Her gece bir kez; akşam kapanışı açılırsa o an | planlama | Motorun taban planı, aday işler (özet), sabit bloklar, kapasite, dünün sonucu, kapanış notu | Günün 3 işi, sıra tercihleri, ertelenecekler, süre düzeltmeleri, uyarılar; her biri gerekçeli |
 | `week` | Cumartesi; hafta içinde yeniden kurma tetiklenince | planlama | `loadByWeek` çıktısı, aday kalemler, tabanlar, geçen haftanın sonucu | Haftanın kalemleri, modül başına saat payı, bırakılacaklar; gerekçeli |
