@@ -77,14 +77,14 @@ describe("core does not import modules", () => {
     expect(
       await restrictedImportErrors(
         'import { dayKey } from "@/lib/date";\nimport { x } from "../data/x";\nexport const y = [dayKey, x];\n',
-        "src/core/planner/example.ts",
+        "src/core/today/example.ts",
       ),
     ).toHaveLength(0);
     // Dynamic imports inside the core, and packages that merely have "modules" in their name.
     expect(
       await restrictedImportErrors(
         'import x from "some-modules/thing";\nexport const load = () => import("../data/x");\nexport const y = x;\n',
-        "src/core/planner/example.ts",
+        "src/core/today/example.ts",
       ),
     ).toHaveLength(0);
   });
@@ -165,5 +165,51 @@ describe("only the AI gateway imports the provider's SDK", () => {
         "src/core/ai/example.ts",
       ),
     ).toHaveLength(1);
+  });
+}, 60_000);
+
+describe("the planner is pure", () => {
+  it("rejects data, AI, app, UI, Supabase and React imports", async () => {
+    const paths = [
+      "@/core/data/work",
+      "../data/work",
+      "@/core/ai/gateway",
+      "../app/hooks",
+      "@/lib/supabase/client",
+      "@supabase/supabase-js",
+      "react",
+      "@tanstack/react-query",
+    ];
+    for (const path of paths) {
+      const errors = await restrictedImportErrors(
+        `import { x } from "${path}";\nexport const y = x;\n`,
+        "src/core/planner/example.ts",
+      );
+      expect(errors, path).toHaveLength(1);
+      expect(errors[0]).toContain("src/core/planner is pure");
+    }
+  });
+
+  it("rejects reading the clock and the network", async () => {
+    const snippets = [
+      "export const t = Date.now();\n",
+      "export const t = new Date();\n",
+      'export const r = fetch("/api/x");\n',
+    ];
+    for (const snippet of snippets) {
+      expect(
+        await restrictedImportErrors(snippet, "src/core/planner/example.ts"),
+        snippet,
+      ).toHaveLength(1);
+    }
+  });
+
+  it("allows a time given to it, dates and other pure core code", async () => {
+    expect(
+      await restrictedImportErrors(
+        'import { dayKey } from "@/lib/date";\nimport { isBlocked } from "@/core/today/select";\nexport const f = (now: Date) => [dayKey(new Date(now.getTime())), isBlocked];\n',
+        "src/core/planner/example.ts",
+      ),
+    ).toHaveLength(0);
   });
 }, 60_000);

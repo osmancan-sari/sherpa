@@ -36,6 +36,29 @@ function dynamicImports(esquery, message) {
   ];
 }
 const CORE_TO_MODULES_SYNTAX = dynamicImports(CORE_TO_MODULES_ESQUERY, CORE_TO_MODULES_MESSAGE);
+
+// Architecture rule (CLAUDE.md): the planner is pure. It reads no database, clock or network:
+// no data, AI, app or Supabase code, no React, and the current time comes in as a parameter.
+const PLANNER = "src/core/planner/**";
+const PLANNER_IMPORTS = {
+  regex:
+    "^(@/core/(data|ai|app|ui)|(\\.\\./)+(data|ai|app|ui)|@/lib/supabase|react|next|@supabase|@tanstack)(/|$)",
+  message: "src/core/planner is pure: data in, plan out (docs/04-planlayici.md).",
+};
+const PLANNER_SYNTAX = [
+  {
+    selector: "CallExpression[callee.object.name='Date'][callee.property.name='now']",
+    message: "The planner does not read the clock; take `now` from the input.",
+  },
+  {
+    selector: "NewExpression[callee.name='Date'][arguments.length=0]",
+    message: "The planner does not read the clock; take `now` from the input.",
+  },
+  {
+    selector: "CallExpression[callee.name='fetch']",
+    message: "The planner does not touch the network.",
+  },
+];
 const AI_SDK_SYNTAX = dynamicImports(AI_SDK_ESQUERY, AI_SDK_PATTERN.message);
 
 // Architecture rules (CLAUDE.md), static and dynamic imports alike:
@@ -65,6 +88,22 @@ const eslintConfig = defineConfig([
     rules: {
       "no-restricted-imports": ["error", { patterns: [CORE_TO_MODULES_PATTERN, AI_SDK_PATTERN] }],
       "no-restricted-syntax": ["error", ...CORE_TO_MODULES_SYNTAX, ...AI_SDK_SYNTAX],
+    },
+  },
+  {
+    files: [PLANNER],
+    ignores: ["src/core/planner/**/*.test.ts"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        { patterns: [CORE_TO_MODULES_PATTERN, AI_SDK_PATTERN, PLANNER_IMPORTS] },
+      ],
+      "no-restricted-syntax": [
+        "error",
+        ...CORE_TO_MODULES_SYNTAX,
+        ...AI_SDK_SYNTAX,
+        ...PLANNER_SYNTAX,
+      ],
     },
   },
   {

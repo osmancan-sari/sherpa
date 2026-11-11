@@ -171,6 +171,21 @@ Kapanış, yarının planını kullanıcıya onaylatmaktır. Yapay zeka açıksa
 4. Boşaltma kutusu: akla gelenler gelen kutusuna.
 5. Onay: `days` kaydı yazılır (`plan_source = closing`), ekran gece moduna geçer.
 
+## Uygulama notları (Ç3)
+
+Kod `src/core/planner/` içindedir; dokümanın açık bıraktığı yerler şöyle yorumlandı:
+
+- **Girdi.** `PlanInput` yukarıdakine ek olarak taşır: `closed` (gün akşam kapatıldı), `spentThisWeek` (modül başına bu haftaki dakikalar; haftalık taban için), `committed` (haftanın taahhüt ettiği kalemler; yoksa `null`), `top3` (günün kaydındaki üç iş), `skipped` (bugün ertelenen kalem ve ritimler), `openSession`, `prompt`, `lastSeenAt` (bugünden önceki son kullanım: oturum, ritim kaydı, giriş, biten iş), `startedToday`. Girdi satırlardan `planInput` ile kurulur; ekran da sunucu da aynı fonksiyonu kullanır.
+- **Yuvalar.** 90 dakikadan uzun aralık açgözlü bölünür: 90 dk derin, 15 dk mola, kalan için yeniden; artan parça uzunluğuna göre derin, hafif ya da atılır. İş yuvanın başına konur, yuvanın kalanı kendi başına bir yuva olur (derin, hafif ya da atılır; molanın kalanı atılır).
+- **Kapasite.** Zorunlu işler kapasite çarpanını aşabilir, yuvaların fiziksel süresini aşamaz; enerjisi uymayan zorunlu iş süresi yeten ilk mola dışı yuvaya konur. Öğrenilen kapasite çarpanı 0,2–1 arasında tutulur (kaydı tutulmayan günler planı boşaltmasın).
+- **Geçmiş son tarih.** Son tarihi geçmiş iş zorunlu olmaz ve aciliyeti 0,5 sayılır: bugüne yığılmaz (kural 2), havuzda sıradan iş gibi planlanır.
+- **Taban.** Ömürlük modülün haftalık tabanı `weekly_floor_minutes × floorMultiplier(mod)`; Yoğun modda çarpan en az 0,5'tir ("küçülür ama sıfırlanmaz"). Taban, haftanın kalan günleri tabana ulaşmak için gereken 45 dakikalık oturum sayısından fazla değilse tehlikededir; o zaman modülün en iyi adayı zorunlu olur. Ritmin Yoğun moddaki hedefi `mode_targets.busy`, ama `floor_count`'un altına inmez. Ağırlık çarpanı 0 olan modül (ör. Tatil) yalnızca bugün teslim olan işini önerir.
+- **Gece.** Bitiş çizgisinden sonra, gün kapatılınca ve saat 05:00'ten (günün başlangıcı daha erkense ondan) önce `now = night`. Açık oturum, bloğun içinde olmak ve gece sırayla önce gelir; sonra geri dönüş, soru, tamam, öneri.
+- **Tamam.** Günün üç işi (günün kaydındaki) bitmiş ve zorunlu iş kalmamışsa; hiç iş planlanmamış ama bugün bir şey bitmişse de. Üç işin bir üyesi kalemse, kalemin bugün biten bir oturum işi onu bitmiş sayar.
+- **Haftanın kalemleri.** Hafta planı varken Bugün yalnızca taahhüt edilmiş kalemleri (ve eforu dolup "Bitti mi?" bekleyenleri) önerir; kalemlerin oturum işleri her zaman aday olur. Tarihsiz kalem haftalık yüke girmez (kendi haftası yoktur); taahhütte kapasite kalırsa bir oturumluk payla girer. Bu hafta teslim olan kalem kapasiteyi aşsa da taahhüt edilir.
+- **Pay.** Kalemin haftaya düşen payı `spreadItem`: kalan efor, başlangıçla (ya da şimdi) son tarih arasındaki haftalara kapasiteyle orantılı; aralığın ötesine düşen haftaların payı aralığa yüklenmez. Pay `session_minutes` uzunluğunda (yoksa 45, en çok 90) oturumlara bölünür, sonuncusu kısa olabilir (en az 15).
+- **Yeniden taahhüt.** `recommitReason`: taahhüdün dışında bu hafta teslim olan yeni kalem, haftanın kapasitesinin 30 dakikadan çok düşmesi (yeni blok) ya da hayat modunun değişmesi. Zaman geçmesi kapasite kaybı sayılmaz. Kullanıcının isteği çağıranın işidir.
+
 ## Test kapsamı (en az)
 
 - Blok ve yol süresi çıkarıldıktan sonra yuvaların doğru üretimi

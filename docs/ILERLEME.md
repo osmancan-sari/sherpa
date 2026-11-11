@@ -5,7 +5,7 @@ Bu dosyayı Claude Code günceller. Yeni bir oturum yalnızca bu dosyayı ve `pr
 ## Durum
 
 - Faz: **Ç3 (Planlayıcı) sürüyor** (başlangıç 11 Kas 2026, gece; kullanıcı bu gece için "bir oturumda tek faz" kuralını esnetti, Ç2 ile aynı oturumda). Ç0, Ç1, Ç2 bitti (`c0-tamam`, `c1-tamam`, `c2-tamam`); D1 ve D2 tamamlandı; D3 (`ANTHROPIC_API_KEY`) bekliyor, yapay zeka sahte sağlayıcıyla
-- Adım: Ç3 planı aşağıda; 1. adım bitti, 2. adım (planlayıcı motoru) sürüyor
+- Adım: Ç3 planı aşağıda; 1. ve 2. adım bitti, denetimleri sürüyor
 - Son commit: Ç2 faz raporu ve etiketi
 
 ### Ç3 planı
@@ -15,7 +15,7 @@ Her adımın sonunda `npm run check` ve commit; şema, planlayıcı motoru ve ya
 | # | Adım | Durum |
 | --- | --- | --- |
 | 1 | Migration: `tasks.defer_count` (ertelenme sayısı), `week_plans.life_mode` ve `shares` (kalem başına haftanın payı), planlayıcı tabloları canlı yayına; tipler; veritabanı testleri | bitti (`20261111202959_planner.sql`; `constraints.test.ts` +2). Adım denetimi 2. adımla birlikte |
-| 2 | Planlayıcı motoru `src/core/planner/` (saf): yuvalar, adaylar, skor, süzgeçler, zorunlular, `buildPlan`, `pickForMinutes`, "şimdi" durumları, uyarılar; `loadByWeek`, `commitWeek`, oturumlara bölme, plan istikrarı; öğrenme (tahmin ve kapasite çarpanları); girdinin satırlardan kurulması | bekliyor |
+| 2 | Planlayıcı motoru `src/core/planner/` (saf): yuvalar, adaylar, skor, süzgeçler, zorunlular, `buildPlan`, `pickForMinutes`, "şimdi" durumları, uyarılar; `loadByWeek`, `commitWeek`, oturumlara bölme, plan istikrarı; öğrenme (tahmin ve kapasite çarpanları); girdinin satırlardan kurulması | bitti, denetim bekliyor: `src/core/planner/` (`slots`, `candidates`, `plan`, `week`, `learn`, `input`), saflık lint kuralı. Testler: `plan.test.ts` 42, `week.test.ts` 17, `learn.test.ts` 6, `input.test.ts` 6, `core-imports.test.ts` +3 |
 | 3 | Veri katmanı: günün kaydı (ilk dokunuş, otomatik plan, günün 3 işi, kapanış), haftanın taahhüdü ve oturum işleri, hayat modu dönemleri, öğrenilen değerler; Ertele, Takıldım, bekleyen iş ve takip; plan bekçisi (gün ve hafta değişince); veritabanı testleri | bekliyor |
 | 4 | Bugün ekranı `plan.now` durumlarıyla: TopBar, NowCard (öneri, çalışan, blok, soru, tamam, gece, geri dönüş), UpNext, DayStrip, AlertBar, "neden?", "X dk'm var", "Yeniden planla", Ertele, Takıldım, klavye | bekliyor |
 | 5 | Akşam kapanışı (`/kapanis`) | bekliyor |
@@ -425,6 +425,10 @@ Adımlar:
 | 11 Kas 2026 | Ç2: tarayıcı `size` isteği tahminle dönünce verileri yeniden okur (canlı bağlantıya ek); kartın "Onayla" bildirimi `mutateAsync` üzerinden | Uzun test koşusunda canlı bağlantı iletileri düştü ve tahmin ekrana gelmedi; kart iyimser olarak listeden çıkınca `mutate` geri çağrıları çalışmıyordu | `src/core/app/CoreProvider.tsx`, `src/core/ui/inbox/InboxScreen.tsx` |
 | 11 Kas 2026 | Ç2: **Test değişikliği:** `tests/e2e/work-sessions.spec.ts` "Yarın" satırını başlığın tam eşleşmesiyle bulur; `tests/e2e/screenshots.spec.ts` gelen kutusunda 3 giriş bekler | İlki saat 22:00'den sonra kırılıyordu ("Bugün düşük" iki saat sonraya, yani "yarın 00:…" oluyordu; Ç1'den kalan saate bağlı test). İkincisi örnek verinin yapay zeka kartı. Beklentiler gevşemedi | `tests/e2e/work-sessions.spec.ts`, `tests/e2e/screenshots.spec.ts` |
 | 11 Kas 2026 | Ç2: Ayarlar'da maliyet Türkçe sayıyla ve küçük tutarlarda dört basamakla yazılır | "0.000 $" sıfır gibi okunuyordu | `src/core/ui/settings/AiSettings.tsx` |
+| 11 Kas 2026 | Ç3: planlayıcının yorumları (geçmiş son tarih, taban, gece, tamam, yuva bölme, hafta payı, yeniden taahhüt) `docs/04-planlayici.md` "Uygulama notları (Ç3)" içinde. **Görüşün gerek:** geçmiş son tarihin zorunlu sayılmaması; gecenin 05:00'te bitmesi | Doküman bu durumları tanımlamıyordu | `src/core/planner/`, `docs/04-planlayici.md`, `docs/09-kararlar.md` |
+| 11 Kas 2026 | Ç3: planlayıcının saflığı lint kuralıyla korunur: `src/core/planner/` veri, yapay zeka, uygulama, arayüz, Supabase ve React kodunu içe aktaramaz; `Date.now()`, argümansız `new Date()` ve `fetch` yasak (`tests/unit/core-imports.test.ts`) | Mimari kural: planlayıcı saf fonksiyondur | `eslint.config.mjs` |
+| 11 Kas 2026 | Ç3: **Test değişikliği:** `tests/unit/core-imports.test.ts` içindeki "core-to-core" örneği `src/core/planner/` yerine `src/core/today/` yolunda: planlayıcı artık veri koduna giremez | Kuralın kendisi değişti; sınadığı şey (çekirdek içi içe aktarma serbest) aynı | `tests/unit/core-imports.test.ts` |
+| 11 Kas 2026 | Ç3: 1. adımın (migration) denetimi 2. adımla birlikte yapılır | Migration üç sütun ve yayın satırından ibaret; motorla birlikte bakılması anlamlı | — |
 | 11 Kas 2026 | D1: bulut projelerinin kimlikleri ve `prod`'un site adresi `supabase/config.toml` içinde `[remotes.dev]`, `[remotes.prod]` bloklarında; `config push` `prod`'a kendi adresini gönderir. Kimlik ayarları `--remote=<ref>` ile gönderilir; bağlı proje `dev` | Ayarlar depoda dursun, iki proje aynı kaynaktan kurulsun | `supabase/config.toml` |
 | 11 Kas 2026 | D1: `storage.vector` kapatıldı (yerelde de) | Uygulama kullanmıyor; `config push` bulutta açacaktı ve ücret koşulu belirsizdi | `supabase/config.toml` |
 | 11 Kas 2026 | D1: Vercel projesi `vercel.json` ile Next.js'e sabitlendi; `.vercelignore` `.env*` dosyalarının ve yerel çıktıların yüklenmesini engeller (kök yollar `/` ile: `data` tek başına `src/core/data`'yı da dışarıda bırakıyordu) | Komut satırından açılan projede çerçeve "Other" kalıyordu ve site 404 veriyordu; anahtarlar asla yüklenmesin | `vercel.json`, `.vercelignore` |

@@ -1,7 +1,10 @@
 import type {
   Block,
   BlockSeries,
+  DayRow,
+  LifeModePeriod,
   ModuleRow,
+  Prompt,
   Rhythm,
   RhythmLog,
   Session,
@@ -211,6 +214,64 @@ export function session(overrides: Partial<Session> = {}): Session {
     started_at: "2026-11-12T07:00:00+00:00",
     ended_at: null,
     measured: true,
+    created_at: STAMP,
+    updated_at: STAMP,
+    ...overrides,
+  };
+}
+
+export function prompt(overrides: Partial<Prompt> = {}): Prompt {
+  return {
+    id: testId(),
+    user_id: USER_ID,
+    module_id: MODULE_ID,
+    kind: "attendance",
+    question: "Derse girdin mi?",
+    options: [
+      { value: "yes", label: "Evet" },
+      { value: "no", label: "Hayır" },
+    ],
+    subject_type: null,
+    subject_id: null,
+    ask_after: STAMP,
+    status: "pending",
+    answer: null,
+    answered_at: null,
+    created_at: STAMP,
+    updated_at: STAMP,
+    ...overrides,
+  };
+}
+
+export function dayRow(overrides: Partial<DayRow> = {}): DayRow {
+  return {
+    id: testId(),
+    user_id: USER_ID,
+    date: "2026-11-12",
+    day_type: null,
+    life_mode: "normal",
+    started_at: null,
+    finish_line: null,
+    top3: [],
+    plan: null,
+    plan_source: null,
+    plan_reasons: null,
+    closed_at: null,
+    closing_note: null,
+    created_at: STAMP,
+    updated_at: STAMP,
+    ...overrides,
+  };
+}
+
+export function lifeModePeriod(overrides: Partial<LifeModePeriod> = {}): LifeModePeriod {
+  return {
+    id: testId(),
+    user_id: USER_ID,
+    mode: "busy",
+    starts_on: "2026-11-09",
+    ends_on: "2026-11-15",
+    note: null,
     created_at: STAMP,
     updated_at: STAMP,
     ...overrides,
