@@ -169,6 +169,17 @@ Denetçinin 14. notu doğru: 5. ve 6. adımlar ile örnek veri tek commit'te (`9
 
 ### D1. Bulut ve yayın: tamamlandı (11 Kas 2026, 08:35; benim payım bitti, sıra sende)
 
+**Durum (11 Kas 2026, 12:45): senin payın tamam, benim payım gözetimsiz oturumda yapılamadı. Bulutta hiçbir şey açılmadı, hiçbir şey gönderilmedi.** Ç1 etiketlendikten sonra bağlantıya başladım. Girişler yerinde (Supabase CLI: `mealprep-easy` kuruluşu, içinde proje yok; Vercel CLI: giriş yapılmış; `gh` kurulu değil). İlk adımda (`supabase projects create sherpa-dev`) oturumun izin düzeni komutu reddetti: gözetimsiz çalışmada gerçek dünyada kaynak açan işlemlere izin verilmiyor. Kural gereği yeniden denemedim ve başka yoldan dolanmadım.
+
+Ayrıca doğrulayamadığım bir şey: `mealprep-easy` kuruluşunun planı. CLI planı göstermiyor. Ücretsiz plandaysa iki proje ücretsiz; ücretli bir plandaysa her yeni proje ücret çıkarır. Aşağıdaki yollardan birini seçmeden önce Supabase panosunda kuruluşun planına bak.
+
+Senden gereken (birini seç):
+
+1. **Başında durduğun bir oturum (önerilen).** VS Code'da Claude Code'u aç ve "`docs/ILERLEME.md` içindeki D1'i bağla" yaz; izin sorularını tek tek onayla. Sıra aşağıdaki "Benim yapacaklarım" listesidir; yaklaşık yarım saat sürer ve sonunda üretim adresinde giriş kodunu senin yazman gerekir.
+2. **Gözetimsiz devam etsin istiyorsan** `.claude/settings.json` içinde şu komutlara izin ver: `npx supabase projects create`, `npx supabase link`, `npx supabase db push`, `npx supabase config push`, `npx vercel`, `git push`. Sonra bu paragrafın başına "izin verildi" yaz; sıradaki oturum bağlantıyı yapar.
+
+**Gözetimsiz oturumlar için not:** bu paragrafta "izin verildi" yazmıyorsa D1'i yeniden deneme; yerel Supabase ile devam et.
+
 Supabase ve Vercel girişleri yapıldı (`npx supabase login`, `npx vercel login`), GitHub'da özel `sherpa` deposu açıldı, `.env.d1` dolduruldu. Vercel'de proje elle kurulmadı; kurulumu sen komut satırından yap. Aşağıdaki "Benim yapacaklarım" listesi artık yapılabilir.
 
 O zamana kadar her şey yerel Supabase ile çalışıyor. Aşağıdakileri yapınca yeni oturumda geri kalanını (projeleri açma, şema ve kimlik ayarlarını aktarma, hesabı oluşturma, Vercel ortam değişkenleri, yayın, üretimde giriş ve koruma denemesi) ben komut satırından yaparım.
@@ -328,6 +339,7 @@ Benim yapacaklarım (D1 tamamlanınca): iki Supabase projesini açmak (bölge: F
 - Ç1'de 5. ve 6. adımlar tek commit'te geldi (`9486fea`) ve adım denetimi 7. adımdan sonra yapıldı (önceki oturum kullanım sınırında commit'siz kaldı).
 - Ç1, adım 2: `b87e5fb` commit'i lint kırmızıyken atıldı (komut zincirinde çıkış kodu yutuldu); 21 saniye sonra `6439e65` ile düzeltildi. O andan beri kapı komutları `pipefail` ile çalıştırılıyor.
 
+- **D1 bağlantısı gözetimsiz oturumda yapılamıyor** (11 Kas 2026): bulut projesi açan komut izin düzenince reddedildi; ayrıntı ve senden gereken "Senden bekleyenler" → D1 altında. O zamana kadar her şey yerel Supabase ile sürüyor.
 - Bulut yok: üretim adresi, bulut `dev` ve `prod` projeleri, gerçek e-posta gönderimi ve Vercel önizleme koruması D1'e kadar sınanamıyor. Yerel `config.toml` yalnızca yerel Supabase'i yönetir; aynı kimlik ayarları D1'de bulut projelerine aktarılıp `session.spec.ts` içindeki "yeni kayıt kapalı" sınamaları orada yinelenmeli.
 - Uçtan uca testlerde sunucu günlüğüne iki kez `AuthApiError: Refresh token is not valid` düşer. Beklenen bir çıktıdır ("yenilenemeyen oturum kapatılır" testi sahte yenileme belirteci gönderir); hata değildir.
 - Girişten sonra tarayıcıda oturum çerezinin yanında birkaç `…-code-verifier` çerezi kalıyor (Supabase istemcisinin PKCE akışından). Kod akışında kullanılmıyorlar; birikip birikmediğine bakılmadı. Giriş cihaz başına bir kez yapıldığı için sorun beklenmiyor; Ç4'te oturum davranışı elden geçirilirken bakılacak.
