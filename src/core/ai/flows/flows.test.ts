@@ -1,8 +1,8 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { MODULE_ID, workItem } from "@/core/testing/factories";
 import type { EnrichOutput } from "../calls/enrich";
 import type { SizeOutput } from "../calls/size";
-import { sizeRequestFor } from "../client";
+import { sizeAfterProposal, sizeRequestFor } from "../client";
 import { corrections, mergeMark, readMark } from "../marks";
 import { enrichedRecord, isSure } from "./enrich-apply";
 import { clampEffort, sizeColumns, sizeNeeds } from "./size";
@@ -200,10 +200,32 @@ describe("size: what is asked and what is written", () => {
       kept: [] as string[],
       ...over,
     });
-    expect(sizeRequestFor(result({ created: true }))).toEqual({ id: "i", rescope: false });
-    expect(sizeRequestFor(result({ changed: ["meta"] }))).toEqual({ id: "i", rescope: true });
+    expect(sizeRequestFor(result({ created: true }))).toEqual({ id: "i" });
+    expect(sizeRequestFor(result({ changed: ["meta"] }))).toEqual({ id: "i" });
     expect(sizeRequestFor(result({ changed: ["due_at"] }))).toBeNull();
     expect(sizeRequestFor(result({ target: "rhythm", created: true }))).toBeNull();
+  });
+
+  it("asks the size route after a proposal, and survives the network failing", async () => {
+    const fetch = vi.fn(async () => Response.json({ status: "applied", fields: [] }));
+    vi.stubGlobal("fetch", fetch);
+    const created = { target: "work_item" as const, id: "i", created: true, changed: [], kept: [] };
+    expect(await sizeAfterProposal(created)).toEqual({ status: "applied", fields: [] });
+    expect(fetch).toHaveBeenCalledWith("/api/ai/size", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: "i" }),
+    });
+    expect(sizeAfterProposal({ ...created, created: false })).toBeNull();
+
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => {
+        throw new TypeError("offline");
+      }),
+    );
+    expect(await sizeAfterProposal(created)).toBeNull();
+    vi.unstubAllGlobals();
   });
 });
 

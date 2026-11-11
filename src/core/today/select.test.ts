@@ -356,6 +356,8 @@ describe("moduleUpcoming", () => {
         sitting,
         workItem({ title: "ileride başlayacak", earliest_at: "2026-12-01T09:00:00+03:00" }),
         workItem({ title: "kapalı", status: "dropped" }),
+        // A suggested piece of a split is not work until it is accepted.
+        workItem({ title: "önerilen parça", status: "proposed", parent_id: sitting.id }),
         workItem({ title: "başka modülün kalemi", module_id: other }),
       ],
       rhythms: [weekly, rhythm({ title: "pasif", active: false })],

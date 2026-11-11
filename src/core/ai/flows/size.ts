@@ -33,6 +33,41 @@ export function sizeNeeds(
   });
 }
 
+/** What the work is, as far as its size goes: a change here asks the AI again. */
+export function scopeOf(
+  item: Pick<WorkItem, "title" | "meta" | "effort_min_minutes" | "effort_max_minutes">,
+): string {
+  return JSON.stringify([
+    item.title,
+    canonical(item.meta ?? {}),
+    item.effort_min_minutes,
+    item.effort_max_minutes,
+  ]);
+}
+
+/** The same value with object keys in a fixed order: jsonb comes back re-ordered. */
+function canonical(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(canonical);
+  if (value !== null && typeof value === "object") {
+    const source = value as Record<string, unknown>;
+    return Object.fromEntries(
+      Object.keys(source)
+        .sort()
+        .map((key) => [key, canonical(source[key])]),
+    );
+  }
+  return value;
+}
+
+/**
+ * True when the AI sized the item before and its scope has changed since (docs/04, "Efor
+ * istikrarı"). Decided here, from the data, not by whoever asks.
+ */
+export function scopeChanged(item: WorkItem): boolean {
+  const scope = readMark(item.ai)?.scope;
+  return scope !== undefined && scope !== scopeOf(item);
+}
+
 /** The estimate inside the module's bounds, rounded to five minutes. */
 export function clampEffort(
   minutes: number,
@@ -100,7 +135,7 @@ export async function buildSizeInput(
         : null,
     meta: (item.meta ?? {}) as Record<string, unknown>,
     need,
-    similar: await finishedItemsOfModule(db, item.module_id),
+    similar: await finishedItemsOfModule(db, item.module_id, item.title),
   };
 }
 
@@ -108,13 +143,13 @@ export async function buildSizeInput(
 export async function sizeWorkItem(
   deps: AiDeps,
   registry: ModuleRegistry,
-  request: { id: string; rescope?: boolean },
+  request: { id: string },
   now: Date,
 ): Promise<SizeOutcome> {
   const { db } = deps;
   const item = (await db.from("work_items").select("*").eq("id", request.id).maybeSingle()).data;
   if (!item) return { status: "gone" };
-  const need = sizeNeeds(item, request.rescope ?? false);
+  const need = sizeNeeds(item, scopeChanged(item));
   if (need.length === 0) return { status: "not_needed" };
 
   const input = await buildSizeInput(db, registry, item, need, now);
@@ -136,6 +171,7 @@ export async function sizeWorkItem(
     call_id: result.callId,
     fields,
     input: `${item.title} ${JSON.stringify(item.meta ?? {})}`.slice(0, 300),
+    scope: scopeOf(item),
   });
 
   // Only onto the row the estimate was made for: an edit in the meantime wins.

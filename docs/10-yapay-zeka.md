@@ -106,11 +106,16 @@ Aylık toplam veritabanında hesaplanır (`ai_spend_since`, `ai_usage_since`; ç
 `tasks.ai` alanı (jsonb):
 
 ```json
-{ "model": "claude-haiku-5-5", "at": "2026-11-12T08:14:00Z",
+{ "kind": "enrich", "model": "claude-haiku-5-5", "at": "2026-11-12T08:14:00Z",
+  "call_id": "…",                -- değerlerin geldiği `ai_calls` satırı
+  "input": "Sunum slaytları cuma", -- çağrının gördüğü kısa girdi; düzeltme örneği olarak saklanır
   "fields": { "est_minutes": { "value": 45, "confidence": 0.7, "reason": "benzer 3 hazırlık işi ortalama 50 dk sürdü" },
-              "importance": { "value": 3, "confidence": 0.8, "reason": "ağırlığı %20, 4 gün kaldı" } },
-  "user_edited": ["est_minutes"] }
+              "importance": { "value": 3, "confidence": 0.8, "reason": "ağırlığı %20, 4 gün kaldı", "kind": "size" } },
+  "user_edited": ["est_minutes"],
+  "scope": "…" }                 -- yalnızca `size`: tahminin yapıldığı kapsam (başlık, meta, sınırlar)
 ```
+
+Alandaki `kind`, alanı işaretin ilk çağrısından başka bir çağrı koyduysa yazılır. İş kaleminde `provenance` `ai` olmayan alan (modül ya da kullanıcı sonradan yazdıysa) işarette dursa da yapay zekanın sayılmaz.
 
 `settings` tablosuna: `ai_enabled boolean`, `ai_monthly_budget_usd numeric default 5`.
 
@@ -130,14 +135,15 @@ Her çağrının bir akışı vardır (`src/core/ai/flows/`): girdiyi kurar, ge�
 | Akış | Tetikleyen | Ne yazar |
 | --- | --- | --- |
 | `enrich` | Hızlı girişte serbest satır (önce gelen kutusuna yazılır) | Emin (`module` ve `target` güveni ≥ 0,6, modül etkin): satır bir işe ya da iş kalemine çevrilir, giriş `routed` olur. Emin değil: giriş `needs_confirm` olur, öneri `suggestion` içinde saklanır; kart onaylanınca aynı yazma tarayıcıda yapılır, kullanıcı modülü değiştirdiyse bu da düzeltme olarak `ai_feedback`'e düşer. Yanıt yok: giriş `new` kalır |
-| `size` | Modülün teklifi: yeni iş kalemi ya da kapsamı (başlık, `meta`, sınırlar) değişen kalem | Kaynağı boş ya da `default` olan yargı alanları (toplam efor, oturum süresi, önem, enerji); efor modülün sınırına kırpılır. Yapay zekanın daha önce koyduğu değer yalnızca kapsam değişince yeniden sorulur; modülün ve kullanıcının değerine dokunulmaz |
+| `size` | Modülün teklifi: yeni iş kalemi ya da kapsamı (başlık, `meta`, sınırlar) değişmiş olabilecek kalem | Kaynağı boş ya da `default` olan yargı alanları (toplam efor, oturum süresi, önem, enerji); efor modülün sınırına kırpılır. Yapay zekanın daha önce koyduğu değer yalnızca kapsam değişince yeniden sorulur: sunucu işaretteki `scope` ile kalemin bugünkü kapsamını karşılaştırır. Modülün ve kullanıcının değerine dokunulmaz; arada kalem düzenlendiyse tahmin yazılmaz. Girdideki benzer kalemler: aynı modülün başlığı en çok benzeyen bitmiş kalemleri |
 | `decompose` | Kullanıcı "adımlara böl" der | Kalemin altına `proposed` alt kalemler (bağımlılıklarıyla). Kullanıcı kabul edince `active`, reddedince `dropped` olur. Bekleyen öneri varken yeniden sorulmaz |
 | `extract` | Modül yapıştırılan metni okutur | Hiçbir şey; öneriler modüle döner, ne olacaklarına modül karar verir |
 
 - Kullanıcının kendi yazdığı (satır sonundaki gün ve süre) alan yapay zekanın değildir; işareti yoktur.
 - Alt kalemlere bölünmüş kalem, açık alt kalemi oldukça Bugün listesinde kendisi görünmez; alt kalemleri onun yerine geçer.
 - `ai` işaretindeki her alan onu koyan çağrıyı da taşır (`kind`); düzeltme o çağrının adıyla kaydedilir.
-- Durum rotası (`GET /api/ai/status`) geçidin sırasıyla yapay zekanın şu an çalışıp çalışmadığını ve ayın harcamasını verir.
+- Durum rotası (`GET /api/ai/status`) geçidin sırasıyla yapay zekanın şu an çalışıp çalışmadığını (hızlı modele göre) ve ayın harcamasını verir.
+- Düzeltme (`ai_feedback`) ancak kullanıcının düzenlemesi kaydedildikten sonra yazılır.
 
 ## Plan çağrısının akışı
 

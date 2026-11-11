@@ -28,6 +28,8 @@ export type AiMark = {
   user_edited: string[];
   /** The short input the call saw; shown again as an example when the user corrects it. */
   input: string;
+  /** `size`: the scope (title, meta, bounds) the estimate was made for; a new scope asks again. */
+  scope?: string;
 };
 
 export function readMark(value: Json | null | undefined): AiMark | null {
@@ -42,6 +44,7 @@ export function readMark(value: Json | null | undefined): AiMark | null {
     fields: mark.fields,
     user_edited: Array.isArray(mark.user_edited) ? mark.user_edited : [],
     input: mark.input ?? "",
+    ...(typeof mark.scope === "string" ? { scope: mark.scope } : {}),
   };
 }
 
@@ -69,6 +72,9 @@ export function mergeMark(existing: AiMark | null, next: Omit<AiMark, "user_edit
     ...next,
     kind: existing?.kind ?? next.kind,
     input: existing?.input || next.input,
+    ...((next.scope ?? existing?.scope) !== undefined
+      ? { scope: next.scope ?? existing?.scope }
+      : {}),
     fields,
     user_edited: userEdited,
   };
@@ -95,30 +101,61 @@ export function corrections(mark: AiMark | null, edit: Record<string, unknown>):
   });
 }
 
+/** One `ai_feedback` row: a value the AI set and what the user made of it. */
+export type FeedbackRow = {
+  module_slug: string;
+  kind: AiKind;
+  input_summary: string;
+  ai_value: NonNullable<Json>;
+  user_value: NonNullable<Json>;
+};
+
 /**
- * Records the user's corrections of AI values (`ai_feedback`) and returns the mark with those
- * columns marked as the user's. The examples travel with later calls (rule 8).
+ * What an edit means for the AI's values: the rows of `ai_feedback` it adds and the mark with
+ * those columns as the user's. Null when it corrects nothing. Pure; the caller writes the rows
+ * only after the edit itself was saved (the log cannot be undone).
  */
-export async function recordCorrections(
-  db: Db,
-  args: { mark: AiMark | null; edit: Record<string, unknown>; moduleSlug: string | null },
-): Promise<AiMark | null> {
+export function planCorrections(args: {
+  mark: AiMark | null;
+  edit: Record<string, unknown>;
+  moduleSlug: string | null;
+}): { mark: AiMark; rows: FeedbackRow[] } | null {
   const found = corrections(args.mark, args.edit);
-  if (!args.mark || found.length === 0) return args.mark;
-  check(
-    await db.from("ai_feedback").insert(
-      found.map((correction) => ({
-        // A piece of work without a module is still an example for routing.
-        module_slug: args.moduleSlug ?? "-",
-        kind: correction.kind,
-        input_summary: args.mark!.input.slice(0, 300),
-        ai_value: toJson({ [correction.column]: correction.ai }),
-        user_value: toJson({ [correction.column]: correction.user }),
-      })),
+  if (!args.mark || found.length === 0) return null;
+  const mark = args.mark;
+  return {
+    mark: {
+      ...mark,
+      user_edited: [...new Set([...mark.user_edited, ...found.map((c) => c.column)])],
+    },
+    rows: found.map((correction) => ({
+      // A piece of work without a module is still an example for routing.
+      module_slug: args.moduleSlug ?? "-",
+      kind: correction.kind,
+      input_summary: mark.input.slice(0, 300),
+      ai_value: toJson({ [correction.column]: correction.ai }),
+      user_value: toJson({ [correction.column]: correction.user }),
+    })),
+  };
+}
+
+/** Writes corrections (rule 8): the examples travel with later calls. */
+export async function saveCorrections(db: Db, rows: FeedbackRow[]): Promise<void> {
+  if (rows.length === 0) return;
+  check(await db.from("ai_feedback").insert(rows));
+}
+
+/**
+ * The mark as it stands next to the field sources: a field the module or the user has set since
+ * is no longer the AI's, whatever the mark still holds. Rows without sources (tasks) keep it.
+ */
+export function currentMark(mark: AiMark | null, provenance: unknown): AiMark | null {
+  if (!mark || !provenance || typeof provenance !== "object") return mark;
+  const sources = provenance as Record<string, string>;
+  const fields = Object.fromEntries(
+    Object.entries(mark.fields).filter(
+      ([column]) => sources[column] === undefined || sources[column] === "ai",
     ),
   );
-  return {
-    ...args.mark,
-    user_edited: [...new Set([...args.mark.user_edited, ...found.map((c) => c.column)])],
-  };
+  return { ...mark, fields };
 }

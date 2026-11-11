@@ -1,4 +1,4 @@
-import { readMark, recordCorrections } from "@/core/ai/marks";
+import { currentMark, planCorrections, readMark, saveCorrections } from "@/core/ai/marks";
 import { markUserEdited } from "@/core/contract/envelope";
 import {
   check,
@@ -61,15 +61,17 @@ export async function createTask(db: Db, task: NewTask): Promise<Task> {
 }
 
 export async function updateTask(db: Db, id: string, patch: TablesUpdate<"tasks">): Promise<Task> {
-  const ai = await correctionsOf(db, "tasks", id, patch);
-  return unwrap(
+  const corrected = await correctionsOf(db, "tasks", id, patch);
+  const task = unwrap(
     await db
       .from("tasks")
-      .update(ai === undefined ? patch : { ...patch, ai })
+      .update(corrected ? { ...patch, ai: toJson(corrected.mark) } : patch)
       .eq("id", id)
       .select()
       .single(),
   );
+  if (corrected) await saveCorrections(db, corrected.rows);
+  return task;
 }
 
 /** Columns the AI may set (enrich on tasks, size on work items). */
@@ -86,8 +88,8 @@ const AI_COLUMNS = new Set([
 ]);
 
 /**
- * When an edit changes values the AI set, the corrections are recorded (`ai_feedback`) and the
- * row's mark is returned with those columns as the user's. Undefined when nothing changes.
+ * When an edit changes values the AI set: the row's mark with those columns as the user's, and
+ * the corrections to record once the edit is saved. Null when nothing is corrected.
  */
 async function correctionsOf(
   db: Db,
@@ -96,17 +98,22 @@ async function correctionsOf(
   edit: Record<string, unknown>,
 ) {
   // Status changes and the like never touch an AI value: no extra read for them.
-  if (!Object.keys(edit).some((column) => AI_COLUMNS.has(column))) return undefined;
-  const current = unwrap(await db.from(table).select("ai, module_id").eq("id", id).single());
-  const mark = readMark(current.ai);
-  if (!mark) return undefined;
+  if (!Object.keys(edit).some((column) => AI_COLUMNS.has(column))) return null;
+  const current = unwrap(await db.from(table).select("*").eq("id", id).single());
+  // A field the module set over the AI's value since is not the AI's any more.
+  const provenance = table === "work_items" ? (current as WorkItem).provenance : null;
+  const mark = currentMark(readMark(current.ai), provenance);
+  if (!mark) return null;
   const moduleId = (edit.module_id as string | null | undefined) ?? current.module_id;
   const slug = moduleId
     ? ((await db.from("modules").select("slug").eq("id", moduleId).maybeSingle()).data?.slug ??
       null)
     : null;
-  const next = await recordCorrections(db, { mark, edit, moduleSlug: slug });
-  return next === mark ? undefined : toJson(next);
+  const planned = planCorrections({ mark, edit, moduleSlug: slug });
+  if (!planned) return null;
+  // The stored mark keeps every field (the sources decide what is shown); only user_edited grows.
+  const stored = readMark(current.ai)!;
+  return { mark: { ...stored, user_edited: planned.mark.user_edited }, rows: planned.rows };
 }
 
 /** One tap: done. A session running on the task is closed with it. */
@@ -193,15 +200,17 @@ export type WorkItemEdit = Partial<
 export async function updateWorkItem(db: Db, id: string, edit: WorkItemEdit): Promise<WorkItem> {
   const current = unwrap(await db.from("work_items").select("provenance").eq("id", id).single());
   const provenance = markUserEdited(current.provenance as Provenance, Object.keys(edit));
-  const ai = await correctionsOf(db, "work_items", id, edit);
-  return unwrap(
+  const corrected = await correctionsOf(db, "work_items", id, edit);
+  const item = unwrap(
     await db
       .from("work_items")
-      .update({ ...edit, provenance, ...(ai === undefined ? {} : { ai }) })
+      .update({ ...edit, provenance, ...(corrected ? { ai: toJson(corrected.mark) } : {}) })
       .eq("id", id)
       .select()
       .single(),
   );
+  if (corrected) await saveCorrections(db, corrected.rows);
+  return item;
 }
 
 // --- Rhythms ---------------------------------------------------------------------------------

@@ -14,7 +14,11 @@ export const POST = aiRoute(
       .min(1)
       .max(EXTRACT_MAX_CHARS * 4),
     publishedAt: z.iso.datetime({ offset: true }).nullish(),
-    context: z.record(z.string(), z.unknown()).optional(),
+    // What the module knows about the text; small, like everything sent to the model (rule 7).
+    context: z
+      .record(z.string(), z.unknown())
+      .refine((value) => JSON.stringify(value).length <= EXTRACT_MAX_CHARS, "context too large")
+      .optional(),
   }),
   (deps, body) => runExtract(deps, registry, body, new Date()),
 );

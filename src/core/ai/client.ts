@@ -22,14 +22,16 @@ export async function postAi<T = unknown>(call: AiCallName, body: unknown): Prom
 }
 
 /**
- * After a module's proposal: a new work item, or one whose scope changed, may have judgement
- * fields to estimate. The server decides what is missing; most proposals need nothing. Pure.
+ * After a module's proposal: a new work item, or one whose scope may have changed, is worth
+ * asking about. Only a trigger: the server decides from the data what (if anything) to
+ * estimate; most proposals need nothing. Pure.
  */
-export function sizeRequestFor(result: ProposalResult): { id: string; rescope: boolean } | null {
+export function sizeRequestFor(result: ProposalResult): { id: string } | null {
   if (result.target !== "work_item") return null;
-  const rescope = !result.created && result.changed.some((field) => SCOPE_FIELDS.includes(field));
-  if (!result.created && !rescope) return null;
-  return { id: result.id, rescope };
+  if (!result.created && !result.changed.some((field) => SCOPE_FIELDS.includes(field))) {
+    return null;
+  }
+  return { id: result.id };
 }
 
 export function sizeAfterProposal(result: ProposalResult): Promise<unknown> | null {

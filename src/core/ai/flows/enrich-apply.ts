@@ -181,6 +181,7 @@ export async function applyEnrichment(
   if (claimed.length === 0) return { status: "gone" };
 
   let id: string;
+  let createdItem: string | null = null;
   try {
     if (target === "task") {
       id = unwrap(await db.from("tasks").insert(row).select("id").single()).id;
@@ -193,6 +194,7 @@ export async function applyEnrichment(
           .single(),
       ) as WorkItem;
       id = item.id;
+      createdItem = item.id;
       if (args.output.steps.length > 1) {
         // Steps the AI saw in the line: offered as a split to accept, never applied alone.
         await writeSplit(
@@ -217,7 +219,10 @@ export async function applyEnrichment(
       }
     }
   } catch (error) {
-    // Back to where it was, so the entry is not lost behind a "routed" with nothing in it.
+    // Back to where it was, so the entry is not lost behind a "routed" with nothing in it, and
+    // a half-written item is not left behind to be created a second time on the next try.
+    // (Deleting is right here: the row was made a moment ago by this write and nobody saw it.)
+    if (createdItem) check(await db.from("work_items").delete().eq("id", createdItem));
     check(
       await db
         .from("inbox_entries")

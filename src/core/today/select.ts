@@ -242,8 +242,13 @@ export function moduleUpcoming(input: {
 }): Candidate[] {
   const { moduleId, now } = input;
   const candidates: Candidate[] = [];
+  // A suggested piece (`proposed`) is not work until the user accepts it.
   const openItems = input.workItems.filter(
-    (item) => item.module_id === moduleId && item.status !== "done" && item.status !== "dropped",
+    (item) =>
+      item.module_id === moduleId &&
+      item.status !== "done" &&
+      item.status !== "dropped" &&
+      item.status !== "proposed",
   );
   const openItemIds = new Set(openItems.map((item) => item.id));
   const openTasks = input.tasks.filter(

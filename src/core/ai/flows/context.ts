@@ -77,21 +77,32 @@ export async function similarFinishedTasks(
   }));
 }
 
-/** The last finished work items of a module: what was estimated and what was really spent. */
+/**
+ * Finished work items of the same module, those whose titles look most like this one first
+ * (then the most recent): what was estimated and what was really spent.
+ */
 export async function finishedItemsOfModule(
   db: Db,
   moduleId: string,
+  title: string,
   limit = 8,
 ): Promise<{ title: string; estimated: number | null; spent: number }[]> {
-  const items = unwrap(
+  const target = words(title);
+  const done = unwrap(
     await db
       .from("work_items")
       .select("id, title, effort_total_minutes")
       .eq("module_id", moduleId)
       .eq("status", "done")
       .order("updated_at", { ascending: false })
-      .limit(limit),
+      .limit(100),
   );
+  // A stable sort: equally alike items stay newest first.
+  const items = done
+    .map((item) => ({ item, score: likeness(target, words(item.title)) }))
+    .sort((a, b) => b.score - a.score)
+    .slice(0, limit)
+    .map(({ item }) => item);
   if (items.length === 0) return [];
   const tasks = unwrap(
     await db

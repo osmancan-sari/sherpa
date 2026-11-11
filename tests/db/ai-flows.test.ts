@@ -12,7 +12,7 @@ import { aiStatus } from "@/core/ai/status";
 import type { AiConfig, AiProvider } from "@/core/ai/types";
 import type { ModuleDefinition, ModuleRegistry, WorkProposal } from "@/core/contract/types";
 import { addInboxEntry } from "@/core/data/inbox";
-import { propose } from "@/core/data/propose";
+import { onProposal, propose } from "@/core/data/propose";
 import { updateTask, updateWorkItem } from "@/core/data/work";
 import { todayCandidates } from "@/core/today/select";
 import { makeModule, ok, ownerDb, wipe } from "./helpers";
@@ -292,8 +292,16 @@ describe("size", () => {
     const [call] = await calls();
     expect(call).toMatchObject({ kind: "size", subject_id: id });
 
-    // Asked once: the same item needs nothing more.
+    // Asked once: the same item needs nothing more, also after a proposal that keeps the scope.
     expect(await sizeWorkItem(deps(), registry, { id }, NOW)).toEqual({ status: "not_needed" });
+    const moved = await propose(
+      db,
+      mod,
+      prep({ when: { due: "2026-11-21T10:00:00+03:00", hard: true } }),
+    );
+    expect(moved.changed).toEqual(["due_at"]);
+    expect(await sizeWorkItem(deps(), registry, { id }, NOW)).toEqual({ status: "not_needed" });
+    expect(await calls()).toHaveLength(1);
   });
 
   it("a user's correction is kept through later proposals and calls", async () => {
@@ -313,7 +321,7 @@ describe("size", () => {
     // The module re-proposes with a new scope; the AI asks again only for its own values.
     const again = await propose(db, mod, prep({ meta: { scope: "Hafta 1–8" } }));
     expect(again.changed).toContain("meta");
-    expect(await sizeWorkItem(deps(), registry, { id, rescope: true }, NOW)).toEqual({
+    expect(await sizeWorkItem(deps(), registry, { id }, NOW)).toEqual({
       status: "applied",
       fields: ["session_minutes", "importance", "energy"],
     });
@@ -349,6 +357,149 @@ describe("size", () => {
     );
     expect(await sizeWorkItem(deps(), registry, { id }, NOW)).toEqual({ status: "not_needed" });
     expect(await calls()).toEqual([]);
+  });
+});
+
+describe("edges", () => {
+  it("an edit made while the AI was sizing wins: the estimate is not written", async () => {
+    const mod = await makeModule(db);
+    const { id } = await propose(db, mod, prep());
+    const inner = fakeProvider();
+    const editing: AiProvider = {
+      name: "fake",
+      complete: async (request) => {
+        await updateWorkItem(db, id, { effort_total_minutes: 150 });
+        return inner.complete(request);
+      },
+    };
+    expect(await sizeWorkItem(deps(editing), registry, { id }, NOW)).toEqual({ status: "gone" });
+    const item = ok(await db.from("work_items").select("*").single());
+    expect(item).toMatchObject({ effort_total_minutes: 150, ai: null });
+    expect(item.provenance).toMatchObject({ effort_total_minutes: "user" });
+  });
+
+  it("a write that fails half way leaves the entry as it was and no half-made work", async () => {
+    const mod = await makeModule(db);
+    const entry = await addInboxEntry(db, "Sınama dönem projesi");
+    const card = ok(
+      await db
+        .from("inbox_entries")
+        .update({ status: "needs_confirm" })
+        .eq("id", entry.id)
+        .select()
+        .single(),
+    );
+    const output = {
+      title: "Dönem projesi",
+      module: { value: "sinama", confidence: 0.9, reason: "" },
+      target: { value: "work_item" as const, confidence: 0.9, reason: "" },
+      est_minutes: { value: 240, confidence: 0.6, reason: "" },
+      energy: { value: null, confidence: 0, reason: "" },
+      context: { value: null, confidence: 0, reason: "" },
+      importance: { value: null, confidence: 0, reason: "" },
+      due: { value: null, confidence: 0, reason: "" },
+      // A blank step title breaks the split's write after the item was written.
+      steps: [
+        { title: "Kapsam", minutes: 45 },
+        { title: "   ", minutes: 45 },
+      ],
+    };
+    await expect(
+      applyEnrichment(db, {
+        entry: card,
+        output,
+        parsed: { title: "Sınama dönem projesi", dueDay: null, minutes: null },
+        callId: crypto.randomUUID(),
+        model: "fake-fast",
+        moduleId: mod.id,
+        moduleSlug: "sinama",
+        now: NOW,
+      }),
+    ).rejects.toThrow();
+    expect(ok(await db.from("work_items").select("id"))).toEqual([]);
+    expect(await entryOf(entry.id)).toMatchObject({ status: "needs_confirm", routed_at: null });
+  });
+
+  it("tells the listeners about every stored proposal", async () => {
+    const mod = await makeModule(db);
+    const heard: string[] = [];
+    const stop = onProposal((result) => heard.push(`${result.target}:${result.created}`));
+    await propose(db, mod, prep());
+    await propose(db, mod, prep({ title: "Yeni ad" }));
+    stop();
+    await propose(db, mod, prep({ title: "Duyulmayan" }));
+    expect(heard).toEqual(["work_item:true", "work_item:false"]);
+  });
+
+  it("enrich sees finished work that looks alike and the user's last corrections (rule 8)", async () => {
+    const mod = await makeModule(db);
+    const done = ok(
+      await db
+        .from("tasks")
+        .insert({ module_id: mod.id, title: "Sunum provası", status: "done", est_minutes: 30 })
+        .select()
+        .single(),
+    );
+    ok(
+      await db
+        .from("sessions")
+        .insert({
+          task_id: done.id,
+          module_id: mod.id,
+          started_at: "2026-11-01T09:00:00Z",
+          ended_at: "2026-11-01T09:50:00Z",
+        })
+        .select(),
+    );
+    ok(
+      await db
+        .from("ai_feedback")
+        .insert({
+          module_slug: "sinama",
+          kind: "enrich",
+          input_summary: "Okuma",
+          ai_value: { est_minutes: 30 },
+          user_value: { est_minutes: 60 },
+        })
+        .select(),
+    );
+    const seen: string[] = [];
+    const inner = fakeProvider();
+    const watching: AiProvider = {
+      name: "fake",
+      complete: (request) => {
+        seen.push(request.user);
+        return inner.complete(request);
+      },
+    };
+    const entry = await addInboxEntry(db, "Sınama sunum slaytları");
+    await enrichEntry(deps(watching), registry, entry.id, NOW);
+    const input = JSON.parse(seen[0]);
+    expect(input.similar).toEqual([{ title: "Sunum provası", module: "sinama", minutes: 50 }]);
+    expect(input.corrections).toEqual([
+      { module: "sinama", input: "Okuma", ai: { est_minutes: 30 }, user: { est_minutes: 60 } },
+    ]);
+    expect(input.modules).toEqual([{ slug: "sinama", name: "Sınama", area: null, intake: [] }]);
+  });
+
+  it("an edit that fails records no correction", async () => {
+    await makeModule(db);
+    const entry = await addInboxEntry(db, "Sınama sunum slaytları");
+    const outcome = await enrichEntry(deps(), registry, entry.id, NOW);
+    if (outcome.status !== "applied") throw new Error("not applied");
+    // More than one sitting: the database refuses it.
+    await expect(updateTask(db, outcome.id, { est_minutes: 200 })).rejects.toThrow();
+    expect(await feedback()).toEqual([]);
+  });
+
+  it("a field the module set over the AI's value is not the AI's any more", async () => {
+    const mod = await makeModule(db);
+    const { id } = await propose(db, mod, prep());
+    await sizeWorkItem(deps(), registry, { id }, NOW);
+    // The module now knows the importance itself.
+    await propose(db, mod, prep({ importance: 4 }));
+    await updateWorkItem(db, id, { importance: 2 });
+    expect(await feedback()).toEqual([]);
   });
 });
 
@@ -442,7 +593,7 @@ describe("extract", () => {
     expect(await calls()).toEqual([]);
   });
 
-  it("drops suggestions that do not fit the extractor's item", async () => {
+  it("gives no suggestions at all when one of them does not fit the extractor's item", async () => {
     await makeModule(db);
     const provider = fakeProvider({ extract: () => ({ suggestions: [{ title: 1 }], note: null }) });
     expect(

@@ -36,10 +36,11 @@ export async function aiStatus(deps: AiDeps, now: Date): Promise<AiStatus> {
   const known = { enabled, budgetUsd, spentUsd };
 
   if (!config.provider) return { ...base, ...known, state: "no_provider" };
-  // Every call of this phase needs the fast model, decompose the planning one.
-  const models = [config.models.fast, config.models.plan];
-  if (models.some((model) => !model)) return { ...base, ...known, state: "no_model" };
-  if (models.some((model) => !hasPrice(model!))) return { ...base, ...known, state: "no_price" };
+  // The state of the fast model: the intake calls (enrich, size, extract) run on it. A missing
+  // or unpriced planning model only stops `decompose`, which says so itself when asked.
+  const fast = config.models.fast;
+  if (!fast) return { ...base, ...known, state: "no_model" };
+  if (!hasPrice(fast)) return { ...base, ...known, state: "no_price" };
   if (!enabled) return { ...base, ...known, state: "disabled" };
   if (!withinBudget(spentUsd, budgetUsd)) return { ...base, ...known, state: "budget" };
   return { ...base, ...known, state: "on" };
