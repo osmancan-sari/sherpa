@@ -431,8 +431,38 @@ enabled = true
 [remotes.dev]
 project_id = "pjcbnldkfdwfrrjdtacz"
 
+[remotes.dev.auth.rate_limit]
+# Codes asked for per hour; the local 2 is too tight for one person signing in on two devices.
+email_sent = 10
+
+[remotes.dev.auth.email.smtp]
+# Resend (D1): the cloud projects send the login code through it. The key is read from the
+# environment (RESEND_API_KEY in .env.d1) when the config is pushed; it is never in this file.
+enabled = true
+host = "smtp.resend.com"
+port = 465
+user = "resend"
+pass = "env(RESEND_API_KEY)"
+admin_email = "onboarding@resend.dev"
+sender_name = "Sherpa"
+
 [remotes.prod]
 project_id = "jqqvfdjrkpxbklocsqvq"
 
 [remotes.prod.auth]
 site_url = "https://sherpa-private.vercel.app"
+
+[remotes.prod.auth.rate_limit]
+# Codes asked for per hour; the local 2 is too tight for one person signing in on two devices.
+email_sent = 10
+
+[remotes.prod.auth.email.smtp]
+# Resend (D1): the cloud projects send the login code through it. The key is read from the
+# environment (RESEND_API_KEY in .env.d1) when the config is pushed; it is never in this file.
+enabled = true
+host = "smtp.resend.com"
+port = 465
+user = "resend"
+pass = "env(RESEND_API_KEY)"
+admin_email = "onboarding@resend.dev"
+sender_name = "Sherpa"

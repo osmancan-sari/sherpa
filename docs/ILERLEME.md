@@ -5,7 +5,7 @@ Bu dosyayı Claude Code günceller. Yeni bir oturum yalnızca bu dosyayı ve `pr
 ## Durum
 
 - Faz: **Ç2 (Yapay zeka geçidi) sürüyor** (başlangıç 11 Kas 2026). Ç0 ve Ç1 bitti (`c0-tamam`, `c1-tamam`); yayın ve telefon D1 ve D2'yi bekliyor. D3 (`ANTHROPIC_API_KEY`) verilmedi: faz sahte sağlayıcıyla geliştiriliyor
-- Adım: Ç2 planı aşağıda; 5. adım bitti, 6. adım (uçtan uca testler, ekran görüntüleri) sırada. Araya kullanıcının isteğiyle D1 girdi: bulut projeleri, şema ve üretim yayını hazır; GitHub'a gönderme ve e-posta göndericisi (SMTP) kullanıcıyı bekliyor ("Senden bekleyenler" → D1)
+- Adım: Ç2 planı aşağıda; 5. adım bitti, 6. adım (uçtan uca testler, ekran görüntüleri) sırada. Araya kullanıcının isteğiyle D1 girdi: bulut projeleri, şema, e-posta (Resend), GitHub bağlantısı ve üretim yayını hazır; üretimde giriş denemesi sürüyor
 - Son commit: Ç2 adım 5
 
 ### Ç2 planı
@@ -181,7 +181,7 @@ Denetçinin 14. notu doğru: 5. ve 6. adımlar ile örnek veri tek commit'te (`9
 
 21:50'de başlatılan eski betik penceresi kapatıldı ve `docs/BEKLIYOR.md` silindi; kararı ben verdim (yeni betik kalsın). Betiğe aynı anda ikinci kez çalışmayı engelleyen bir kilit eklendi (`logs/runner.pid`). Bu konuda yapılacak bir şey yok; `c0-tamam` etiketi yerinde.
 
-### D1. Bulut ve yayın: büyük ölçüde bağlandı (11 Kas 2026, 21:20); senden iki şey bekleniyor
+### D1. Bulut ve yayın: bağlandı (11 Kas 2026); üretimde giriş denemesi sürüyor
 
 Senin isteğinle, başında durduğun oturumda bağlandı. Supabase'te ücretsiz planlı `sherpa` kuruluşu kullanıldı.
 
@@ -191,28 +191,20 @@ Senin isteğinle, başında durduğun oturumda bağlandı. Supabase'te ücretsiz
 | --- | --- |
 | Supabase `sherpa-dev` (`pjcbnldkfdwfrrjdtacz`) ve `sherpa-prod` (`jqqvfdjrkpxbklocsqvq`), Frankfurt (`eu-central-1`), ücretsiz boy | açıldı, ikisi de sağlıklı |
 | Bütün migration'lar (6) önce `dev`'e sonra `prod`'a | uygulandı |
-| Kimlik ayarları (`supabase config push`): yeni kayıt kapalı, kod 10 dakika, onay e-postası yok, TOTP kapalı; `prod`'un site adresi `https://sherpa-private.vercel.app` (`config.toml` içinde `[remotes.prod]`) | uygulandı. **E-posta şablonu uygulanamadı**, aşağıda 2. madde |
+| Kimlik ayarları (`supabase config push`): yeni kayıt kapalı, kod 10 dakika, onay e-postası yok, TOTP kapalı; `prod`'un site adresi `https://sherpa-private.vercel.app` (`config.toml` içinde `[remotes.prod]`) | uygulandı |
 | `ALLOWED_EMAIL` hesabı | iki projede açıldı (`scripts/create-user.mjs`) |
 | Vercel projesi `sherpa-private` (`vercel.json` ile Next.js), ortam değişkenleri: Production → `sherpa-prod`, Preview → `sherpa-dev` (+ `deneme` modülü); gizli anahtar "Secret" olarak | kuruldu |
 | Üretim yayını `https://sherpa-private.vercel.app` (komut satırından, `npx vercel deploy --prod`) | çalışıyor |
 | Dışarıdan sınama: `/`, `/gelen` → `/giris` (307); `/api/me`, `/api/export`, `/api/ai/status`, `POST /api/ai/enrich` → 401; `/manifest.webmanifest`, `/robots.txt`, `/giris` → 200; dağıtıma özel adres Vercel girişine yönleniyor (302, önizleme koruması açık) | geçti |
 | Anahtarlar ve parolalar | yalnızca depo dışı dosyalarda: `.env.d1` (veritabanı parolaları, proje kimlikleri), `.env.cloud-dev`, `.env.cloud-prod` (adres ve anahtarlar); `.vercelignore` bunların yüklenmesini engeller |
 
-**Senden gereken**
+| GitHub: dal `main`, `origin` = `https://github.com/osmancan-sari/sherpa`, `c0-tamam` ve `c1-tamam` etiketleri | kullanıcı gönderdi |
+| E-posta: Resend SMTP iki projede (`config.toml` içinde `[remotes.*.auth.email.smtp]`, anahtar `.env.d1`'deki `RESEND_API_KEY`'den gönderim anında okunur, dosyaya yazılmaz), kod şablonu (`supabase/templates/magic_link.html`), saatte en çok 10 kod e-postası. Yerelde kod e-postası Mailpit'e düşmeye devam eder | uygulandı; `config diff`: kimlik ayarları dosyayla aynı (8 haneli kod dahil) |
+| Vercel ↔ GitHub (`vercel git connect`): `main`'e gönderilen her commit üretime, öbür dallar önizlemeye yayınlanır | bağlandı |
 
-1. **GitHub'a gönderme izni.** `git remote add origin https://github.com/osmancan-sari/sherpa.git` ve `git push` oturumun izin denetiminde reddedildi; dal da bu yüzden hâlâ `master`. Ya bu oturumda "GitHub'a gönder" de ve izin sorusunu onayla, ya da PowerShell'de kendin çalıştır:
-   ```
-   git branch -m master main
-   git remote add origin https://github.com/osmancan-sari/sherpa.git
-   git push -u origin main --tags
-   ```
-   Gönderildikten sonra Vercel projesini depoya bağlarım (`vercel git connect`; tarayıcıda Vercel'in GitHub uygulamasına bu depo için bir onay istenebilir). O zamana kadar yayın komut satırından yapılır.
-2. **Giriş kodunun e-postası.** Supabase'in ücretsiz katmanı, kendi e-posta göndericisiyle şablon değiştirmeye izin vermiyor ("Email template modification is not available for free tier projects using the default email provider"). Hazır şablon kod yerine bağlantı gönderir; uygulama kodla giriş ister (`docs/11-yayin-ve-cihazlar.md`, "Giriş yöntemi"). Bu yüzden **üretimde giriş henüz çalışmaz**. Çözüm ücretsiz bir SMTP göndericisi. Önerim Resend (ücretsiz katman günde 100 e-posta):
-   - resend.com'da `ALLOWED_EMAIL` adresinle hesap aç (alan adı doğrulamadan yalnızca hesabın kendi adresine gönderebilir; tek kullanıcı için yeter), iki adımlı doğrulamayı aç.
-   - Bir API anahtarı oluştur ve sohbete yazmadan `.env.d1` dosyasına `RESEND_API_KEY=...` satırı olarak ekle.
-   - Bana "SMTP hazır" de. Ben `config.toml`'a SMTP ayarını (anahtar ortam değişkeninden) ekleyip şablonla birlikte iki projeye gönderirim ve üretimde girişi seninle denerim: e-postanı yazarsın, gelen 8 haneli kodu uygulamaya girersin.
+**Kalan:** üretim adresinde kodla giriş denemesi (kullanıcıyla), sonra D2 (telefon).
 
-Not: Supabase'in hazır göndericisi saatte 2 e-postayla sınırlı; SMTP bağlanınca bu sınır kalkar.
+Bulut ayarını değiştirmek: `supabase/config.toml` düzenlenir, `RESEND_API_KEY` ortamda olmalıdır (`.env.d1`), sonra `npx supabase config push --remote=<ref>` önce `dev`'e, sonra `prod`'a. Gönderim öncesi `--yes` olmadan çalıştırılırsa farkı gösterir.
 
 ### D2. Telefon (D1'den sonra)
 
@@ -370,7 +362,7 @@ Not: Supabase'in hazır göndericisi saatte 2 e-postayla sınırlı; SMTP bağla
 | 11 Kas 2026 | D1: `storage.vector` kapatıldı (yerelde de) | Uygulama kullanmıyor; `config push` bulutta açacaktı ve ücret koşulu belirsizdi | `supabase/config.toml` |
 | 11 Kas 2026 | D1: Vercel projesi `vercel.json` ile Next.js'e sabitlendi; `.vercelignore` `.env*` dosyalarının ve yerel çıktıların yüklenmesini engeller (kök yollar `/` ile: `data` tek başına `src/core/data`'yı da dışarıda bırakıyordu) | Komut satırından açılan projede çerçeve "Other" kalıyordu ve site 404 veriyordu; anahtarlar asla yüklenmesin | `vercel.json`, `.vercelignore` |
 | 11 Kas 2026 | D1: önizleme ortamı `sherpa-dev`'e ve `deneme` modülüne bağlı; üretim `sherpa-prod`'a, `deneme` kapalı | Önizlemede gerçek veri olmasın | Vercel ortam değişkenleri |
-| 11 Kas 2026 | D1: giriş kodunun şablonu ücretsiz katmanda Supabase'in hazır göndericisiyle değiştirilemiyor; SMTP göndericisi (öneri: Resend) gerekiyor. **Senden bekleniyor** | Hazır şablon kod göndermiyor | `docs/11-yayin-ve-cihazlar.md` |
+| 11 Kas 2026 | D1: giriş kodu bulutta Resend SMTP ile gider (gönderen `onboarding@resend.dev`, ad "Sherpa"); SMTP yalnızca `[remotes.*]` bloklarında, yerel Mailpit'te kalır; bulutta saatte en çok 10 kod e-postası. Alan adı doğrulanmadığı için Resend yalnızca hesabın kendi adresine gönderir; `ALLOWED_EMAIL` o adres olmalı | Ücretsiz katman hazır göndericiyle şablon değiştirmeye izin vermiyordu; hazır sınır (saatte 2) iki cihazda giriş için dar | `supabase/config.toml`, `docs/11-yayin-ve-cihazlar.md` |
 
 ## Bilinen sorunlar
 
