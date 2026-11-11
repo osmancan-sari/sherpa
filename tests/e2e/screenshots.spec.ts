@@ -4,7 +4,7 @@ import { expect, type Page, test as base } from "@playwright/test";
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/database.types";
 import { seedDemo } from "../../scripts/demo-data";
-import { insert, rows, waitFor } from "./data";
+import { insert, rows, update, waitFor } from "./data";
 import { test } from "./fixtures";
 import { ALLOWED_EMAIL, requestCode } from "./helpers";
 import { type Cookie, PUBLISHABLE_KEY, readSession, SUPABASE_URL } from "./supabase";
@@ -79,7 +79,22 @@ function screensFor(itemId: string): Screen[] {
         await expect(page.getByRole("navigation", { name: "Modüller" })).toContainText("Deneme");
       },
     },
-    { name: "hafta", path: "/hafta", ready: heading("Hafta") },
+    {
+      name: "hafta",
+      path: "/hafta",
+      ready: async (page) => {
+        await expect(
+          page.getByRole("region", { name: "Haftanın kalemleri" }).getByRole("listitem").first(),
+        ).toBeVisible();
+      },
+    },
+    {
+      name: "kapanis",
+      path: "/kapanis",
+      ready: async (page) => {
+        await expect(page.getByRole("region", { name: "Sorular" })).toBeVisible();
+      },
+    },
     {
       name: "moduller",
       path: "/m",
@@ -282,10 +297,38 @@ for (const theme of ["dark", "light"] as const) {
     await page.keyboard.press("Escape");
     await expect(dialog).toBeHidden();
 
+    // Ç3: why this work, the minutes the user has, the closing's draft, the night.
+    await now.getByRole("button", { name: "Neden?" }).click();
+    await expect(now.getByRole("note", { name: "Neden bu iş" })).toBeVisible();
+    await shot("bugun-neden");
+
     await now.getByRole("button", { name: "Başla" }).click();
     await expect(now.getByRole("button", { name: "Bitti" })).toBeVisible();
     await shot("bugun-oturum");
     await now.getByRole("button", { name: "Durdur" }).click();
+    await expect(now.getByRole("button", { name: "Başla" })).toBeVisible();
+
+    await page.getByRole("button", { name: "X dk'm var" }).click();
+    const minutes = page.getByRole("dialog", { name: "Kaç dakikan var?" });
+    await minutes.getByLabel("Dakika").fill("30");
+    await minutes.getByRole("button", { name: "Bul" }).click();
+    await expect(minutes.getByRole("button", { name: "Başla" })).toBeVisible();
+    await shot("x-dk");
+    await page.keyboard.press("Escape");
+
+    await page.goto("/kapanis");
+    await page.getByRole("button", { name: "İleri" }).click();
+    await shot("kapanis-bugun");
+    await page.getByRole("button", { name: "İleri" }).click();
+    await expect(page.getByRole("region", { name: "Yarın" })).toBeVisible();
+    await shot("kapanis-yarin");
+
+    // The night: the day's finish line has passed.
+    const [today] = (await rows("days")).filter((row) => row.plan_source !== null);
+    await update("days", today.id as string, { finish_line: "00:00" });
+    await page.goto("/");
+    await expect(now).toContainText("Yarın ilk iş:");
+    await shot("bugun-gece");
   });
 }
 

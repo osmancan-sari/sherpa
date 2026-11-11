@@ -6,9 +6,10 @@ import type { WorkProposal } from "@/core/contract/types";
 import { createBlock, createSeries } from "@/core/data/blocks";
 import { addInboxEntry } from "@/core/data/inbox";
 import { propose } from "@/core/data/propose";
+import { keepWeek } from "@/core/data/keep";
 import { createTask } from "@/core/data/work";
 import { check, type Db, type ModuleRow, unwrap } from "@/core/types";
-import { dayKey, END_OF_DAY, istanbulInstant, shiftDay, weekStart } from "@/lib/date";
+import { dayKey, END_OF_DAY, istanbulInstant, shiftDay, weekdayOf, weekStart } from "@/lib/date";
 
 // Sample data for trying the core without real modules (docs/07-yol-haritasi.md, Ç1): a few
 // made-up modules with realistic work items, rhythms, blocks and some history. The module rows
@@ -81,6 +82,12 @@ export async function seedDemo(db: Db, now: Date): Promise<DemoSummary> {
             sort: 2,
             area_id: area.id,
             weekly_floor_minutes: 60,
+            mode_behavior: {
+              normal: { weightMultiplier: 1, floorMultiplier: 1 },
+              busy: { weightMultiplier: 0.5, floorMultiplier: 0.5 },
+              minimum: { weightMultiplier: 0.3, floorMultiplier: 0.5 },
+              holiday: { weightMultiplier: 0, floorMultiplier: 0 },
+            },
           },
           {
             slug: "saglik-ornek",
@@ -90,6 +97,12 @@ export async function seedDemo(db: Db, now: Date): Promise<DemoSummary> {
             sort: 3,
             area_id: area.id,
             weekly_floor_minutes: 90,
+            mode_behavior: {
+              normal: { weightMultiplier: 1, floorMultiplier: 1 },
+              busy: { weightMultiplier: 0.3, floorMultiplier: 0.5 },
+              minimum: { weightMultiplier: 0.3, floorMultiplier: 0.5 },
+              holiday: { weightMultiplier: 0.5, floorMultiplier: 0 },
+            },
           },
           { slug: "is-ornek", name: "İş", kind: "lifelong", color: "#7c3aed", sort: 4 },
         ],
@@ -362,6 +375,8 @@ export async function seedDemo(db: Db, now: Date): Promise<DemoSummary> {
       },
     );
   }
+  // Yesterday evening's reading: the account is in use, not back after days away (Ç3).
+  sessions.push({ module_id: okul.id, title: "Okuma", ...span(-1, "20:00", 35) });
   // This period: one sweep and one walk are already done; the morning routine is still open today.
   const monday = weekStart(today);
   logs.push(
@@ -404,6 +419,18 @@ export async function seedDemo(db: Db, now: Date): Promise<DemoSummary> {
     if (error) throw new Error(`${table}: ${error.message}`);
     return total ?? 0;
   };
+  // The planner (Ç3): a busy week ahead, and this week committed the way the screen does it
+  // on its first opening (the work items' share of the week cut into sittings).
+  check(
+    await db.from("life_mode_periods").insert({
+      mode: "busy",
+      starts_on: day(7 - weekdayOf(today) + 1),
+      ends_on: day(7 - weekdayOf(today) + 7),
+      note: "Vize haftası",
+    }),
+  );
+  await keepWeek(db, now);
+
   return {
     modules: moduleRows.length,
     work_items: await count("work_items"),

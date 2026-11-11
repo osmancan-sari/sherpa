@@ -1,5 +1,8 @@
 import { beforeEach, describe, expect, it } from "vitest";
+import { loadPlanRows } from "@/core/data/keep";
+import { buildPlan, planInput } from "@/core/planner";
 import { todayCandidates } from "@/core/today/select";
+import { dayKey, istanbulInstant, shiftDay, weekStart } from "@/lib/date";
 import { seedDemo } from "../../scripts/demo-data";
 import { ok, ownerDb, strangerDb, wipe } from "./helpers";
 
@@ -22,7 +25,7 @@ describe("sample data", () => {
       ai_calls: 3,
     });
     expect(summary.blocks).toBeGreaterThan(30);
-    expect(summary.sessions).toBe(25);
+    expect(summary.sessions).toBe(26);
 
     // Module rows without code, each with work of its own.
     const modules = ok(await db.from("modules").select("*"));
@@ -91,5 +94,53 @@ describe("sample data", () => {
     // Nothing of it is visible to another account.
     expect(ok(await strangerDb().from("modules").select("id"))).toEqual([]);
     expect(ok(await strangerDb().from("work_items").select("id"))).toEqual([]);
+  });
+
+  it("keeps the lifelong module's weekly floor in busy mode (Ç3 acceptance)", async () => {
+    const db = ownerDb();
+    const now = new Date();
+    await seedDemo(db, now);
+    const rows = await loadPlanRows(db, now);
+    // The week's last day, in busy mode, nothing done yet for the floor this week.
+    const sunday = shiftDay(weekStart(dayKey(now)), 6);
+    const morning = istanbulInstant(sunday, "08:00");
+    const busy = [
+      {
+        id: "busy",
+        user_id: "",
+        mode: "busy" as const,
+        starts_on: sunday,
+        ends_on: sunday,
+        note: null,
+        created_at: now.toISOString(),
+        updated_at: now.toISOString(),
+      },
+    ];
+    const input = {
+      ...planInput({ ...rows, lifeModes: busy }, { date: sunday, now: morning, context: "desk" }),
+      spentThisWeek: {},
+      dayStart: morning,
+    };
+    expect(input.lifeMode).toBe("busy");
+    const plan = buildPlan(input);
+    const health = rows.modules.find((row) => row.slug === "saglik-ornek")!;
+    const floor = plan.candidates.find(
+      (row) => row.moduleId === health.id && row.mandatory === "floor",
+    );
+    expect(floor).toBeDefined();
+    expect(plan.slots.some((slot) => slot.assignment?.candidate.id === floor!.id)).toBe(true);
+    // Its weight in busy mode is low: only the floor brings it in, not its score.
+    expect(floor!.score).toBeLessThan(
+      plan.candidates.filter((row) => row.mandatory === null)[0]?.score ?? Infinity,
+    );
+  });
+
+  it("commits this week and marks the busy week ahead", async () => {
+    const db = ownerDb();
+    await seedDemo(db, new Date());
+    const [week] = ok(await db.from("week_plans").select("*"));
+    expect(week.committed.length).toBeGreaterThan(0);
+    const [period] = ok(await db.from("life_mode_periods").select("mode, note"));
+    expect(period).toEqual({ mode: "busy", note: "Vize haftası" });
   });
 });

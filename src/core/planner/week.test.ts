@@ -11,6 +11,7 @@ import {
   sittingChanges,
   type WeekInput,
   appendable,
+  missingSittings,
   weekAction,
 } from "./week";
 
@@ -358,7 +359,9 @@ describe("new items in the week", () => {
   });
 
   it("leaves the week alone when nothing is new", () => {
-    expect(weekAction(stored, { ...input, now: later })).toBeNull();
+    // (The committed item has its sitting: otherwise the week would repair it.)
+    const sitting = task({ work_item_id: old.id, status: "todo" });
+    expect(weekAction(stored, { ...input, now: later, tasks: [sitting] })).toBeNull();
     expect(weekAction(null, input)).toEqual({ kind: "commit", reason: "none" });
   });
 });
@@ -376,5 +379,38 @@ describe("the AI's module hours", () => {
       moduleBudgets: { okul: 600, spor: 30, yok: 90 },
     });
     expect(plan.moduleBudgets).toEqual({ okul: 600, spor: 120 });
+  });
+});
+
+describe("a committed item without its sittings", () => {
+  const item = workItem({
+    title: "Yarım kalan",
+    effort_total_minutes: 180,
+    effort_done_minutes: 45,
+    session_minutes: 45,
+  });
+  const stored = {
+    committed: [item.id],
+    capacityMinutes: 1000,
+    capacityByDay: {},
+    lifeMode: "normal" as const,
+    shares: { [item.id]: { minutes: 135, from: 0 } },
+    committedAt: at(MONDAY, "08:00").toISOString(),
+  };
+
+  it("gets the rest of its share cut into sittings again", () => {
+    const action = weekAction(stored, week({ items: [item] }));
+    expect(action).toEqual({ kind: "repair", items: [item.id] });
+    // 135 of the week, 45 done since the commitment: 90 left, two sittings.
+    expect(missingSittings(stored, week({ items: [item] }))[0].sittings).toEqual([45, 45]);
+  });
+
+  it("is left alone with an open sitting, a worked share, or while it waits", () => {
+    const open = task({ work_item_id: item.id, status: "todo" });
+    expect(missingSittings(stored, week({ items: [item], tasks: [open] }))).toEqual([]);
+    const worked = { ...item, effort_done_minutes: 135 };
+    expect(missingSittings(stored, week({ items: [worked] }))).toEqual([]);
+    const waiting = { ...item, status: "waiting" as const };
+    expect(missingSittings(stored, week({ items: [waiting] }))).toEqual([]);
   });
 });

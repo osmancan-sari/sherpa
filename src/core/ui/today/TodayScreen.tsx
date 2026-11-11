@@ -133,7 +133,10 @@ function TodayBody() {
   const ahead = assignments.filter((row) => row.candidate.id !== currentId);
   // When the day is done, what is still planned waits behind "Vakit kalırsa" with the rest.
   const finished = state.kind === "done";
-  const upNext = state.kind === "return" || finished ? [] : ahead.slice(0, 3);
+  // At night and on the return the screen is quiet: the card alone (with the day's three on
+  // the return), no list, no strip, no warnings (docs/04-planlayici.md, "Geri dönüş").
+  const quiet = state.kind === "night" || state.kind === "return";
+  const upNext = quiet || finished ? [] : ahead.slice(0, 3);
   const rest = [...ahead.slice(finished ? 0 : 3).map((row) => row.candidate), ...plan.overflow];
   const doneToday = input.tasks.filter(
     (task) =>
@@ -146,7 +149,7 @@ function TodayBody() {
 
       <AiBudgetNotice />
 
-      <AlertBar warnings={plan.warnings} modules={moduleMap} />
+      {quiet ? null : <AlertBar warnings={plan.warnings} modules={moduleMap} />}
 
       {/* minmax(0, …) and min-w-0: a long title is cut with an ellipsis instead of widening
           the column past the screen. */}
@@ -181,7 +184,7 @@ function TodayBody() {
               ))}
             </ul>
           )}
-          {rest.length > 0 && state.kind !== "return" ? (
+          {rest.length > 0 && !quiet ? (
             <details
               className="text-sm"
               open={restOpen}
@@ -207,8 +210,12 @@ function TodayBody() {
         </section>
       </div>
 
-      <DayStrip input={input} plan={plan} now={now} modules={moduleMap} />
-      <DayBlocks blocks={blocksOfDay(input.blocks, input.date)} now={now} />
+      {quiet ? null : (
+        <>
+          <DayStrip input={input} plan={plan} now={now} modules={moduleMap} />
+          <DayBlocks blocks={blocksOfDay(input.blocks, input.date)} now={now} />
+        </>
+      )}
 
       <footer className="flex flex-wrap items-center gap-2">
         <ModuleChips modules={modules.filter(({ row }) => row.status === "active")} />

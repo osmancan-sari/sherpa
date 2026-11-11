@@ -13,7 +13,13 @@ import {
   type WeekPlan,
 } from "@/core/planner";
 import type { PlannedDay } from "@/core/planner/learn";
-import { appendable, type StoredWeekPlan, type WeekAction, weekAction } from "@/core/planner/week";
+import {
+  appendable,
+  missingSittings,
+  type StoredWeekPlan,
+  type WeekAction,
+  weekAction,
+} from "@/core/planner/week";
 import { type Db, type Task, unwrap, type WeekPlanRow } from "@/core/types";
 import { dayKey, shiftDay, weekStart } from "@/lib/date";
 import { listBlocks } from "./blocks";
@@ -149,19 +155,23 @@ export async function keepWeek(
     : weekAction(stored, input);
   if (!action) return { action, plan: row ?? null };
 
-  if (action.kind === "append" && stored && row) {
-    const added = appendable(stored, input);
+  if ((action.kind === "append" || action.kind === "repair") && stored && row) {
+    const added = action.kind === "append" ? appendable(stored, input) : [];
+    const repaired = action.kind === "repair" ? missingSittings(stored, input) : [];
     const plan: WeekPlan = {
       weekStart: input.weekStart,
       committed: [
         // What was committed stays as it was; only its sittings are left alone.
-        ...stored.committed.map((itemId) => ({
-          itemId,
-          minutes: stored.shares[itemId]?.minutes ?? 0,
-          from: stored.shares[itemId]?.from ?? 0,
-          sittings: [] as number[],
-          required: false,
-        })),
+        ...stored.committed.map(
+          (itemId) =>
+            repaired.find((entry) => entry.itemId === itemId) ?? {
+              itemId,
+              minutes: stored.shares[itemId]?.minutes ?? 0,
+              from: stored.shares[itemId]?.from ?? 0,
+              sittings: [] as number[],
+              required: false,
+            },
+        ),
         ...added,
       ],
       moduleBudgets: addBudgets(row.module_budgets as Record<string, number>, added, rows),
@@ -175,7 +185,7 @@ export async function keepWeek(
     const saved = await saveWeekPlan(db, plan, {
       tasks: rows.tasks,
       items: rows.workItems,
-      only: added.map((entry) => entry.itemId),
+      only: [...added, ...repaired].map((entry) => entry.itemId),
     });
     return { action, plan: saved };
   }

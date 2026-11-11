@@ -257,6 +257,12 @@ test("after the finish line the screen is at night and shows the first work of t
   const now = page.getByRole("region", { name: "Şimdi" });
   await expect(now).toContainText("Yarın ilk iş: Yarının işi");
   await expect(now.getByRole("button", { name: "Başla" })).toHaveCount(0);
+  // The night is quiet: no strip of the day, no warnings, nothing next.
+  await expect(page.getByRole("region", { name: "Günün şeridi" })).toHaveCount(0);
+  await expect(page.getByRole("region", { name: "Uyarılar" })).toHaveCount(0);
+  await expect(page.getByRole("region", { name: "Sıradakiler" })).toContainText(
+    "Sırada başka iş yok.",
+  );
 });
 
 test("back after three days the screen opens on 'Kaldığın yerden devam' and piles nothing up", async ({

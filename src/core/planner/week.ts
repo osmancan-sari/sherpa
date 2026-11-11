@@ -543,7 +543,10 @@ export type StoredWeekPlan = StoredWeek & {
 };
 
 export type WeekAction =
-  { kind: "commit"; reason: RecommitReason | "none" } | { kind: "append"; items: string[] } | null;
+  | { kind: "commit"; reason: RecommitReason | "none" }
+  | { kind: "append"; items: string[] }
+  | { kind: "repair"; items: string[] }
+  | null;
 
 /**
  * What the week needs now: a commitment (none yet, or a trigger fired), new items added to it,
@@ -556,7 +559,47 @@ export function weekAction(stored: StoredWeekPlan | null, input: WeekInput): Wee
   const reason = recommitReason(stored, input);
   if (reason) return { kind: "commit", reason };
   const items = appendable(stored, input);
-  return items.length > 0 ? { kind: "append", items: items.map((row) => row.itemId) } : null;
+  if (items.length > 0) return { kind: "append", items: items.map((row) => row.itemId) };
+  const missing = missingSittings(stored, input);
+  return missing.length > 0 ? { kind: "repair", items: missing.map((row) => row.itemId) } : null;
+}
+
+/**
+ * Committed items with part of the week's share left but no open sitting: their sittings were
+ * never written (a write cut short: the week row and the sittings are two writes) or were all
+ * dropped. The rest of the share is cut into sittings again. An item worked to its share, split
+ * into pieces, or waiting is left alone.
+ */
+export function missingSittings(stored: StoredWeekPlan, input: WeekInput): CommittedItem[] {
+  const weekEnd = istanbulInstant(shiftDay(weekStart(input.weekStart), 7)).getTime();
+  const containers = new Set(
+    input.items
+      .filter((item) => item.status === "active" || item.status === "waiting")
+      .map((item) => item.parent_id),
+  );
+  const missing: CommittedItem[] = [];
+  for (const id of stored.committed) {
+    const item = input.items.find((row) => row.id === id);
+    const share = stored.shares[id];
+    if (!item || !share || item.status !== "active" || containers.has(id)) continue;
+    const left = Math.min(
+      remainingEffort(item),
+      share.minutes - (item.effort_done_minutes - share.from),
+    );
+    if (left <= 0) continue;
+    const open = input.tasks.some(
+      (task) => task.work_item_id === id && ["todo", "doing", "waiting"].includes(task.status),
+    );
+    if (open) continue;
+    missing.push({
+      itemId: id,
+      minutes: share.minutes,
+      from: share.from,
+      sittings: cutSittings(left, item.session_minutes),
+      required: item.due_at !== null && Date.parse(item.due_at) < weekEnd,
+    });
+  }
+  return missing;
 }
 
 /** The new items that join the commitment, with their share and sittings. */
