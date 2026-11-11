@@ -149,6 +149,24 @@ export function buildSlots(
 
 export const slotMinutes = (slots: Slot[]) => slots.reduce((sum, slot) => sum + slot.minutes, 0);
 
+/** Slot minutes of a whole day, from its start to its finish line, whatever the time now. */
+export function wholeDaySlotMinutes(input: {
+  date: string;
+  dayStart: Date;
+  finishLine: Date;
+  blocks: Block[];
+  settings: PlannerSettings;
+}): number {
+  const start = istanbulInstant(input.date).getTime();
+  const end = istanbulInstant(shiftDay(input.date, 1)).getTime();
+  const ofDay = input.blocks.filter(
+    (block) => Date.parse(block.starts_at) < end && Date.parse(block.ends_at) > start,
+  );
+  return slotMinutes(
+    buildSlots({ start: input.dayStart, end: input.finishLine }, ofDay, input.settings),
+  );
+}
+
 /**
  * The day type of a day: what its blocks say, else the default (docs/03-veri-modeli.md,
  * "Türetilen değerler").

@@ -1,6 +1,5 @@
 import type {
   Block,
-  DayType,
   Context,
   DayRow,
   InboxEntry,
@@ -49,8 +48,7 @@ export type StoredDayPlan = {
   version: 1;
   advice?: PlanAdvice | null;
   skipped?: string[];
-  /** The day's type when it was planned, and its slot minutes; the capacity learning reads them. */
-  dayType?: DayType;
+  /** Slot minutes of the whole day when it was first planned; the capacity learning reads it. */
   slotMinutes?: number;
   usableMinutes?: number;
 };
@@ -129,7 +127,9 @@ export function planInput(
   return {
     now,
     date,
-    dayType: day?.day_type ?? dayTypeOf(date, rows.blocks, settings),
+    // Derived from the day's blocks (docs/03-veri-modeli.md, "Türetilen değerler"); the
+    // record's `day_type` is the type the day was planned with, for learning.
+    dayType: dayTypeOf(date, rows.blocks, settings),
     lifeMode: lifeModeOn(rows.lifeModes, date),
     dayStart: day?.started_at ? new Date(day.started_at) : istanbulInstant(date, settings.dayStart),
     finishLine: istanbulInstant(date, (day?.finish_line ?? settings.finishLine).slice(0, 5)),

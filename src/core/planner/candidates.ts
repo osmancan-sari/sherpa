@@ -181,7 +181,10 @@ export function buildCandidates(input: PlanInput): Candidate[] {
   );
   for (const task of openTasks) {
     if (!returning && task.planned_date !== null && task.planned_date > date) continue;
-    if (skipped.has(task.id)) continue;
+    // A work item put off today takes its sittings with it.
+    if (skipped.has(task.id) || (task.work_item_id !== null && skipped.has(task.work_item_id))) {
+      continue;
+    }
     const item = task.work_item_id
       ? input.workItems.find((row) => row.id === task.work_item_id)
       : undefined;
@@ -341,9 +344,7 @@ export function buildCandidates(input: PlanInput): Candidate[] {
   // An urgent item needs today its next sitting, not all of them: the others are planned like
   // the rest of the pool (the capacity holds).
   const firstSitting = new Map<string, Candidate>();
-  for (const candidate of [...scored].sort(
-    (a, b) => (a.task?.position ?? 0) - (b.task?.position ?? 0),
-  )) {
+  for (const candidate of [...scored].sort((a, b) => sittingRank(a.task) - sittingRank(b.task))) {
     const itemId = candidate.task?.work_item_id;
     if (candidate.mandatory !== "urgent" || !itemId) continue;
     if (firstSitting.has(itemId)) candidate.mandatory = null;
@@ -384,6 +385,16 @@ export function shareWorked(
 ): boolean {
   const share = input.shares?.[item.id];
   return share !== undefined && item.effort_done_minutes - share.from >= share.minutes;
+}
+
+/**
+ * The order of an item's sittings: the running one, then by place; one without a place (started
+ * by hand) after them, as `start_session` picks them.
+ */
+export function sittingRank(task: { status: string; position: number | null } | undefined) {
+  if (!task) return 0;
+  if (task.status === "doing") return -1;
+  return task.position ?? Number.MAX_SAFE_INTEGER;
 }
 
 /** Mandatory first (by deadline), then by score, then by the old order: deadline, importance, age. */

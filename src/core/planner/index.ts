@@ -12,7 +12,14 @@ export {
   DEFER_LIMIT,
 } from "./plan";
 export { buildCandidates, compareScored, isReturning, rhythmState } from "./candidates";
-export { buildSlots, dayCapacity, dayTypeOf, plannerSettings, DEFAULT_SETTINGS } from "./slots";
+export {
+  buildSlots,
+  dayCapacity,
+  dayTypeOf,
+  plannerSettings,
+  wholeDaySlotMinutes,
+  DEFAULT_SETTINGS,
+} from "./slots";
 export {
   commitWeek,
   cutSittings,

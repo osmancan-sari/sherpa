@@ -108,7 +108,10 @@ export function todayCandidates(input: TodayInput): Candidate[] {
   for (const task of openTasks) {
     if (task.work_item_id === null) continue;
     const current = nextSitting.get(task.work_item_id);
-    const rank = (row: Task) => (row.status === "doing" ? -1 : (row.position ?? 0));
+    // Running first, then by place; one without a place (started by hand) last, as
+    // `start_session` picks them.
+    const rank = (row: Task) =>
+      row.status === "doing" ? -1 : (row.position ?? Number.MAX_SAFE_INTEGER);
     if (!current || rank(task) < rank(current)) nextSitting.set(task.work_item_id, task);
   }
   for (const task of openTasks) {

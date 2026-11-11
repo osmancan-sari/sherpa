@@ -6,6 +6,8 @@ import {
   closeDay,
   deferTask,
   listLifeModes,
+  planDay,
+  saveDayPlan,
   saveStats,
   setLifeMode,
   skipToday,
@@ -37,30 +39,39 @@ const day = async (date: string) =>
   (await db.from("days").select("*").eq("date", date).maybeSingle()).data;
 
 describe("the day's record", () => {
-  it("opens on the first touch with the engine's plan, once", async () => {
+  it("gets the engine's plan once, with the day's type and mode; a plan written meanwhile stays", async () => {
     const mod = await makeModule(db);
     const work = await createTask(db, { module_id: mod.id, title: "Rapor" });
     const first = await plan();
-    const row = await touchDay(db, {
-      date: TODAY,
-      now: NOW,
-      plan: first.plan,
-      dayType: first.input.dayType,
-      day: null,
+    const row = await planDay(db, { plan: first.plan, day: first.input });
+    expect(row).toMatchObject({
+      plan_source: "auto",
+      top3: [work.id],
+      day_type: "home",
+      life_mode: "normal",
+      started_at: null,
     });
-    expect(row).toMatchObject({ plan_source: "auto", top3: [work.id] });
-    expect(row.started_at).not.toBeNull();
-    expect(storedPlan(row)).toMatchObject({ dayType: "home" });
-    expect(storedPlan(row).slotMinutes).toBeGreaterThan(0);
-    // A second touch changes nothing.
-    const again = await touchDay(db, {
-      date: TODAY,
-      now: istanbulInstant(TODAY, "10:00"),
-      plan: first.plan,
-      dayType: "home",
-      day: row,
-    });
-    expect(again.started_at).toBe(row.started_at);
+    // The whole day's slots (08:00–19:00), not what is left of it at 09:00.
+    expect(storedPlan(row).slotMinutes).toBeGreaterThan(600);
+    await db.from("days").update({ plan_source: "closing", top3: [] }).eq("id", row.id);
+    const again = await planDay(db, { plan: first.plan, day: first.input });
+    expect(again).toMatchObject({ plan_source: "closing", top3: [] });
+  });
+
+  it("writes the first touch once", async () => {
+    await touchDay(db, TODAY, NOW);
+    await touchDay(db, TODAY, istanbulInstant(TODAY, "10:00"));
+    expect(Date.parse((await day(TODAY))!.started_at!)).toBe(NOW.getTime());
+  });
+
+  it("keeps the day's slot minutes of its first record when the plan is made again", async () => {
+    const mod = await makeModule(db);
+    await createTask(db, { module_id: mod.id, title: "Okuma" });
+    const morning = await plan();
+    const first = await planDay(db, { plan: morning.plan, day: morning.input });
+    const late = await plan(istanbulInstant(TODAY, "17:00"));
+    const again = await saveDayPlan(db, { plan: late.plan, day: late.input, source: "auto" });
+    expect(storedPlan(again).slotMinutes).toBe(storedPlan(first).slotMinutes);
   });
 
   it("keeps the evening's plan for tomorrow and closes today", async () => {
@@ -72,7 +83,7 @@ describe("the day's record", () => {
     await closeDay(db, {
       today: TODAY,
       now: evening,
-      tomorrow: { plan: buildPlan(input), dayType: input.dayType },
+      tomorrow: { plan: buildPlan(input), day: input },
       note: "Yarın erken",
     });
     expect(await day(shiftDay(TODAY, 1))).toMatchObject({
@@ -82,18 +93,11 @@ describe("the day's record", () => {
     const today = await day(TODAY);
     expect(today).toMatchObject({ closing_note: "Yarın erken" });
     expect(today!.closed_at).not.toBeNull();
-    // The next morning's first touch keeps the closing's plan.
+    // The next morning the engine does not replace the closing's plan.
     const morning = istanbulInstant(shiftDay(TODAY, 1), "08:30");
     const next = await plan(morning);
-    const touched = await touchDay(db, {
-      date: shiftDay(TODAY, 1),
-      now: morning,
-      plan: next.plan,
-      dayType: next.input.dayType,
-      day: await day(shiftDay(TODAY, 1)),
-    });
-    expect(touched).toMatchObject({ plan_source: "closing", top3: [work.id] });
-    expect(touched.started_at).not.toBeNull();
+    const kept = await planDay(db, { plan: next.plan, day: next.input });
+    expect(kept).toMatchObject({ plan_source: "closing", top3: [work.id] });
   });
 
   it("puts work off: a task to tomorrow with its count, an item or rhythm off today's list", async () => {
@@ -108,6 +112,23 @@ describe("the day's record", () => {
     expect(storedPlan(await day(TODAY)).skipped).toEqual([item.id]);
     const { input } = await plan();
     expect(input.skipped).toEqual([item.id]);
+  });
+
+  it("a sitting put off takes its item's other sittings off today's plan", async () => {
+    const mod = await makeModule(db);
+    const item = await createWorkItem(db, {
+      module_id: mod.id,
+      title: "Tez",
+      effort_total_minutes: 180,
+      session_minutes: 60,
+    });
+    await keepWeek(db, NOW);
+    const before = await plan();
+    const sittings = before.plan.candidates.filter((row) => row.task?.work_item_id === item.id);
+    expect(sittings.length).toBeGreaterThan(0);
+    await deferTask(db, sittings[0].task!, TODAY);
+    const after = await plan();
+    expect(after.plan.candidates.filter((row) => row.task?.work_item_id === item.id)).toEqual([]);
   });
 
   it("forgets the days planned during an absence", async () => {
@@ -135,16 +156,38 @@ describe("waiting work", () => {
   it("waits with a follow-up day; the follow-up brings it back or waits more", async () => {
     const mod = await makeModule(db);
     const work = await createTask(db, { module_id: mod.id, title: "Hocadan cevap" });
-    const waiting = await waitOnTask(db, work.id, "Hoca", TODAY);
+    const waiting = await waitOnTask(db, work, "Hoca", TODAY);
     expect(waiting).toMatchObject({
       status: "waiting",
       waiting_on: "Hoca",
       follow_up_on: shiftDay(TODAY, 3),
     });
-    const more = await answerFollowUp(db, work.id, false, shiftDay(TODAY, 3));
+    const more = await answerFollowUp(db, work, false, shiftDay(TODAY, 3));
     expect(more).toMatchObject({ status: "waiting", follow_up_on: shiftDay(TODAY, 6) });
-    const back = await answerFollowUp(db, work.id, true, shiftDay(TODAY, 6));
+    const back = await answerFollowUp(db, work, true, shiftDay(TODAY, 6));
     expect(back).toMatchObject({ status: "todo", waiting_on: null, follow_up_on: null });
+  });
+
+  it("a waiting sitting holds its whole item, and its answer frees it", async () => {
+    const mod = await makeModule(db);
+    const item = await createWorkItem(db, {
+      module_id: mod.id,
+      title: "Anket",
+      effort_total_minutes: 120,
+    });
+    const sitting = await createTask(db, {
+      module_id: mod.id,
+      title: "Anket",
+      work_item_id: item.id,
+    });
+    await waitOnTask(db, sitting, "Danışman", TODAY);
+    expect(ok(await db.from("work_items").select("status").eq("id", item.id).single())).toEqual({
+      status: "waiting",
+    });
+    await answerFollowUp(db, sitting, true, shiftDay(TODAY, 3));
+    expect(ok(await db.from("work_items").select("status").eq("id", item.id).single())).toEqual({
+      status: "active",
+    });
   });
 });
 
@@ -240,6 +283,76 @@ describe("the week", () => {
       await db.from("tasks").select("status").eq("work_item_id", item.id).eq("status", "todo"),
     );
     expect(open.length).toBeGreaterThan(0);
+  });
+
+  it("is committed again when asked, and follows the AI's advice within the rules", async () => {
+    const mod = await makeModule(db);
+    const a = await createWorkItem(db, { module_id: mod.id, title: "A", effort_total_minutes: 90 });
+    const b = await createWorkItem(db, { module_id: mod.id, title: "B", effort_total_minutes: 90 });
+    await keepWeek(db, NOW);
+    const asked = await keepWeek(db, istanbulInstant(TODAY, "12:00"), {
+      force: true,
+      advise: async () => ({ committed: [b.id], drop: [a.id], reasons: { [b.id]: "B öne." } }),
+    });
+    expect(asked.action).toEqual({ kind: "commit", reason: "none" });
+    expect(asked.plan).toMatchObject({
+      committed: [b.id],
+      plan_source: "ai",
+      reasons: { [b.id]: "B öne." },
+    });
+    // A's sitting is no longer needed this week.
+    const open = ok(
+      await db.from("tasks").select("work_item_id").eq("status", "todo").order("work_item_id"),
+    );
+    expect(open.every((row) => row.work_item_id === b.id)).toBe(true);
+    // Advice that fails is no advice: the engine commits on its own.
+    const failed = await keepWeek(db, istanbulInstant(TODAY, "13:00"), {
+      force: true,
+      advise: async () => {
+        throw new Error("down");
+      },
+    });
+    expect(failed.plan).toMatchObject({ plan_source: "auto" });
+  });
+
+  it("learns from measured sessions when the week is new, and commits on what it learned", async () => {
+    const mod = await makeModule(db);
+    // Five finished sittings of 30 minutes' estimate that took 60: the multiplier is 2.
+    for (let n = 0; n < 5; n++) {
+      const day = shiftDay(TODAY, -(n + 1));
+      const task = await createTask(db, { module_id: mod.id, title: `Ödev ${n}`, est_minutes: 30 });
+      const start = istanbulInstant(day, "10:00");
+      ok(
+        await db
+          .from("sessions")
+          .insert({
+            task_id: task.id,
+            module_id: mod.id,
+            started_at: start.toISOString(),
+            ended_at: new Date(start.getTime() + 60 * 60_000).toISOString(),
+          })
+          .select(),
+      );
+      await db
+        .from("tasks")
+        .update({ status: "done", done_at: start.toISOString() })
+        .eq("id", task.id);
+    }
+    await keepWeek(db, NOW);
+    expect(
+      ok(
+        await db
+          .from("planner_stats")
+          .select("key, value, sample_size")
+          .eq("key", `est_multiplier:${mod.slug}:task`),
+      ),
+    ).toEqual([{ key: `est_multiplier:${mod.slug}:task`, value: 2, sample_size: 5 }]);
+    const { input } = await plan();
+    expect(input.stats).toContainEqual({
+      key: `est_multiplier:${mod.slug}:task`,
+      value: 2,
+      sample_size: 5,
+    });
   });
 
   it("keeps one learned value per key", async () => {

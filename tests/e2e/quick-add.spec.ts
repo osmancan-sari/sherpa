@@ -109,7 +109,10 @@ test("a task longer than 90 minutes cannot be saved; the interface offers a work
   });
   // No task of its own: the only tasks are the item's sittings, opened when the week took it
   // in (Ç3).
-  const tasks = await rows("tasks");
+  const tasks = await waitFor(
+    () => rows("tasks"),
+    (list) => list.length > 0,
+  );
   expect(tasks.every((task) => task.work_item_id === items[0].id)).toBe(true);
   // The item is offered on the Today screen as a sitting that fits.
   const now = page.getByRole("region", { name: "Şimdi" });

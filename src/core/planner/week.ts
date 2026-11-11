@@ -516,6 +516,7 @@ export function recommitReason(stored: StoredWeek, input: WeekInput): RecommitRe
       !known.has(item.id) &&
       item.due_at !== null &&
       Date.parse(item.due_at) < weekEnd &&
+      (item.earliest_at === null || Date.parse(item.earliest_at) < weekEnd) &&
       remainingEffort(item) > 0 &&
       !isBlocked(item, input.items),
   );

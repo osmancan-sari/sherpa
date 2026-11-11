@@ -1,11 +1,10 @@
-import type { Plan } from "@/core/planner";
+import { type Plan, type PlanInput, wholeDaySlotMinutes } from "@/core/planner";
 import { type StoredDayPlan, storedPlan } from "@/core/planner/input";
 import { sittingChanges, type WeekPlan } from "@/core/planner/week";
 import {
   check,
   type DayRow,
   type Db,
-  type DayType,
   type LifeMode,
   type LifeModePeriod,
   type PlannerStatRow,
@@ -36,53 +35,52 @@ async function getDay(db: Db, date: string): Promise<DayRow | null> {
 
 type PlanSource = "closing" | "ai" | "auto";
 
-/** What the days row keeps of a plan besides its three: how much time the day had. */
-export function planSnapshot(
+/** What a day is planned in: the input's day, its type and mode (docs/03, `days`). */
+export type PlannedDay = Pick<
+  PlanInput,
+  "date" | "dayType" | "lifeMode" | "dayStart" | "finishLine" | "blocks" | "settings"
+>;
+
+/**
+ * The record's columns for a plan: its three, the day's type and mode, and what the day held.
+ * The day's slot minutes are the whole day's (start to finish line), kept from the first
+ * record: the capacity learning divides the day's work by them.
+ */
+function planColumns(
   plan: Plan,
-  dayType: DayType,
-  extra: Partial<StoredDayPlan> = {},
-): StoredDayPlan {
-  return {
+  day: PlannedDay,
+  previous: DayRow | null,
+  extra: Partial<StoredDayPlan>,
+) {
+  const stored = storedPlan(previous);
+  const kept: StoredDayPlan = {
+    ...stored,
     ...extra,
     version: 1,
-    dayType,
-    slotMinutes: plan.slots.reduce((sum, slot) => sum + slot.minutes, 0),
-    usableMinutes: plan.usableMinutes,
+    slotMinutes: stored.slotMinutes ?? wholeDaySlotMinutes(day),
+  };
+  return {
+    date: day.date,
+    top3: plan.top3,
+    day_type: day.dayType,
+    life_mode: day.lifeMode,
+    plan: toJson(kept),
   };
 }
 
 /**
- * The day's first touch: the record is opened with the moment and the plan the engine made
- * (`plan_source = auto`). A day that already has its plan (from the closing or the AI) only
- * gets its first touch.
+ * Today's plan when the day has none yet (no closing, no AI): the engine's (`plan_source =
+ * auto`). The record is read again first, so a plan written meanwhile (on the other screen)
+ * is never replaced. The first touch is not written here: the screen may be on all night.
  */
-export async function touchDay(
-  db: Db,
-  input: { date: string; now: Date; plan: Plan; dayType: DayType; day: DayRow | null },
-): Promise<DayRow> {
-  const { date, now, plan, day } = input;
-  if (day?.plan_source) {
-    if (day.started_at) return day;
-    return unwrap(
-      await db
-        .from("days")
-        .update({ started_at: now.toISOString() })
-        .eq("id", day.id)
-        .select()
-        .single(),
-    );
-  }
+export async function planDay(db: Db, input: { plan: Plan; day: PlannedDay }): Promise<DayRow> {
+  const current = await getDay(db, input.day.date);
+  if (current?.plan_source) return current;
   return unwrap(
     await db
       .from("days")
       .upsert(
-        {
-          date,
-          started_at: day?.started_at ?? now.toISOString(),
-          top3: plan.top3,
-          plan: toJson(planSnapshot(plan, input.dayType, storedPlan(day))),
-          plan_source: "auto",
-        },
+        { ...planColumns(input.plan, input.day, current, {}), plan_source: "auto" },
         { onConflict: "user_id,date" },
       )
       .select()
@@ -90,27 +88,51 @@ export async function touchDay(
   );
 }
 
+/**
+ * The day's first touch (docs/04-planlayici.md, `dayStart`): the moment the user first did
+ * something on a screen that day. Written once.
+ */
+export async function touchDay(db: Db, date: string, now: Date): Promise<void> {
+  const current = await getDay(db, date);
+  if (current?.started_at) return;
+  if (current) {
+    check(
+      await db
+        .from("days")
+        .update({ started_at: now.toISOString() })
+        .eq("id", current.id)
+        .is("started_at", null),
+    );
+    return;
+  }
+  check(
+    await db
+      .from("days")
+      .upsert(
+        { date, started_at: now.toISOString() },
+        { onConflict: "user_id,date", ignoreDuplicates: true },
+      ),
+  );
+}
+
 /** A new plan for a day: "Yeniden planla", the AI's plan, the evening closing. */
 export async function saveDayPlan(
   db: Db,
   input: {
-    date: string;
     plan: Plan;
-    dayType: DayType;
+    day: PlannedDay;
     source: PlanSource;
     stored?: Partial<StoredDayPlan>;
     reasons?: Record<string, string> | null;
   },
 ): Promise<DayRow> {
-  const previous = storedPlan(await getDay(db, input.date));
+  const previous = await getDay(db, input.day.date);
   return unwrap(
     await db
       .from("days")
       .upsert(
         {
-          date: input.date,
-          top3: input.plan.top3,
-          plan: toJson(planSnapshot(input.plan, input.dayType, { ...previous, ...input.stored })),
+          ...planColumns(input.plan, input.day, previous, input.stored ?? {}),
           plan_source: input.source,
           ...(input.reasons === undefined ? {} : { plan_reasons: toJson(input.reasons) }),
         },
@@ -138,15 +160,14 @@ export async function closeDay(
   input: {
     today: string;
     now: Date;
-    tomorrow: { plan: Plan; dayType: DayType; advice?: StoredDayPlan["advice"] };
+    tomorrow: { plan: Plan; day: PlannedDay; advice?: StoredDayPlan["advice"] };
     note: string | null;
     reasons?: Record<string, string> | null;
   },
 ): Promise<void> {
   await saveDayPlan(db, {
-    date: shiftDay(input.today, 1),
     plan: input.tomorrow.plan,
-    dayType: input.tomorrow.dayType,
+    day: input.tomorrow.day,
     source: "closing",
     stored: input.tomorrow.advice ? { advice: input.tomorrow.advice } : {},
     reasons: input.reasons,
@@ -177,13 +198,16 @@ export async function clearPastPlannedDays(db: Db, today: string): Promise<void>
 
 // --- Tasks: put off, waiting -----------------------------------------------------------------
 
-/** "Ertele": tomorrow, and one more time put off. */
+/**
+ * "Ertele": tomorrow, and one more time put off. A sitting takes its work item off today's list
+ * with it: the item's other sittings wait too.
+ */
 export async function deferTask(
   db: Db,
-  task: Pick<Task, "id" | "defer_count">,
+  task: Pick<Task, "id" | "defer_count" | "work_item_id">,
   today: string,
 ): Promise<Task> {
-  return unwrap(
+  const deferred = unwrap(
     await db
       .from("tasks")
       .update({ planned_date: shiftDay(today, 1), defer_count: task.defer_count + 1 })
@@ -191,19 +215,24 @@ export async function deferTask(
       .select()
       .single(),
   );
+  if (task.work_item_id) await skipToday(db, today, task.work_item_id);
+  return deferred;
 }
 
 /** Days until a waiting task asks to be followed up. */
 export const FOLLOW_UP_DAYS = 3;
 
-/** "Birini bekliyorum": the task waits; a short reminder comes on its follow-up day. */
+/**
+ * "Birini bekliyorum": the task waits; a short reminder comes on its follow-up day. A sitting
+ * puts its whole work item on hold: the item cannot go on while its step waits.
+ */
 export async function waitOnTask(
   db: Db,
-  id: string,
+  task: Pick<Task, "id" | "work_item_id">,
   waitingOn: string | null,
   today: string,
 ): Promise<Task> {
-  return unwrap(
+  const waiting = unwrap(
     await db
       .from("tasks")
       .update({
@@ -211,23 +240,43 @@ export async function waitOnTask(
         waiting_on: waitingOn,
         follow_up_on: shiftDay(today, FOLLOW_UP_DAYS),
       })
-      .eq("id", id)
+      .eq("id", task.id)
       .select()
       .single(),
   );
+  if (task.work_item_id) {
+    check(
+      await db
+        .from("work_items")
+        .update({ status: "waiting" })
+        .eq("id", task.work_item_id)
+        .eq("status", "active"),
+    );
+  }
+  return waiting;
 }
 
-/** The follow-up: the answer came (the task is back in the pool), or still waiting. */
+/** The follow-up: the answer came (the task, and its item, are back), or still waiting. */
 export async function answerFollowUp(
   db: Db,
-  id: string,
+  task: Pick<Task, "id" | "work_item_id">,
   came: boolean,
   today: string,
 ): Promise<Task> {
   const patch = came
     ? { status: "todo" as const, waiting_on: null, follow_up_on: null }
     : { follow_up_on: shiftDay(today, FOLLOW_UP_DAYS) };
-  return unwrap(await db.from("tasks").update(patch).eq("id", id).select().single());
+  const row = unwrap(await db.from("tasks").update(patch).eq("id", task.id).select().single());
+  if (came && task.work_item_id) {
+    check(
+      await db
+        .from("work_items")
+        .update({ status: "active" })
+        .eq("id", task.work_item_id)
+        .eq("status", "waiting"),
+    );
+  }
+  return row;
 }
 
 // --- The week --------------------------------------------------------------------------------

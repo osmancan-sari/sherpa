@@ -184,7 +184,8 @@ export async function keepWeek(
   // stands on this week's values, and nothing learned changes it until the next week.
   let current = input;
   if (!stored) {
-    const learned = await learn(db, rows);
+    // Learning that fails leaves last week's values; the week is committed all the same.
+    const learned = await learn(db, rows).catch(() => [] as PlannerStat[]);
     if (learned.length > 0) current = { ...input, stats: mergeStats(input.stats, learned) };
   }
   const advice = options.advise ? await options.advise(current).catch(() => null) : null;
@@ -208,12 +209,22 @@ export async function learn(db: Db, rows: PlanRows): Promise<PlannerStat[]> {
   const ids = [
     ...new Set(rows.sessions.map((row) => row.task_id).filter((id): id is string => id !== null)),
   ];
-  const tasks: Task[] =
-    ids.length === 0 ? [] : unwrap(await db.from("tasks").select("*").in("id", ids));
+  const tasks: Task[] = [];
+  // In pieces: eight weeks of sessions would make one long request.
+  for (let at = 0; at < ids.length; at += 100) {
+    tasks.push(
+      ...unwrap(
+        await db
+          .from("tasks")
+          .select("*")
+          .in("id", ids.slice(at, at + 100)),
+      ),
+    );
+  }
   const planned: PlannedDay[] = rows.days.flatMap((day) => {
     const stored = storedPlan(day);
-    if (!stored.slotMinutes || !stored.dayType) return [];
-    return [{ date: day.date, dayType: stored.dayType, slotMinutes: stored.slotMinutes }];
+    if (!stored.slotMinutes || !day.day_type) return [];
+    return [{ date: day.date, dayType: day.day_type, slotMinutes: stored.slotMinutes }];
   });
   const stats = [
     ...estimateMultipliers(rows.sessions, tasks, rows.modules),

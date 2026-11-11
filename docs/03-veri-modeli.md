@@ -210,12 +210,12 @@ Aynı anda en fazla bir açık oturum olur (tekil indeks). Oturumlar üç verita
 Günün planı ve sonucu. `(user_id, date)` tekil.
 ```
 date date
-day_type enum(home, office, campus)
-life_mode enum(normal, busy, minimum, holiday)
+day_type enum(home, office, campus)   -- gün planlanırken türetilen tip (bloklardan; yoksa ayarlardaki)
+life_mode enum(normal, busy, minimum, holiday)   -- gün planlanırken geçerli mod
 started_at timestamptz null   -- günün ilk dokunuşu
 finish_line time              -- bu saatten sonra derin iş önerilmez
 top3 uuid[]                   -- günün 3 işi
-plan jsonb                    -- planlayıcının çıktısı (yuvalar ve atamalar)
+plan jsonb                    -- planın özeti: yapay zekanın önerisi (`advice`), bugün ertelenenler (`skipped`), bütün günün yuva süresi (`slotMinutes`). Yuvalar ve atamalar kaydedilmez: ekran planı her değişiklikte aynı fonksiyonla yeniden kurar
 plan_source enum(closing, ai, auto)   -- kapanışta onaylandı / yapay zeka önerdi / yalnızca motor
 plan_reasons jsonb null       -- yapay zekanın gerekçeleri ("neden?")
 closed_at timestamptz null    -- akşam kapanışı yapıldıysa
