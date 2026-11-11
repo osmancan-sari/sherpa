@@ -108,7 +108,7 @@ Tek kutu, iki kullanım:
 
 Kutu tek satırla başlar ve yapıştırılan çok satırlı metinle büyür (`sherpa` bloğu satırlarını korur); `Enter` kaydeder, `Shift+Enter` satır ekler. Yapıştırılan yapılı bloğu tanıyan modül varsa giriş doğrudan ona işlenir.
 
-Yapay zeka açıkken serbest metin gelen kutusunda beklemez: iş hemen varsayılanlarla görünür, birkaç saniye içinde modül, süre ve önem yerinde dolar. Yapay zekanın koyduğu değerler küçük bir işaretle ayırt edilir; üzerine gelince gerekçesi görünür, tıklayınca değiştirilir. Emin olmadığı girişler gelen kutusuna onay kartı olarak düşer.
+Yapay zeka açıkken serbest metin gelen kutusunda beklemez: giriş hemen gelen kutusuna yazılır, birkaç saniye içinde yapay zeka onu modülü, süresi, önemi ve son tarihiyle bir işe (tek oturum) ya da iş kalemine (birden çok oturum) çevirir ve giriş gelen kutusundan çıkar. İş önce varsayılanlarla açılmaz, çünkü her iş bir modüle bağlıdır ve modülü yapay zeka seçer. Satırın sonuna yazılan gün ve süre kullanıcınındır; yapay zeka onları değiştirmez. Yapay zekanın koyduğu değerler küçük bir işaretle ayırt edilir; üzerine gelince gerekçesi görünür, tıklayınca değiştirilir. Emin olmadığı girişler gelen kutusunda onay kartı olarak kalır. Yapay zeka kapalıyken, yanıt vermezse ya da bütçe dolduysa giriş gelen kutusunda kalır ve kullanıcı yönlendirir.
 
 Her modül hızlı girişe kendi türlerini ekler (sözleşmenin `intake` bölümü): Okul "sınav/teslim" ve "not", Beslenme "tartı" ve "alışveriş kalemi" gibi.
 

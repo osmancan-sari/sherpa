@@ -75,6 +75,9 @@ export type ModuleDefinition = {
   sizingHints?: string
   onOutcome?: (o: Outcome, ctx: ModuleContext) => Promise<void>
 
+  // Yapıştırılan serbest metni okuyanlar (yapay zekanın `extract` çağrısı)
+  extractors?: Extractor[]
+
   // Modülün kendi tabloları; '<slug>_' ile başlar. "Tümünü dışa aktar" bunları da alır
   tables?: string[]
 
@@ -264,6 +267,22 @@ Akış:
   sizingHints?: string                 // yapay zekaya verilen, modüle özel efor ipuçları (kısa metin)
   onOutcome?: (o: Outcome, ctx: ModuleContext) => Promise<void>
 ```
+
+`size` çağrısını tarayıcı başlatır: çekirdek her teklifi kaydettikten sonra yeni kalem ya da kapsamı (başlık, `meta`, `effort.bounds`) değişen kalem için sunucuya sorar; neyin boş olduğuna sunucu karar verir. Modülün ayrıca bir şey yapması gerekmez.
+
+**Serbest metinden öneri (`extractors`).** Modül, yapıştırılan bir metni (duyuru, e-posta) okutmak isterse bir okuyucu tanımlar:
+
+```ts
+type Extractor<T> = {
+  key: string            // modül içinde tekil: 'ninova_announcement'
+  version: string        // talimat ya da şema değişince değişir (önceki yanıt yeniden kullanılmaz)
+  instructions: string   // metinde ne aranacağı, modülün kendi diliyle
+  item: ZodType<T>       // tek önerinin şeması
+  max?: number           // bir metinden en çok kaç öneri (varsayılan 10)
+}
+```
+
+Modül `POST /api/ai/extract` ile `{ module, extractor, text, publishedAt?, context? }` gönderir; çekirdek çağrıyı yapar, şemaya uyan önerileri döndürür ve hiçbir şey yazmaz. `context`, modülün metni okumaya yarayan bilgisidir (örneğin dersin açık değerlendirmeleri). Önerilerin ne olacağına (genelde kullanıcının onayladığı bir kart) modül karar verir. Yapay zeka yoksa yanıt `skipped` olur; modül elle girişe döner.
 
 ## Kurallar
 

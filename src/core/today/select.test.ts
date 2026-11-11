@@ -137,6 +137,28 @@ describe("todayCandidates", () => {
     expect(after.map((c) => c.title)).toEqual(["soru çöz"]);
   });
 
+  it("offers the pieces of a split item instead of the item; a suggested split changes nothing", () => {
+    const whole = workItem({ title: "proje", effort_total_minutes: 600 });
+    const piece = (title: string, status: "proposed" | "active" | "done" | "dropped") =>
+      workItem({ title, status, parent_id: whole.id, effort_total_minutes: 120 });
+
+    // Only suggested (or declined) pieces: the item is still the work.
+    const suggested = todayCandidates(
+      input({ workItems: [whole, piece("taslak", "proposed"), piece("eski", "dropped")] }),
+    );
+    expect(suggested.map((c) => c.title)).toEqual(["proje"]);
+
+    // Accepted: the open pieces stand for it.
+    const accepted = todayCandidates(
+      input({ workItems: [whole, piece("taslak", "active"), piece("kapsam", "done")] }),
+    );
+    expect(accepted.map((c) => c.title)).toEqual(["taslak"]);
+
+    // Every piece finished: the item comes back, to be closed.
+    const finished = todayCandidates(input({ workItems: [whole, piece("taslak", "done")] }));
+    expect(finished.map((c) => c.title)).toEqual(["proje"]);
+  });
+
   it("offers a rhythm while it has debt in its period, once a day", () => {
     const weekly = rhythm({ title: "süpürme", target_count: 2, period: "week" });
     const none = todayCandidates(input({ rhythms: [weekly] }));

@@ -241,6 +241,13 @@ describe("incomingFields", () => {
       artifact_url: "D:/okul/doc.pdf",
       depends_on_keys: ["a:1"],
       meta: { course_code: "BBF301E" },
+      // Ç2: the module's range is kept on the item, for the `size` call.
+      effort_min_minutes: 120,
+      effort_max_minutes: 600,
+    });
+    expect(incomingFields(proposal({ effort: {} })).facts).toMatchObject({
+      effort_min_minutes: null,
+      effort_max_minutes: null,
     });
     expect(fields.judgments).toMatchObject({
       importance: { value: 4, source: "module" },

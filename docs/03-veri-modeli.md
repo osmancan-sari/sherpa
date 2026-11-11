@@ -101,6 +101,8 @@ meta jsonb default '{}'
 Kurallar:
 - `active` bir kalemin kalan eforu varsa ve haftası geldiyse en az bir `todo` oturum işi olmalı. Oturum işleri kalem haftalık plana girerken üretilir (bkz. `docs/04-planlayici.md`, "Plan ufukları").
 - Kalan efor = `effort_total_minutes − effort_done_minutes`; sıfıra inince kalem kullanıcıya "bitti mi?" diye sorulur, kendiliğinden kapanmaz.
+- `proposed` kalem yapay zekanın bölme önerisidir (`parent_id` altında, `decompose` ya da `enrich` adımları): kullanıcı kabul edene kadar planlanmaz ve Bugün'de görünmez; kabul edilince `active`, reddedilince `dropped` olur.
+- Açık (`active` ya da `waiting`) alt kalemi olan kalem Bugün'de kendisi görünmez; alt kalemleri onun yerine geçer. Alt kalemlerin hepsi kapanınca kalem yeniden görünür ve kapatılmayı bekler.
 - Planlayıcı gelene kadar (Ç3) oturum işi, kalemde "Başla" denince o an üretilir: uzunluğu `session_minutes`, yoksa kalan eforun 45 dakikayı geçmeyen kısmı. Oturum işi kalemin `source_type` ve `source_id` değerlerini taşır; modül kendi işini böyle tanır.
 - Açık oturum işi (`todo`, `doing`, `waiting`) kalemin adını, son tarihini, önemini, enerji ve bağlamını, kalemde oturum süresi (`session_minutes`) doluysa onu da izler: kalem değişince (kullanıcının düzenlemesi ya da modülün yeni teklifi) veritabanı açık oturum işlerini de günceller (`sync_open_sittings` tetikleyicisi). Bitmiş ve bırakılmış oturum işleri eski değerleriyle kalır.
 

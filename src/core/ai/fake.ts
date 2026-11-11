@@ -1,3 +1,5 @@
+import { parseQuickText } from "@/core/intake/parse";
+import { dayKey, istanbulInstant, shiftDay } from "@/lib/date";
 import type { DecomposeOutput } from "./calls/decompose";
 import type { EnrichInput, EnrichOutput } from "./calls/enrich";
 import type { SizeInput, SizeOutput } from "./calls/size";
@@ -16,18 +18,62 @@ type Answer = (input: unknown) => unknown;
 
 const none = { value: null, confidence: 0, reason: "" };
 
+/** Words that make the fake read a line as work of several sittings. */
+const LARGE = ["proje", "tez", "sınav", "sinav", "rapor", "[ai:item]"];
+
+/**
+ * Reads a line roughly the way a model would: the module named in it (or the only one there
+ * is), the day and duration typed at its end, a larger size for project-like words.
+ * `[ai:unsure]` makes it unsure, so the answer becomes a card to confirm.
+ */
 function enrich(input: unknown): EnrichOutput {
-  const { text } = input as EnrichInput;
+  const given = input as Partial<EnrichInput> & { text: string };
+  const text = given.text;
+  const today = given.today ?? dayKey(new Date());
+  const modules = given.modules ?? [];
+  const lower = text.toLocaleLowerCase("tr");
+  const now = istanbulInstant(today, "12:00");
+  const parsed = parseQuickText(text.replace(/\[ai:[a-z]+\]/g, " "), now);
+
+  const named = modules.find(
+    (mod) =>
+      lower.includes(mod.name.toLocaleLowerCase("tr")) || lower.includes(mod.slug.toLowerCase()),
+  );
+  const chosen = named ?? (modules.length === 1 ? modules[0] : undefined);
+  const unsure = lower.includes("[ai:unsure]");
+  const large = LARGE.some((word) => lower.includes(word));
+  const minutes = parsed.minutes ?? (large ? 240 : 45);
+  const soon = parsed.dueDay !== null && parsed.dueDay <= shiftDay(today, 3);
+
   return {
-    title: text.trim().slice(0, 200) || "İş",
-    module: { value: null, confidence: 0.2, reason: "uygun modül bulunamadı" },
-    target: { value: "task", confidence: 0.6, reason: "tek oturumluk görünüyor" },
-    est_minutes: { value: 30, confidence: 0.4, reason: "benzer iş yok; varsayılan" },
-    energy: { value: "light", confidence: 0.4, reason: "kısa iş" },
-    context: { value: "any", confidence: 0.4, reason: "yer belirtilmemiş" },
-    importance: { value: 2, confidence: 0.4, reason: "son tarih yok" },
-    due: none,
-    steps: [],
+    title: parsed.title.trim() || "İş",
+    module: chosen
+      ? {
+          value: chosen.slug,
+          confidence: unsure ? 0.3 : named ? 0.9 : 0.7,
+          reason: named ? "modülün adı geçiyor" : "tek etkin modül",
+        }
+      : { value: null, confidence: 0.2, reason: "uygun modül bulunamadı" },
+    target: {
+      value: large ? "work_item" : "task",
+      confidence: unsure ? 0.3 : 0.8,
+      reason: large ? "birden çok oturum ister" : "tek oturumluk görünüyor",
+    },
+    est_minutes: { value: minutes, confidence: 0.6, reason: "benzer işlere göre" },
+    energy: { value: large ? "deep" : "light", confidence: 0.6, reason: "işin türüne göre" },
+    context: { value: "any", confidence: 0.5, reason: "yer belirtilmemiş" },
+    importance: soon
+      ? { value: 3, confidence: 0.7, reason: "son tarih yakın" }
+      : { value: 2, confidence: 0.5, reason: "yakın son tarih yok" },
+    due: parsed.dueDay
+      ? { value: parsed.dueDay, confidence: 0.9, reason: "satırda gün yazıyor" }
+      : none,
+    steps: large
+      ? [
+          { title: "Kapsamı çıkar", minutes: 45 },
+          { title: "İlk taslak", minutes: 90 },
+        ]
+      : [],
   };
 }
 

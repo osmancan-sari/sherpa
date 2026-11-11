@@ -1,4 +1,5 @@
 import type { ComponentType, ReactNode } from "react";
+import type { Extractor } from "@/core/ai/calls/extract";
 import type {
   AppEvent,
   Context,
@@ -282,6 +283,13 @@ export type ModuleDefinition = {
   // Work envelope
   /** Short text with the module's own effort hints, given to the AI (Ç2). */
   sizingHints?: string;
+  /**
+   * Readers of pasted free text (an announcement, an e-mail): what to look for and the shape of
+   * one suggestion. The core runs the `extract` call; the module decides what the suggestions
+   * become.
+   */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- each reader has its own item
+  extractors?: Extractor<any>[];
   onOutcome?: (outcome: Outcome, ctx: ModuleContext) => Promise<void>;
 
   /** The module's own tables; "export everything" includes them. */

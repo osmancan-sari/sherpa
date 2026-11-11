@@ -14,6 +14,7 @@ import {
 } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { postAi } from "@/core/ai/client";
 import { useAddInboxEntry, useAddTask, useAddWorkItem, useRefreshAll } from "@/core/app/actions";
 import { useDb, useRegistry } from "@/core/app/CoreProvider";
 import { type KnownModule, useModules, useNow } from "@/core/app/hooks";
@@ -231,10 +232,20 @@ function QuickAddDialog({
     try {
       if (await routeBlocks()) return;
 
-      // Free use: nothing picked, the text goes to the inbox as it is.
+      // Free use: nothing picked, the text goes to the inbox as it is. The AI then reads it
+      // on the server and, when it is sure, turns it into work of the right module; the
+      // change arrives through the live connection (docs/10-yapay-zeka.md, `enrich`).
       if (!selected) {
         if (!text.trim()) return;
-        addInboxEntry.mutate({ id: crypto.randomUUID(), text });
+        const id = crypto.randomUUID();
+        // Chained on the promise, not on mutate's callbacks: those stop once the dialog closes.
+        void addInboxEntry
+          .mutateAsync({ id, text })
+          .then(() => postAi("enrich", { entryId: id }))
+          .then(() => refreshAll())
+          .catch(() => {
+            // The failed save already said so on screen; nothing to read without an entry.
+          });
         done("Gelen kutusuna eklendi.");
         return;
       }

@@ -66,6 +66,8 @@ Yerelde giriş kodu e-postası gönderilmez; Mailpit'e düşer: `http://127.0.0.
 
 `deneme` modülü yalnızca `NEXT_PUBLIC_SHERPA_DEMO_MODULE=1` iken kaydolur (`.env.local`; testler bunu ister). Üretimde bu değişken verilmez.
 
+Yapay zeka anahtarsız geliştirilir: `.env.local` içinde `SHERPA_AI_FAKE=1` verilirse (yalnızca yerel Supabase ile) kayıtlı yanıtlar veren sahte sağlayıcı çalışır. Anahtar (`ANTHROPIC_API_KEY`) da sahte sağlayıcı da yoksa uygulama yapay zekasız çalışır.
+
 ## Mimari kurallar
 
 - **Çekirdek modülleri tanımaz.** `src/core/` içinde hiçbir dosya `src/modules/*` içe aktarmaz. Modüller çekirdeğe yalnızca `docs/06-modul-sozlesmesi.md` içindeki sözleşmeyle bağlanır ve `src/modules/registry.ts` üzerinden kaydolur.

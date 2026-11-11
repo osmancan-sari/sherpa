@@ -47,7 +47,7 @@ AI_MODEL_PLAN=claude-sonnet-5-5      # plan, replan, week, month, review, decomp
 3. **Öneri, emir değil.** Yapay zeka son tarih değiştiremez, iş silemez, kayıt tamamlayamaz. Bunları yalnızca önerir; kullanıcı tek dokunuşla onaylar. Doğrudan yazabildikleri: yeni işin alanları, süre tahmini, önem, planlanan gün, günün 3 işi.
 4. **Kaynağı belli.** Yapay zekanın koyduğu her değer işaretlidir (`tasks.ai`) ve gerekçesiyle saklanır. Kullanıcının elle değiştirdiği alanı yapay zeka bir daha değiştirmez.
 5. **Motor son sözü söyler.** `plan` çıktısı motora girdi olur. Kapasiteyi aşan, bloklarla çakışan, 90 dakika sınırını ya da bitiş çizgisini çiğneyen öneri motor tarafından düzeltilir ve düzeltme uyarı olarak gösterilir.
-6. **Arayüz beklemez.** Giriş anında iş varsayılan değerlerle hemen görünür; `enrich` sonucu gelince alanlar yerinde güncellenir. Zaman aşımı 8 saniye; aşılırsa iş varsayılanlarla kalır.
+6. **Arayüz beklemez.** Serbest giriş anında gelen kutusuna yazılır; `enrich` sonucu gelince iş ya da iş kalemi olur (aşağıda "Akışlar"). Zaman aşımı 8 saniye; aşılırsa giriş gelen kutusunda kalır.
 7. **Az bağlam.** Hiçbir çağrı bütün veritabanını görmez. `plan` için motor önce adayları süzer ve en fazla 80 işin kısa özetini gönderir (kimlik, başlık, modül, süre, son tarih, önem, enerji).
 8. **Düzeltmelerden öğrenme.** Kullanıcı yapay zekanın koyduğu bir değeri değiştirince kayıt düşer (`ai_feedback`). `enrich` isteklerine o modülün son 10 düzeltmesi örnek olarak eklenir. Model eğitilmez; yalnızca örnekler güncel tutulur.
 9. **Bütçe sınırı.** Her çağrının belirteç sayısı ve maliyeti kaydedilir (`ai_calls`). Aylık toplam ayarlardaki sınıra ulaşınca yapay zeka o ay kapanır ve ekranda tek satırla bildirilir.
@@ -122,6 +122,22 @@ Aylık toplam veritabanında hesaplanır (`ai_spend_since`, `ai_usage_since`; ç
 - Zaman aşımı hızlı çağrılarda 8, planlama çağrılarında 30 saniyedir (`AI_TIMEOUT_FAST_MS`, `AI_TIMEOUT_PLAN_MS` ile değişir). Sağlayıcı yeniden denemez; bekleme süresinin tamamı zaman aşımıdır.
 - Kaydedilemeyen yanıt kullanılmaz: bütçe kayıttan hesaplanır.
 - Sahte sağlayıcı (`fake.ts`) kayıtlı kurallarla yanıt verir; yalnızca `SHERPA_AI_FAKE=1` verilmiş ve veritabanı yerel olduğunda devreye girer (testler, anahtarsız geliştirme).
+
+## Akışlar (Ç2)
+
+Her çağrının bir akışı vardır (`src/core/ai/flows/`): girdiyi kurar, geçitten geçirir, sonucu veriye yazar. Tarayıcı akışı `/api/ai/<çağrı>` rotasıyla başlatır ve yanıtı beklemez; yazılan veri canlı bağlantıyla ekrana gelir. Rotalar oturumu kendileri denetler ve veritabanına kullanıcının istemcisiyle yazar.
+
+| Akış | Tetikleyen | Ne yazar |
+| --- | --- | --- |
+| `enrich` | Hızlı girişte serbest satır (önce gelen kutusuna yazılır) | Emin (`module` ve `target` güveni ≥ 0,6, modül etkin): satır bir işe ya da iş kalemine çevrilir, giriş `routed` olur. Emin değil: giriş `needs_confirm` olur, öneri `suggestion` içinde saklanır; kart onaylanınca aynı yazma tarayıcıda yapılır, kullanıcı modülü değiştirdiyse bu da düzeltme olarak `ai_feedback`'e düşer. Yanıt yok: giriş `new` kalır |
+| `size` | Modülün teklifi: yeni iş kalemi ya da kapsamı (başlık, `meta`, sınırlar) değişen kalem | Kaynağı boş ya da `default` olan yargı alanları (toplam efor, oturum süresi, önem, enerji); efor modülün sınırına kırpılır. Yapay zekanın daha önce koyduğu değer yalnızca kapsam değişince yeniden sorulur; modülün ve kullanıcının değerine dokunulmaz |
+| `decompose` | Kullanıcı "adımlara böl" der | Kalemin altına `proposed` alt kalemler (bağımlılıklarıyla). Kullanıcı kabul edince `active`, reddedince `dropped` olur. Bekleyen öneri varken yeniden sorulmaz |
+| `extract` | Modül yapıştırılan metni okutur | Hiçbir şey; öneriler modüle döner, ne olacaklarına modül karar verir |
+
+- Kullanıcının kendi yazdığı (satır sonundaki gün ve süre) alan yapay zekanın değildir; işareti yoktur.
+- Alt kalemlere bölünmüş kalem, açık alt kalemi oldukça Bugün listesinde kendisi görünmez; alt kalemleri onun yerine geçer.
+- `ai` işaretindeki her alan onu koyan çağrıyı da taşır (`kind`); düzeltme o çağrının adıyla kaydedilir.
+- Durum rotası (`GET /api/ai/status`) geçidin sırasıyla yapay zekanın şu an çalışıp çalışmadığını ve ayın harcamasını verir.
 
 ## Plan çağrısının akışı
 

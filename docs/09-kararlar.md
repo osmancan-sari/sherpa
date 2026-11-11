@@ -65,6 +65,11 @@
 | Yapay zekanın yapılı çıktısı araç şemasıyla değil API'nin yapılı çıktı biçimiyle (`output_config.format`) alınır; geçit aynı Zod şemasıyla yeniden doğrular (Ç2) | Güncel modellerde zorunlu araç seçimi desteklenmiyor; doğrulama tek yerde | Yapay zeka geçidi |
 | Fiyat tablosunda olmayan model çağrılmaz (Ç2) | Maliyeti sayılamayan çağrı bütçeyi delerdi | Model değişikliği `pricing.ts`'e satır ister |
 | Planlama çağrılarında zaman aşımı 30 saniye (Ç2; hızlı çağrılar 8) | Doküman yalnızca hızlı çağrının süresini veriyordu | Yapay zeka geçidi |
+| Serbest giriş önce gelen kutusuna yazılır; `enrich` emin olunca onu işe ya da iş kalemine çevirir. Önceki tasarımdaki "iş hemen varsayılanlarla görünür" uygulanmadı (Ç2) | `tasks.module_id` zorunlu ve modülü yapay zeka seçiyor; modülsüz iş açılamaz. Yapay zeka yokken giriş gelen kutusunda kalır (kabul ölçütü) | `docs/05-arayuz.md`, `docs/10-yapay-zeka.md` |
+| Satır sonuna yazılan gün ve süre kullanıcınındır; başlık kullanıcının kendi sözcükleridir, modelin önerdiği başlık yalnızca satır boşsa kullanılır (Ç2) | Kural 4: kullanıcının değeri yapay zekaca ezilmez | `enrich` |
+| Yapay zekanın bölme önerileri `proposed` alt kalemler olarak yazılır; açık alt kalemi olan kalem Bugün'de görünmez (Ç2) | Öneri tek dokunuşla kabul ya da reddedilsin; kabul edilen bölme işi iki kez göstermesin | Veri modeli, Ç3 planlayıcı |
+| `size` çağrısını tarayıcı başlatır (çekirdeğin teklif dinleyicisi); hangi alanın boş olduğuna sunucu karar verir. Yapay zekanın kendi tahmini yalnızca kapsam (başlık, `meta`, sınırlar) değişince yeniden sorulur (Ç2) | Modüller teklifi tarayıcıda yapar; kural 10 ve "Efor istikrarı" | Modül sözleşmesi |
+| Modül sözleşmesine `extractors` eklendi; `extract` rotası hiçbir şey yazmaz, önerileri modüle döndürür (Ç2) | Çekirdek modülün verisini tanımaz; önerinin ne olacağına modül karar verir | Modül sözleşmesi |
 
 ## Açık sorular
 

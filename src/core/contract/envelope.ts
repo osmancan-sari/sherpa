@@ -260,6 +260,9 @@ export function incomingFields(proposal: WorkProposal): IncomingFields {
       artifact_url: proposal.artifact ?? null,
       depends_on_keys: proposal.depends_on ?? [],
       meta: proposal.meta ?? {},
+      // The module's range for the effort: the `size` call keeps its estimate inside it.
+      effort_min_minutes: proposal.effort?.bounds?.min ?? null,
+      effort_max_minutes: proposal.effort?.bounds?.max ?? null,
     },
     judgments: estimates,
   };

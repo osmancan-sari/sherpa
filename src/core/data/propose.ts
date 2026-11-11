@@ -20,6 +20,33 @@ const TABLE: Record<ProposalTarget, "work_items" | "rhythms" | "blocks"> = {
 const UNIQUE_VIOLATION = "23505";
 
 /**
+ * Told about every stored proposal. The browser registers one that asks the server to estimate
+ * the empty judgement fields (`size`); the data layer itself never calls the AI.
+ */
+export type ProposalListener = (result: ProposalResult) => void;
+
+const listeners = new Set<ProposalListener>();
+
+/** Adds a listener; returns the function that removes it. */
+export function onProposal(listener: ProposalListener): () => void {
+  listeners.add(listener);
+  return () => {
+    listeners.delete(listener);
+  };
+}
+
+function told(result: ProposalResult): ProposalResult {
+  for (const listener of listeners) {
+    try {
+      listener(result);
+    } catch {
+      // A listener's failure never fails the proposal.
+    }
+  }
+  return result;
+}
+
+/**
  * Who closed a record is kept next to the other field sources: "user" when the user did it,
  * this mark when the module took its proposal back. Only the module's own closing is undone
  * by a new proposal.
@@ -113,7 +140,13 @@ export async function propose(db: Db, mod: ModuleRow, input: unknown): Promise<P
       if (error?.code === UNIQUE_VIOLATION && attempt === 0) continue;
       if (error) throw new DataError(error.message, error.code);
       if (target === "work_item") await resolveDependents(db, mod.id, proposal.key);
-      return { target, id: data.id, created: true, changed: merged.changed, kept: merged.kept };
+      return told({
+        target,
+        id: data.id,
+        created: true,
+        changed: merged.changed,
+        kept: merged.kept,
+      });
     }
 
     // A record the module withdrew comes back when it is proposed again. One the user closed
@@ -142,13 +175,13 @@ export async function propose(db: Db, mod: ModuleRow, input: unknown): Promise<P
           .eq("id", existing.id),
       );
     }
-    return {
+    return told({
       target,
       id: existing.id,
       created: false,
       changed: merged.changed,
       kept: merged.kept,
-    };
+    });
   }
   throw new DataError(`could not save proposal "${proposal.key}"`);
 }

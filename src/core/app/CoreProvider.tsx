@@ -2,8 +2,10 @@
 
 import { QueryClient, QueryClientProvider, useQueryClient } from "@tanstack/react-query";
 import { createContext, type ReactNode, useContext, useEffect, useMemo, useState } from "react";
+import { sizeAfterProposal } from "@/core/ai/client";
 import type { ModuleRegistry } from "@/core/contract/types";
 import { ensureBlocksAhead } from "@/core/data/blocks";
+import { onProposal } from "@/core/data/propose";
 import type { Db } from "@/core/types";
 import { createClient } from "@/lib/supabase/client";
 import { touchClock } from "./clock";
@@ -127,6 +129,10 @@ function LiveSync() {
         // Not being able to top up is not worth interrupting anyone; the next visit tries again.
       });
   }, [db, queryClient]);
+
+  // A module's proposal may leave judgement fields empty: the server estimates them (`size`).
+  // The answer is written to the work item and arrives through the live connection above.
+  useEffect(() => onProposal((result) => void sizeAfterProposal(result)), []);
 
   return null;
 }

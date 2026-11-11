@@ -141,7 +141,8 @@ describe("propose", () => {
         title: "BBF301E Midterm",
         when: { due: "2026-11-11T10:00:00+03:00", hard: true },
         importance: 4,
-        effort: { total_minutes: 480 },
+        // Same bounds as before (Ç2 stores them): only the title is new to the record.
+        effort: { total_minutes: 480, bounds: { min: 120, max: 600 } },
       }),
     );
     expect(again.created).toBe(false);

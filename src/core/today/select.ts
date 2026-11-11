@@ -108,10 +108,17 @@ export function todayCandidates(input: TodayInput): Candidate[] {
   }
 
   const itemsWithOpenTask = new Set(openTasks.map((task) => task.work_item_id));
+  // An item split into pieces is done through its pieces: the pieces stand for it.
+  const splitItems = new Set(
+    workItems
+      .filter((item) => item.status === "active" || item.status === "waiting")
+      .map((item) => item.parent_id),
+  );
   for (const item of workItems) {
     if (item.status !== "active" || !activeModuleIds.has(item.module_id)) continue;
     // Its open sitting already stands for it in the list.
     if (itemsWithOpenTask.has(item.id)) continue;
+    if (splitItems.has(item.id)) continue;
     if (item.earliest_at !== null && Date.parse(item.earliest_at) > now.getTime()) continue;
     if (isBlocked(item, workItems)) continue;
     candidates.push({
