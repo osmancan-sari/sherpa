@@ -118,8 +118,10 @@ function TodayBody() {
 
       {prompt ? <PromptCard prompt={prompt} mod={moduleMap.get(prompt.module_id)} /> : null}
 
-      <div className="grid gap-5 lg:grid-cols-5">
-        <div className="lg:col-span-3">
+      {/* minmax(0, …) and min-w-0: a long title is cut with an ellipsis instead of widening
+          the column past the screen. */}
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-5 lg:grid-cols-5">
+        <div className="min-w-0 lg:col-span-3">
           {failed ? (
             <LoadFailed onRetry={() => queries.forEach((query) => void query.refetch())} />
           ) : loading ? (
@@ -129,7 +131,7 @@ function TodayBody() {
           )}
         </div>
 
-        <section aria-label="Sıradakiler" className="flex flex-col gap-3 lg:col-span-2">
+        <section aria-label="Sıradakiler" className="flex min-w-0 flex-col gap-3 lg:col-span-2">
           <h2 className="text-muted-foreground text-xs font-medium tracking-widest uppercase">
             Sıradakiler
           </h2>

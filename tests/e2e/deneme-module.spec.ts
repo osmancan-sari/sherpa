@@ -115,6 +115,50 @@ test("its entry type in quick add creates a record, proposes the work and publis
   await expect(page.getByRole("navigation", { name: "Modüller" })).toContainText("1 açık kayıt");
 });
 
+test("a number outside the bounds its field declares keeps the entry from being saved", async ({
+  page,
+}) => {
+  await activate(page);
+  await page.goto("/");
+  await expect(page.getByRole("region", { name: "Şimdi" })).toBeVisible();
+  await page.keyboard.press("n");
+  const dialog = page.getByRole("dialog", { name: "Yeni giriş" });
+  const entry = dialog.getByLabel("Giriş", { exact: true });
+  await entry.fill("Kısa kayıt");
+  await page.keyboard.press("Tab");
+  await dialog
+    .getByRole("group", { name: "Kayıt türü" })
+    .getByRole("button", { name: "Kayıt" })
+    .click();
+
+  // The field says "at least 5": 3 minutes is not a length the core takes.
+  const minutes = dialog.getByLabel(/Süre \(dk\)/);
+  const save = dialog.getByRole("button", { name: "Kaydet" });
+  await minutes.fill("3");
+  await expect(save).toBeDisabled();
+  // Enter in the entry line does not get around the button.
+  await entry.press("Enter");
+  await expect(dialog).toBeVisible();
+  expect(await rows("deneme_items")).toEqual([]);
+
+  // A length that is not a multiple of five is fine.
+  await minutes.fill("12");
+  await save.click();
+  await expect(dialog).toBeHidden();
+  const [item] = await waitFor(
+    () => rows("deneme_items"),
+    (list) => list.length === 1,
+  );
+  expect(item).toMatchObject({ title: "Kısa kayıt", minutes: 12 });
+  const [work] = await waitFor(
+    () => rows("work_items"),
+    (list) => list.length === 1,
+  );
+  expect(work).toMatchObject({ key: `item:${item.id}`, effort_total_minutes: 12 });
+  // Nothing was written by the refused attempts.
+  expect(await rows("deneme_items")).toHaveLength(1);
+});
+
 test("proposing again with the same key keeps one record, and keeps what the user changed", async ({
   page,
 }) => {

@@ -20,7 +20,7 @@ Yeni modül `src/modules/_sablon/` kopyalanarak başlar.
 
 ### Modül çekirdekten neyi içe aktarabilir
 
-Modül yalnızca kendi klasörünü ve aşağıdakileri içe aktarır; başka bir modülü ya da çekirdeğin öbür iç dosyalarını içe aktarmaz.
+Modül yalnızca kendi klasörünü, dış paketleri (`react`, `next/link`, `lucide-react`…) ve aşağıdakileri içe aktarır; başka bir modülü ya da çekirdeğin öbür iç dosyalarını içe aktarmaz. Liste `tests/unit/modules.test.ts` içinde denetlenir; listeye ekleme bu dokümanla birlikte yapılır.
 
 | Nereden | Ne |
 | --- | --- |
@@ -32,6 +32,7 @@ Modül yalnızca kendi klasörünü ve aşağıdakileri içe aktarır; başka bi
 | `@/core/ui/Notices` | `useNotify()`, `SAVE_FAILED`: ekranın altındaki tek satırlık bildirim |
 | `@/core/ui/kit` | Bileşen takımı |
 | `@/components/ui/*`, `@/lib/date`, `@/lib/utils` | Düğme ve giriş alanı, tarih yardımcıları |
+| `@/lib/supabase/database.types` | Modülün kendi tablolarının satır tipleri (`Tables<"<slug>_…">`) |
 
 Ekran bileşeni bağlam üzerinden yazdığında (`ctx.propose`, kendi tablosu) işlem bitince `refreshAll()` çağırır; öbür cihazlar değişikliği Realtime ile alır. Yazma hata verirse `notify(SAVE_FAILED)` der.
 
@@ -269,7 +270,7 @@ Akış:
 - **Her teklif geri izlenebilir ve tekrar edilebilir.** `source` kaynağı gösterir; `key` aynı teklifin ikinci kez kayıt açmasını önler.
 - **Modül olgu verir, yargıyı dayatmaz.** Kesin bildiği süreyi yazabilir (sabah rutini 20 dk); bilmediğini boş bırakır ve sınır verir.
 - **Formül yeten yerde yapay zeka yok.** "Prep'ten bir gün önce alışveriş" gibi kesin kurallarda modül bütün alanları kendisi doldurur; `size` çağrısı yapılmaz.
-- **Türetilen işler yeniden üretilebilir olmalı.** Kaynak kayıt değişince (örneğin sınav tarihi) modül ilgili işleri günceller; kullanıcının elle değiştirdiği işi ezmez (`meta.user_edited = true`).
+- **Türetilen işler yeniden üretilebilir olmalı.** Kaynak kayıt değişince (örneğin sınav tarihi) modül ilgili işleri günceller; kullanıcının elle değiştirdiği alanı çekirdek ezmez (alan kaynağı `provenance` içinde `user` olarak durur; modülün ayrıca bir şey işaretlemesi gerekmez).
 - **Arşivlenen modülün açık işleri `dropped` olur,** blok serileri kapanır, ritimleri pasifleşir. Verisi silinmez. Modülün teklif ettiği kayıtlar (`key` taşıyanlar) geri çekilmiş sayılır: modül yeniden etkinleştirilip aynı `key` ile yeniden teklif edince (`onActivate`) geri gelir. Kullanıcının elle eklediği işler ve arşivden önce kendi kapattığı kayıtlar geri gelmez.
 - **Modül sayfası çekirdek kabuğu kullanır.** Beş bölgeli iskeletin dışına çıkmaz; gövdede serbesttir.
 

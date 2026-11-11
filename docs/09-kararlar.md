@@ -52,6 +52,9 @@
 | Modül sayfasında açık oturum işi olan kalem tek satırdır: kalem görünür, oturum işi ayrıca listelenmez (Ç1) | Kalemin düzenleme, bitirme ve bırakma eylemleri her zaman erişilebilir olsun; "Başla" açık oturum işini sürdürür | Arayüz |
 | Başarısız okuma istemcide ikinci kez yeniden denenmez (Ç1) | Supabase istemcisi okumayı kendisi 3 kez dener (1, 2, 4 sn); üstüne deneme "Veri okunamadı" bildirimini 15 saniyeye geciktiriyordu | İstemci verisi |
 | `deneme_items` tablosu üretim veritabanında da açılır; `deneme` kodu pakette bulunur ama `NEXT_PUBLIC_SHERPA_DEMO_MODULE` verilmediği için kaydolmaz (Ç1) | Migration zinciri ortamlar arasında aynı kalsın; boş bir tablo zararsız. İstenirse modül hattı başlarken ayrı bir karar ile kaldırılır | D1 |
+| Seri bitirilince gelecek blokları silinir (elle değiştirilmiş ve iptal edilmiş olanlar dahil); modül arşivinde ise `cancelled` olur (Ç1) | Seri kullanıcının kendi kaldırdığı bir kuraldır, blokları onun türevidir; arşivde ise "verisi silinmez" geçerli | Veri modeli |
+| Modülün çekirdekten içe aktarabileceği yollar kapalı bir listedir ve testle denetlenir (`tests/unit/modules.test.ts`); `@/lib/supabase/database.types` listeye eklendi (Ç1) | Listede olmayan bir çekirdek dosyası (ör. `@/core/data/*`) modüle çekirdek tablolara zarfsız yazma yolu açardı | Modül sözleşmesi |
+| Şablonun yalnızca adı değiştirilmiş bir kopyası (`sablon-kopya`) `deneme` ile aynı anahtarın arkasında kaydolur (Ç1) | "Şablondan kopyalanan modül çalışır" ölçütü kalıcı bir uçtan uca testle sınansın; üretimde kaydolmaz | Yerel geliştirmede modül listesinde "Şablon kopyası" görünür |
 
 ## Açık sorular
 

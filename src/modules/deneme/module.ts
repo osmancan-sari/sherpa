@@ -85,7 +85,9 @@ export const deneme: ModuleDefinition = {
           title: String(values.title ?? ""),
           kind,
           due_on: typeof values.due_on === "string" && values.due_on ? values.due_on : null,
-          minutes: typeof values.minutes === "number" && values.minutes > 0 ? values.minutes : null,
+          // Shorter than the shortest sitting is not a length the core takes: left open instead.
+          minutes:
+            typeof values.minutes === "number" && values.minutes >= 5 ? values.minutes : null,
         });
       },
     },
@@ -103,7 +105,7 @@ export const deneme: ModuleDefinition = {
           .deneme;
         await addItem(ctx, {
           title: block.title,
-          minutes: typeof block.minutes === "number" ? block.minutes : null,
+          minutes: typeof block.minutes === "number" && block.minutes >= 5 ? block.minutes : null,
           due_on: typeof block.due_on === "string" ? block.due_on : null,
         });
       },

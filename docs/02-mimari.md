@@ -60,7 +60,7 @@ src/
     testing/                testler için satır üreticileri
   modules/
     registry.ts             kayıtlı modüller
-    okul/                   module.ts, queries.ts, rules.ts, components/, page.tsx
+    okul/                   module.ts, queries.ts, rules.ts, components/, README.md
     _sablon/                yeni modül için kopyalanacak iskelet
     deneme/                 çekirdeğin sınandığı modül; yalnızca NEXT_PUBLIC_SHERPA_DEMO_MODULE=1 iken kaydolur
   lib/                      supabase istemcisi, tarih yardımcıları

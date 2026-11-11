@@ -17,7 +17,10 @@ Aşağıdaki adımlarla boş bir modül yaklaşık 15 dakikada sayfasıyla birli
 3. **Kaydet.** `src/modules/registry.ts` içinde tanımı içe aktar ve listeye ekle:
    ```ts
    import { ev } from "./ev/module";
-   const definitions: ModuleDefinition[] = [ev, ...(DEMO_MODULE_ENABLED ? [deneme] : [])];
+   const definitions: ModuleDefinition[] = [
+     ev,
+     ...(DEMO_MODULE_ENABLED ? [deneme, TEMPLATE_COPY] : []),
+   ];
    ```
 4. **Denetle.** `npm run check`. Sözleşmeye uymayan tanım (geçersiz `slug`, yinelenen sekme anahtarı, başka adla başlayan olay ya da tablo) burada hata verir ve neyin yanlış olduğunu söyler.
 5. **Aç.** `npm run dev` → Ayarlar → Modüller → "Etkinleştir". Modül çipi Bugün ekranında, sayfası `/m/ev` adresinde görünür; hızlı girişte modül olarak seçilebilir.
@@ -38,6 +41,8 @@ Buraya kadar çekirdekte tek satır değişmez; değişen dosyalar yalnızca `sr
 | Ortak bileşenler | `@/core/ui/kit`: tablo, grafikler, ızgara, zaman çizelgesi, adımlayıcı, çipler, zamanlayıcı, boş ve hata durumları |
 
 Her bağlantı noktasının çalışan bir örneği `src/modules/deneme` içindedir.
+
+Şablonun kendisi de sınanır: sınama ortamında `sablon-kopya` adıyla (yalnızca adı değiştirilmiş bir kopya olarak) kaydolur ve `tests/e2e/template-module.spec.ts` onu etkinleştirip çipine, sayfasına ve hızlı girişine bakar. Şablonu değiştirirsen bu test yeşil kalmalı.
 
 ## Kurallar
 

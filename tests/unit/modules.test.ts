@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { createRegistry, definitionProblems } from "@/core/contract/registry";
 import { sablon } from "@/modules/_sablon/module";
 import { deneme } from "@/modules/deneme/module";
-import { registry } from "@/modules/registry";
+import { DEMO_MODULE_ENABLED, registry, TEMPLATE_COPY } from "@/modules/registry";
 
 // The two modules of the core phases follow the contract, and a module is nothing but its own
 // folder plus one line in the registry.
@@ -20,8 +20,10 @@ describe("the module template", () => {
     expect(copy.get("ev")?.ui.tabs.map((tab) => tab.key)).toEqual(["genel"]);
   });
 
-  it("is not registered itself", () => {
+  it("is not registered itself; only a renamed copy is, where the demo switch is on", () => {
     expect(registry.get("sablon")).toBeUndefined();
+    expect(TEMPLATE_COPY).toEqual({ ...sablon, slug: "sablon-kopya", name: "Şablon kopyası" });
+    expect(registry.get(TEMPLATE_COPY.slug) !== undefined).toBe(DEMO_MODULE_ENABLED);
   });
 });
 
@@ -76,6 +78,7 @@ describe("the deneme module", () => {
     const fresh = await import("@/modules/registry");
     expect(fresh.DEMO_MODULE_ENABLED).toBe(expected);
     expect(fresh.registry.get("deneme") !== undefined).toBe(expected);
+    expect(fresh.registry.get("sablon-kopya") !== undefined).toBe(expected);
   });
 });
 
@@ -108,6 +111,45 @@ describe("module boundaries", () => {
         expect(other === undefined || other === folder, `${file} imports ${target}`).toBe(true);
         expect(target.startsWith("../../"), `${file} leaves its folder: ${target}`).toBe(false);
       }
+    }
+  });
+
+  // docs/06-modul-sozlesmesi.md, "Modül çekirdekten neyi içe aktarabilir". A new entry here
+  // goes into that table as well.
+  const ALLOWED = [
+    "@/core/contract/types",
+    "@/core/types",
+    "@/core/ui/module/ModuleProvider",
+    "@/core/app/hooks",
+    "@/core/app/actions",
+    "@/core/ui/Notices",
+    "@/core/ui/kit",
+    "@/lib/date",
+    "@/lib/utils",
+    "@/lib/supabase/database.types",
+  ];
+
+  it.each(folders)("%s imports from the core only what the contract allows", (folder) => {
+    for (const file of sourceFiles(path.join(modulesRoot, folder))) {
+      const source = readFileSync(file, "utf8");
+      const targets = [
+        ...source.matchAll(/from\s+["']([^"']+)["']/g),
+        ...source.matchAll(/import\(\s*["']([^"']+)["']/g),
+        ...source.matchAll(/require\(\s*["']([^"']+)["']/g),
+      ].map((match) => match[1]);
+      for (const target of targets) {
+        // Its own files, and packages from node_modules, are the module's own business.
+        if (target.startsWith("./") || target.startsWith("../")) continue;
+        if (!target.startsWith("@/")) continue;
+        const allowed = ALLOWED.includes(target) || target.startsWith("@/components/ui/");
+        expect(allowed, `${file} imports ${target}`).toBe(true);
+      }
+    }
+  });
+
+  it("the allow list would catch a module reaching for the core's data functions", () => {
+    for (const target of ["@/core/data/work", "@/core/data/propose", "@/lib/supabase/client"]) {
+      expect(ALLOWED.includes(target) || target.startsWith("@/components/ui/")).toBe(false);
     }
   });
 

@@ -6,7 +6,7 @@ Bu dosyayı Claude Code günceller. Yeni bir oturum yalnızca bu dosyayı ve `pr
 
 - Faz: **Ç1 (Çekirdek ve modül temeli): 8. adımda, faz denetimi sürüyor.** Ç0 bitti (`c0-tamam`); yayın ve telefon D1 ve D2'yi bekliyor
 - Adım: 8 / 8 (aşağıdaki plan); 1–7 bitti
-- Son commit: adım denetimi düzeltmeleri, ekran görüntüleri, faz raporu taslağı
+- Son commit: faz denetimi 1. tur düzeltmeleri (telefonda Bugün taşması, şablon ve içe aktarım testleri, yeniden alınan ekran görüntüleri)
 
 ### Ç1 planı
 
@@ -100,7 +100,7 @@ Her şey yerel Supabase ve üretim derlemesine karşı doğrulandı; bulut ve ge
 | Aynı `key` ile iki kez teklif edilen zarf tek kayıt üretiyor; kullanıcının değiştirdiği alan ikinci teklifte ezilmiyor | Sağlandı | `src/core/contract/envelope.test.ts`, `tests/db/envelope.test.ts`; arayüzden uçtan uca: `edit-work.spec.ts` ("what the user changes on a proposed work item survives the module's next proposal") ve `deneme-module.spec.ts` |
 | `deneme` modülü çipini, sayfasını, girişini ve tekliflerini yalnızca sözleşme üzerinden veriyor; `src/core/` içinde `src/modules/` içe aktarımı yok (lint kuralıyla denetleniyor) | Sağlandı. `alerts` tanımlı ama çekirdek modül uyarılarını Ç3'te (`AlertBar`) göstermeye başlayacak | `deneme-module.spec.ts`, `tests/unit/modules.test.ts` (modül başka modülü içe aktarmıyor, çekirdek tabloya doğrudan uzanmıyor), `tests/unit/core-imports.test.ts`, `eslint.config.mjs` |
 | `deneme` modülü kendi sekmesini, alt sayfasını, tam ekran görünümünü, hızlı eylemini ve ayar formunu çekirdeğe dokunmadan ekliyor | Sağlandı | `deneme-module.spec.ts`; iki genişlikte `module-page.both.spec.ts`. Hepsi `src/modules/deneme/module.ts` içindeki `ui` alanından geliyor |
-| `_sablon` kopyalanarak yeni bir boş modül 15 dakikada ayağa kalkıyor (adımlar modül README'sinde yazılı) | Sağlandı: adımları 11 Kas'ta bir kez kendim uyguladım (`ev` adıyla kopya, 4 satır ad değişikliği, kayıtta 2 satır; `npm run check` yeşil; derlemede etkinleştirme, çip, sayfa ve hızlı giriş geçici bir uçtan uca testle doğrulandı; sonra kaldırıldı). Kalıcı test yalnızca tanım düzeyinde. **15 dakikayı sen de bir kez denemelisin** | `src/modules/_sablon/README.md`, `tests/unit/modules.test.ts` ("gives a working module once it is renamed") |
+| `_sablon` kopyalanarak yeni bir boş modül 15 dakikada ayağa kalkıyor (adımlar modül README'sinde yazılı) | Sağlandı: yalnızca adı değiştirilmiş bir şablon kopyası kalıcı bir uçtan uca testte etkinleştiriliyor; çipi, beş bölgeli sayfası, hızlı girişi ve ayar sayfası sınanıyor. Adımları 11 Kas'ta bir kez de kendim uyguladım (`ev` adıyla kopya, 4 satır ad değişikliği, kayıtta 2 satır; sonra kaldırıldı). **15 dakikayı sen de bir kez denemelisin (elle doğrulanacak)** | `src/modules/_sablon/README.md`, `tests/e2e/template-module.spec.ts`, `tests/unit/modules.test.ts` ("gives a working module once it is renamed") |
 | Bütün veri JSON olarak dışa aktarılabiliyor | Sağlandı | `settings.spec.ts` (indirilen dosya: bütün çekirdek tablolar ve `deneme_items`), `tests/db/blocks.test.ts` "export" (her çekirdek tablo listede, başkasının satırı yok, 1000 satırdan uzun tablo tam), `guard.spec.ts` (oturumsuz 401) |
 
 Kapsamdan eksik kalan: sabit blok ve serilerde tür (`kind`) ve gün tipi sonradan düzenlenemiyor (oluştururken verilir); yolculuk süreleri (`travel_*`) için arayüz yok (Ç3'te yuva hesabıyla birlikte anlam kazanır).
@@ -116,11 +116,17 @@ Kapsamdan eksik kalan: sabit blok ve serilerde tür (`kind`) ve gün tipi sonrad
 7. Elle düzenleme: iş, kalem, ritim (modül sayfasında), blok ve seri (Ayarlar'da); elle ritim ekleme (adım 7)
 8. Örnek veri: `npm run db:seed` (dört sahte modül, zarfla gelen kalemler ve ritimler, seriler, geçmiş oturumlar) (adım 7)
 
-Testler: 113 birim, 83 veritabanı, 100 uçtan uca (`npm run check:full` yeşil). Ekran görüntüleri: `docs/ekran-goruntuleri/c1/` (61 dosya; pano 1920 genişlik tam sayfa, telefon 390×844 ekranın gösterdiği, uzun sayfalarda ayrıca sayfanın sonu). Örnek veri ve `deneme` modülüyle alındı; kendim baktım: boş ya da bozuk ekran yok. İlk çekimde modül sayfası veri okunmadan "sırada iş yok" diyordu; düzeltildi ve yeniden çekildi. `npm run db:seed` komutunu da elle çalıştırdım (boş hesap, dolu hesapta ret, `--reset`).
+Testler: 124 birim, 83 veritabanı, 104 uçtan uca (`npm run check:full` yeşil; ekran görüntüsü çekimiyle 110). Ekran görüntüleri: `docs/ekran-goruntuleri/c1/` (61 dosya; pano 1920 genişlik tam sayfa, telefon 390×844 ekranın gösterdiği, uzun sayfalarda ayrıca sayfanın sonu). Örnek veri ve `deneme` modülüyle alındı; kendim baktım: boş ya da bozuk ekran yok. İlk çekimde modül sayfası veri okunmadan "sırada iş yok" diyordu; düzeltildi ve yeniden çekildi. `npm run db:seed` komutunu da elle çalıştırdım (boş hesap, dolu hesapta ret, `--reset`).
 
 #### Denetim
 
-(Faz denetimi bitince doldurulacak.)
+Faz denetimi (her biri bağımsız bir alt ajan; yalnızca `prompts/denetci.md`, kip ve kapsam verildi):
+
+| Tur | Karar | Bulgular | Ne yapıldı |
+| --- | --- | --- | --- |
+| Faz, 1. tur (`639a0cf`) | GEÇTİ | Engelleyici yok. 4 önemli: (1) telefonda Bugün ekranı uzun başlıkla yana taşıyor, alt çubuk ve hızlı girişteki "Ekle" ekran dışına kayıyor (ekran görüntülerinden ölçüldü; raporum "bozuk ekran yok" diyordu, yanlıştı); (2) bunu yakalayan test yok; (3) `_sablon` ölçütünün kalıcı kanıtı yok; (4) "modül çekirdekten neyi içe aktarabilir" kuralını denetleyen kapı yok, `deneme` listede olmayan bir yolu içe aktarıyor. 7 not: düzenleme penceresinde kaleme çevirme önerisi yok; iki eski doküman satırı; "Seriyi bitir" blokları siliyor ve yazılı değil; `deneme` 5 dakikadan kısa hedefte teklifsiz kayıt bırakıyor; yapılı blok ayrıştırıcısının birim testi yok; ekran görüntüsü verisi zarfsız yazılıyor; pano Bugün örnek veriyle kayıyor | Dört önemli bulgu düzeltildi: ızgara sütunu daralabiliyor (`TodayScreen.tsx`); `today.both.spec.ts` iki genişlikte uzun başlıklarla taşmayı, alt çubuğu ve hızlı giriş penceresini sınıyor (düzeltme geri alınınca telefonda 394 px taşmayla kırmızıya düştüğü denendi); şablonun adı değiştirilmiş kopyası kalıcı uçtan uca testte (`template-module.spec.ts`); içe aktarım izin listesi testte ve dokümanda. Notlardan: iki doküman satırı, seri kararı (doküman ve kararlar), `deneme` alt sınırı ve hızlı girişte sınır dışı sayının kaydı kapatması (Enter dahil; testiyle), `blocks.test.ts`, ekran görüntüsü verisi düzeltildi; görüntüler yeniden alındı ve telefon görüntülerine yeniden baktım. Açık kalan notlar: düzenleme penceresindeki öneri ("Bilinen sorunlar"), pano kaydırması (Ç4 kapsamı) |
+
+Not: 1. turun düzeltmeleri sürerken oturum kullanım sınırına takıldı ve değişiklikler commit'siz kaldı; sonraki oturum denetçi raporunu oturum kaydından okuyup işi tamamladı.
 
 Adım denetimleri:
 
@@ -262,6 +268,10 @@ Benim yapacaklarım (D1 tamamlanınca): iki Supabase projesini açmak (bölge: F
 | 11 Kas 2026 | Ç1: uçtan uca testlerde canlı eşitleme testleri ayrı projede ve en önce çalışır (`esitleme`). **Test değişikliği:** `work-sessions.spec.ts` ilk testinde "başlangıç geri alınınca kart izler" adımı artık sayfayı yeniden yükleyerek bakıyor (sunucu saatini sınıyor); yenilemeden izleme `sync.spec.ts` içinde sınanmaya devam ediyor | Realtime kapanan sayfaların aboneliklerini 15 sn tutuyor; 100 testlik koşuda her değişiklik onlarca kez sayılıp yerel sınırı (100 ileti/sn) aşıyor ve iletiler düşüyordu. Gerçek kullanım iki cihaz | `playwright.config.ts`, `tests/e2e/work-sessions.spec.ts` |
 | 11 Kas 2026 | Ç1: ekran görüntüleri örnek veriyle alınır; panoda tam sayfa, telefonda ekranın gösterdiği (uzun sayfada ayrıca sonu) | Telefonda alt çubuk ekrana sabit; tam sayfa görüntüde sayfanın ortasında çıkıyordu | `tests/e2e/screenshots.spec.ts` |
 | 11 Kas 2026 | Ç1: arayüz metinleri (modül sayfası, ayarlar, düzenleme pencereleri, bildirimler), önem adları (Düşük, Normal, Yüksek, Çok yüksek), "Önümüzdeki 4 hafta" listesi. **Görüşün gerek** | Kısa ve düz, ünlemsiz | `src/core/ui/**` |
+| 11 Kas 2026 | Ç1: şablonun yalnızca adı değiştirilmiş kopyası (`sablon-kopya`, "Şablon kopyası") `deneme` ile aynı anahtarın arkasında kaydolur | Faz denetimi: "şablondan kopyalanan modül çalışır" ölçütünün kalıcı kanıtı yoktu. Bedeli: yerel geliştirmede Ayarlar → Modüller listesinde kapalı bir "Şablon kopyası" satırı görünür; üretimde kaydolmaz | `src/modules/registry.ts`, `tests/e2e/template-module.spec.ts`, `src/modules/_sablon/README.md` |
+| 11 Kas 2026 | Ç1: modülün çekirdekten içe aktarabileceği yollar kapalı listedir; test denetler. `@/lib/supabase/database.types` listeye eklendi | Faz denetimi: `@/core/data/*` içe aktaran modül testten geçiyor ve çekirdek tabloya zarfsız ulaşabiliyordu | `tests/unit/modules.test.ts`, `docs/06-modul-sozlesmesi.md` |
+| 11 Kas 2026 | Ç1: seri bitirilince gelecek blokları silinir (elle değiştirilmiş ve iptal edilmişler dahil); arşivde `cancelled` olur | Davranış vardı ama yazılı değildi (faz denetimi notu). Seri kullanıcının kaldırdığı kuraldır, bloklar türevidir | `docs/03-veri-modeli.md`, `docs/09-kararlar.md` |
+| 11 Kas 2026 | Ç1: hızlı girişte modülün sayı alanı kendi sınırlarının dışındaysa kayıt kapalıdır (Enter da kaydetmez); `deneme` 5 dakikadan kısa süreyi boş sayar | Faz denetimi notu: 1–4 dk girilen hedefte kayıt yazılıyor, teklif reddedilip kayıt teklifsiz kalıyordu | `src/core/ui/QuickAdd.tsx`, `src/modules/deneme/module.ts`, `tests/e2e/deneme-module.spec.ts` |
 
 ## Bilinen sorunlar
 
@@ -272,7 +282,8 @@ Benim yapacaklarım (D1 tamamlanınca): iki Supabase projesini açmak (bölge: F
 - "Seriyi bitir" (elle değiştirilmiş gelecek blokları da siler), "Bırak" ve "Durdur" onaysız ve arayüzden geri alınamaz; durdurulan ritim hiçbir listede görünmez. Onay ya da "Geri al" isteyip istemediğine sen karar ver.
 - 90 dakikayı aşan süre düzenleme penceresinde yalnızca "Kaydet"i kapatır; hızlı giriş ve gelen kutusundaki gibi kaleme çevirme önerisi yok.
 - Sabit blok ve seride tür ile gün tipi sonradan değiştirilemez; yolculuk süreleri için arayüz yok.
-- `deneme` kodu üretim paketinde bulunur (kaydolmaz); `deneme_items` tablosu üretimde de açılır.
+- `deneme` kodu üretim paketinde bulunur (kaydolmaz); `deneme_items` tablosu üretimde de açılır. Yerel geliştirmede modül listesinde ayrıca kapalı bir "Şablon kopyası" satırı görünür (şablonu sınayan testin modülü).
+- Pano genişliğinde Bugün ekranı örnek veriyle bir ekrandan uzun (kaydırma var); "kaydırma yok" pano yerleşimi Ç4'ün işi.
 - Tarih kutuları tarayıcının kendi biçimini gösterir (ekran görüntülerinde "13-Nov-2026"); telefonda sistemin tarih seçicisi açılır.
 - Ç1'de 5. ve 6. adımlar tek commit'te geldi (`9486fea`) ve adım denetimi 7. adımdan sonra yapıldı (önceki oturum kullanım sınırında commit'siz kaldı).
 - Ç1, adım 2: `b87e5fb` commit'i lint kırmızıyken atıldı (komut zincirinde çıkış kodu yutuldu); 21 saniye sonra `6439e65` ile düzeltildi. O andan beri kapı komutları `pipefail` ile çalıştırılıyor.

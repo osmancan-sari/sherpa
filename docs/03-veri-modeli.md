@@ -187,7 +187,7 @@ provenance jsonb default '{}' -- kullanıcının elle değiştirdiği alanlar
 source_type text null, source_id uuid null
 unique (series_id, occurrence_on)
 ```
-Seriden üretilen blok elle değiştirilebilir ya da iptal edilebilir; yeniden üretim elle değiştirilmiş bloğu ezmez. Tekillik başlangıç saatine değil serinin gününe bağlıdır: saati elle değiştirilen blok için eski saat yeniden üretilmez. İptal edilen blok silinmez (`cancelled`), böylece yeniden üretilmez.
+Seriden üretilen blok elle değiştirilebilir ya da iptal edilebilir; yeniden üretim elle değiştirilmiş bloğu ezmez. Tekillik başlangıç saatine değil serinin gününe bağlıdır: saati elle değiştirilen blok için eski saat yeniden üretilmez. İptal edilen blok silinmez (`cancelled`), böylece yeniden üretilmez. Seri bitirilince (`valid_to`) gelecek blokları silinir, elle değiştirilmiş ve iptal edilmiş olanlar dahil: seri kullanıcının kaldırdığı bir kuraldır ve üretilmiş bloklar onun türevidir; geçmiş bloklar kalır. Modül arşivlenince ise bloklar silinmez, `cancelled` olur.
 
 ### sessions
 Bir işe harcanan gerçek zaman.

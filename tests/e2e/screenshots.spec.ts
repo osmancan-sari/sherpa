@@ -52,8 +52,9 @@ async function prepare(page: Page): Promise<string> {
     (list) =>
       list.some((row) => (row.settings as { added_count?: number } | null)?.added_count === 1),
   );
+  // Finished records are written straight into the module's table: they have no open work.
+  // (An open record has to come through the module, or it would have no work item.)
   await insert("deneme_items", [
-    { title: "Rapor taslağı", minutes: 90, due_on: "2031-01-15" },
     { title: "Kaynak taraması", minutes: 45, done: true, spent_minutes: 50, feedback: "kolay" },
     { title: "Sunum provası", minutes: 30, done: true, spent_minutes: 25 },
   ]);
@@ -102,7 +103,7 @@ function screensFor(itemId: string): Screen[] {
       ready: async (page) => {
         await expect(
           page.getByRole("table", { name: "Deneme kayıtları" }).getByRole("row"),
-        ).toHaveCount(5);
+        ).toHaveCount(4);
         await expect(page.getByLabel("Bu hafta")).toBeVisible();
         await expect(page.getByRole("region", { name: "Yaklaşanlar" })).toContainText(
           "Örnek hedef",

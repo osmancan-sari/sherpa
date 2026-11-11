@@ -298,7 +298,21 @@ function QuickAddDialog({
         (index === 0 && field.type === "text" ? parsed.title : String(field.default ?? ""));
       return value.trim() === "";
     }) ?? false;
-  const canSubmit = intake ? !missingRequired : text.trim() !== "";
+  // The form checks itself (see noValidate below), so a number outside the bounds its field
+  // declares keeps the save button off.
+  const outOfBounds =
+    intake?.fields.some((field) => {
+      if (field.type !== "number") return false;
+      const value = (fieldValues[field.name] ?? String(field.default ?? "")).trim();
+      if (value === "") return false;
+      const number = Number(value);
+      return (
+        Number.isNaN(number) ||
+        (field.min !== undefined && number < field.min) ||
+        (field.max !== undefined && number > field.max)
+      );
+    }) ?? false;
+  const canSubmit = intake ? !missingRequired && !outOfBounds : text.trim() !== "";
 
   const submitLabel = !selected ? "Gelen kutusuna ekle" : intake ? "Kaydet" : "Ekle";
 
@@ -315,6 +329,8 @@ function QuickAddDialog({
         className="flex flex-col gap-4"
         onSubmit={(event) => {
           event.preventDefault();
+          // Enter in the entry line asks for a submit even while the save button is off.
+          if (!canSubmit) return;
           void submit(overLimit);
         }}
       >
