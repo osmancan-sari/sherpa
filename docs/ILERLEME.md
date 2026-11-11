@@ -5,7 +5,7 @@ Bu dosyayı Claude Code günceller. Yeni bir oturum yalnızca bu dosyayı ve `pr
 ## Durum
 
 - Faz: **Ç2 (Yapay zeka geçidi) sürüyor** (başlangıç 11 Kas 2026). Ç0 ve Ç1 bitti (`c0-tamam`, `c1-tamam`); yayın ve telefon D1 ve D2'yi bekliyor. D3 (`ANTHROPIC_API_KEY`) verilmedi: faz sahte sağlayıcıyla geliştiriliyor
-- Adım: Ç2 planı aşağıda; 5. adım bitti, 6. adım (uçtan uca testler, ekran görüntüleri) sırada. Araya kullanıcının isteğiyle D1 girdi ve tamamlandı: üretimde kodla giriş çalışıyor; sıradaki durak D2 (telefon)
+- Adım: Ç2 planı aşağıda; 5. adım bitti, 6. adım (uçtan uca testler, ekran görüntüleri) sırada. Araya kullanıcının isteğiyle D1 ve D2 girdi, ikisi de tamamlandı (üretimde kodla giriş, telefonda ana ekran uygulaması ve eşitleme çalışıyor)
 - Son commit: Ç2 adım 5
 
 ### Ç2 planı
@@ -206,7 +206,11 @@ Senin isteğinle, başında durduğun oturumda bağlandı. Supabase'te ücretsiz
 
 Bulut ayarını değiştirmek: `supabase/config.toml` düzenlenir, `RESEND_API_KEY` ortamda olmalıdır (`.env.d1`), sonra `npx supabase config push --remote=<ref>` önce `dev`'e, sonra `prod`'a. Gönderim öncesi `--yes` olmadan çalıştırılırsa farkı gösterir.
 
-### D2. Telefon (D1'den sonra)
+### D2. Telefon: tamamlandı (11 Kas 2026)
+
+**Sonuç (kullanıcı):** ana ekrandan tam ekran açıldı, kodla giriş yapıldı, uygulama kapatılıp açılınca giriş kaldı, telefondan eklenen giriş masaüstünde yenilemeden göründü. Açık kalan: oturumun haftalarca açık kalması (`docs/11-yayin-ve-cihazlar.md` kabul ölçütü) zamanla görülecek.
+
+Adımlar:
 
 1. iPhone'da Safari ile kalıcı adresi aç → Paylaş → Ana Ekrana Ekle.
 2. Ana ekrandaki Sherpa simgesinden aç: adres çubuğu olmadan, tam ekran açılmalı.
@@ -224,7 +228,7 @@ Bulut ayarını değiştirmek: `supabase/config.toml` düzenlenir, `RESEND_API_K
 
 ### Ç1'den sana kalanlar (elle doğrulanacak)
 
-- Gerçek telefonda eklenen işin masaüstünde yenilemeden görünmesi (D1 ve D2'den sonra).
+- ~~Gerçek telefonda eklenen işin masaüstünde yenilemeden görünmesi~~: doğrulandı (D2, 11 Kas 2026; telefondan eklenen giriş masaüstünde göründü).
 - `src/modules/_sablon/README.md` adımlarıyla 15 dakikada boş modül: bir kez dene, süre tutuyor mu söyle.
 - "Verdiğim kararlar" ve "Bilinen sorunlar" içinde **Görüşün gerek** yazan satırlar.
 - Ekran görüntüleri: `docs/ekran-goruntuleri/c1/`.
