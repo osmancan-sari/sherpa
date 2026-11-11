@@ -266,6 +266,49 @@ export type Database = {
         };
         Relationships: [];
       };
+      deneme_items: {
+        Row: {
+          created_at: string;
+          done: boolean;
+          due_on: string | null;
+          feedback: string | null;
+          id: string;
+          kind: string;
+          minutes: number | null;
+          spent_minutes: number | null;
+          title: string;
+          updated_at: string;
+          user_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          created_at?: string;
+          done?: boolean;
+          due_on?: string | null;
+          feedback?: string | null;
+          id?: string;
+          kind?: string;
+          minutes?: number | null;
+          spent_minutes?: number | null;
+          title: string;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Update: {
+          created_at?: string;
+          done?: boolean;
+          due_on?: string | null;
+          feedback?: string | null;
+          id?: string;
+          kind?: string;
+          minutes?: number | null;
+          spent_minutes?: number | null;
+          title?: string;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
       events: {
         Row: {
           created_at: string;

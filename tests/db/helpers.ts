@@ -76,7 +76,7 @@ export const CORE_TABLES = [
 ] as const;
 
 /** Module tables (not part of the core) that also hold test rows. */
-export const MODULE_TABLES: readonly string[] = [];
+export const MODULE_TABLES: readonly string[] = ["deneme_items"];
 
 /** Removes everything the two test accounts own. */
 export async function wipe(): Promise<void> {

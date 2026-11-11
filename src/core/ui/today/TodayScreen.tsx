@@ -19,6 +19,7 @@ import {
   useBlocks,
   useDuePrompts,
   useModuleQuery,
+  useModuleRows,
   useModules,
   useNow,
   useOpenSession,
@@ -55,6 +56,7 @@ export function TodayScreen() {
 function TodayBody() {
   const now = useNow();
   const { modules } = useModules();
+  const moduleRows = useModuleRows();
   const activeModuleIds = useActiveModuleIds();
   const tasks = useTasks();
   const workItems = useWorkItems();
@@ -99,7 +101,10 @@ function TodayBody() {
   );
   const todaysBlocks = blocksOfDay(blocks.data ?? [], today);
   const prompt = (prompts.data ?? []).find((item) => activeModuleIds.has(item.module_id));
-  const loading = tasks.isLoading || openSession.isLoading || workItems.isLoading;
+  const queries = [tasks, workItems, rhythms, rhythmLogs, blocks, openSession, moduleRows];
+  const loading = queries.some((query) => query.isLoading);
+  // A failed read is not "nothing to do": the card says so instead of showing an empty day.
+  const failed = queries.some((query) => query.isError && query.data === undefined);
 
   return (
     <>
@@ -115,7 +120,9 @@ function TodayBody() {
 
       <div className="grid gap-5 lg:grid-cols-5">
         <div className="lg:col-span-3">
-          {loading ? (
+          {failed ? (
+            <LoadFailed onRetry={() => queries.forEach((query) => void query.refetch())} />
+          ) : loading ? (
             <div className="border-border min-h-56 rounded-2xl border md:min-h-72" />
           ) : (
             <NowCard state={state} now={now} modules={moduleMap} />
@@ -126,7 +133,7 @@ function TodayBody() {
           <h2 className="text-muted-foreground text-xs font-medium tracking-widest uppercase">
             Sıradakiler
           </h2>
-          {upcoming.length === 0 ? (
+          {failed || loading ? null : upcoming.length === 0 ? (
             <p className="text-muted-foreground text-sm">Sırada başka iş yok.</p>
           ) : (
             <ul className="divide-border border-border divide-y rounded-xl border">
@@ -153,6 +160,25 @@ function TodayBody() {
         </div>
       </footer>
     </>
+  );
+}
+
+/** Shown when the data could not be read. One plain sentence and a way to try again. */
+export function LoadFailed({ onRetry }: { onRetry: () => void }) {
+  return (
+    <div
+      role="alert"
+      className="border-border flex min-h-56 flex-col justify-between gap-6 rounded-2xl border p-6 md:p-8"
+    >
+      <p className="text-muted-foreground text-lg">
+        Veri okunamadı. Bağlantı gelince kendiliğinden yenilenir.
+      </p>
+      <div>
+        <Button variant="outline" className="h-11 md:h-9" onClick={onRetry}>
+          Yeniden dene
+        </Button>
+      </div>
+    </div>
   );
 }
 

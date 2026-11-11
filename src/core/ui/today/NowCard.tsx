@@ -4,12 +4,11 @@ import Link from "next/link";
 import { type FormEvent, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useEndSession, useStartSession } from "@/core/app/actions";
+import { useCloseWorkItem, useEndSession, useStartSession } from "@/core/app/actions";
 import type { KnownModule } from "@/core/app/hooks";
 import type { NowCardContent } from "@/core/contract/types";
 import { type Candidate, elapsedMinutes, type NowState } from "@/core/today/select";
 import { formatMinutes, formatTime } from "@/lib/date";
-import { QuickAddButton } from "../QuickAdd";
 
 // The "now" card: the largest thing on the Today screen. Its first form has four states
 // (running, fixed block, suggestion, nothing); the planner's states arrive in Ç3.
@@ -31,6 +30,7 @@ export function NowCard({
 }) {
   const start = useStartSession();
   const end = useEndSession();
+  const closeItem = useCloseWorkItem();
   const [unplanned, setUnplanned] = useState(false);
 
   const frame = (children: React.ReactNode) => (
@@ -128,9 +128,6 @@ export function NowCard({
             {state.block.location ? ` · ${state.block.location}` : ""}
           </p>
         </div>
-        <div>
-          <QuickAddButton />
-        </div>
       </>,
     );
   }
@@ -148,6 +145,43 @@ export function NowCard({
   if (state.kind === "suggest") {
     const { candidate } = state;
     const mod = modules.get(candidate.moduleId);
+    const item = candidate.item;
+    // The effort planned for a work item is used up. It does not close on its own; the card
+    // asks (docs/03-veri-modeli.md).
+    const usedUp =
+      item !== undefined &&
+      item.effort_total_minutes !== null &&
+      item.effort_done_minutes >= item.effort_total_minutes;
+    if (usedUp && !unplanned) {
+      return frame(
+        <>
+          <div className="flex flex-col gap-2">
+            {mod ? <ModuleLine mod={mod} /> : null}
+            <h2 className="text-3xl leading-tight font-semibold tracking-tight md:text-5xl">
+              {candidate.title}
+            </h2>
+            <p className="text-muted-foreground md:text-lg">
+              Ayrılan {formatMinutes(item.effort_total_minutes!)} doldu. Bitti mi?
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              className="h-12 px-6 text-base"
+              onClick={() => closeItem.mutate({ itemId: candidate.id, result: "done" })}
+            >
+              Bitti
+            </Button>
+            <Button
+              variant="outline"
+              className="h-12 px-5 text-base"
+              onClick={() => start.mutate(sessionTargetOf(candidate))}
+            >
+              Devam et
+            </Button>
+          </div>
+        </>,
+      );
+    }
     return frame(
       <>
         <div className="flex flex-col gap-2">
@@ -189,7 +223,6 @@ export function NowCard({
         unplannedForm
       ) : (
         <div className="flex flex-wrap gap-2">
-          <QuickAddButton />
           <Button variant="outline" className="h-11 md:h-9" onClick={() => setUnplanned(true)}>
             Başka bir şey yapıyorum
           </Button>

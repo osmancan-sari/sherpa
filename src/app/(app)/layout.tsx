@@ -8,7 +8,7 @@ export default function AppLayout({ children }: LayoutProps<"/">) {
     <AppProviders>
       <div className="flex min-h-dvh flex-1 flex-col md:flex-row">
         <AppNav />
-        <main className="flex min-w-0 flex-1 flex-col pb-[calc(3.5rem+env(safe-area-inset-bottom))] md:pb-0">
+        <main className="flex min-w-0 flex-1 flex-col pb-[calc(9rem+env(safe-area-inset-bottom))] md:pb-0">
           {children}
         </main>
         <QuickAddButton floating />

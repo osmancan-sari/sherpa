@@ -3,6 +3,7 @@
 import { CalendarRange, CircleDot, Inbox, LayoutGrid, Settings } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { Suspense } from "react";
 import { cn } from "@/lib/utils";
 
 const items = [
@@ -22,8 +23,20 @@ function isActive(pathname: string, href: string): boolean {
  * and a bottom bar within thumb reach on the phone.
  */
 export function AppNav() {
-  const pathname = usePathname();
+  // On routes with a dynamic segment the path is only known in the browser; until then the
+  // same bar is drawn with no item marked.
+  return (
+    <Suspense fallback={<AppNavView pathname={null} />}>
+      <CurrentAppNav />
+    </Suspense>
+  );
+}
 
+function CurrentAppNav() {
+  return <AppNavView pathname={usePathname()} />;
+}
+
+function AppNavView({ pathname }: { pathname: string | null }) {
   return (
     <nav
       aria-label="Ana gezinme"
@@ -38,7 +51,7 @@ export function AppNav() {
       </div>
       <ul className="flex md:flex-col md:gap-0.5 md:px-2">
         {items.map(({ href, label, icon: Icon }) => {
-          const active = isActive(pathname, href);
+          const active = pathname !== null && isActive(pathname, href);
           return (
             <li key={href} className="min-w-0 flex-1 md:flex-none">
               <Link

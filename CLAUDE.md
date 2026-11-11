@@ -56,11 +56,14 @@ Paket sürümlerini ezberden yazma; kurarken güncel kararlı sürümü kullan v
 | `npm run db:types` | Yerel şemadan `src/lib/supabase/database.types.ts` üretir |
 | `npm run db:push` | Migration'ları bağlı bulut projesine uygular (`supabase link` sonrası) |
 | `npm run db:user` | `ALLOWED_EMAIL` hesabını oluşturur (yeni kayıt kapalı; hesap yalnızca böyle açılır) |
+| `npm run db:seed` | Yerel hesaba örnek veri yazar (sahte modüller, kalemler, ritimler, bloklar). Hesap doluysa `npm run db:seed -- --reset`. Yalnızca yerel Supabase |
 | `npm run icons` | Uygulama simgelerini yeniden üretir |
 
 Faz ekran görüntüleri: PowerShell'de `$env:SHERPA_SHOTS = "c0"; npm run test:e2e` → `docs/ekran-goruntuleri/c0/`.
 
 Yerelde giriş kodu e-postası gönderilmez; Mailpit'e düşer: `http://127.0.0.1:54324`.
+
+`deneme` modülü yalnızca `NEXT_PUBLIC_SHERPA_DEMO_MODULE=1` iken kaydolur (`.env.local`; testler bunu ister). Üretimde bu değişken verilmez.
 
 ## Mimari kurallar
 

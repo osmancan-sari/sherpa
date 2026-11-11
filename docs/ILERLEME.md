@@ -5,8 +5,8 @@ Bu dosyayı Claude Code günceller. Yeni bir oturum yalnızca bu dosyayı ve `pr
 ## Durum
 
 - Faz: **Ç1 (Çekirdek ve modül temeli) sürüyor.** Ç0 bitti (`c0-tamam`); yayın ve telefon D1 ve D2'yi bekliyor
-- Adım: 5 / 8 (aşağıdaki plan); 1–4 bitti
-- Son commit: istemci altyapısı, Bugün ekranı, hızlı giriş, gelen kutusu
+- Adım: 7 / 8 (aşağıdaki plan); 1–6 bitti, 7 sürüyor
+- Son commit: örnek veri betiği (`npm run db:seed`)
 
 ### Ç1 planı
 
@@ -18,9 +18,9 @@ Her adımın sonunda `npm run check` ve commit; şema, RLS, iş zarfı ve eşitl
 | 2 | Migration: `docs/03-veri-modeli.md` çekirdek tabloları, RLS, oturum ve arşiv fonksiyonları, Realtime yayını; tipler; veritabanı testleri (RLS, kısıtlar) | bitti; denetim (adım kipi): 2 engelleyici ve 5 önemli bulgu düzeltildi |
 | 3 | Çekirdek veri katmanı (`src/core/data`), iş zarfı (`propose`, `withdraw`, `provenance`, `onOutcome`), olaylar, modül sözleşmesi tipleri ve kayıt, blok serisi üretimi | bitti (arayüz yok); denetim (adım kipi): engelleyici yok, 8 önemli bulgu düzeltildi |
 | 4 | İstemci altyapısı: TanStack Query, Realtime, modül kaydı bağlamı. Bugün ekranı, hızlı giriş, gelen kutusu, oturumlar | bitti (63 uçtan uca test; iki cihaz eşitlemesi dahil) |
-| 5 | Modül arayüzü zemini: `ModulePageShell`, sekmeler, alt sayfalar, tam ekran, hızlı eylemler, modül ayarları, bileşen takımı. `_sablon` ve `deneme` | sırada |
-| 6 | Ayarlar: modüller, sabit bloklar, dışa aktarım | |
-| 7 | `scripts/seed-demo.ts`, uçtan uca testler (iki cihaz eşitlemesi dahil), ekran görüntüleri | |
+| 5 | Modül arayüzü zemini: `ModulePageShell`, sekmeler, alt sayfalar, tam ekran, hızlı eylemler, modül ayarları, bileşen takımı. `_sablon` ve `deneme` | bitti (14 uçtan uca test + iki genişlikte modül sayfası testi) |
+| 6 | Ayarlar: modüller, sabit bloklar, dışa aktarım | bitti (`settings.spec.ts`, `tests/db/blocks.test.ts` içinde dışa aktarım) |
+| 7 | `scripts/seed-demo.ts`, elle düzenleme arayüzü (iş, kalem, ritim, blok, seri), ekran görüntüleri | sürüyor: örnek veri bitti; düzenleme arayüzü ve ekran görüntüleri sırada |
 | 8 | `check:full`, faz denetimi, düzeltmeler, faz raporu, etiket | |
 
 ## Biten fazlar
@@ -87,7 +87,7 @@ Son denetimden sonraki değişiklikler yalnızca bu dosyadadır (faz raporu). `n
 
 ## Sıradaki adım
 
-Ç1'in 5. adımı: modül arayüzü zemini (`ModulePageShell`, sekmeler, alt sayfalar, tam ekran, hızlı eylemler, modül ayarları, bileşen takımı), `_sablon` ve `deneme` modülleri. Ayrıntı yukarıda "Ç1 planı" tablosunda.
+Ç1'in 7. adımı: iş, kalem, ritim, blok ve seri için elle düzenleme arayüzü (veri katmanı hazır: `updateTask`, `updateWorkItem`, `updateRhythm`, `createRhythm`, `updateBlock`, `updateSeries`), ardından 5–7. adımların denetimi (adım kipi), ekran görüntüleri (`SHERPA_SHOTS=c1`) ve 8. adım.
 
 ## Senden bekleyenler
 

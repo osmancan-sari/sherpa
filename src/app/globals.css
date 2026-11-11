@@ -148,3 +148,22 @@
 .health-behind {
   color: var(--health-behind);
 }
+
+/* Chart colours (validated with the dataviz palette checker against both surfaces).
+   --series-1: the default colour of a single-series chart.
+   --seq-1..4: one hue from light to dark for magnitude; in dark mode the order turns round,
+               so "more" always stands further from the surface. */
+:root {
+  --series-1: #2a78d6;
+  --seq-1: #86b6ef;
+  --seq-2: #5598e7;
+  --seq-3: #256abf;
+  --seq-4: #104281;
+}
+.dark {
+  --series-1: #3987e5;
+  --seq-1: #184f95;
+  --seq-2: #2a78d6;
+  --seq-3: #6da7ec;
+  --seq-4: #9ec5f4;
+}

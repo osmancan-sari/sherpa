@@ -7,6 +7,7 @@ const ALLOWED_EMAIL = process.env.ALLOWED_EMAIL!;
 
 /** Children before parents, so rows can be removed in this order. */
 const TABLES = [
+  "deneme_items",
   "rhythm_logs",
   "sessions",
   "tasks",

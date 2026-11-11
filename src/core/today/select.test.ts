@@ -13,6 +13,8 @@ import {
   currentBlock,
   elapsedMinutes,
   isBlocked,
+  minutesPerWeek,
+  moduleUpcoming,
   nowState,
   periodStart,
   rhythmProgress,
@@ -235,6 +237,23 @@ describe("blocks", () => {
     expect(blocksOfDay(all, "2026-11-13").map((b) => b.title)).toEqual(["Gece"]);
   });
 
+  it("lists a block that runs past midnight on both days", () => {
+    const overnight = block({
+      title: "Gece vardiyası",
+      starts_at: "2026-11-12T23:30:00+03:00",
+      ends_at: "2026-11-13T00:30:00+03:00",
+    });
+    expect(blocksOfDay([overnight], "2026-11-12")).toHaveLength(1);
+    expect(blocksOfDay([overnight], "2026-11-13")).toHaveLength(1);
+    expect(blocksOfDay([overnight], "2026-11-14")).toEqual([]);
+    // Ending exactly at midnight does not reach into the next day.
+    const untilMidnight = block({
+      starts_at: "2026-11-12T23:00:00+03:00",
+      ends_at: "2026-11-13T00:00:00+03:00",
+    });
+    expect(blocksOfDay([untilMidnight], "2026-11-13")).toEqual([]);
+  });
+
   it("finds the block that is running now", () => {
     expect(currentBlock([evening, morning], NOW)?.title).toBe("Ders");
     expect(currentBlock([evening, cancelled], NOW)).toBeNull();
@@ -294,5 +313,76 @@ describe("elapsedMinutes", () => {
     expect(elapsedMinutes("2026-11-12T10:39:30+03:00", NOW)).toBe(0);
     // A device clock slightly behind the server never shows a negative time.
     expect(elapsedMinutes("2026-11-12T10:41:00+03:00", NOW)).toBe(0);
+  });
+});
+
+describe("moduleUpcoming", () => {
+  it("lists everything of the module that is open, in date order, waiting work included", () => {
+    const other = "33333333-3333-4333-8333-333333333333";
+    const sitting = workItem({ title: "oturumu açık kalem" });
+    const weekly = rhythm({ title: "ritim" });
+    const list = moduleUpcoming({
+      moduleId: MODULE_ID,
+      tasks: [
+        task({ title: "bekleyen", status: "waiting", due_at: "2026-11-13T10:00:00+03:00" }),
+        task({ title: "yarına planlı", planned_date: "2026-11-13" }),
+        task({ title: "biten", status: "done" }),
+        task({ title: "başka modül", module_id: other }),
+        task({ title: "oturum", work_item_id: sitting.id, due_at: "2026-11-20T10:00:00+03:00" }),
+      ],
+      workItems: [
+        sitting,
+        workItem({ title: "ileride başlayacak", earliest_at: "2026-12-01T09:00:00+03:00" }),
+        workItem({ title: "kapalı", status: "dropped" }),
+        workItem({ title: "başka modülün kalemi", module_id: other }),
+      ],
+      rhythms: [weekly, rhythm({ title: "pasif", active: false })],
+      rhythmLogs: [rhythmLog(weekly.id, "2026-11-09"), rhythmLog(weekly.id, "2026-11-10")],
+      now: NOW,
+    });
+    expect(list.map((c) => [c.type, c.title])).toEqual([
+      ["task", "bekleyen"],
+      ["task", "oturum"],
+      ["task", "yarına planlı"],
+      ["item", "ileride başlayacak"],
+      ["rhythm", "ritim"],
+    ]);
+    // A rhythm that has met its target is still part of the module's picture.
+    expect(list.at(-1)!.progress).toBe("2/2");
+  });
+});
+
+describe("minutesPerWeek", () => {
+  it("adds up finished sessions per week, oldest first, the current week last", () => {
+    const other = "33333333-3333-4333-8333-333333333333";
+    const span = (start: string, minutes: number, extra = {}) =>
+      session({
+        module_id: MODULE_ID,
+        started_at: start,
+        ended_at: new Date(Date.parse(start) + minutes * 60_000).toISOString(),
+        ...extra,
+      });
+    const weeks = minutesPerWeek(
+      [
+        span("2026-11-12T08:00:00+03:00", 45),
+        span("2026-11-09T00:10:00+03:00", 30),
+        // Sunday 23:50 in Istanbul still belongs to the week before.
+        span("2026-11-08T23:50:00+03:00", 20),
+        span("2026-10-20T10:00:00+03:00", 60),
+        span("2026-11-10T10:00:00+03:00", 90, { module_id: other }),
+        span("2026-11-10T10:00:00+03:00", 90, { measured: false }),
+        session({ module_id: MODULE_ID, started_at: "2026-11-12T09:00:00+03:00" }),
+        span("2026-01-05T10:00:00+03:00", 500),
+      ],
+      MODULE_ID,
+      NOW,
+      4,
+    );
+    expect(weeks).toEqual([
+      { weekStart: "2026-10-19", minutes: 60 },
+      { weekStart: "2026-10-26", minutes: 0 },
+      { weekStart: "2026-11-02", minutes: 20 },
+      { weekStart: "2026-11-09", minutes: 75 },
+    ]);
   });
 });

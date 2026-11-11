@@ -1,7 +1,7 @@
 import { nextSessionMinutes } from "@/core/contract/envelope";
 import type { RhythmProgress } from "@/core/contract/types";
 import type { Block, Period, Rhythm, RhythmLog, Session, Task, WorkItem } from "@/core/types";
-import { dayKey, monthStart, weekStart } from "@/lib/date";
+import { dayKey, istanbulInstant, monthStart, shiftDay, weekStart } from "@/lib/date";
 
 // What the first Today screen shows, as pure functions of the data and the current time.
 // There is no planner yet (Ç3): the list is everything that can be done now, ordered by
@@ -152,10 +152,20 @@ export function todayCandidates(input: TodayInput): Candidate[] {
   return candidates.sort(compareCandidates);
 }
 
-/** Blocks of the given day that have not been cancelled, in order. */
+/**
+ * Blocks that touch the given day and have not been cancelled, in order. A block that runs
+ * past midnight belongs to both days.
+ */
 export function blocksOfDay(blocks: Block[], day: string): Block[] {
+  const dayStart = istanbulInstant(day).getTime();
+  const dayEnd = istanbulInstant(shiftDay(day, 1)).getTime();
   return blocks
-    .filter((block) => block.status !== "cancelled" && dayKey(new Date(block.starts_at)) === day)
+    .filter(
+      (block) =>
+        block.status !== "cancelled" &&
+        Date.parse(block.starts_at) < dayEnd &&
+        Date.parse(block.ends_at) > dayStart,
+    )
     .sort((a, b) => Date.parse(a.starts_at) - Date.parse(b.starts_at));
 }
 
@@ -208,4 +218,95 @@ export function nowState(input: {
 /** Whole minutes a session has been running, from the server's start time. */
 export function elapsedMinutes(startedAt: string, now: Date): number {
   return Math.max(0, Math.floor((now.getTime() - Date.parse(startedAt)) / 60_000));
+}
+
+/**
+ * Everything of one module that is still open, in date order: for the "upcoming" region of
+ * the module's page. Unlike the Today list it also shows what is waiting or not due to start
+ * yet, because the page is where the whole picture of the module lives.
+ */
+export function moduleUpcoming(input: {
+  moduleId: string;
+  tasks: Task[];
+  workItems: WorkItem[];
+  rhythms: Rhythm[];
+  rhythmLogs: RhythmLog[];
+  now: Date;
+}): Candidate[] {
+  const { moduleId, now } = input;
+  const candidates: Candidate[] = [];
+  const openTasks = input.tasks.filter(
+    (task) => task.module_id === moduleId && ["todo", "doing", "waiting"].includes(task.status),
+  );
+  for (const task of openTasks) {
+    candidates.push({
+      type: "task",
+      id: task.id,
+      title: task.title,
+      moduleId,
+      minutes: task.est_minutes,
+      dueAt: task.due_at,
+      importance: task.importance,
+      createdAt: task.created_at,
+      task,
+    });
+  }
+  const itemsWithOpenTask = new Set(openTasks.map((task) => task.work_item_id));
+  for (const item of input.workItems) {
+    if (item.module_id !== moduleId || item.status === "done" || item.status === "dropped")
+      continue;
+    if (itemsWithOpenTask.has(item.id)) continue;
+    candidates.push({
+      type: "item",
+      id: item.id,
+      title: item.title,
+      moduleId,
+      minutes: nextSessionMinutes(item),
+      dueAt: item.due_at,
+      importance: item.importance,
+      createdAt: item.created_at,
+      item,
+    });
+  }
+  for (const rhythm of input.rhythms) {
+    if (rhythm.module_id !== moduleId || !rhythm.active) continue;
+    const progress = rhythmProgress(rhythm, input.rhythmLogs, now);
+    candidates.push({
+      type: "rhythm",
+      id: rhythm.id,
+      title: rhythm.title,
+      moduleId,
+      minutes: rhythm.est_minutes,
+      dueAt: null,
+      importance: 2,
+      createdAt: rhythm.created_at,
+      progress: `${progress.done}/${progress.target}`,
+    });
+  }
+  return candidates.sort(compareCandidates);
+}
+
+/**
+ * Minutes spent per week in a module over the last `weeks` weeks, oldest first, the current
+ * week last. Only finished, measured sessions count.
+ */
+export function minutesPerWeek(
+  sessions: Session[],
+  moduleId: string,
+  now: Date,
+  weeks = 8,
+): { weekStart: string; minutes: number }[] {
+  const current = weekStart(dayKey(now));
+  const starts = Array.from({ length: weeks }, (_, index) =>
+    shiftDay(current, -7 * (weeks - 1 - index)),
+  );
+  const totals = new Map(starts.map((start) => [start, 0]));
+  for (const session of sessions) {
+    if (session.module_id !== moduleId || session.ended_at === null || !session.measured) continue;
+    const week = weekStart(dayKey(new Date(session.started_at)));
+    if (!totals.has(week)) continue;
+    const minutes = (Date.parse(session.ended_at) - Date.parse(session.started_at)) / 60_000;
+    totals.set(week, totals.get(week)! + minutes);
+  }
+  return starts.map((start) => ({ weekStart: start, minutes: Math.round(totals.get(start)!) }));
 }

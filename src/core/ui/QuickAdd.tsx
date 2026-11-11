@@ -60,17 +60,18 @@ export function QuickAddProvider({ children }: { children: ReactNode }) {
     [],
   );
 
-  // "N" opens quick add from every screen.
+  // "N" opens quick add from every screen. While it is open the key belongs to the dialog.
+  const isOpen = state.open;
   useEffect(() => {
     const onKey = (event: globalThis.KeyboardEvent) => {
       if (event.key.toLowerCase() !== "n" || event.ctrlKey || event.metaKey || event.altKey) return;
-      if (isTyping(event.target)) return;
+      if (isOpen || isTyping(event.target)) return;
       event.preventDefault();
       open();
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [open]);
+  }, [open, isOpen]);
 
   const value = useMemo(() => ({ open }), [open]);
 
@@ -146,7 +147,7 @@ function QuickAddDialog({
   const addWorkItem = useAddWorkItem();
   const addInboxEntry = useAddInboxEntry();
 
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
   const detailsRef = useRef<HTMLDivElement>(null);
   const [text, setText] = useState("");
   const [moduleSlug, setModuleSlug] = useState<string | null>(preset.moduleSlug ?? null);
@@ -179,11 +180,15 @@ function QuickAddDialog({
     selectModule(slugs[(index + step + slugs.length) % slugs.length]);
   };
 
-  const onInputKey = (event: KeyboardEvent<HTMLInputElement>) => {
-    if (event.key === "Tab" && active.length > 0) {
+  const onInputKey = (event: KeyboardEvent<HTMLTextAreaElement>) => {
+    // Enter saves; a pasted block keeps its own line breaks, and Shift+Enter adds one by hand.
+    if (event.key === "Enter" && !event.shiftKey) {
+      event.preventDefault();
+      event.currentTarget.form?.requestSubmit();
+    } else if (event.key === "Tab" && active.length > 0) {
       event.preventDefault();
       cycleModule(event.shiftKey ? -1 : 1);
-    } else if (event.key === "ArrowDown") {
+    } else if (event.key === "ArrowDown" && !text.includes("\n")) {
       const next = detailsRef.current?.querySelector<HTMLElement>("button, input, select");
       if (next) {
         event.preventDefault();
@@ -311,8 +316,10 @@ function QuickAddDialog({
           void submit(overLimit);
         }}
       >
-        <Input
+        {/* A text area, one line tall until it needs more: a pasted block keeps its lines. */}
+        <textarea
           ref={inputRef}
+          rows={1}
           value={text}
           onChange={(event) => {
             setText(event.target.value);
@@ -322,7 +329,7 @@ function QuickAddDialog({
           aria-label="Giriş"
           placeholder="Sunum slaytları cuma 45dk"
           autoComplete="off"
-          className="h-12 text-base"
+          className="border-input placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 dark:bg-input/30 field-sizing-content max-h-48 min-h-12 w-full resize-none rounded-lg border bg-transparent px-3 py-3 text-base outline-none focus-visible:ring-3"
         />
 
         <div ref={detailsRef} className="flex flex-col gap-4">
@@ -346,7 +353,7 @@ function QuickAddDialog({
           )}
 
           {selected && intakeTypes.length > 0 ? (
-            <div role="group" aria-label="Tür" className="flex flex-wrap gap-2">
+            <div role="group" aria-label="Kayıt türü" className="flex flex-wrap gap-2">
               <Chip pressed={typeKey === TASK} onClick={() => setTypeKey(TASK)}>
                 İş
               </Chip>
@@ -507,6 +514,8 @@ export function IntakeFields({
           return (
             <Field key={field.name} label={label}>
               <select
+                // Named on its own: inside a label a select would also read out its value.
+                aria-label={label}
                 value={value}
                 onChange={(event) => onChange(field.name, event.target.value)}
                 className="border-input bg-background h-11 rounded-lg border px-3 text-sm md:h-9"

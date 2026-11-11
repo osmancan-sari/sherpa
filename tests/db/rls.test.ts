@@ -56,6 +56,7 @@ const SAMPLES: Record<string, (ids: Record<string, string>) => Row> = {
   weekly_reviews: () => ({ week_start: "2026-11-09" }),
   planner_stats: () => ({ key: "capacity:home:evening", value: 0.7 }),
   settings: () => ({}),
+  deneme_items: () => ({ title: "Deneme kaydı" }),
 };
 
 /** Insert order: parents first. Tables not named here go last, in any order. */

@@ -592,10 +592,16 @@ begin
         v_minutes := 45;
       end if;
       v_minutes := coalesce(v_item.session_minutes, least(45, greatest(5, v_minutes)));
-      insert into public.tasks (module_id, work_item_id, title, est_minutes, due_at, energy, context, importance)
+      -- The sitting carries the item's source, so the module that proposed the item recognises
+      -- its own work on the "now" card.
+      insert into public.tasks (
+        module_id, work_item_id, title, est_minutes, due_at, energy, context, importance,
+        source_type, source_id
+      )
       values (
         v_item.module_id, v_item.id, v_item.title, least(90, greatest(5, v_minutes)), v_item.due_at,
-        coalesce(v_item.energy, 'light'), coalesce(v_item.context, 'any'), v_item.importance
+        coalesce(v_item.energy, 'light'), coalesce(v_item.context, 'any'), v_item.importance,
+        v_item.source_type, v_item.source_id
       )
       returning * into v_task;
     end if;

@@ -3,7 +3,20 @@ import { SESSION_COOKIE } from "./supabase";
 
 // Acceptance: without signing in, no page and no API route returns data.
 
-const pages = ["/", "/hafta", "/m", "/gelen", "/ayarlar", "/m/okul", "/boyle-bir-sayfa-yok"];
+const pages = [
+  "/",
+  "/hafta",
+  "/m",
+  "/gelen",
+  "/ayarlar",
+  "/ayarlar/moduller",
+  "/ayarlar/moduller/deneme",
+  "/ayarlar/bloklar",
+  "/m/okul",
+  "/m/deneme/bilesenler",
+  "/m/deneme/tam/odak",
+  "/boyle-bir-sayfa-yok",
+];
 
 for (const path of pages) {
   test(`page ${path} redirects to the login page`, async ({ request, page }) => {
@@ -27,7 +40,13 @@ test("the server-component payload of a page is guarded too", async ({ request }
   expect(await response.text()).not.toContain("Hafta");
 });
 
-for (const path of ["/api/me", "/api/boyle-bir-rota-yok", "/api/ai/enrich", "/api/mcp"]) {
+for (const path of [
+  "/api/me",
+  "/api/export",
+  "/api/boyle-bir-rota-yok",
+  "/api/ai/enrich",
+  "/api/mcp",
+]) {
   test(`API ${path} answers 401 without data`, async ({ request }) => {
     for (const method of ["get", "post"] as const) {
       const response = await request[method](path, { maxRedirects: 0 });

@@ -20,6 +20,8 @@ export function touchClock(): void {
 export function subscribeClock(listener: () => void): () => void {
   listeners.add(listener);
   if (listeners.size === 1) {
+    // Nobody was watching: what is stored may be old.
+    current = new Date();
     timer = setInterval(touchClock, TICK_MS);
     document.addEventListener("visibilitychange", touchClock);
     window.addEventListener("focus", touchClock);

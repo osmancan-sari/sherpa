@@ -25,6 +25,7 @@
     "db:types": "supabase gen types typescript --local > src/lib/supabase/database.types.ts && prettier --write src/lib/supabase/database.types.ts",
     "db:push": "supabase db push",
     "db:user": "node --env-file=.env.local scripts/create-user.mjs",
+    "db:seed": "tsx scripts/seed-demo.ts",
     "icons": "node scripts/generate-icons.mjs"
   },
   "dependencies": {

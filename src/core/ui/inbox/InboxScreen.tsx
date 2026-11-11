@@ -18,6 +18,7 @@ import { cn } from "@/lib/utils";
 import { ClientOnly } from "../ClientOnly";
 import { EmptyState, PageShell } from "../PageShell";
 import { QuickAddButton } from "../QuickAdd";
+import { LoadFailed } from "../today/TodayScreen";
 
 // Inbox: entries that have not been routed yet. Without the AI (Ç2) the user routes them by
 // hand: one touch to open "işe çevir" or "bloğa çevir", one to confirm; or "sil".
@@ -40,7 +41,9 @@ function InboxBody() {
 
   return (
     <>
-      {inbox.isLoading ? null : entries.length === 0 ? (
+      {inbox.isError && inbox.data === undefined ? (
+        <LoadFailed onRetry={() => void inbox.refetch()} />
+      ) : inbox.isLoading ? null : entries.length === 0 ? (
         <EmptyState>Gelen kutusu boş.</EmptyState>
       ) : (
         <ul className="flex flex-col gap-3">
@@ -67,9 +70,7 @@ function EntryRow({ entry, modules }: { entry: InboxEntry; modules: KnownModule[
   const parsed = useMemo(() => parseQuickText(entry.raw_text, now), [entry.raw_text, now]);
   const [moduleSlug, setModuleSlug] = useState<string | null>(null);
   const [day, setDay] = useState(parsed.dueDay ?? "");
-  const [minutes, setMinutes] = useState(
-    String(Math.min(parsed.minutes ?? TASK_DEFAULT_MINUTES, TASK_MAX_MINUTES)),
-  );
+  const [minutes, setMinutes] = useState(String(parsed.minutes ?? TASK_DEFAULT_MINUTES));
   const [blockDay, setBlockDay] = useState(parsed.dueDay ?? dayKey(now));
   const [startTime, setStartTime] = useState("10:00");
   const [endTime, setEndTime] = useState("11:00");
@@ -78,12 +79,26 @@ function EntryRow({ entry, modules }: { entry: InboxEntry; modules: KnownModule[
     modules.find(({ row }) => row.slug === moduleSlug) ??
     (modules.length === 1 ? modules[0] : undefined);
   const minutesValue = Number(minutes);
-  const taskReady =
-    chosen !== undefined && minutesValue >= TASK_MIN_MINUTES && minutesValue <= TASK_MAX_MINUTES;
+  // Longer than one sitting: it cannot be a task; it is saved as a work item instead.
+  const overLimit = minutesValue > TASK_MAX_MINUTES;
+  const taskReady = chosen !== undefined && minutesValue >= TASK_MIN_MINUTES;
   const blockReady = blockDay !== "" && endTime > startTime;
 
   const toTask = () => {
     if (!chosen || !taskReady) return;
+    if (overLimit) {
+      route.mutate({
+        entryId: entry.id,
+        module: chosen.row.slug,
+        workItem: {
+          module_id: chosen.row.id,
+          title: parsed.title,
+          effort_total_minutes: minutesValue,
+          due_at: day ? dueAtEndOfDay(day) : null,
+        },
+      });
+      return;
+    }
     route.mutate({
       entryId: entry.id,
       module: chosen.row.slug,
@@ -181,7 +196,6 @@ function EntryRow({ entry, modules }: { entry: InboxEntry; modules: KnownModule[
                 type="number"
                 inputMode="numeric"
                 min={TASK_MIN_MINUTES}
-                max={TASK_MAX_MINUTES}
                 step={5}
                 value={minutes}
                 onChange={(event) => setMinutes(event.target.value)}
@@ -189,12 +203,18 @@ function EntryRow({ entry, modules }: { entry: InboxEntry; modules: KnownModule[
               />
             </Labelled>
             <Button className="h-11 md:h-9" disabled={!taskReady} onClick={toTask}>
-              Kaydet
+              {overLimit ? "İş kalemi olarak kaydet" : "Kaydet"}
             </Button>
             <Button variant="ghost" className="h-11 md:h-9" onClick={() => setMode("idle")}>
               Vazgeç
             </Button>
           </div>
+          {overLimit ? (
+            <p role="note" className="text-muted-foreground text-sm">
+              {TASK_MAX_MINUTES} dakikadan uzun iş tek oturuma sığmaz; iş kalemi olarak kaydedilir
+              ve oturumlara bölünür.
+            </p>
+          ) : null}
         </div>
       ) : null}
 

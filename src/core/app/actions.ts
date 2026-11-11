@@ -20,7 +20,16 @@ import {
   type NewWorkItem,
   reopenTask,
 } from "@/core/data/work";
-import type { Block, InboxEntry, Prompt, RhythmLog, Session, Task, WorkItem } from "@/core/types";
+import type {
+  Block,
+  InboxEntry,
+  Prompt,
+  Rhythm,
+  RhythmLog,
+  Session,
+  Task,
+  WorkItem,
+} from "@/core/types";
 import { dayKey } from "@/lib/date";
 import { SAVE_FAILED, useNotify } from "@/core/ui/Notices";
 import { useRegistry } from "./CoreProvider";
@@ -114,13 +123,28 @@ export function useStartSession() {
     optimistic: (target, queryClient) => {
       const previous = queryClient.getQueryData<Session | null>(keys.openSession);
       const now = stamp();
+      // What the card shows until the server answers: the title and the module of the thing
+      // that was started, read from what is already on screen.
+      const tasks = queryClient.getQueryData<Task[]>(keys.tasks) ?? [];
+      const items = queryClient.getQueryData<WorkItem[]>(keys.workItems) ?? [];
+      const rhythms = queryClient.getQueryData<Rhythm[]>(keys.rhythms) ?? [];
+      const item =
+        "workItemId" in target ? items.find((row) => row.id === target.workItemId) : null;
+      const moduleId =
+        "title" in target
+          ? (target.moduleId ?? null)
+          : "taskId" in target
+            ? (tasks.find((row) => row.id === target.taskId)?.module_id ?? null)
+            : "rhythmId" in target
+              ? (rhythms.find((row) => row.id === target.rhythmId)?.module_id ?? null)
+              : (item?.module_id ?? null);
       const draft: Session = {
         id: "pending",
         user_id: "",
         task_id: "taskId" in target ? target.taskId : null,
         rhythm_id: "rhythmId" in target ? target.rhythmId : null,
-        module_id: "title" in target ? (target.moduleId ?? null) : null,
-        title: "title" in target ? target.title : null,
+        module_id: moduleId,
+        title: "title" in target ? target.title : (item?.title ?? null),
         started_at: now,
         ended_at: null,
         measured: true,
@@ -245,11 +269,16 @@ export function useRouteEntry() {
     mutate: async (
       db,
       args: { entryId: string } & (
-        { task: NewTask & { id: string }; module: string } | { block: NewBlock & { id: string } }
+        | { task: NewTask & { id: string }; module: string }
+        | { workItem: NewWorkItem; module: string }
+        | { block: NewBlock & { id: string } }
       ),
     ) => {
       let routed: RoutedTo;
-      if ("task" in args) {
+      if ("workItem" in args) {
+        const item = await createWorkItem(db, args.workItem);
+        routed = [{ type: "work_item", id: item.id, module: args.module }];
+      } else if ("task" in args) {
         const task = await createTask(db, args.task);
         routed = [{ type: "task", id: task.id, module: args.module }];
       } else {
