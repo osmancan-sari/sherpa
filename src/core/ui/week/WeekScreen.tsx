@@ -2,7 +2,13 @@
 
 import { type FormEvent, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { type KnownModule, useModules, useTodayPlan } from "@/core/app/hooks";
+import {
+  type KnownModule,
+  useHorizonReviews,
+  useModules,
+  useTodayPlan,
+  useWeeklyReviews,
+} from "@/core/app/hooks";
 import { useRecommitWeek, useSetLifeMode } from "@/core/app/plan-actions";
 import { weekInput } from "@/core/data/keep";
 import { dayCapacity, lifeModeOn, loadByWeek, readShares, type WeekLoad } from "@/core/planner";
@@ -142,6 +148,8 @@ function WeekBody() {
       <LifeModePicker rows={rows} today={input.date} />
 
       <Horizon loads={loads} />
+
+      <AiNotes week={week} month={`${(date ?? dayKey(now)).slice(0, 7)}-01`} />
     </>
   );
 }
@@ -400,6 +408,57 @@ function Horizon({ loads }: { loads: WeekLoad[] }) {
           </li>
         ))}
       </ol>
+    </section>
+  );
+}
+
+type ReviewSummary = {
+  summary?: string;
+  suggestions?: string[];
+  mode?: { mode: LifeMode; reason: string } | null;
+};
+type MonthProposal = { text?: string };
+
+/**
+ * What the AI said about the week behind (`review`, from Saturday) and the coming weeks
+ * (`month`). Nothing without the AI: the screen above is the engine's and complete.
+ */
+function AiNotes({ week, month }: { week: string; month: string }) {
+  const reviews = useWeeklyReviews();
+  const horizons = useHorizonReviews();
+  const review = reviews.data?.find((row) => row.week_start === week)?.summary as
+    ReviewSummary | undefined;
+  const proposals = (
+    (horizons.data?.find((row) => row.period_start === month)?.proposals ?? []) as MonthProposal[]
+  ).filter((row) => row.text);
+  if (!review?.summary && proposals.length === 0) return null;
+  return (
+    <section aria-label="Yapay zekanın notları" className="flex flex-col gap-3">
+      <h2 className="text-muted-foreground text-xs font-medium tracking-widest uppercase">
+        Yapay zekanın notları
+      </h2>
+      {review?.summary ? (
+        <div className="flex flex-col gap-1 text-sm">
+          <p>{review.summary}</p>
+          {(review.suggestions ?? []).map((suggestion) => (
+            <p key={suggestion} className="text-muted-foreground">
+              {suggestion}
+            </p>
+          ))}
+          {review.mode ? (
+            <p className="text-muted-foreground">
+              Mod önerisi: {MODE_LABEL[review.mode.mode]}. {review.mode.reason}
+            </p>
+          ) : null}
+        </div>
+      ) : null}
+      {proposals.length > 0 ? (
+        <ul className="text-muted-foreground flex flex-col gap-1 text-sm">
+          {proposals.map((row) => (
+            <li key={row.text}>{row.text}</li>
+          ))}
+        </ul>
+      ) : null}
     </section>
   );
 }

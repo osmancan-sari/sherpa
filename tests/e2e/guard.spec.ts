@@ -46,6 +46,10 @@ for (const path of [
   "/api/export",
   "/api/boyle-bir-rota-yok",
   "/api/ai/enrich",
+  "/api/ai/plan",
+  "/api/ai/week",
+  "/api/ai/month",
+  "/api/ai/review",
   "/api/mcp",
 ]) {
   test(`API ${path} answers 401 without data`, async ({ request }) => {

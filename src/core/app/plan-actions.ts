@@ -10,6 +10,7 @@ import {
   skipToday,
   waitOnTask,
 } from "@/core/data/planning";
+import { postAi } from "@/core/ai/client";
 import { confirmSession, endSession } from "@/core/data/sessions";
 import { createTask } from "@/core/data/work";
 import { buildPlan, type Candidate, isFinished, type PlanInput } from "@/core/planner";
@@ -179,7 +180,16 @@ export function useCloseDay() {
 export function useReplan() {
   const onError = useFailureNotice();
   return useCoreMutation({
-    mutate: (db, input: PlanInput) => {
+    mutate: async (db, { input, ai }: { input: PlanInput; ai: boolean }) => {
+      // With the AI on, its `replan` (the server keeps what is finished of the three). Without
+      // an answer, the engine plans again here.
+      if (ai) {
+        const answer = await postAi<{ status?: string }>("plan", {
+          date: input.date,
+          kind: "replan",
+        });
+        if (answer?.status === "applied") return null;
+      }
       // What is finished of the day's three stays in it (the day's progress is kept); the rest
       // is chosen again.
       const finished = (input.top3 ?? []).filter((id) => isFinished(id, input));

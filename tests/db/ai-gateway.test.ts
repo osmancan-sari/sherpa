@@ -303,7 +303,10 @@ describe("no call at all", () => {
   });
 
   it("when the checks cannot be read, instead of throwing or calling unchecked", async () => {
-    // The secret key has no user: the spending function refuses to answer.
+    // The secret key has no user: the spending function refuses to answer. The key sees every
+    // account's rows; another account's settings (the end-to-end tests' account keeps one) must
+    // not decide the answer, so none are left.
+    ok(await adminDb().from("settings").delete().not("id", "is", null).select());
     const { provider, calls: asked } = counting();
     expect(
       await runAiCall({ db: adminDb(), config: config(provider) }, enrichSpec, input("x")),

@@ -3,6 +3,16 @@ import { dayKey, istanbulInstant, shiftDay } from "@/lib/date";
 import type { DecomposeOutput } from "./calls/decompose";
 import type { EnrichInput, EnrichOutput } from "./calls/enrich";
 import type { ExtractInput, ExtractOutput } from "./calls/extract";
+import type {
+  MonthCallInput,
+  MonthOutput,
+  PlanCallInput,
+  PlanOutput,
+  ReviewCallInput,
+  ReviewOutput,
+  WeekCallInput,
+  WeekOutput,
+} from "./calls/planning";
 import type { SizeInput, SizeOutput } from "./calls/size";
 import { type AiKind, type AiProvider, ProviderError, type ProviderRequest } from "./types";
 
@@ -135,11 +145,79 @@ function extract(input: unknown, request: ProviderRequest): ExtractOutput<unknow
   return { suggestions, note: null };
 }
 
+// --- Planning (Ç3) -----------------------------------------------------------------------------
+
+/**
+ * The day: the three are the engine's candidates in its order, the first one with a reason;
+ * a candidate whose title carries "[ai:defer]" is put off (the engine refuses it when it is
+ * mandatory). Enough to see the advice and its reasons arrive end to end.
+ */
+function plan(input: unknown): PlanOutput {
+  const { candidates } = input as PlanCallInput;
+  const deferred = candidates.filter((row) => row.title.includes("[ai:defer]"));
+  const chosen = candidates.filter((row) => !row.title.includes("[ai:defer]")).slice(0, 3);
+  return {
+    top3: chosen.map((row, index) => ({
+      id: row.id,
+      reason: index === 0 ? "Yapay zeka: günün en önemli işi bu." : "Yapay zeka: bugün sığıyor.",
+    })),
+    prefer: [],
+    defer: deferred.map((row) => ({ id: row.id, reason: "Yapay zeka: yarına kalabilir." })),
+    estimates: [],
+    warnings: [],
+  };
+}
+
+/** The week: the engine's own commitment, each with a reason. */
+function week(input: unknown): WeekOutput {
+  const { base } = input as WeekCallInput;
+  return {
+    committed: base.map((id) => ({ id, reason: "Yapay zeka: bu haftaya düşüyor." })),
+    drop: [],
+    module_budgets: [],
+  };
+}
+
+/** The coming weeks: a busy week where demand is over capacity. */
+function month(input: unknown): MonthOutput {
+  const { weeks } = input as MonthCallInput;
+  const tight = weeks.find((row) => row.demand > row.capacity);
+  return {
+    proposals: tight
+      ? [
+          {
+            kind: "mode",
+            item_id: null,
+            week_start: tight.week_start,
+            mode: "busy",
+            text: `${tight.week_start} haftası sıkışık; o hafta Yoğun mod önerilir.`,
+          },
+        ]
+      : [],
+  };
+}
+
+/** The week behind: a plain summary of the modules' reports. */
+function review(input: unknown): ReviewOutput {
+  const { modules, worked } = input as ReviewCallInput;
+  const minutes = worked.reduce((sum, row) => sum + row.minutes, 0);
+  return {
+    summary: `Bu hafta ${modules.length} modülde ${minutes} dakika çalışıldı.`,
+    suggestions: ["Önümüzdeki hafta en yakın son tarihten başla."],
+    mode: null,
+  };
+}
+
 const ANSWERS: Record<AiKind, Answer> = {
   enrich,
   size,
   decompose,
   extract,
+  plan,
+  replan: plan,
+  week,
+  month,
+  review,
 };
 
 /** Rough token count, so the fake's calls have a cost and the budget is exercised. */

@@ -19,7 +19,7 @@ import { getOpenSession, listSessions } from "@/core/data/sessions";
 import { listDays, listLifeModes, listStats, listWeekPlans } from "@/core/data/planning";
 import { listRhythmLogs, listRhythms, listTasks, listWorkItems } from "@/core/data/work";
 import { buildPlan, type PlanRows, planInput, plannerSettings, planningDay } from "@/core/planner";
-import type { Context, Db, ModuleRow } from "@/core/types";
+import { type Context, type Db, type ModuleRow, unwrap } from "@/core/types";
 import { dayKey, shiftDay, weekStart } from "@/lib/date";
 import { readClock, readServerClock, subscribeClock } from "./clock";
 import { CORE, MODULE, useDb, useRegistry } from "./CoreProvider";
@@ -70,6 +70,8 @@ export const keys = {
   weekPlans: [CORE, "week_plans"] as const,
   lifeModes: [CORE, "life_mode_periods"] as const,
   stats: [CORE, "planner_stats"] as const,
+  weeklyReviews: [CORE, "weekly_reviews"] as const,
+  horizonReviews: [CORE, "horizon_reviews"] as const,
 };
 
 export function useModuleRows() {
@@ -182,6 +184,39 @@ export function useLifeModes() {
 export function usePlannerStats() {
   const db = useDb();
   return useQuery({ queryKey: keys.stats, queryFn: () => listStats(db) });
+}
+
+/** The AI's look back on recent weeks (`review`). */
+export function useWeeklyReviews() {
+  const db = useDb();
+  return useQuery({
+    queryKey: keys.weeklyReviews,
+    queryFn: async () =>
+      unwrap(
+        await db
+          .from("weekly_reviews")
+          .select("*")
+          .gte("week_start", shiftDay(weekStart(dayKey(new Date())), -7))
+          .order("week_start"),
+      ),
+  });
+}
+
+/** The AI's proposals for the coming weeks (`month`). */
+export function useHorizonReviews() {
+  const db = useDb();
+  return useQuery({
+    queryKey: keys.horizonReviews,
+    queryFn: async () =>
+      unwrap(
+        await db
+          .from("horizon_reviews")
+          .select("*")
+          .eq("scope", "month")
+          .gte("period_start", shiftDay(dayKey(new Date()), -62))
+          .order("period_start"),
+      ),
+  });
 }
 
 // --- The device's context ------------------------------------------------------------------

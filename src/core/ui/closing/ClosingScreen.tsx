@@ -10,9 +10,11 @@ import {
   useCompleteTask,
   useLogRhythm,
 } from "@/core/app/actions";
-import { type KnownModule, useModules, useTodayPlan } from "@/core/app/hooks";
+import { type KnownModule, useAiStatus, useModules, useTodayPlan } from "@/core/app/hooks";
 import { useCloseDay } from "@/core/app/plan-actions";
-import { buildPlan, type Candidate, tomorrowInput } from "@/core/planner";
+import { useQuery } from "@tanstack/react-query";
+import { postAi } from "@/core/ai/client";
+import { buildPlan, type Candidate, type PlanAdvice, tomorrowInput } from "@/core/planner";
 import { formatMinutes } from "@/lib/date";
 import { cn } from "@/lib/utils";
 import { ClientOnly } from "../ClientOnly";
@@ -53,11 +55,27 @@ function ClosingBody() {
   const [dump, setDump] = useState("");
   const moduleMap = useMemo(() => new Map(modules.map((mod) => [mod.row.id, mod])), [modules]);
 
+  // With the AI on, tomorrow's draft comes from its `plan` call, with reasons (docs/04,
+  // "Akşam kapanışı"); nothing is written until the user confirms. Without it, the engine's.
+  const aiOn = useAiStatus().data?.state === "on";
+  const tomorrowDate = rows ? tomorrowInput(rows, { now, context }).date : null;
+  const preview = useQuery({
+    queryKey: ["closing-preview", tomorrowDate],
+    enabled: aiOn && tomorrowDate !== null,
+    staleTime: Infinity,
+    queryFn: () =>
+      postAi<{ status: string; advice?: PlanAdvice }>("plan", {
+        date: tomorrowDate,
+        preview: true,
+      }),
+  });
+  const advice = preview.data?.status === "applied" ? preview.data.advice : undefined;
+
   const tomorrow = useMemo(() => {
     if (!rows) return null;
-    const base = tomorrowInput(rows, { now, context });
+    const base = { ...tomorrowInput(rows, { now, context }), advice };
     return { base, plan: buildPlan({ ...base, skipped: [...(base.skipped ?? []), ...removed] }) };
-  }, [rows, now, context, removed]);
+  }, [rows, now, context, removed, advice]);
 
   if (failed) return <LoadFailed onRetry={retry} />;
   if (!input || !rows || !tomorrow) {
@@ -116,8 +134,13 @@ function ClosingBody() {
       {
         today: input.date,
         now: new Date(),
-        tomorrow: { plan: { ...plan, top3 }, day: tomorrow.base, stored: { skipped } },
+        tomorrow: {
+          plan: { ...plan, top3 },
+          day: tomorrow.base,
+          stored: advice ? { skipped, advice } : { skipped },
+        },
         note: null,
+        reasons: advice?.reasons ?? null,
       },
       {
         onSuccess: () => {
@@ -231,6 +254,7 @@ function ClosingBody() {
                     chosen={top3.includes(candidate.id)}
                     fits={placed.has(candidate.id)}
                     onToggle={() => togglePick(candidate.id)}
+                    reason={advice?.reasons?.[candidate.id]}
                     onRemove={() => {
                       setRemoved([...removed, candidate.id]);
                       if (picked) setPicked(picked.filter((id) => id !== candidate.id));
@@ -330,6 +354,7 @@ function DoneRow({
 }
 
 function DraftRow({
+  reason,
   candidate,
   mod,
   chosen,
@@ -343,6 +368,8 @@ function DraftRow({
   fits: boolean;
   onToggle: () => void;
   onRemove: () => void;
+  /** The AI's reason, when it planned the draft. */
+  reason?: string;
 }) {
   return (
     <li className="flex items-center gap-3 px-4 py-3">
@@ -365,6 +392,7 @@ function DraftRow({
             .filter(Boolean)
             .join(" · ")}
         </p>
+        {reason ? <p className="text-muted-foreground truncate text-xs">{reason}</p> : null}
       </div>
       <Button
         variant="ghost"

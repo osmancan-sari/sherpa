@@ -46,6 +46,14 @@ async function addRecord(page: Page, title: string) {
   await expect(dialog).toBeHidden();
 }
 
+/**
+ * The intake calls these tests are about. With the AI on, the screens also plan the day and the
+ * week (Ç3: plan, week, month, review); those calls are tested in planlama.ai.spec.ts.
+ */
+const INTAKE = ["enrich", "size", "decompose", "extract"];
+const intakeCalls = async () =>
+  (await rows("ai_calls")).filter((call) => INTAKE.includes(call.kind as string));
+
 const upcoming = (page: Page) => page.getByRole("region", { name: "Yaklaşanlar" });
 
 test("a free line becomes work of the right module within seconds, its values marked with reasons", async ({
@@ -71,7 +79,7 @@ test("a free line becomes work of the right module within seconds, its values ma
   expect(fields.due_at).toBeUndefined();
   const [entry] = await rows("inbox_entries");
   expect(entry.status).toBe("routed");
-  const [call] = await rows("ai_calls");
+  const [call] = await intakeCalls();
   expect(call).toMatchObject({ kind: "enrich", ok: true });
   expect(Number(call.cost_usd)).toBeGreaterThan(0);
 
@@ -156,7 +164,7 @@ test("an answer outside the schema writes nothing: the line stays in the inbox",
   await page.goto("/");
   await freeLine(page, "fatura öde [ai:invalid]");
   const [call] = await waitFor(
-    () => rows("ai_calls"),
+    () => intakeCalls(),
     (list) => list.length === 1,
     10_000,
   );
@@ -185,7 +193,7 @@ test("with the budget at 0 no call is made, the screens say so, and the line sta
   await freeLine(page, "Sunum slaytları cuma");
   // The request has come back (the screen re-reads), and nothing was asked of the AI.
   await page.waitForTimeout(1500);
-  expect(await rows("ai_calls")).toEqual([]);
+  expect(await intakeCalls()).toEqual([]);
   expect(await rows("tasks")).toEqual([]);
   const [entry] = await rows("inbox_entries");
   expect(entry.status).toBe("new");
@@ -312,7 +320,7 @@ test("settings show this month's calls and what they cost", async ({ page }) => 
   await page.goto("/");
   await freeLine(page, "Sunum slaytları");
   await waitFor(
-    () => rows("ai_calls"),
+    () => intakeCalls(),
     (list) => list.length === 1,
     10_000,
   );
@@ -351,7 +359,8 @@ test("without any provider every feature works: lines wait in the inbox, efforts
   expect(entry.status).toBe("new");
   // No task from the line; the record's work item has its sittings from the week (Ç3).
   expect((await rows("tasks")).filter((task) => task.work_item_id === null)).toEqual([]);
-  expect(await rows("ai_calls")).toEqual([]);
+  // (A planning call of the previous test's server may still land; it is not this test's.)
+  expect(await intakeCalls()).toEqual([]);
 
   // Nothing on screen breaks: the inbox shows the line with its manual actions.
   await page.goto(`${WITHOUT_AI}/gelen`);

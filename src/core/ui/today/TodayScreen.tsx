@@ -56,6 +56,7 @@ function TodayBody() {
   const end = useEndSession();
   const defer = useDefer();
   const replan = useReplan();
+  const aiOn = useAiStatus().data?.state === "on";
   const notify = useNotify();
   const [minutesOpen, setMinutesOpen] = useState(false);
   const [restOpen, setRestOpen] = useState(false);
@@ -71,7 +72,7 @@ function TodayBody() {
   const state = plan?.now;
   const doReplan = () => {
     if (!input) return;
-    replan.mutate(input, { onSuccess: () => notify("Gün yeniden planlandı.") });
+    replan.mutate({ input, ai: aiOn }, { onSuccess: () => notify("Gün yeniden planlandı.") });
   };
 
   // The second screen's keys (docs/05-arayuz.md, "Klavye"): Space starts or finishes, E puts

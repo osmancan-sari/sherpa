@@ -3,8 +3,9 @@ import type { z } from "zod";
 // The AI gateway (docs/10-yapay-zeka.md). Every call to a language model goes through
 // `runAiCall` in gateway.ts; nothing else in the app talks to a provider.
 
-/** The calls of Ç2. The planning calls (plan, replan, week, month, review) arrive in Ç3. */
-export type AiKind = "enrich" | "size" | "decompose" | "extract";
+/** The intake calls (Ç2) and the planning calls (Ç3). */
+export type AiKind =
+  "enrich" | "size" | "decompose" | "extract" | "plan" | "replan" | "week" | "month" | "review";
 
 /** Which model a call runs on: the fast one for intake, the planning one for judgement. */
 export type ModelTier = "fast" | "plan";
@@ -14,6 +15,11 @@ export const KIND_TIER: Record<AiKind, ModelTier> = {
   size: "fast",
   extract: "fast",
   decompose: "plan",
+  plan: "plan",
+  replan: "plan",
+  week: "plan",
+  month: "plan",
+  review: "plan",
 };
 
 /** What a provider is asked: one system prompt, one user message, one output schema. */

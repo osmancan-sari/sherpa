@@ -5,7 +5,8 @@ import { SCOPE_FIELDS } from "./flows/scope";
 // work is already saved and shown, the answer arrives through the live connection, and a
 // failure (offline, server error) leaves the work as it is. Never throws.
 
-export type AiCallName = "enrich" | "size" | "decompose" | "extract";
+export type AiCallName =
+  "enrich" | "size" | "decompose" | "extract" | "plan" | "week" | "month" | "review";
 
 export async function postAi<T = unknown>(call: AiCallName, body: unknown): Promise<T | null> {
   try {
