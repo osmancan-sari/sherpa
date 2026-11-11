@@ -93,7 +93,7 @@ Bir aday bir yuvaya ancak üçünü de geçerse girer:
 | Süzgeç | Kural |
 | --- | --- |
 | Süre | `est_minutes × tahmin çarpanı ≤ yuva süresi` |
-| Enerji | Derin yuva: deep ve light alır. Hafif yuva: light alır. Mola yuvası: physical ve 15 dk'yı geçmeyen light alır |
+| Enerji | Derin yuva: her işi alır (deep, light, physical). Hafif yuva: light ve physical alır. Mola yuvası: yalnızca süresine sığan physical ve 15 dk'yı geçmeyen light alır |
 | Bağlam | İşin bağlamı `any` ya da cihazın bağlamına eşit. `status = waiting` olan iş hiçbir zaman aday değildir |
 
 Bağlam eşleşmesi: ikinci ekran `desk` bağlamındadır ve `desk`, `home`, `any` işlerini görür. Telefonda kullanıcı bağlam seçer (`office`, `campus`, `out`, `commute`).
@@ -124,6 +124,7 @@ skor = önem × (aciliyet + ritimBorcu + bekleme)
 | `suggest` | Boş yuva ve atanmış iş var | Yuvanın işi; Başla düğmesi |
 | `prompt` | Bekleyen bir olay sorusu var ve oturum açık değil | Tek soru |
 | `done` | Günün 3 işi ve zorunlular bitti | "Bugün tamam" |
+| `empty` | Hiç aday yok ve bugün bir şey bitmedi | "Bugün için planlanan bir şey yok" ve hızlı giriş |
 | `night` | Bitiş çizgisi geçti ya da gün kapatıldı | Gece ekranı: yarının ilk işi |
 | `return` | Son etkileşimden beri `return_after_days` gün geçti | Geri dönüş ekranı |
 
@@ -178,6 +179,10 @@ Kod `src/core/planner/` içindedir; dokümanın açık bıraktığı yerler şö
 - **Girdi.** `PlanInput` yukarıdakine ek olarak taşır: `closed` (gün akşam kapatıldı), `spentThisWeek` (modül başına bu haftaki dakikalar; haftalık taban için), `committed` (haftanın taahhüt ettiği kalemler; yoksa `null`), `top3` (günün kaydındaki üç iş), `skipped` (bugün ertelenen kalem ve ritimler), `openSession`, `prompt`, `lastSeenAt` (bugünden önceki son kullanım: oturum, ritim kaydı, giriş, biten iş), `startedToday`. Girdi satırlardan `planInput` ile kurulur; ekran da sunucu da aynı fonksiyonu kullanır.
 - **Yuvalar.** 90 dakikadan uzun aralık açgözlü bölünür: 90 dk derin, 15 dk mola, kalan için yeniden; artan parça uzunluğuna göre derin, hafif ya da atılır. İş yuvanın başına konur, yuvanın kalanı kendi başına bir yuva olur (derin, hafif ya da atılır; molanın kalanı atılır).
 - **Kapasite.** Zorunlu işler kapasite çarpanını aşabilir, yuvaların fiziksel süresini aşamaz; enerjisi uymayan zorunlu iş süresi yeten ilk mola dışı yuvaya konur. Öğrenilen kapasite çarpanı 0,2–1 arasında tutulur (kaydı tutulmayan günler planı boşaltmasın).
+- **Fiziksel iş.** Koşu, spor gibi masa başı olmayan iş süresi yeten her yuvaya girer; mola yuvası yalnızca kısa olanı alır. Doküman fiziksel işi yalnızca molaya koyuyordu; 15 dakikadan uzun fiziksel iş hiç planlanamıyordu. **Görüşün gerek.**
+- **Acil kalem.** Aciliyet kalemin kalan toplam eforundan hesaplanır, ama zorunlu olan yalnızca kalemin sıradaki oturum işidir (en küçük `position`); öbür oturumları havuzun geri kalanı gibi kapasiteyle planlanır. Son tarihi bugün olan kalemin bütün oturumları zorunludur.
+- **Haftanın payı.** Girdi her taahhüt edilmiş kalemin haftalık payını ve taahhüt anındaki biten eforunu taşır (`shares`). Pay işlenince kalem önerilmez ve "sıradaki adım tanımsız" uyarısı çıkmaz; eforun kalanı sonraki haftalarındır.
+- **Yapay zekanın modül payları** (`week`): yapay zekanın önerdiği dakikalar geçerlidir, ama hiçbir modül ritimlerinin ve tabanının istediğinden aza düşmez.
 - **Tahmin çarpanı.** Süre `est_minutes × çarpan`; 90 dakikayı aşan iş hiçbir yuvaya girmez ve "vakit kalırsa"da bekler. Bugün teslim olan böyle bir iş en uzun derin yuvaya konur (bugün başlanır, sonraki yuvada sürer).
 - **Bekleme terimi** son tarihsiz işlere ve kalemlere uygulanır; ritimlerin yerine borçları vardır.
 - **Öneri ve taban.** `defer` bütün zorunlu işaretlerden (haftalık taban dahil) sonra uygulanır; zorunlu iş ertelenemez, uyarı çıkar.

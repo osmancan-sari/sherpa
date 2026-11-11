@@ -59,6 +59,11 @@ const PLANNER_SYNTAX = [
     message: "The planner does not read the clock; take `now` from the input.",
   },
   {
+    selector:
+      "CallExpression[callee.object.name=/^(Math|performance)$/][callee.property.name=/^(random|now)$/]",
+    message: "The planner is deterministic: no random numbers, no clock.",
+  },
+  {
     selector: "CallExpression[callee.name='fetch']",
     message: "The planner does not touch the network.",
   },

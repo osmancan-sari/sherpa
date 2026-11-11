@@ -67,6 +67,11 @@ export type PlanInput = {
   spentThisWeek?: Record<string, number>;
   /** This week's committed work items; null when the week has no plan yet. */
   committed?: string[] | null;
+  /**
+   * Each committed item's share of the week and its done effort when it was committed: once
+   * the share is worked, the item waits for next week (no warning, not offered).
+   */
+  shares?: Record<string, WeekShare>;
   /** The day's three, as fixed when the day was planned (days.top3). */
   top3?: string[];
   /** Put off for today with "Ertele" (work items and rhythms; tasks move to tomorrow instead). */
@@ -80,6 +85,8 @@ export type PlanInput = {
   startedToday?: boolean;
   advice?: PlanAdvice;
 };
+
+export type WeekShare = { minutes: number; from: number };
 
 export type CandidateType = "task" | "item" | "rhythm" | "follow_up";
 

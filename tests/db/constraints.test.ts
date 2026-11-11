@@ -288,7 +288,7 @@ describe("the planner's columns (Ç3)", () => {
     const week = ok(
       await db.from("week_plans").insert({ week_start: "2026-11-16" }).select().single(),
     );
-    expect(week).toMatchObject({ life_mode: null, shares: {} });
+    expect(week).toMatchObject({ life_mode: null, shares: {}, day_capacity: {} });
     const busy = ok(
       await db
         .from("week_plans")

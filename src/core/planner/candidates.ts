@@ -120,11 +120,30 @@ export function availableUntil(input: PlanInput, due: Date): number {
   const last = dayKey(due);
   let total = 0;
   for (let day = input.date; day <= last; day = shiftDay(day, 1)) {
-    const from =
-      day === input.date ? (input.now > input.dayStart ? input.now : input.dayStart) : undefined;
-    total += dayCapacity(day, input.blocks, input.settings, input.stats, { from, until: due });
+    if (day === last) {
+      const from = day === input.date ? windowStartOf(input) : undefined;
+      total += dayCapacity(day, input.blocks, input.settings, input.stats, { from, until: due });
+    } else total += wholeDay(input, day);
   }
   return total;
+}
+
+const windowStartOf = (input: PlanInput) =>
+  input.now > input.dayStart ? input.now : input.dayStart;
+
+// The capacity of a whole day depends only on the input: worked out once per plan, not once
+// per candidate (the screen re-plans every minute).
+const wholeDays = new WeakMap<PlanInput, Map<string, number>>();
+function wholeDay(input: PlanInput, day: string): number {
+  let cache = wholeDays.get(input);
+  if (!cache) wholeDays.set(input, (cache = new Map()));
+  let value = cache.get(day);
+  if (value === undefined) {
+    const from = day === input.date ? windowStartOf(input) : undefined;
+    value = dayCapacity(day, input.blocks, input.settings, input.stats, { from });
+    cache.set(day, value);
+  }
+  return value;
 }
 
 /** The learned estimate multiplier for a task of this module and kind; 1 until learned. */
@@ -227,6 +246,8 @@ export function buildCandidates(input: PlanInput): Candidate[] {
     const usedUp =
       item.effort_total_minutes !== null && item.effort_done_minutes >= item.effort_total_minutes;
     if (committed && !committed.has(item.id) && !usedUp) continue;
+    // This week's share is worked: the rest of the effort belongs to the coming weeks.
+    if (!usedUp && shareWorked(input, item)) continue;
     const minutes = nextSessionMinutes(item);
     raws.push({
       type: "item",
@@ -312,6 +333,18 @@ export function buildCandidates(input: PlanInput): Candidate[] {
     scored.push({ ...rest, score, mandatory });
   }
 
+  // An urgent item needs today its next sitting, not all of them: the others are planned like
+  // the rest of the pool (the capacity holds).
+  const firstSitting = new Map<string, Candidate>();
+  for (const candidate of [...scored].sort(
+    (a, b) => (a.task?.position ?? 0) - (b.task?.position ?? 0),
+  )) {
+    const itemId = candidate.task?.work_item_id;
+    if (candidate.mandatory !== "urgent" || !itemId) continue;
+    if (firstSitting.has(itemId)) candidate.mandatory = null;
+    else firstSitting.set(itemId, candidate);
+  }
+
   markFloorWork(input, scored, modules);
   // The AI may put work off, but never mandatory work (the engine has the last word). This runs
   // after every mandatory mark, the weekly floors included.
@@ -337,6 +370,15 @@ function markFloorWork(input: PlanInput, candidates: Candidate[], modules: Map<s
       .sort(compareScored)[0];
     if (best && best.mandatory === null) best.mandatory = "floor";
   }
+}
+
+/** The item's share of the week is worked: it waits for next week. */
+export function shareWorked(
+  input: Pick<PlanInput, "shares">,
+  item: { id: string; effort_done_minutes: number },
+): boolean {
+  const share = input.shares?.[item.id];
+  return share !== undefined && item.effort_done_minutes - share.from >= share.minutes;
 }
 
 /** Mandatory first (by deadline), then by score, then by the old order: deadline, importance, age. */

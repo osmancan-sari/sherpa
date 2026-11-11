@@ -229,7 +229,9 @@ describe("sittings", () => {
     ];
     const changes = sittingChanges(
       {
-        committed: [{ itemId: item.id, minutes: 180, sittings: [45, 45, 45, 45], required: false }],
+        committed: [
+          { itemId: item.id, minutes: 180, sittings: [45, 45, 45, 45], required: false, from: 0 },
+        ],
       },
       tasks,
     );
@@ -246,7 +248,7 @@ describe("sittings", () => {
       task({ work_item_id: item.id, status: "todo", position }),
     );
     const changes = sittingChanges(
-      { committed: [{ itemId: item.id, minutes: 45, sittings: [45], required: false }] },
+      { committed: [{ itemId: item.id, minutes: 45, sittings: [45], required: false, from: 0 }] },
       tasks,
     );
     expect(changes).toEqual({ create: [], drop: [tasks[1].id, tasks[2].id] });
@@ -318,7 +320,9 @@ describe("new items in the week", () => {
     capacityMinutes: plan.capacityMinutes,
     capacityByDay: plan.capacityByDay,
     lifeMode: plan.lifeMode,
-    shares: Object.fromEntries(plan.committed.map((row) => [row.itemId, row.minutes])),
+    shares: Object.fromEntries(
+      plan.committed.map((row) => [row.itemId, { minutes: row.minutes, from: row.from }]),
+    ),
     committedAt: at(MONDAY, "08:00").toISOString(),
   };
   const later = at(shiftDay(MONDAY, 2), "10:00");
@@ -338,7 +342,7 @@ describe("new items in the week", () => {
   });
 
   it("an item from a module waits when the week is full; one the user added joins anyway", () => {
-    const full = { ...stored, shares: { [old.id]: 100_000 } };
+    const full = { ...stored, shares: { [old.id]: { minutes: 100_000, from: 0 } } };
     const fromModule = workItem({
       key: "m:2",
       effort_total_minutes: 90,
@@ -356,5 +360,21 @@ describe("new items in the week", () => {
   it("leaves the week alone when nothing is new", () => {
     expect(weekAction(stored, { ...input, now: later })).toBeNull();
     expect(weekAction(null, input)).toEqual({ kind: "commit", reason: "none" });
+  });
+});
+
+describe("the AI's module hours", () => {
+  it("stand, but never below what a module's rhythms and floor need", () => {
+    const school = moduleRow({ slug: "okul", kind: "term" });
+    const sport = moduleRow({
+      id: "33333333-3333-4333-8333-333333333333",
+      slug: "spor",
+      kind: "lifelong",
+      weekly_floor_minutes: 120,
+    });
+    const plan = commitWeek(week({ modules: [school, sport] }), {
+      moduleBudgets: { okul: 600, spor: 30, yok: 90 },
+    });
+    expect(plan.moduleBudgets).toEqual({ okul: 600, spor: 120 });
   });
 });

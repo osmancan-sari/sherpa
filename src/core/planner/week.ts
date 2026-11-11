@@ -3,7 +3,7 @@ import { isBlocked } from "@/core/today/select";
 import { dayKey, istanbulInstant, shiftDay, weekStart } from "@/lib/date";
 import { moduleWeight, rhythmTarget, weeklyFloor } from "./candidates";
 import { dayCapacity } from "./slots";
-import type { PlannerSettings, PlannerStat } from "./types";
+import type { PlannerSettings, PlannerStat, WeekShare } from "./types";
 
 // The far horizons (docs/04-planlayici.md, "Plan ufukları"): week by week demand and capacity,
 // and the week's commitment with its items cut into sittings.
@@ -267,6 +267,8 @@ export type CommittedItem = {
   sittings: number[];
   /** Due this week: committed whatever the capacity. */
   required: boolean;
+  /** The item's done effort when it was committed; the share counts from here. */
+  from: number;
 };
 
 export type WeekPlan = {
@@ -319,10 +321,12 @@ export function commitWeek(input: WeekInput, advice?: WeekAdvice): WeekPlan {
   const daysLeft = 7 - Math.max(0, daysBetweenKeys(week, today));
   let fixed = 0;
   const budgets: Record<string, number> = {};
+  const fixedOf: Record<string, number> = {};
   for (const mod of input.modules) {
     if (!active.has(mod.id)) continue;
     const minutes = Math.round(fixedDemand(input, mod, week, Math.max(0, Math.min(7, daysLeft))));
     fixed += minutes;
+    fixedOf[mod.slug] = minutes;
     if (minutes > 0) budgets[mod.slug] = minutes;
   }
   let free = load.capacityMinutes - fixed;
@@ -381,6 +385,7 @@ export function commitWeek(input: WeekInput, advice?: WeekAdvice): WeekPlan {
     taken.add(item.id);
     free -= minutes;
     committed.push({
+      from: item.effort_done_minutes,
       itemId: item.id,
       minutes,
       sittings: cutSittings(minutes, item.session_minutes),
@@ -397,6 +402,16 @@ export function commitWeek(input: WeekInput, advice?: WeekAdvice): WeekPlan {
     ) {
       if (!advice?.committed || advice.committed.includes(item.id)) continue;
       left.push(item.id);
+    }
+  }
+
+  // The AI's hours per module stand, as long as no module gets less than its rhythms and
+  // floor need (the engine checks; docs/10-yapay-zeka.md, "İş bölümü").
+  if (advice?.moduleBudgets) {
+    for (const [slug, minutes] of Object.entries(advice.moduleBudgets)) {
+      const mod = input.modules.find((row) => row.slug === slug && active.has(row.id));
+      if (!mod || !Number.isFinite(minutes)) continue;
+      budgets[slug] = Math.max(Math.round(minutes), fixedOf[slug] ?? 0);
     }
   }
 
@@ -520,7 +535,7 @@ export function recommitReason(stored: StoredWeek, input: WeekInput): RecommitRe
 /** The stored commitment as `weekAction` reads it. */
 export type StoredWeekPlan = StoredWeek & {
   /** Minutes per committed item id. */
-  shares: Record<string, number>;
+  shares: Record<string, WeekShare>;
   /** When the commitment was last written: items created later are new to it. */
   committedAt: string;
 };
@@ -562,7 +577,7 @@ export function appendable(stored: StoredWeekPlan, input: WeekInput): CommittedI
   if (fresh.length === 0) return [];
   // Each new item's share as a commitment would give it, the committed ones left aside.
   const plan = commitWeek({ ...input, items: input.items.filter((item) => !known.has(item.id)) });
-  const used = Object.values(stored.shares).reduce((sum, minutes) => sum + minutes, 0);
+  const used = Object.values(stored.shares).reduce((sum, share) => sum + share.minutes, 0);
   let free = (stored.capacityMinutes ?? plan.capacityMinutes) - used - fixedTotal(input, week);
   const added: CommittedItem[] = [];
   for (const item of fresh) {
@@ -573,6 +588,7 @@ export function appendable(stored: StoredWeekPlan, input: WeekInput): CommittedI
     if (!byHand && minutes > free) continue;
     free -= minutes;
     added.push({
+      from: item.effort_done_minutes,
       itemId: item.id,
       minutes,
       sittings: cutSittings(minutes, item.session_minutes),

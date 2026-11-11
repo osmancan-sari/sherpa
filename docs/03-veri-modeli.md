@@ -232,7 +232,7 @@ capacity_minutes int          -- haftanın kullanılabilir süresi
 plan_source enum(closing, ai, auto)
 reasons jsonb null
 life_mode enum(normal, busy, minimum, holiday) null   -- taahhüdün yapıldığı mod; mod değişince hafta yeniden kurulur
-shares jsonb default '{}'     -- { "<kalem id>": 180 } kalemin bu haftaya düşen eforu (dakika)
+shares jsonb default '{}'     -- { "<kalem id>": { "minutes": 180, "from": 60 } } kalemin bu haftaki payı ve taahhüt anındaki biten eforu
 day_capacity jsonb default '{}'  -- { "2026-11-18": 420 } taahhüt anında kalan her günün kapasitesi; kayıp bununla ölçülür
 ```
 
@@ -295,7 +295,7 @@ summary jsonb                 -- modül raporları, kapasite, öneriler
 ### planner_stats
 Planlayıcının öğrendiği değerler.
 ```
-key text unique per user      -- 'est_multiplier:okul:prep', 'capacity:office:evening'
+key text unique per user      -- 'est_multiplier:okul:prep', 'capacity:office'
 value numeric
 sample_size int
 ```

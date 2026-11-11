@@ -142,10 +142,14 @@ describe("filters", () => {
     expect(placedIds(plan)).toEqual([]);
   });
 
-  it("energy: deep slots take deep and light work, light slots light, breaks physical or short light", () => {
+  it("energy: deep slots take any work, light slots light or physical, breaks short physical or light", () => {
     expect(fits(candidate({ energy: "deep" }), slot("deep", 60), "desk")).toBe(true);
     expect(fits(candidate({ energy: "light" }), slot("deep", 60), "desk")).toBe(true);
-    expect(fits(candidate({ energy: "physical" }), slot("deep", 60), "desk")).toBe(false);
+    expect(fits(candidate({ energy: "physical" }), slot("deep", 60), "desk")).toBe(true);
+    expect(fits(candidate({ energy: "physical" }), slot("light", 30), "desk")).toBe(true);
+    expect(fits(candidate({ energy: "physical", minutes: 45 }), slot("break", 15), "desk")).toBe(
+      false,
+    );
     expect(fits(candidate({ energy: "deep" }), slot("light", 30), "desk")).toBe(false);
     expect(fits(candidate({ energy: "light" }), slot("light", 30), "desk")).toBe(true);
     expect(fits(candidate({ energy: "physical", minutes: 15 }), slot("break", 15), "desk")).toBe(
@@ -612,5 +616,69 @@ describe("rhythms", () => {
     expect(buildCandidates(input({ rhythms: [weekly], rhythmLogs: lastWeek }))).toMatchObject([
       { progress: "0/1" },
     ]);
+  });
+});
+
+describe("physical work", () => {
+  it("longer than a break goes into a slot of its length", () => {
+    const run = task({ title: "Koşu", energy: "physical", est_minutes: 45 });
+    const plan = buildPlan(input({ tasks: [run] }));
+    expect(placedIds(plan)).toEqual([run.id]);
+  });
+});
+
+describe("an urgent item", () => {
+  it("needs its next sitting today, not all of them", () => {
+    const item = workItem({
+      effort_total_minutes: 1200,
+      due_at: iso("19:00", shiftDay(DATE, 2)),
+    });
+    const sittings = [1, 2, 3].map((position) =>
+      task({ work_item_id: item.id, est_minutes: 45, due_at: item.due_at, position }),
+    );
+    const candidates = buildCandidates(input({ workItems: [item], tasks: sittings }));
+    const mandatory = candidates.filter((row) => row.mandatory !== null).map((row) => row.id);
+    expect(mandatory).toEqual([sittings[0].id]);
+  });
+});
+
+describe("the week's share", () => {
+  it("once worked, the item waits for next week, without a warning", () => {
+    const item = workItem({ title: "Tez", effort_total_minutes: 600, effort_done_minutes: 240 });
+    const shares = { [item.id]: { minutes: 180, from: 60 } };
+    const plan = buildPlan(input({ workItems: [item], committed: [item.id], shares }));
+    expect(plan.candidates).toEqual([]);
+    expect(plan.warnings).toEqual([]);
+    const notYet = { [item.id]: { minutes: 180, from: 120 } };
+    const open = buildPlan(input({ workItems: [item], committed: [item.id], shares: notYet }));
+    expect(open.candidates.map((row) => row.id)).toEqual([item.id]);
+    expect(open.warnings.map((row) => row.kind)).toEqual(["next_step"]);
+  });
+});
+
+describe("Ertele", () => {
+  it("takes items, rhythms and follow-ups off today's list", () => {
+    const item = workItem();
+    const walk = rhythm();
+    const waiting = task({ status: "waiting", follow_up_on: DATE });
+    const all = { workItems: [item], rhythms: [walk], tasks: [waiting] };
+    expect(buildCandidates(input(all)).length).toBe(3);
+    const skipped = [item.id, walk.id, waiting.id];
+    expect(buildCandidates(input({ ...all, skipped }))).toEqual([]);
+  });
+});
+
+describe("an empty day", () => {
+  it("is 'empty' when there is nothing to do and nothing was done", () => {
+    expect(buildPlan(input()).now).toEqual({ kind: "empty" });
+  });
+
+  it("is 'done' when nothing is left but something was finished today", () => {
+    const finished = task({ status: "done", done_at: iso("09:00"), est_minutes: 25 });
+    expect(buildPlan(input({ now: at("10:00"), tasks: [finished] })).now).toEqual({
+      kind: "done",
+      finished: 1,
+      minutes: 25,
+    });
   });
 });

@@ -1,7 +1,13 @@
 import type { Context } from "@/core/types";
 import { blocksOfDay, currentBlock } from "@/core/today/select";
 import { dayKey, formatDue, formatTime, istanbulInstant, shiftDay } from "@/lib/date";
-import { availableUntil, buildCandidates, isReturning, rhythmState } from "./candidates";
+import {
+  availableUntil,
+  buildCandidates,
+  isReturning,
+  rhythmState,
+  shareWorked,
+} from "./candidates";
 import { buildSlots, capacityFactor, kindOf, slotMinutes } from "./slots";
 import type { Assignment, Candidate, NowState, Plan, PlanInput, Slot, Warning } from "./types";
 
@@ -37,8 +43,10 @@ export function contextFits(work: Context, device: Context): boolean {
 export function fits(candidate: Candidate, slot: Slot, device: Context): boolean {
   if (candidate.minutes > slot.minutes) return false;
   if (!contextFits(candidate.context, device)) return false;
-  if (slot.kind === "deep") return candidate.energy === "deep" || candidate.energy === "light";
-  if (slot.kind === "light") return candidate.energy === "light";
+  // Physical work (a run, a workout) is not desk work: it fits any slot it is short enough
+  // for; a break takes it only when it is short (the length filter above).
+  if (slot.kind === "deep") return true;
+  if (slot.kind === "light") return candidate.energy !== "deep";
   return (
     candidate.energy === "physical" || (candidate.energy === "light" && candidate.minutes <= 15)
   );
@@ -328,7 +336,7 @@ function warningsOf(input: PlanInput, candidates: Candidate[], placed: Set<strin
     if (!item || item.status !== "active") continue;
     const left =
       item.effort_total_minutes === null ? 1 : item.effort_total_minutes - item.effort_done_minutes;
-    if (left <= 0) continue;
+    if (left <= 0 || shareWorked(input, item)) continue;
     const open = input.tasks.some(
       (task) => task.work_item_id === id && ["todo", "doing", "waiting"].includes(task.status),
     );
