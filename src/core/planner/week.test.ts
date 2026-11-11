@@ -10,6 +10,8 @@ import {
   recommitReason,
   sittingChanges,
   type WeekInput,
+  appendable,
+  weekAction,
 } from "./week";
 
 // The far horizons (docs/04-planlayici.md, "Plan ufukları", "Test kapsamı").
@@ -258,6 +260,7 @@ describe("plan stability", () => {
   const stored = {
     committed: plan.committed.map((row) => row.itemId),
     capacityMinutes: plan.capacityMinutes,
+    capacityByDay: plan.capacityByDay,
     lifeMode: plan.lifeMode,
   };
 
@@ -282,5 +285,76 @@ describe("plan stability", () => {
     const blocks = [fullDay(shiftDay(MONDAY, 3))];
     expect(recommitReason(stored, { ...input, blocks })).toBe("capacity_lost");
     expect(recommitReason(stored, { ...input, lifeMode: "busy" })).toBe("mode_changed");
+  });
+
+  it("sees capacity lost after a commitment made in the middle of the week", () => {
+    const wednesday = shiftDay(MONDAY, 2);
+    const midweek = { ...input, now: at(wednesday) };
+    const made = commitWeek(midweek);
+    const kept = {
+      committed: made.committed.map((row) => row.itemId),
+      capacityMinutes: made.capacityMinutes,
+      capacityByDay: made.capacityByDay,
+      lifeMode: made.lifeMode,
+    };
+    // Friday afternoon, nothing new: the hours gone by are not a loss.
+    expect(recommitReason(kept, { ...midweek, now: at(shiftDay(MONDAY, 4), "15:00") })).toBeNull();
+    // Thursday filled by a block: lost.
+    const thursday = [fullDay(shiftDay(MONDAY, 3))];
+    expect(recommitReason(kept, { ...midweek, blocks: thursday })).toBe("capacity_lost");
+  });
+});
+
+describe("new items in the week", () => {
+  const old = workItem({
+    title: "Eski",
+    effort_total_minutes: 120,
+    created_at: at(MONDAY, "07:00").toISOString(),
+  });
+  const input = week({ items: [old] });
+  const plan = commitWeek(input);
+  const stored = {
+    committed: plan.committed.map((row) => row.itemId),
+    capacityMinutes: plan.capacityMinutes,
+    capacityByDay: plan.capacityByDay,
+    lifeMode: plan.lifeMode,
+    shares: Object.fromEntries(plan.committed.map((row) => [row.itemId, row.minutes])),
+    committedAt: at(MONDAY, "08:00").toISOString(),
+  };
+  const later = at(shiftDay(MONDAY, 2), "10:00");
+
+  it("join the commitment when the week has room; what was committed stays as it was", () => {
+    const fresh = workItem({
+      title: "Yeni",
+      key: "m:1",
+      effort_total_minutes: 90,
+      created_at: later.toISOString(),
+    });
+    const action = weekAction(stored, { ...input, now: later, items: [old, fresh] });
+    expect(action).toEqual({ kind: "append", items: [fresh.id] });
+    const [added] = appendable(stored, { ...input, now: later, items: [old, fresh] });
+    expect(added).toMatchObject({ itemId: fresh.id, required: false });
+    expect(added.sittings.length).toBeGreaterThan(0);
+  });
+
+  it("an item from a module waits when the week is full; one the user added joins anyway", () => {
+    const full = { ...stored, shares: { [old.id]: 100_000 } };
+    const fromModule = workItem({
+      key: "m:2",
+      effort_total_minutes: 90,
+      created_at: later.toISOString(),
+    });
+    const byHand = workItem({
+      key: null,
+      effort_total_minutes: 90,
+      created_at: later.toISOString(),
+    });
+    const added = appendable(full, { ...input, now: later, items: [old, fromModule, byHand] });
+    expect(added.map((row) => row.itemId)).toEqual([byHand.id]);
+  });
+
+  it("leaves the week alone when nothing is new", () => {
+    expect(weekAction(stored, { ...input, now: later })).toBeNull();
+    expect(weekAction(null, input)).toEqual({ kind: "commit", reason: "none" });
   });
 });

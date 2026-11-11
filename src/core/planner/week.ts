@@ -275,6 +275,11 @@ export type WeekPlan = {
   /** Minutes per module slug: committed shares plus rhythms and floors. */
   moduleBudgets: Record<string, number>;
   capacityMinutes: number;
+  /**
+   * Each day's whole capacity, from the day of the commitment to the end of the week. Lost
+   * capacity is measured against it day by day, so time passing never counts as a loss.
+   */
+  capacityByDay: Record<string, number>;
   /** Items that did not fit this week. */
   left: string[];
   /** The life mode the commitment was made in (a change of mode re-commits). */
@@ -305,8 +310,8 @@ export function commitWeek(input: WeekInput, advice?: WeekAdvice): WeekPlan {
   const week = weekStart(input.weekStart);
   const weekEnd = istanbulInstant(shiftDay(week, 7)).getTime();
   const mode = modeOf(input, week);
-  const [load] = loadByWeek(input, { from: week, weeks: 8 });
   const loads = loadByWeek(input, { from: week, weeks: 8 });
+  const [load] = loads;
   const active = new Set(
     input.modules.filter((mod) => mod.status === "active").map((mod) => mod.id),
   );
@@ -400,6 +405,7 @@ export function commitWeek(input: WeekInput, advice?: WeekAdvice): WeekPlan {
     committed,
     moduleBudgets: budgets,
     capacityMinutes: load.capacityMinutes,
+    capacityByDay: dayCapacities(input, week),
     left,
     lifeMode: mode,
     source: advice ? "ai" : "auto",
@@ -454,8 +460,22 @@ export function sittingChanges(plan: Pick<WeekPlan, "committed">, tasks: Task[])
 export type StoredWeek = {
   committed: string[];
   capacityMinutes: number | null;
+  /** `WeekPlan.capacityByDay` as it was stored; empty for a commitment without it. */
+  capacityByDay: Record<string, number>;
   lifeMode: LifeMode | null;
 };
+
+/** The whole capacity of each day from today to the end of the week. */
+export function dayCapacities(input: LoadInput, week: string): Record<string, number> {
+  const today = dayKey(input.now);
+  const days: Record<string, number> = {};
+  for (let index = 0; index < 7; index++) {
+    const day = shiftDay(week, index);
+    if (day < today) continue;
+    days[day] = Math.round(dayCapacity(day, input.blocks, input.settings, input.stats));
+  }
+  return days;
+}
 
 export type RecommitReason = "new_required" | "capacity_lost" | "mode_changed";
 
@@ -484,12 +504,88 @@ export function recommitReason(stored: StoredWeek, input: WeekInput): RecommitRe
       !isBlocked(item, input.items),
   );
   if (newRequired) return "new_required";
-  if (stored.capacityMinutes !== null) {
-    // Time passing is not lost capacity: compare the week as a whole, from its start.
-    const fullNow =
-      input.now.getTime() < istanbulInstant(week).getTime() ? input.now : istanbulInstant(week);
-    const capacity = weekCapacity(week, fullNow, input.blocks, input.settings, input.stats);
-    if (capacity < stored.capacityMinutes - CAPACITY_SLACK) return "capacity_lost";
+  // Each remaining day as a whole, against the same day when the week was committed: a new
+  // block or a longer one is lost capacity, the hours that have gone by are not.
+  const now = dayCapacities(input, week);
+  let lost = 0;
+  for (const [day, before] of Object.entries(stored.capacityByDay)) {
+    if (now[day] !== undefined) lost += Math.max(0, before - now[day]);
   }
+  if (lost > CAPACITY_SLACK) return "capacity_lost";
   return null;
+}
+
+// --- Keeping the week -------------------------------------------------------------------------
+
+/** The stored commitment as `weekAction` reads it. */
+export type StoredWeekPlan = StoredWeek & {
+  /** Minutes per committed item id. */
+  shares: Record<string, number>;
+  /** When the commitment was last written: items created later are new to it. */
+  committedAt: string;
+};
+
+export type WeekAction =
+  { kind: "commit"; reason: RecommitReason | "none" } | { kind: "append"; items: string[] } | null;
+
+/**
+ * What the week needs now: a commitment (none yet, or a trigger fired), new items added to it,
+ * or nothing. New items are those created after the commitment was written; they join it when
+ * the week has room, without changing the shares of what was committed. An item the user added
+ * by hand (no module key) always joins: adding it was the user's request.
+ */
+export function weekAction(stored: StoredWeekPlan | null, input: WeekInput): WeekAction {
+  if (!stored) return { kind: "commit", reason: "none" };
+  const reason = recommitReason(stored, input);
+  if (reason) return { kind: "commit", reason };
+  const items = appendable(stored, input);
+  return items.length > 0 ? { kind: "append", items: items.map((row) => row.itemId) } : null;
+}
+
+/** The new items that join the commitment, with their share and sittings. */
+export function appendable(stored: StoredWeekPlan, input: WeekInput): CommittedItem[] {
+  const week = weekStart(input.weekStart);
+  const weekEnd = istanbulInstant(shiftDay(week, 7)).getTime();
+  const active = new Set(
+    input.modules.filter((mod) => mod.status === "active").map((mod) => mod.id),
+  );
+  const known = new Set(stored.committed);
+  const since = Date.parse(stored.committedAt);
+  const fresh = plannableItems(input.items, active).filter(
+    (item) =>
+      !known.has(item.id) &&
+      Date.parse(item.created_at) > since &&
+      !isBlocked(item, input.items) &&
+      (item.earliest_at === null || Date.parse(item.earliest_at) < weekEnd) &&
+      remainingEffort(item) > 0,
+  );
+  if (fresh.length === 0) return [];
+  // Each new item's share as a commitment would give it, the committed ones left aside.
+  const plan = commitWeek({ ...input, items: input.items.filter((item) => !known.has(item.id)) });
+  const used = Object.values(stored.shares).reduce((sum, minutes) => sum + minutes, 0);
+  let free = (stored.capacityMinutes ?? plan.capacityMinutes) - used - fixedTotal(input, week);
+  const added: CommittedItem[] = [];
+  for (const item of fresh) {
+    const planned = plan.committed.find((row) => row.itemId === item.id);
+    const minutes =
+      planned?.minutes ?? Math.min(remainingEffort(item), item.session_minutes ?? SITTING_DEFAULT);
+    const byHand = item.key === null;
+    if (!byHand && minutes > free) continue;
+    free -= minutes;
+    added.push({
+      itemId: item.id,
+      minutes,
+      sittings: cutSittings(minutes, item.session_minutes),
+      required: item.due_at !== null && Date.parse(item.due_at) < weekEnd,
+    });
+  }
+  return added;
+}
+
+function fixedTotal(input: WeekInput, week: string): number {
+  const today = dayKey(input.now);
+  const daysLeft = Math.max(0, Math.min(7, 7 - Math.max(0, daysBetweenKeys(week, today))));
+  return input.modules
+    .filter((mod) => mod.status === "active")
+    .reduce((sum, mod) => sum + Math.round(fixedDemand(input, mod, week, daysLeft)), 0);
 }

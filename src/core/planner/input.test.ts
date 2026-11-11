@@ -4,12 +4,15 @@ import {
   dayRow,
   lifeModePeriod,
   moduleRow,
+  prompt,
   rhythmLog,
   session,
   task,
+  workItem,
 } from "@/core/testing/factories";
 import { istanbulInstant } from "@/lib/date";
 import { lifeModeOn, type PlanRows, planInput, tomorrowInput } from "./input";
+import { buildPlan } from "./plan";
 
 // The planner's input put together from the rows (src/core/planner/input.ts).
 
@@ -124,5 +127,60 @@ describe("planInput", () => {
       prompt: null,
       startedToday: false,
     });
+  });
+
+  it("after midnight plans the day that is starting, not the one after it", () => {
+    const input = tomorrowInput(rows(), { now: at("00:30", "2026-11-13"), context: "desk" });
+    expect(input.date).toBe("2026-11-13");
+  });
+
+  it("asks only a question that is due and still waiting", () => {
+    const later = prompt({ ask_after: at("12:00").toISOString() });
+    const answered = prompt({ status: "answered" });
+    const due = prompt({ ask_after: at("08:00").toISOString() });
+    const input = planInput(rows({ prompts: [later, answered, due] }), {
+      date: DATE,
+      now: at("09:00"),
+      context: "desk",
+    });
+    expect(input.prompt?.id).toBe(due.id);
+  });
+});
+
+describe("the automatic plan, from the rows", () => {
+  it("is the same as the plan made at the evening closing", () => {
+    const day = "2026-11-13";
+    const startsTomorrow = workItem({
+      title: "Yarın başlar",
+      earliest_at: istanbulInstant(day, "00:00").toISOString(),
+      effort_total_minutes: 120,
+    });
+    const data = rows({
+      tasks: [
+        task({ title: "Rapor", energy: "deep", est_minutes: 60, importance: 3 }),
+        task({ title: "Fatura", est_minutes: 15, due_at: at("17:00", day).toISOString() }),
+      ],
+      workItems: [startsTomorrow],
+      blocks: [
+        block({
+          starts_at: at("12:00", day).toISOString(),
+          ends_at: at("13:00", day).toISOString(),
+        }),
+      ],
+    });
+    const closing = buildPlan(tomorrowInput(data, { now: at("21:30"), context: "desk" }));
+    // The first touch comes at the day's start: the record has it.
+    const touched = {
+      ...data,
+      days: [dayRow({ date: day, started_at: at("08:00", day).toISOString() })],
+    };
+    const auto = buildPlan(
+      planInput(touched, { date: day, now: at("08:00", day), context: "desk" }),
+    );
+    expect(auto.top3).toEqual(closing.top3);
+    expect(auto.top3).toContain(startsTomorrow.id);
+    const ids = (plan: typeof auto) =>
+      plan.slots.flatMap((slot) => (slot.assignment ? [slot.assignment.candidate.id] : []));
+    expect(ids(auto)).toEqual(ids(closing));
   });
 });

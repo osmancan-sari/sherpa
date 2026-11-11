@@ -1,6 +1,6 @@
 import type { Context } from "@/core/types";
 import { blocksOfDay, currentBlock } from "@/core/today/select";
-import { dayKey, formatDue, formatTime, istanbulInstant } from "@/lib/date";
+import { dayKey, formatDue, formatTime, istanbulInstant, shiftDay } from "@/lib/date";
 import { availableUntil, buildCandidates, isReturning, rhythmState } from "./candidates";
 import { buildSlots, capacityFactor, kindOf, slotMinutes } from "./slots";
 import type { Assignment, Candidate, NowState, Plan, PlanInput, Slot, Warning } from "./types";
@@ -16,6 +16,16 @@ export const NIGHT_ENDS = "05:00";
 export const MAX_WARNINGS = 2;
 /** Put off this many times, a task asks to be split, dropped or given a date. */
 export const DEFER_LIMIT = 3;
+
+/**
+ * The day a moment belongs to for planning: before the night ends (05:00, or the day's start
+ * if that is earlier) it is still the night of the day before.
+ */
+export function planningDay(now: Date, dayStart: string): string {
+  const today = dayKey(now);
+  const ends = istanbulInstant(today, dayStart < NIGHT_ENDS ? dayStart : NIGHT_ENDS);
+  return now < ends ? shiftDay(today, -1) : today;
+}
 
 /** The device context sees work of these contexts. The second screen is at the desk at home. */
 export function contextFits(work: Context, device: Context): boolean {
@@ -130,15 +140,28 @@ export function buildPlan(input: PlanInput): Plan {
           contextFits(candidate.context, input.context),
       );
     }
+    // Mandatory work longer than any slot (its estimate times the learned multiplier) still
+    // gets the longest deep slot: it is started today, and goes on in the next one.
+    let minutes = candidate.minutes;
+    if (index < 0 && overCapacity) {
+      const deep = slots
+        .map((slot, at) => ({ slot, at }))
+        .filter(
+          ({ slot }) =>
+            !slot.assignment &&
+            slot.kind === "deep" &&
+            contextFits(candidate.context, input.context),
+        )
+        .sort((a, b) => b.slot.minutes - a.slot.minutes)[0];
+      if (deep && deep.slot.minutes < candidate.minutes) {
+        index = deep.at;
+        minutes = deep.slot.minutes;
+      }
+    }
     if (index < 0) return false;
-    place(
-      slots,
-      index,
-      { candidate, minutes: candidate.minutes, reasons: engineReasons(candidate, input) },
-      input,
-    );
+    place(slots, index, { candidate, minutes, reasons: engineReasons(candidate, input) }, input);
     placed.add(candidate.id);
-    plannedMinutes += candidate.minutes;
+    plannedMinutes += minutes;
     return true;
   };
 
@@ -347,7 +370,8 @@ function warningsOf(input: PlanInput, candidates: Candidate[], placed: Set<strin
 
 /** "X dk'm var": the best work that fits in the given minutes, now, wherever it was planned. */
 export function pickForMinutes(input: PlanInput, minutes: number): Candidate | null {
-  const kind = kindOf(minutes, input.settings) ?? "light";
+  // Under a light slot's length the minutes are a break: physical work or a short light one.
+  const kind = kindOf(minutes, input.settings) ?? "break";
   const slot: Slot = {
     start: input.now,
     end: new Date(input.now.getTime() + minutes * MINUTE),

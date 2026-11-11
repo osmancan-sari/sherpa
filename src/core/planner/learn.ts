@@ -1,5 +1,6 @@
 import type { DayType, ModuleRow, Session, Task } from "@/core/types";
 import { dayKey } from "@/lib/date";
+import { MIN_SAMPLES } from "./slots";
 import type { PlannerStat } from "./types";
 
 // Learning (docs/04-planlayici.md, "Öğrenme"): once a week, from measured sessions only. It
@@ -7,7 +8,6 @@ import type { PlannerStat } from "./types";
 
 /** Sessions per (module, task kind) the estimate multiplier is taken from. */
 export const ESTIMATE_WINDOW = 20;
-export const MIN_SAMPLES = 5;
 export const MULTIPLIER_MIN = 0.5;
 export const MULTIPLIER_MAX = 3;
 /** Weight of the newest day in the capacity average. */

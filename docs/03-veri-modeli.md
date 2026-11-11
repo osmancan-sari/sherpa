@@ -233,6 +233,7 @@ plan_source enum(closing, ai, auto)
 reasons jsonb null
 life_mode enum(normal, busy, minimum, holiday) null   -- taahhüdün yapıldığı mod; mod değişince hafta yeniden kurulur
 shares jsonb default '{}'     -- { "<kalem id>": 180 } kalemin bu haftaya düşen eforu (dakika)
+day_capacity jsonb default '{}'  -- { "2026-11-18": 420 } taahhüt anında kalan her günün kapasitesi; kayıp bununla ölçülür
 ```
 
 ### horizon_reviews

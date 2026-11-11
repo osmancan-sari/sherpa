@@ -426,6 +426,26 @@ describe("the AI's advice", () => {
     expect(plan.warnings).toMatchObject([{ kind: "advice_rejected", subjectId: due.id }]);
   });
 
+  it("cannot put off the work that keeps a weekly floor", () => {
+    const sport = moduleRow({ slug: "spor", kind: "lifelong", weekly_floor_minutes: 90 });
+    const run = task({ module_id: sport.id, title: "Koşu", est_minutes: 45 });
+    const sunday = "2026-11-15";
+    const plan = buildPlan(
+      input({
+        date: sunday,
+        now: at("08:00", sunday),
+        dayStart: at("08:00", sunday),
+        finishLine: at("12:00", sunday),
+        modules: [sport],
+        tasks: [run],
+        spentThisWeek: {},
+        advice: { defer: [run.id] },
+      }),
+    );
+    expect(placedIds(plan)).toEqual([run.id]);
+    expect(plan.warnings).toMatchObject([{ kind: "advice_rejected", subjectId: run.id }]);
+  });
+
   it("puts its three after the mandatory work, cut at the capacity", () => {
     const tasks = [1, 2, 3, 4].map((n) => task({ title: `İş ${n}`, est_minutes: 30 }));
     const ai = [tasks[3].id, tasks[2].id, tasks[1].id];
@@ -535,6 +555,26 @@ describe("work items and the week", () => {
   });
 });
 
+describe("the learned multiplier", () => {
+  it("sends work longer than any slot to the overflow instead of squeezing it in", () => {
+    const mod = moduleRow();
+    const long = task({ est_minutes: 80, kind: "prep" });
+    const stats = [{ key: `est_multiplier:${mod.slug}:prep`, value: 2, sample_size: 8 }];
+    const plan = buildPlan(input({ modules: [mod], tasks: [long], stats }));
+    expect(plan.candidates[0].minutes).toBe(160);
+    expect(plan.overflow.map((row) => row.id)).toEqual([long.id]);
+  });
+
+  it("still starts such work today when it is due today, in the longest deep slot", () => {
+    const mod = moduleRow();
+    const due = task({ est_minutes: 80, kind: "prep", due_at: iso("18:00") });
+    const stats = [{ key: `est_multiplier:${mod.slug}:prep`, value: 2, sample_size: 8 }];
+    const plan = buildPlan(input({ modules: [mod], tasks: [due], stats }));
+    const slot = plan.slots.find((row) => row.assignment)!;
+    expect(slot).toMatchObject({ kind: "deep", minutes: 90 });
+  });
+});
+
 describe("pickForMinutes", () => {
   it("gives the best work that fits in the minutes", () => {
     const long = task({ title: "Uzun", est_minutes: 45, importance: 4 });
@@ -542,6 +582,11 @@ describe("pickForMinutes", () => {
     expect(pickForMinutes(input({ tasks: [long, short] }), 20)?.id).toBe(short.id);
     expect(pickForMinutes(input({ tasks: [long, short] }), 60)?.id).toBe(long.id);
     expect(pickForMinutes(input({ tasks: [long] }), 20)).toBeNull();
+  });
+
+  it("offers physical or short light work for a few minutes", () => {
+    const stretch = task({ energy: "physical", est_minutes: 10 });
+    expect(pickForMinutes(input({ tasks: [stretch] }), 10)?.id).toBe(stretch.id);
   });
 
   it("does not offer deep work for a few minutes", () => {

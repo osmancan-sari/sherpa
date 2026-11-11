@@ -55,6 +55,10 @@ const PLANNER_SYNTAX = [
     message: "The planner does not read the clock; take `now` from the input.",
   },
   {
+    selector: "CallExpression[callee.name='Date']",
+    message: "The planner does not read the clock; take `now` from the input.",
+  },
+  {
     selector: "CallExpression[callee.name='fetch']",
     message: "The planner does not touch the network.",
   },

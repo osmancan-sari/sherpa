@@ -194,6 +194,7 @@ describe("the planner is pure", () => {
     const snippets = [
       "export const t = Date.now();\n",
       "export const t = new Date();\n",
+      "export const t = Date();\n",
       'export const r = fetch("/api/x");\n',
     ];
     for (const snippet of snippets) {

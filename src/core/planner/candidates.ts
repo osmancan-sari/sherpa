@@ -172,7 +172,9 @@ export function buildCandidates(input: PlanInput): Candidate[] {
       id: task.id,
       title: task.title,
       moduleId: task.module_id,
-      minutes: Math.min(90, minutes),
+      // With the learned multiplier a task may be longer than any slot: it then waits in the
+      // overflow instead of squeezing into 90 minutes.
+      minutes,
       energy: task.energy,
       context: task.context,
       dueAt: task.due_at,
@@ -217,7 +219,10 @@ export function buildCandidates(input: PlanInput): Candidate[] {
   for (const item of input.workItems) {
     if (item.status !== "active" || !modules.has(item.module_id)) continue;
     if (withSitting.has(item.id) || split.has(item.id) || skipped.has(item.id)) continue;
-    if (item.earliest_at !== null && Date.parse(item.earliest_at) > input.now.getTime()) continue;
+    // Against the start of the planned window, not the clock: tomorrow's plan made the evening
+    // before sees what may start tomorrow.
+    const windowStart = Math.max(input.now.getTime(), input.dayStart.getTime());
+    if (item.earliest_at !== null && Date.parse(item.earliest_at) > windowStart) continue;
     if (isBlocked(item, input.workItems)) continue;
     const usedUp =
       item.effort_total_minutes !== null && item.effort_done_minutes >= item.effort_total_minutes;
@@ -293,23 +298,26 @@ export function buildCandidates(input: PlanInput): Candidate[] {
       debt = (state.debt / Math.max(1, state.target)) * state.progress;
       if (state.floorInDanger) mandatory = "floor";
     }
+    // Waiting raises undated work slowly; a rhythm has its debt instead.
     const wait =
-      raw.dueAt === null
+      raw.dueAt === null && raw.type !== "rhythm"
         ? Math.min(0.3, Math.max(0, daysFrom(dayKey(new Date(raw.createdAt)), date)) / 30)
         : 0;
     let score = weight * (IMPORTANCE_FACTOR[raw.importance] ?? 1) * (urgency + debt + wait);
     if (preferred.has(raw.id)) score *= 1.5;
     // A module that the life mode switches off offers nothing, unless it is due today.
     if (weight <= 0 && mandatory !== "due_today") continue;
-    // The AI may put work off, but never mandatory work (the engine has the last word).
-    if (deferred.has(raw.id) && mandatory === null) continue;
     const { remaining: _remaining, ...rest } = raw;
     void _remaining;
     scored.push({ ...rest, score, mandatory });
   }
 
   markFloorWork(input, scored, modules);
-  return scored.sort(compareScored);
+  // The AI may put work off, but never mandatory work (the engine has the last word). This runs
+  // after every mandatory mark, the weekly floors included.
+  return scored
+    .filter((candidate) => !deferred.has(candidate.id) || candidate.mandatory !== null)
+    .sort(compareScored);
 }
 
 /**

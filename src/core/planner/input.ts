@@ -16,7 +16,8 @@ import type {
   WeekPlanRow,
   WorkItem,
 } from "@/core/types";
-import { dayKey, istanbulInstant, shiftDay, weekStart } from "@/lib/date";
+import { istanbulInstant, shiftDay, weekStart } from "@/lib/date";
+import { planningDay } from "./plan";
 import { dayTypeOf, plannerSettings } from "./slots";
 import type { PlanAdvice, PlanInput } from "./types";
 
@@ -137,8 +138,12 @@ export function planInput(
     skipped: stored.skipped ?? [],
     openSession: rows.openSession,
     prompt:
-      rows.prompts.find((row) =>
-        rows.modules.some((mod) => mod.id === row.module_id && mod.status === "active"),
+      // A question that was put off ("Sonra") or answered waits, even in a list read earlier.
+      rows.prompts.find(
+        (row) =>
+          row.status === "pending" &&
+          Date.parse(row.ask_after) <= now.getTime() &&
+          rows.modules.some((mod) => mod.id === row.module_id && mod.status === "active"),
       ) ?? null,
     lastSeenAt: lastActivityBefore(rows, dayBegins),
     startedToday: rows.sessions.some((row) => Date.parse(row.started_at) >= dayBegins.getTime()),
@@ -148,7 +153,8 @@ export function planInput(
 
 /** Tomorrow's input at the evening closing (and for the night screen's "first thing tomorrow"). */
 export function tomorrowInput(rows: PlanRows, options: { now: Date; context: Context }): PlanInput {
-  const date = shiftDay(dayKey(options.now), 1);
+  // After midnight, before the night ends, "tomorrow" is the day that is starting.
+  const date = shiftDay(planningDay(options.now, plannerSettings(rows.settings).dayStart), 1);
   return {
     ...planInput(rows, { ...options, date }),
     prompt: null,

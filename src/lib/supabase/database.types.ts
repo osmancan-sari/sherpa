@@ -1040,6 +1040,7 @@ export type Database = {
           capacity_minutes: number | null;
           committed: string[];
           created_at: string;
+          day_capacity: NonNullable<Json>;
           id: string;
           life_mode: Database["public"]["Enums"]["life_mode"] | null;
           module_budgets: NonNullable<Json>;
@@ -1055,6 +1056,7 @@ export type Database = {
           capacity_minutes?: number | null;
           committed?: string[];
           created_at?: string;
+          day_capacity?: NonNullable<Json>;
           id?: string;
           life_mode?: Database["public"]["Enums"]["life_mode"] | null;
           module_budgets?: NonNullable<Json>;
@@ -1069,6 +1071,7 @@ export type Database = {
           capacity_minutes?: number | null;
           committed?: string[];
           created_at?: string;
+          day_capacity?: NonNullable<Json>;
           id?: string;
           life_mode?: Database["public"]["Enums"]["life_mode"] | null;
           module_budgets?: NonNullable<Json>;
