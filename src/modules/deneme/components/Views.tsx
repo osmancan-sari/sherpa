@@ -5,11 +5,11 @@ import { Button } from "@/components/ui/button";
 import { useRefreshAll } from "@/core/app/actions";
 import { useModuleQuery } from "@/core/app/hooks";
 import type { ModuleViewProps } from "@/core/contract/types";
-import { EmptyState, NumberStepper, Timer } from "@/core/ui/kit";
+import { BarChart, EmptyState, NumberStepper, Timer } from "@/core/ui/kit";
 import { useModule } from "@/core/ui/module/ModuleProvider";
 import { SAVE_FAILED, useNotify } from "@/core/ui/Notices";
 import { formatMinutes } from "@/lib/date";
-import { type DenemeKind, getItem, KIND_LABEL } from "../queries";
+import { type DenemeKind, getItem, KIND_LABEL, listItems } from "../queries";
 import { settingsOf } from "../rules";
 
 /** Sub page /m/deneme/kayit/:id: one record, and the work the core holds for it. */
@@ -55,6 +55,26 @@ export function ItemPage({ params }: ModuleViewProps) {
         ))}
       </dl>
     </div>
+  );
+}
+
+/** Region 4 of the module page ("history"): what the finished records cost. */
+export function HistoryView() {
+  const { row } = useModule();
+  const items = useModuleQuery(row, ["items"], listItems);
+  const finished = (items.data ?? []).filter((item) => item.done && item.spent_minutes !== null);
+  if (items.isLoading) return null;
+  if (finished.length === 0) return <EmptyState>Biten kayıt yok.</EmptyState>;
+  return (
+    <BarChart
+      title="Biten kayıtlara harcanan süre"
+      data={finished.slice(-8).map((item) => ({
+        label: item.title.slice(0, 10),
+        value: item.spent_minutes!,
+      }))}
+      unit="dk"
+      color={row.color}
+    />
   );
 }
 

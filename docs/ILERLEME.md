@@ -4,9 +4,9 @@ Bu dosyayı Claude Code günceller. Yeni bir oturum yalnızca bu dosyayı ve `pr
 
 ## Durum
 
-- Faz: **Ç1 (Çekirdek ve modül temeli) sürüyor.** Ç0 bitti (`c0-tamam`); yayın ve telefon D1 ve D2'yi bekliyor
-- Adım: 7 / 8 (aşağıdaki plan); 1–6 bitti, 7 sürüyor
-- Son commit: örnek veri betiği (`npm run db:seed`)
+- Faz: **Ç1 (Çekirdek ve modül temeli): 8. adımda, faz denetimi sürüyor.** Ç0 bitti (`c0-tamam`); yayın ve telefon D1 ve D2'yi bekliyor
+- Adım: 8 / 8 (aşağıdaki plan); 1–7 bitti
+- Son commit: adım denetimi düzeltmeleri, ekran görüntüleri, faz raporu taslağı
 
 ### Ç1 planı
 
@@ -18,10 +18,10 @@ Her adımın sonunda `npm run check` ve commit; şema, RLS, iş zarfı ve eşitl
 | 2 | Migration: `docs/03-veri-modeli.md` çekirdek tabloları, RLS, oturum ve arşiv fonksiyonları, Realtime yayını; tipler; veritabanı testleri (RLS, kısıtlar) | bitti; denetim (adım kipi): 2 engelleyici ve 5 önemli bulgu düzeltildi |
 | 3 | Çekirdek veri katmanı (`src/core/data`), iş zarfı (`propose`, `withdraw`, `provenance`, `onOutcome`), olaylar, modül sözleşmesi tipleri ve kayıt, blok serisi üretimi | bitti (arayüz yok); denetim (adım kipi): engelleyici yok, 8 önemli bulgu düzeltildi |
 | 4 | İstemci altyapısı: TanStack Query, Realtime, modül kaydı bağlamı. Bugün ekranı, hızlı giriş, gelen kutusu, oturumlar | bitti (63 uçtan uca test; iki cihaz eşitlemesi dahil) |
-| 5 | Modül arayüzü zemini: `ModulePageShell`, sekmeler, alt sayfalar, tam ekran, hızlı eylemler, modül ayarları, bileşen takımı. `_sablon` ve `deneme` | bitti (14 uçtan uca test + iki genişlikte modül sayfası testi) |
+| 5 | Modül arayüzü zemini: `ModulePageShell`, sekmeler, alt sayfalar, tam ekran, hızlı eylemler, modül ayarları, bileşen takımı. `_sablon` ve `deneme` | bitti (`deneme-module.spec.ts` 13 test, `module-page.both.spec.ts` iki genişlikte 2 test) |
 | 6 | Ayarlar: modüller, sabit bloklar, dışa aktarım | bitti (`settings.spec.ts`, `tests/db/blocks.test.ts` içinde dışa aktarım) |
-| 7 | `scripts/seed-demo.ts`, elle düzenleme arayüzü (iş, kalem, ritim, blok, seri), ekran görüntüleri | sürüyor: örnek veri bitti; düzenleme arayüzü ve ekran görüntüleri sırada |
-| 8 | `check:full`, faz denetimi, düzeltmeler, faz raporu, etiket | |
+| 7 | `scripts/seed-demo.ts`, elle düzenleme arayüzü (iş, kalem, ritim, blok, seri), ekran görüntüleri | bitti; 5–7. adımların denetimi (adım kipi, `cac1403..a4281f3`): engelleyici yok, 7 önemli bulgu; ayrıntı faz raporunda |
+| 8 | `check:full`, faz denetimi, düzeltmeler, faz raporu, etiket | sürüyor |
 
 ## Biten fazlar
 
@@ -85,9 +85,68 @@ Son denetimden sonraki değişiklikler yalnızca bu dosyadadır (faz raporu). `n
 - Telefonda bakılacaklar (D2): durum çubuğu rengi (`themeColor` sistem tercihine göre, uygulamanın varsayılanı koyu), güvenli alanlar, posta uygulamasından dönünce kod adımının durması.
 - TanStack Query, Realtime ve `m/[slug]` Ç1'de kurulacak; Ç0'da yok.
 
+### Ç1: Çekirdek ve modül temeli (11 Kas 2026)
+
+Her şey yerel Supabase ve üretim derlemesine karşı doğrulandı; bulut ve gerçek telefon D1 ve D2'ye bağlı (Ç0 ile aynı durum).
+
+#### Kabul ölçütleri
+
+| Ölçüt | Durum | Kanıt |
+| --- | --- | --- |
+| Telefonda eklenen iş, masaüstündeki Bugün ekranında yenilemeden görünüyor | Sağlandı (iki tarayıcı bağlamı: telefon genişliği ve pano). **Gerçek telefonla elle doğrulanacak (D2)** | `tests/e2e/sync.spec.ts`: telefondan eklenen iş 3 saniye içinde panoda; telefonda başlatılan oturum panoda yürüyor, panodaki "Bitti" telefonda kapatıyor; uygulama dışından yapılan değişiklik açık ekrana ulaşıyor. Sayfanın yeniden yüklenmediği sınanıyor |
+| 90 dakikadan uzun iş kaydedilemiyor; arayüz iş kalemine çevirmeyi öneriyor | Sağlandı | Veritabanı kısıtı (`tests/db/constraints.test.ts`); hızlı giriş (`quick-add.spec.ts`), gelen kutusu (`inbox.spec.ts`), düzenleme penceresi (`edit-work.spec.ts`: 120 dk ile "Kaydet" kapalı; burada öneri yok, yalnızca engel) |
+| Başla → Bitti bir oturum kaydı üretiyor; aynı anda iki açık oturum olamıyor | Sağlandı | `work-sessions.spec.ts`, `tests/db/sessions.test.ts` (tekil indeks ve `start_session`) |
+| Haftalık bir blok serisi gelecek haftaların bloklarını üretiyor; tek bir blok iptal edilebiliyor | Sağlandı | `settings.spec.ts` (Ayarlar'dan seri → 8 hafta, tek blok iptal, yeniden açılışta geri gelmiyor), `edit-work.spec.ts` (seri düzenleme), `tests/db/blocks.test.ts` |
+| Aynı `key` ile iki kez teklif edilen zarf tek kayıt üretiyor; kullanıcının değiştirdiği alan ikinci teklifte ezilmiyor | Sağlandı | `src/core/contract/envelope.test.ts`, `tests/db/envelope.test.ts`; arayüzden uçtan uca: `edit-work.spec.ts` ("what the user changes on a proposed work item survives the module's next proposal") ve `deneme-module.spec.ts` |
+| `deneme` modülü çipini, sayfasını, girişini ve tekliflerini yalnızca sözleşme üzerinden veriyor; `src/core/` içinde `src/modules/` içe aktarımı yok (lint kuralıyla denetleniyor) | Sağlandı. `alerts` tanımlı ama çekirdek modül uyarılarını Ç3'te (`AlertBar`) göstermeye başlayacak | `deneme-module.spec.ts`, `tests/unit/modules.test.ts` (modül başka modülü içe aktarmıyor, çekirdek tabloya doğrudan uzanmıyor), `tests/unit/core-imports.test.ts`, `eslint.config.mjs` |
+| `deneme` modülü kendi sekmesini, alt sayfasını, tam ekran görünümünü, hızlı eylemini ve ayar formunu çekirdeğe dokunmadan ekliyor | Sağlandı | `deneme-module.spec.ts`; iki genişlikte `module-page.both.spec.ts`. Hepsi `src/modules/deneme/module.ts` içindeki `ui` alanından geliyor |
+| `_sablon` kopyalanarak yeni bir boş modül 15 dakikada ayağa kalkıyor (adımlar modül README'sinde yazılı) | Sağlandı: adımları 11 Kas'ta bir kez kendim uyguladım (`ev` adıyla kopya, 4 satır ad değişikliği, kayıtta 2 satır; `npm run check` yeşil; derlemede etkinleştirme, çip, sayfa ve hızlı giriş geçici bir uçtan uca testle doğrulandı; sonra kaldırıldı). Kalıcı test yalnızca tanım düzeyinde. **15 dakikayı sen de bir kez denemelisin** | `src/modules/_sablon/README.md`, `tests/unit/modules.test.ts` ("gives a working module once it is renamed") |
+| Bütün veri JSON olarak dışa aktarılabiliyor | Sağlandı | `settings.spec.ts` (indirilen dosya: bütün çekirdek tablolar ve `deneme_items`), `tests/db/blocks.test.ts` "export" (her çekirdek tablo listede, başkasının satırı yok, 1000 satırdan uzun tablo tam), `guard.spec.ts` (oturumsuz 401) |
+
+Kapsamdan eksik kalan: sabit blok ve serilerde tür (`kind`) ve gün tipi sonradan düzenlenemiyor (oluştururken verilir); yolculuk süreleri (`travel_*`) için arayüz yok (Ç3'te yuva hesabıyla birlikte anlam kazanır).
+
+#### Ne kuruldu
+
+1. Çekirdek tablolar, RLS, oturum ve arşiv fonksiyonları, Realtime yayını (adım 2)
+2. İş zarfı (`propose`, `withdraw`, alan kaynağı, `onOutcome`), olaylar, modül sözleşmesi tipleri ve kayıt denetimi (adım 3)
+3. İstemci: TanStack Query, canlı eşitleme ve güvenlik ağı, Bugün ekranı (şimdi kartı, sıradakiler, günün blokları, modül çipleri, olay sorusu), hızlı giriş, gelen kutusu, oturumlar (adım 4)
+4. Modül arayüzü zemini: `/m/<slug>` altındaki bütün adresler modülün; beş bölgeli `ModulePageShell`, sekmeler, alt sayfalar, kabuksuz tam ekran görünüm, hızlı eylemler, modül ayarları; bileşen takımı (`src/core/ui/kit`: tablo, çubuk ve çizgi grafik, ızgara, zaman çizelgesi, adımlayıcı, seçim çipleri, zamanlayıcı, boş ve hata durumları) (adım 5)
+5. `deneme` modülü (sözleşmenin her bağlantı noktası) ve `_sablon` (adım 5)
+6. Ayarlar: modüller (etkinleştir, duraklat, arşivle), sabit bloklar (seri, tek seferlik blok, iptal, düzenleme), dışa aktarım (adım 6)
+7. Elle düzenleme: iş, kalem, ritim (modül sayfasında), blok ve seri (Ayarlar'da); elle ritim ekleme (adım 7)
+8. Örnek veri: `npm run db:seed` (dört sahte modül, zarfla gelen kalemler ve ritimler, seriler, geçmiş oturumlar) (adım 7)
+
+Testler: 113 birim, 83 veritabanı, 100 uçtan uca (`npm run check:full` yeşil). Ekran görüntüleri: `docs/ekran-goruntuleri/c1/` (61 dosya; pano 1920 genişlik tam sayfa, telefon 390×844 ekranın gösterdiği, uzun sayfalarda ayrıca sayfanın sonu). Örnek veri ve `deneme` modülüyle alındı; kendim baktım: boş ya da bozuk ekran yok. İlk çekimde modül sayfası veri okunmadan "sırada iş yok" diyordu; düzeltildi ve yeniden çekildi. `npm run db:seed` komutunu da elle çalıştırdım (boş hesap, dolu hesapta ret, `--reset`).
+
+#### Denetim
+
+(Faz denetimi bitince doldurulacak.)
+
+Adım denetimleri:
+
+| Denetim | Karar | Bulgular | Ne yapıldı |
+| --- | --- | --- | --- |
+| Adım 2: şema ve RLS | (önceki oturum) | 2 engelleyici, 5 önemli | Hepsi düzeltildi (`bca9f33`) |
+| Adım 3: iş zarfı ve sözleşme | (önceki oturum) | Engelleyici yok, 8 önemli | Hepsi düzeltildi (`2cd1cd1`) |
+| Adım 5–7: modül arayüzü, `deneme`, ayarlar, örnek veri, düzenleme (`cac1403..a4281f3`) | GEÇTİ | Engelleyici yok, 7 önemli: (1) 5'in katı olmayan süre tarayıcı doğrulamasına takılıyor, hızlı girişte de; (2) açık oturum işi olan kalemin eylemlerine ulaşılamıyor; (3) arşivlenip yeniden açılan modülün işleri geri gelmiyor, davranış yazılı değil; (4) bazı yeni davranışların testi yok; (5) bu dosya güncel değil; (6) sözleşme dokümanı ile kod örtüşmüyor; (7) `deneme` her bağlantı noktasını örneklemiyor | Hepsi düzeltildi: formlar kendi doğrulamasını yapıyor (12 ve 37 dk testleri); modül sayfasında kalem tek satır, oturum işi ayrıca listelenmiyor; arşiv geri çekme işareti bırakıyor, yeniden teklif geri getiriyor (veritabanı ve uçtan uca test); eksik testler yazıldı (gelen kutusunda uzun giriş, okuma hatası, "Devam et", `Shift+Enter`, iki genişlikte düzenleme); sözleşmeye "modül çekirdekten neyi içe aktarabilir" eklendi, dosya listesi düzeltildi; `deneme`'ye `onArchive` ve `ui.history` eklendi. Notlardan: grafik anahtarları, kararlar tablosundaki boşluk, iki zayıf birim testi, sayı içeren uyarı metni düzeltildi; kalanlar "Bilinen sorunlar"da |
+
+Denetçinin 14. notu doğru: 5. ve 6. adımlar ile örnek veri tek commit'te (`9486fea`) geldi ve adım denetimi 7. adımdan sonra yapıldı. Önceki oturum kullanım sınırına takılıp bu adımları commit'siz bıraktığı için kurtarılan iş tek parça olarak işlendi; sonraki fazlarda adım başına commit ve denetim.
+
+#### Ç2 için notlar
+
+- **Canlı eşitleme testleri önce çalışır** (`esitleme` projesi). Supabase Realtime kapanan sayfanın aboneliğini yaklaşık 15 saniye tutuyor ve her değişikliği hesabın bütün aboneliklerine ayrı ayrı sayıyor; onlarca test sayfa açıp kapatınca yerel sınır (saniyede 100 ileti) aşılıyor ve iletiler düşüyor. Canlı güncellemeye dayanan yeni test `sync.spec.ts` içine yazılmalı; başka dosyada dışarıdan yapılan değişikliği ekranda bekleyen test kırılgan olur.
+- **Next.js çıkılan sayfayı belgede gizli tutuyor** (`cacheComponents`). Uçtan uca testte gezinmeden hemen sonra tıklamadan önce yeni adres beklenmeli; yoksa Playwright gizlenen sayfadaki öğeye takılır. Modül bileşenleri belgede tekil olduklarını varsaymamalı.
+- **Modül eylemleri tarayıcıda art arda yazar** (kendi kaydı → `propose` → `emit`). Arada sayfa kapanırsa kayıt teklifsiz kalır. `deneme` bunu yalnızca `onActivate` içinde yeniden teklif ederek kapatıyor; gerçek modüllerde sayfa açılışında "kayıtlarımın teklifleri yerinde mi" denetimi düşünülmeli (Ç2'nin `size` çağrısı da aynı zincire eklenecek). Ç5'te sunucu tarafı yazma yolu gelince zincir tek istekte yürütülebilir.
+- Ç2 `size` çağrısı `default` kaynaklı eforu ezebilir, `user` kaynaklıyı ezemez; kural `mergeProposal` içinde. Düzenleme pencereleri yalnızca değişen alanı gönderir; yapay zekanın koyduğu değerin işareti ve gerekçesi için `provenance` ve `ai` sütunları hazır.
+- Serbest metin şimdilik hep gelen kutusuna düşüyor; `enrich` buraya bağlanacak (`src/core/ui/QuickAdd.tsx` içinde modül seçilmeden gönderim, `src/core/intake/`).
+- `IntakeType.examples` ve `sizingHints` tanımlı ama henüz hiçbir yerde okunmuyor; Ç2'de okunacak.
+- Başarısız okuma: Supabase istemcisi okumayı kendisi 3 kez dener; TanStack tarafında yeniden deneme kapalı. Yapay zeka rotaları için ayrı düşün (POST yeniden denenmez).
+- Kapı süresi: `check:full` yaklaşık 3 dakika. Veritabanı testleri dosya dosya, uçtan uca testler tek işçiyle çalışır (tek hesap, tek posta kutusu).
+- Uçtan uca testler her testten önce yerel hesabı boşaltır; örnek veriyle bakmak için `npm run db:seed` (dolu hesapta `-- --reset`).
+
 ## Sıradaki adım
 
-Ç1'in 7. adımı: iş, kalem, ritim, blok ve seri için elle düzenleme arayüzü (veri katmanı hazır: `updateTask`, `updateWorkItem`, `updateRhythm`, `createRhythm`, `updateBlock`, `updateSeries`), ardından 5–7. adımların denetimi (adım kipi), ekran görüntüleri (`SHERPA_SHOTS=c1`) ve 8. adım.
+Ç1'in 8. adımı: faz denetimi (denetçi, faz kipi), engelleyici ve önemli bulguların düzeltilmesi, faz raporundaki "Denetim" başlığı, `c1-tamam` etiketi.
 
 ## Senden bekleyenler
 
@@ -95,7 +154,9 @@ Son denetimden sonraki değişiklikler yalnızca bu dosyadadır (faz raporu). `n
 
 21:50'de başlatılan eski betik penceresi kapatıldı ve `docs/BEKLIYOR.md` silindi; kararı ben verdim (yeni betik kalsın). Betiğe aynı anda ikinci kez çalışmayı engelleyen bir kilit eklendi (`logs/runner.pid`). Bu konuda yapılacak bir şey yok; `c0-tamam` etiketi yerinde.
 
-### D1. Bulut ve yayın (Ç0'ın kodu hazır; sıra sende)
+### D1. Bulut ve yayın: tamamlandı (11 Kas 2026, 08:35; benim payım bitti, sıra sende)
+
+Supabase ve Vercel girişleri yapıldı (`npx supabase login`, `npx vercel login`), GitHub'da özel `sherpa` deposu açıldı, `.env.d1` dolduruldu. Vercel'de proje elle kurulmadı; kurulumu sen komut satırından yap. Aşağıdaki "Benim yapacaklarım" listesi artık yapılabilir.
 
 O zamana kadar her şey yerel Supabase ile çalışıyor. Aşağıdakileri yapınca yeni oturumda geri kalanını (projeleri açma, şema ve kimlik ayarlarını aktarma, hesabı oluşturma, Vercel ortam değişkenleri, yayın, üretimde giriş ve koruma denemesi) ben komut satırından yaparım.
 
@@ -175,7 +236,7 @@ Benim yapacaklarım (D1 tamamlanınca): iki Supabase projesini açmak (bölge: F
 | 11 Kas 2026 | Ç1: bırakılmış bir bağımlılık bağlı kalemi tutmaz | Bırakılan kalem hiç bitmez; bağlı kalem sonsuza dek gizli kalırdı | `src/core/today/select.ts` |
 | 11 Kas 2026 | Ç1: hızlı girişte tarih ve süre yalnızca satırın sonundaki sözcüklerden okunur (`yarın`, `cuma`, `15.11`, `+3g`, `45dk`, `1s30dk`); haftanın günü bir sonraki o gündür. **Görüşün gerek** | Başlığın ortasındaki "cuma" başlığın parçası kalsın; kural öngörülebilir olsun | `src/core/intake/parse.ts` |
 | 11 Kas 2026 | Ç1: blok serileri 56 gün (8 hafta) ileriye üretilir; uygulama açılınca eksikler tamamlanır. Gece çalışan zamanlanmış iş D1'den sonra | Zamanlanmış iş Vercel'de çalışır (yayın durağı); o zamana kadar uygulamanın açılması yeterli | `src/core/data/blocks.ts`, `src/core/data/series.ts` |
-| 11 Kas 2026 | Ç1: çekirdek migration'ı (`20261110203434_core_tables.sql`) faz içinde iki kez yerinde düzenlendi (denetim düzeltmeleri) ve yerel veritabanı `db:reset` ile yeniden kuruldu. **D1'den sonra bu yasak:** bulut projesine uygulanmış migration değiştirilmez, yeni migration açılır | Henüz hiçbir bulut projesi yok; şemanın tek dosyada okunur kalması daha değerli. Faz etiketinden sonra da yeni migration açılır | `supabase/migrations/*` |
+| 11 Kas 2026 | Ç1: çekirdek migration'ı (`20261110203434_core_tables.sql`) faz içinde dört kez yerinde düzenlendi (denetim düzeltmeleri, oturum işinin kaynağı, arşiv işareti) ve yerel veritabanı `db:reset` ile yeniden kuruldu. **D1'den sonra bu yasak:** bulut projesine uygulanmış migration değiştirilmez, yeni migration açılır | Henüz hiçbir bulut projesi yok; şemanın tek dosyada okunur kalması daha değerli. Faz etiketinden sonra da yeni migration açılır | `supabase/migrations/*` |
 | 11 Kas 2026 | Ç1: kimin kapattığı `provenance` içinde tutulur (`status`/`active` alanının kaynağı: `user` ya da `module`); yalnızca modülün geri çektiği kayıt yeniden teklifle geri gelir | Adım denetimi buldu: kullanıcı duruma bir kez dokunduysa geri çekilen kayıt bir daha geri gelmiyordu | `src/core/data/propose.ts`, `tests/db/envelope.test.ts` |
 | 11 Kas 2026 | Ç1: biçimin kullanmadığı zarf alanı reddedilir; `key` boşluk, virgül, ayraç, tırnak içeremez | Adım denetimi: sessizce yutulan alan modül yazarını yanıltır; `key` dizi süzgeçlerinin içinde taşınıyor | `src/core/contract/envelope.ts`, `docs/06-modul-sozlesmesi.md` |
 | 11 Kas 2026 | Ç1: kalem kapatılırken ya da geri çekilirken üzerinde çalışan oturum durdurulur ve süresi sayılır; `onOutcome` hata verirse kalem yine kapanır | Adım denetimi: açık oturum kapanmış kaleme bağlı kalıyordu | `src/core/data/outcome.ts`, `src/core/data/propose.ts` |
@@ -186,9 +247,34 @@ Benim yapacaklarım (D1 tamamlanınca): iki Supabase projesini açmak (bölge: F
 | 11 Kas 2026 | Ç1: hızlı girişte `Tab` modüller arasında gezer (hiçbiri → birinci → … → hiçbiri), `Enter` kaydeder; alttaki alanlara ok tuşuyla ya da dokunarak inilir. Telefonda tek bir yüzen "Yeni giriş" düğmesi her ekranda durur. **Görüşün gerek** | Doküman: "`Tab` ile modül"; giriş en çok 2 dokunuş ya da tek cümle | `src/core/ui/QuickAdd.tsx`, `src/app/(app)/layout.tsx` |
 | 11 Kas 2026 | Ç1: Bugün ekranının ilk hali: solda büyük "şimdi" kartı (çalışan oturum → süren sabit blok → listenin başı → boş), sağda sıradakiler, altta günün blokları ve modül çipleri. "Durdur" (bitirmeden bırak), "Bugün bitenler" ve "Geri al" eklendi. **Görüşün gerek** | Kapsam "basit şimdi kartı" diyor; yanlışlıkla başlatılan ya da bitirilen iş geri alınabilmeli. Ertele ve Takıldım Ç3'te | `src/core/ui/today/*` |
 | 11 Kas 2026 | Ç1: uçtan uca testlerde her test boş hesapla başlar (`tests/e2e/fixtures.ts`); `shell.both.spec.ts` da bu `test`'i kullanır (tek değişen satır içe aktarım) | Testler aynı hesabı paylaşıyor; sıra ve önceki çalışmadan kalan veri sonucu etkilemesin | `tests/e2e/fixtures.ts`, `tests/e2e/data.ts`, `tests/e2e/shell.both.spec.ts` |
+| 11 Kas 2026 | Ç1: `deneme` modülü yalnızca `NEXT_PUBLIC_SHERPA_DEMO_MODULE=1` iken kaydolur; `.env.example` yerel geliştirme için açık verir. `deneme_items` tablosu her ortamda açılır | Sınama modülü üretim verisiyle karşılaşmasın; migration zinciri ortamlar arasında aynı kalsın | `src/modules/registry.ts`, `.env.example`, `supabase/migrations/20261110213756_deneme_items.sql` |
+| 11 Kas 2026 | Ç1: `/m/<slug>` altındaki her adres tek rotadan (`[[...path]]`) çözülür; tam ekran görünümler ayrı rota grubunda (`(tam)`), kabuk hiç çizilmeden. Kodu olmayan modül satırının sayfası çekirdeğin varsayılanlarıyla açılır | Modül, çekirdeğe dosya eklemeden sekme ve alt sayfa ekleyebilsin; örnek veri modülleri de gezilebilsin | `src/app/(app)/m/[slug]/[[...path]]`, `src/app/(tam)`, `src/core/ui/module/*` |
+| 11 Kas 2026 | Ç1: modül sayfasının çekirdek varsayılanları: durum şeridi (çip metni, haftalık raporun sayıları, en çok 2 öneri), yaklaşanlar (bekleyen ve henüz başlamamış işler dahil), geçmiş (modül vermezse haftalık harcanan süre), giriş ve ayarlar. **Görüşün gerek** | `docs/05-arayuz.md` beş bölgeyi sayıyor, içeriğini modüle bırakıyordu; boş modül de dolu bir sayfa versin | `src/core/ui/module/ModulePageShell.tsx`, `docs/05-arayuz.md` |
+| 11 Kas 2026 | Ç1: elle düzenlemenin yeri modül sayfasının "Yaklaşanlar" bölgesi (iş, kalem, ritim) ve Ayarlar → Sabit bloklar (blok, seri). Pencere yalnızca değişen alanı yazar. "Bırak", "Durdur", "Seriyi bitir" onaysız tek dokunuş. **Görüşün gerek** | Bugün ekranı seyrek kalsın; kullanıcının dokunmadığı alan "kullanıcının" sayılmasın. Onay konusu denetçinin notu; karar senin | `src/core/ui/EditDialog.tsx`, `src/core/ui/work/EditWork.tsx`, `src/core/ui/settings/BlocksSettings.tsx` |
+| 11 Kas 2026 | Ç1: modül sayfasında açık oturum işi olan kalem tek satırdır; oturum işi ayrıca listelenmez. **Test değişikliği:** `select.test.ts` içindeki `moduleUpcoming` beklentisi buna göre değişti (önce oturum işi listeleniyor, kalem gizleniyordu) | Adım denetimi: kalem gizlenince düzenleme ve kapatma eylemlerine ulaşılamıyordu | `src/core/today/select.ts`, `src/core/today/select.test.ts` |
+| 11 Kas 2026 | Ç1: arşiv, modülün teklif ettiği kayıtlara geri çekme işareti bırakır; modül yeniden etkinleşip aynı `key` ile teklif edince kayıt geri gelir. Elle eklenen ve kullanıcının kendi kapattığı işler geri gelmez. **Test değişikliği:** `deneme-module.spec.ts` yeniden etkinleştirmeden sonra işin `dropped` kalmasını bekliyordu; artık `active` bekliyor | Adım denetimi: `onActivate` yorumu ile test çelişiyordu ve davranış yazılı değildi. Modülü yeniden açan kullanıcı açık kayıtlarının işlerini geri ister | `supabase/migrations/20261110203434_core_tables.sql` (`archive_module`), `docs/06-modul-sozlesmesi.md`, `tests/db/envelope.test.ts` |
+| 11 Kas 2026 | Ç1: bir günün blokları o güne değen bütün bloklardır (gece yarısını aşan blok iki günde de görünür); oturum işi kalemin kaynağını taşır; gelen kutusunda 90 dakikayı aşan giriş iş kalemi olur; eforu dolan kalem kendiliğinden kapanmaz, şimdi kartı sorar; veri okunamazsa boş gün yerine "Veri okunamadı" gösterilir | Önceki oturumun commit'siz kalan kararları; dokümanlara işlendi (`docs/05-arayuz.md`, `docs/09-kararlar.md`) | `src/core/today/select.ts`, `src/core/ui/today/*`, `src/core/ui/inbox/InboxScreen.tsx`, `start_session` |
+| 11 Kas 2026 | Ç1: hızlı giriş kutusu çok satırlı metni korur (`Enter` kaydeder, `Shift+Enter` satır ekler); formlar tarayıcı doğrulamasını kullanmaz, kendi denetimini yapar; açılır kutular kendi adını taşır (`aria-label`) | Yapılı blok satırlarını korusun; `step` kuralı "12dk"yı reddediyordu; etiket içindeki açılır kutu adına seçili değeri de katıyordu | `src/core/ui/QuickAdd.tsx`, `src/core/ui/EditDialog.tsx`, `src/core/ui/settings/BlocksSettings.tsx` |
+| 11 Kas 2026 | Ç1: başarısız okuma istemcide ikinci kez yeniden denenmez (`retry: false`) | Supabase istemcisi okumayı kendisi 3 kez deniyor (1, 2, 4 sn); üstüne deneme hata bildirimini 15 saniyeye geciktiriyordu | `src/core/app/CoreProvider.tsx` |
+| 11 Kas 2026 | Ç1: bileşen takımının grafik renkleri (tek seri için bir mavi, büyüklük için açıktan koyuya tek renk; koyu temada sıra ters). Modül grafiği modülün kendi rengini kullanır. **Görüşün gerek** | Renk anlam taşısın, iki temada da okunsun | `src/app/globals.css`, `src/core/ui/kit/charts.tsx` |
+| 11 Kas 2026 | Ç1: dışa aktarım sunucu rotasıdır (`/api/export`), veriyi kullanıcının kendi yetkisiyle okur; modül tablolarını kayıttaki `tables` listesinden alır | RLS "bütün veri"nin ne olduğunu belirlesin; servis anahtarı kullanılmasın | `src/app/api/export/route.ts`, `src/core/data/export.ts` |
+| 11 Kas 2026 | Ç1: örnek veri yalnızca yerel Supabase'e, hesabın kendi yetkisiyle ve modül işlerini zarfla (`propose`) yazar; dolu hesaba ancak `--reset` ile. Betik `scripts/seed-demo.ts`, veri `scripts/demo-data.ts` | "Üretim verisine yazılmaz"; veri gerçek yoldan geçsin ki çekirdek onunla sınanabilsin. Ekran görüntüleri de aynı veriyi kullanır | `scripts/*`, `tests/db/seed.test.ts`, `tests/e2e/screenshots.spec.ts` |
+| 11 Kas 2026 | Ç1: uçtan uca testlerde canlı eşitleme testleri ayrı projede ve en önce çalışır (`esitleme`). **Test değişikliği:** `work-sessions.spec.ts` ilk testinde "başlangıç geri alınınca kart izler" adımı artık sayfayı yeniden yükleyerek bakıyor (sunucu saatini sınıyor); yenilemeden izleme `sync.spec.ts` içinde sınanmaya devam ediyor | Realtime kapanan sayfaların aboneliklerini 15 sn tutuyor; 100 testlik koşuda her değişiklik onlarca kez sayılıp yerel sınırı (100 ileti/sn) aşıyor ve iletiler düşüyordu. Gerçek kullanım iki cihaz | `playwright.config.ts`, `tests/e2e/work-sessions.spec.ts` |
+| 11 Kas 2026 | Ç1: ekran görüntüleri örnek veriyle alınır; panoda tam sayfa, telefonda ekranın gösterdiği (uzun sayfada ayrıca sonu) | Telefonda alt çubuk ekrana sabit; tam sayfa görüntüde sayfanın ortasında çıkıyordu | `tests/e2e/screenshots.spec.ts` |
+| 11 Kas 2026 | Ç1: arayüz metinleri (modül sayfası, ayarlar, düzenleme pencereleri, bildirimler), önem adları (Düşük, Normal, Yüksek, Çok yüksek), "Önümüzdeki 4 hafta" listesi. **Görüşün gerek** | Kısa ve düz, ünlemsiz | `src/core/ui/**` |
 
 ## Bilinen sorunlar
 
+- **Realtime sınırı.** Yerel Realtime saniyede 100 iletide değişiklikleri düşürüyor; kapanan sayfaların abonelikleri 15 sn kaldığı için bu yalnızca uzun test koşularında oluyor (testler buna göre sıralandı). Gerçek kullanımda iki cihaz var, ama toplu yazma (uzun bir seri, örnek veri) bulut projesinde de sınıra yaklaşabilir; o durumda öbür cihaz değişikliği güvenlik ağıyla (en geç 1 dakika, pencere öne gelince) alır. Bulut projesinin sınırlarına D1'de bakılacak.
+- Modül eylemleri tarayıcıda art arda yazar (kayıt → teklif → olay); arada sayfa kapanırsa kayıt teklifsiz kalır ("Ç2 için notlar").
+- Gece yarısını aşan blok düzenleme penceresinden değiştirilemez (pencere bitişi aynı güne yazar ve "bitiş başlangıçtan sonra" ister). Böyle bir blok bugün yalnızca zarfla ya da veriyle oluşabilir.
+- Serinin günü değiştirilince eski gündeki elle değiştirilmiş ya da iptal edilmiş bloklar yerinde kalır; testi yok.
+- "Seriyi bitir" (elle değiştirilmiş gelecek blokları da siler), "Bırak" ve "Durdur" onaysız ve arayüzden geri alınamaz; durdurulan ritim hiçbir listede görünmez. Onay ya da "Geri al" isteyip istemediğine sen karar ver.
+- 90 dakikayı aşan süre düzenleme penceresinde yalnızca "Kaydet"i kapatır; hızlı giriş ve gelen kutusundaki gibi kaleme çevirme önerisi yok.
+- Sabit blok ve seride tür ile gün tipi sonradan değiştirilemez; yolculuk süreleri için arayüz yok.
+- `deneme` kodu üretim paketinde bulunur (kaydolmaz); `deneme_items` tablosu üretimde de açılır.
+- Tarih kutuları tarayıcının kendi biçimini gösterir (ekran görüntülerinde "13-Nov-2026"); telefonda sistemin tarih seçicisi açılır.
+- Ç1'de 5. ve 6. adımlar tek commit'te geldi (`9486fea`) ve adım denetimi 7. adımdan sonra yapıldı (önceki oturum kullanım sınırında commit'siz kaldı).
 - Ç1, adım 2: `b87e5fb` commit'i lint kırmızıyken atıldı (komut zincirinde çıkış kodu yutuldu); 21 saniye sonra `6439e65` ile düzeltildi. O andan beri kapı komutları `pipefail` ile çalıştırılıyor.
 
 - Bulut yok: üretim adresi, bulut `dev` ve `prod` projeleri, gerçek e-posta gönderimi ve Vercel önizleme koruması D1'e kadar sınanamıyor. Yerel `config.toml` yalnızca yerel Supabase'i yönetir; aynı kimlik ayarları D1'de bulut projelerine aktarılıp `session.spec.ts` içindeki "yeni kayıt kapalı" sınamaları orada yinelenmeli.

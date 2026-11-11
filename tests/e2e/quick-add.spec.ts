@@ -177,3 +177,22 @@ test("typing in a field does not open quick add; Escape closes it", async ({ pag
   await expect(dialog).toBeHidden();
   expect(await rows("inbox_entries")).toHaveLength(0);
 });
+
+test("Shift+Enter adds a line; Enter alone saves", async ({ page }) => {
+  const dialog = await openQuickAdd(page);
+  const box = dialog.getByLabel("Giriş", { exact: true });
+  await box.pressSequentially("ilk satır");
+  await page.keyboard.press("Shift+Enter");
+  await box.pressSequentially("ikinci satır");
+  await expect(dialog).toBeVisible();
+  await expect(box).toHaveValue("ilk satır\nikinci satır");
+  expect(await rows("inbox_entries")).toHaveLength(0);
+
+  await page.keyboard.press("Enter");
+  await expect(dialog).toBeHidden();
+  const [entry] = await waitFor(
+    () => rows("inbox_entries"),
+    (list) => list.length === 1,
+  );
+  expect(entry.raw_text).toBe("ilk satır\nikinci satır");
+});

@@ -235,10 +235,18 @@ export function moduleUpcoming(input: {
 }): Candidate[] {
   const { moduleId, now } = input;
   const candidates: Candidate[] = [];
+  const openItems = input.workItems.filter(
+    (item) => item.module_id === moduleId && item.status !== "done" && item.status !== "dropped",
+  );
+  const openItemIds = new Set(openItems.map((item) => item.id));
   const openTasks = input.tasks.filter(
     (task) => task.module_id === moduleId && ["todo", "doing", "waiting"].includes(task.status),
   );
   for (const task of openTasks) {
+    // A sitting of an open work item is not listed on its own: the item's row stands for it,
+    // and that row is where the item is edited, finished or dropped. "Başla" on the item
+    // goes on with the sitting that is already open.
+    if (task.work_item_id !== null && openItemIds.has(task.work_item_id)) continue;
     candidates.push({
       type: "task",
       id: task.id,
@@ -251,11 +259,7 @@ export function moduleUpcoming(input: {
       task,
     });
   }
-  const itemsWithOpenTask = new Set(openTasks.map((task) => task.work_item_id));
-  for (const item of input.workItems) {
-    if (item.module_id !== moduleId || item.status === "done" || item.status === "dropped")
-      continue;
-    if (itemsWithOpenTask.has(item.id)) continue;
+  for (const item of openItems) {
     candidates.push({
       type: "item",
       id: item.id,

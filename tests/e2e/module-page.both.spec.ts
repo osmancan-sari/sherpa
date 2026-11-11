@@ -81,3 +81,42 @@ test("the module page, its tabs, sub page, full-screen view and settings fit the
   await expect(page.getByRole("form", { name: "Yeni seri" })).toBeVisible();
   expect(await sidewaysOverflow(page)).toBe(0);
 });
+
+test("work is edited by hand on both layouts", async ({ page, viewport }) => {
+  const [mod] = await insert("modules", { slug: "okul-ornek", name: "Okul", color: "#2563eb" });
+  await insert("tasks", { module_id: mod.id, title: "Düzenlenecek iş" });
+  await page.goto("/m/okul-ornek");
+  await page.getByRole("button", { name: "Düzenle: Düzenlenecek iş" }).click();
+
+  const dialog = page.getByRole("dialog", { name: "İşi düzenle" });
+  await expect(dialog).toBeVisible();
+  // The whole form is on the screen: a sheet from the bottom on the phone, centred otherwise.
+  const box = (await dialog.boundingBox())!;
+  expect(box.x).toBeGreaterThanOrEqual(0);
+  expect(box.x + box.width).toBeLessThanOrEqual(viewport!.width);
+  expect(box.y + box.height).toBeLessThanOrEqual(viewport!.height);
+  expect(await sidewaysOverflow(page)).toBe(0);
+  for (const button of await dialog.getByRole("button").all()) {
+    const size = (await button.boundingBox())!;
+    if (viewport!.width < 768) expect(size.height).toBeGreaterThanOrEqual(44);
+  }
+
+  await dialog.getByLabel("Ad", { exact: true }).fill("Düzenlenmiş iş");
+  await dialog.getByLabel("Süre (dk)").fill("20");
+  await dialog.getByRole("button", { name: "Kaydet" }).click();
+  await expect(dialog).toBeHidden();
+  await expect(page.getByRole("region", { name: "Yaklaşanlar" })).toContainText("Düzenlenmiş iş");
+  const [task] = await waitFor(
+    () => rows("tasks"),
+    (list) => list[0].title === "Düzenlenmiş iş",
+  );
+  expect(task.est_minutes).toBe(20);
+
+  // A rhythm by hand, from the same page.
+  await page.getByRole("button", { name: "Ritim ekle" }).click();
+  const rhythm = page.getByRole("dialog", { name: "Yeni ritim" });
+  await rhythm.getByLabel("Ad", { exact: true }).fill("Yürüyüş");
+  await rhythm.getByRole("button", { name: "Ekle" }).click();
+  await expect(rhythm).toBeHidden();
+  await expect(page.getByRole("region", { name: "Yaklaşanlar" })).toContainText("0/1");
+});

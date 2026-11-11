@@ -21,7 +21,7 @@ export const EVENTS = {
 
 export const FEEDBACK_PROMPT = "zorluk";
 
-type Settings = { default_minutes?: number; added_count?: number };
+type Settings = { default_minutes?: number; added_count?: number; archived_on?: string };
 
 export function settingsOf(ctx: ModuleContext): Settings {
   return (ctx.module.settings ?? {}) as Settings;

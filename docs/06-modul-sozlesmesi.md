@@ -9,13 +9,31 @@ src/modules/<slug>/
   module.ts        ModuleDefinition (aşağıda)
   queries.ts       modülün kendi sorguları ve mutasyonları
   rules.ts         olay dinleyicileri: iş, ritim, blok ve soru üretimi
-  page.tsx         modül sayfası (ModulePageShell içinde)
-  components/      modüle özel bileşenler
+  components/      modülün ekranları: sekmeler, alt sayfalar, tam ekran görünümler, ayar formu
   README.md        modülün kısa özeti; tasarımın kendisi docs/moduller/<slug>.md
 supabase/migrations/NNNN_<slug>_*.sql
 ```
 
+Modülün ayrı bir sayfa dosyası yoktur: `/m/<slug>` rotasını ve `ModulePageShell` iskeletini çekirdek kurar, modül ekranlarını `module.ts` içindeki `ui` alanıyla bildirir.
+
 Yeni modül `src/modules/_sablon/` kopyalanarak başlar.
+
+### Modül çekirdekten neyi içe aktarabilir
+
+Modül yalnızca kendi klasörünü ve aşağıdakileri içe aktarır; başka bir modülü ya da çekirdeğin öbür iç dosyalarını içe aktarmaz.
+
+| Nereden | Ne |
+| --- | --- |
+| `@/core/contract/types` | Sözleşmenin tipleri (`ModuleDefinition`, `ModuleContext`, `WorkProposal`…) |
+| `@/core/types` | Satır tipleri (`Task`, `WorkItem`, `AppEvent`…) |
+| `@/core/ui/module/ModuleProvider` | `useModule()`: ekran bileşeninin bağlamı (`row`, `definition`, `ctx`) |
+| `@/core/app/hooks` | `useModuleQuery(row, anahtar, fn)`: modülün bağlamıyla hesaplanan ve her veri değişiminde tazelenen sorgu; `useNow()`: ortak saat |
+| `@/core/app/actions` | `useRefreshAll()`: modül kendi bağlamıyla bir şey yazdıktan sonra ekranı hemen tazeler |
+| `@/core/ui/Notices` | `useNotify()`, `SAVE_FAILED`: ekranın altındaki tek satırlık bildirim |
+| `@/core/ui/kit` | Bileşen takımı |
+| `@/components/ui/*`, `@/lib/date`, `@/lib/utils` | Düğme ve giriş alanı, tarih yardımcıları |
+
+Ekran bileşeni bağlam üzerinden yazdığında (`ctx.propose`, kendi tablosu) işlem bitince `refreshAll()` çağırır; öbür cihazlar değişikliği Realtime ile alır. Yazma hata verirse `notify(SAVE_FAILED)` der.
 
 ## Tanım
 
@@ -151,7 +169,7 @@ type ModuleUiContext = ModuleContext & {
 }
 ```
 
-Sınama modülü `deneme` her bağlantı noktasının çalışan örneğidir; yalnızca `NEXT_PUBLIC_SHERPA_DEMO_MODULE=1` verilen ortamlarda (yerel geliştirme, testler) kaydolur, üretimde kaydolmaz.
+Sınama modülü `deneme` her bağlantı noktasının çalışan örneğidir (`alerts` tanımlıdır ama çekirdek modül uyarılarını Ç3'te, `AlertBar` ile göstermeye başlar); yalnızca `NEXT_PUBLIC_SHERPA_DEMO_MODULE=1` verilen ortamlarda (yerel geliştirme, testler) kaydolur, üretimde kaydolmaz.
 
 Adresler: `/m/<slug>` ilk sekmeyi, `/m/<slug>/<sekme>` adı verilen sekmeyi açar; öbür yollar `routes` ile eşlenir. `tam` parçası çekirdeğe ayrılmıştır: sekme ya da alt sayfa bu adı alamaz.
 
@@ -252,7 +270,7 @@ Akış:
 - **Modül olgu verir, yargıyı dayatmaz.** Kesin bildiği süreyi yazabilir (sabah rutini 20 dk); bilmediğini boş bırakır ve sınır verir.
 - **Formül yeten yerde yapay zeka yok.** "Prep'ten bir gün önce alışveriş" gibi kesin kurallarda modül bütün alanları kendisi doldurur; `size` çağrısı yapılmaz.
 - **Türetilen işler yeniden üretilebilir olmalı.** Kaynak kayıt değişince (örneğin sınav tarihi) modül ilgili işleri günceller; kullanıcının elle değiştirdiği işi ezmez (`meta.user_edited = true`).
-- **Arşivlenen modülün açık işleri `dropped` olur,** blok serileri kapanır, ritimleri pasifleşir. Verisi silinmez.
+- **Arşivlenen modülün açık işleri `dropped` olur,** blok serileri kapanır, ritimleri pasifleşir. Verisi silinmez. Modülün teklif ettiği kayıtlar (`key` taşıyanlar) geri çekilmiş sayılır: modül yeniden etkinleştirilip aynı `key` ile yeniden teklif edince (`onActivate`) geri gelir. Kullanıcının elle eklediği işler ve arşivden önce kendi kapattığı kayıtlar geri gelmez.
 - **Modül sayfası çekirdek kabuğu kullanır.** Beş bölgeli iskeletin dışına çıkmaz; gövdede serbesttir.
 
 ## Modül tasarım şablonu

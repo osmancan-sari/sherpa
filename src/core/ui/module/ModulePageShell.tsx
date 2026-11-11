@@ -234,10 +234,13 @@ function Upcoming({ mod }: { mod: KnownModule }) {
     [mod.row.id, tasks.data, workItems.data, rhythms.data, rhythmLogs.data, now],
   );
 
+  // Until the work has been read the region says nothing; "no work" would be a wrong answer.
+  const loading = [tasks, workItems, rhythms, rhythmLogs].some((query) => query.isLoading);
+
   return (
     <section aria-label="Yaklaşanlar" className="flex flex-col gap-3">
       <RegionTitle>Yaklaşanlar</RegionTitle>
-      {list.length === 0 ? (
+      {loading ? null : list.length === 0 ? (
         <p className="text-muted-foreground text-sm">Bu modülde sırada iş yok.</p>
       ) : (
         <ul className="divide-border border-border divide-y rounded-xl border">

@@ -72,8 +72,8 @@ function Frame({
         <table className="w-full max-w-sm border-collapse text-left tabular-nums">
           <caption className="sr-only">{title}</caption>
           <tbody>
-            {data.map((point) => (
-              <tr key={point.label} className="border-border border-b last:border-b-0">
+            {data.map((point, index) => (
+              <tr key={index} className="border-border border-b last:border-b-0">
                 <th scope="row" className="text-muted-foreground py-1 pr-4 font-normal">
                   {point.label}
                 </th>
@@ -202,7 +202,7 @@ export function BarChart({
                 const { x, y, barHeight } = geometry[index];
                 const radius = Math.min(4, bar / 2, barHeight);
                 return (
-                  <g key={point.label}>
+                  <g key={index}>
                     {barHeight > 0 ? (
                       // Rounded at the data end, square at the baseline.
                       <path
@@ -339,7 +339,7 @@ export function LineChart({
                 ) : null,
               )}
               {data.map((point, index) => (
-                <g key={point.label}>
+                <g key={index}>
                   {index % step === 0 ? (
                     <text
                       x={points[index].x}

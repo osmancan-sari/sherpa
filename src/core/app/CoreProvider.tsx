@@ -50,7 +50,10 @@ function createQueryClient(): QueryClient {
         refetchInterval: 60_000,
         refetchOnWindowFocus: true,
         refetchOnReconnect: true,
-        retry: 1,
+        // The Supabase client already retries a failed read three times (after 1, 2 and 4
+        // seconds). Retrying on top of that would only keep an empty frame on screen for twice
+        // as long before the screen says that the data could not be read.
+        retry: false,
       },
     },
   });

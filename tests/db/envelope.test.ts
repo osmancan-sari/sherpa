@@ -661,6 +661,91 @@ describe("what the core tells a module", () => {
     expect(ok(await db.from("events").select("id"))).toHaveLength(2);
   });
 
+  it("archiving drops proposed work with the module's mark; proposing again brings it back", async () => {
+    const recorder = recordingModule();
+    const registry = createRegistry([recorder.definition]);
+    const mod = await activateModule(db, registry, recorder.definition);
+
+    const item = await propose(db, mod, prep());
+    const rhythm = await propose(
+      db,
+      mod,
+      prep({ key: "rhythm:1", when: { recurrence: { count: 2, period: "week" } } }),
+    );
+    const block = await propose(
+      db,
+      mod,
+      prep({
+        key: "exam:1",
+        when: {
+          fixed: { starts_at: "2099-03-01T10:00:00+03:00", ends_at: "2099-03-01T12:00:00+03:00" },
+        },
+      }),
+    );
+    // Work the user added by hand, and an item the user closed before the module was archived.
+    const byHand = ok(
+      await db
+        .from("work_items")
+        .insert({ module_id: mod.id, title: "Elle eklenen" })
+        .select()
+        .single(),
+    );
+    const closedByUser = await propose(db, mod, prep({ key: "assessment:2:prep" }));
+    await closeWorkItem(db, registry, closedByUser.id, "dropped");
+
+    const archived = await archiveModule(db, registry, mod);
+    const state = async () => ({
+      item: ok(await db.from("work_items").select("status").eq("id", item.id).single()).status,
+      rhythm: ok(await db.from("rhythms").select("active").eq("id", rhythm.id).single()).active,
+      block: ok(await db.from("blocks").select("status").eq("id", block.id).single()).status,
+      byHand: ok(await db.from("work_items").select("status").eq("id", byHand.id).single()).status,
+      closedByUser: ok(
+        await db.from("work_items").select("status").eq("id", closedByUser.id).single(),
+      ).status,
+    });
+    expect(await state()).toEqual({
+      item: "dropped",
+      rhythm: false,
+      block: "cancelled",
+      byHand: "dropped",
+      closedByUser: "dropped",
+    });
+
+    // Switched on again, the module proposes its open records again.
+    await activateModule(db, registry, recorder.definition);
+    expect(archived.id).toBe(mod.id);
+    const again = await propose(db, mod, prep());
+    expect(again).toMatchObject({ id: item.id, created: false });
+    await propose(
+      db,
+      mod,
+      prep({ key: "rhythm:1", when: { recurrence: { count: 2, period: "week" } } }),
+    );
+    await propose(
+      db,
+      mod,
+      prep({
+        key: "exam:1",
+        when: {
+          fixed: { starts_at: "2099-03-01T10:00:00+03:00", ends_at: "2099-03-01T12:00:00+03:00" },
+        },
+      }),
+    );
+    await propose(db, mod, prep({ key: "assessment:2:prep" }));
+    expect(await state()).toEqual({
+      item: "active",
+      rhythm: true,
+      block: "planned",
+      // No key, so nothing proposes it again; and what the user closed stays closed.
+      byHand: "dropped",
+      closedByUser: "dropped",
+    });
+    const restored = ok(
+      await db.from("work_items").select("provenance").eq("id", item.id).single(),
+    );
+    expect(restored.provenance).not.toHaveProperty("status");
+  });
+
   it("asks one question and tells the module the answer", async () => {
     const recorder = recordingModule();
     const registry = createRegistry([recorder.definition]);

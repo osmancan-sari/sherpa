@@ -160,7 +160,9 @@ function EditableCell({
         }
       }}
       className={cn(
-        "hover:border-border focus-visible:border-ring focus-visible:ring-ring/50 h-11 w-full min-w-16 rounded-md border border-transparent bg-transparent px-2 outline-none focus-visible:ring-3 md:h-8",
+        "hover:border-border focus-visible:border-ring focus-visible:ring-ring/50 h-11 w-full rounded-md border border-transparent bg-transparent px-2 outline-none focus-visible:ring-3 md:h-8",
+        // Wide enough to read a name on the phone; the table scrolls sideways inside its frame.
+        type === "text" ? "min-w-40" : "min-w-16",
         align === "right" && "text-right",
       )}
     />

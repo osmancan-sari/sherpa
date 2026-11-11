@@ -29,9 +29,12 @@ test("Başla then Bitti leaves one session record and finishes the task", async 
   expect(open[0].ended_at).toBeNull();
   expect((await rows("tasks"))[0].status).toBe("doing");
 
-  // The clock is the server's: move the start back and the card follows.
+  // The clock is the server's: the elapsed time comes from the stored start, not from a
+  // counter on this device. (That an open screen follows such a change without a reload is
+  // tested in sync.spec.ts, which runs while the live service is quiet.)
   await update("sessions", open[0].id as string, { started_at: at(-25) });
-  await expect(now).toContainText("25 dk geçti · tahmin 45 dk", { timeout: 5000 });
+  await page.reload();
+  await expect(now).toContainText("25 dk geçti · tahmin 45 dk");
 
   await now.getByRole("button", { name: "Bitti" }).click();
   await expect(now).toContainText("Bugün için planlanan bir şey yok.");
@@ -317,4 +320,48 @@ test("work of a paused module is not offered", async ({ page }) => {
   await expect(page.getByRole("navigation", { name: "Modüller" }).getByRole("link")).toHaveText([
     /Okul/,
   ]);
+});
+
+test("a read that fails is not shown as an empty day", async ({ page }) => {
+  const mod = await seedModule();
+  await insert("tasks", { module_id: mod.id, title: "Görünmesi gereken iş" });
+  await page.route("**/rest/v1/tasks*", (route) => route.abort());
+  await page.goto("/");
+  const failed = page.getByRole("alert").filter({ hasText: "Veri okunamadı." });
+  await expect(failed).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByText("Bugün için planlanan bir şey yok.")).toHaveCount(0);
+
+  await page.unroute("**/rest/v1/tasks*");
+  await failed.getByRole("button", { name: "Yeniden dene" }).click();
+  await expect(page.getByRole("region", { name: "Şimdi" }).getByRole("heading")).toHaveText(
+    "Görünmesi gereken iş",
+  );
+});
+
+test("a work item whose planned effort is used up asks; 'Devam et' goes on with it", async ({
+  page,
+}) => {
+  const mod = await seedModule();
+  await insert("work_items", {
+    module_id: mod.id,
+    title: "Uzayan rapor",
+    effort_total_minutes: 60,
+    effort_done_minutes: 60,
+  });
+  await page.goto("/");
+  const now = page.getByRole("region", { name: "Şimdi" });
+  await expect(now).toContainText("Ayrılan 1 sa doldu. Bitti mi?");
+  await now.getByRole("button", { name: "Devam et" }).click();
+
+  // The item is not closed; a new sitting is running on it.
+  await expect(now.getByRole("button", { name: "Durdur" })).toBeVisible();
+  const [session] = await waitFor(
+    () => rows("sessions"),
+    (list) => list.length === 1,
+  );
+  expect(session.ended_at).toBeNull();
+  const [item] = await rows("work_items");
+  expect(item.status).toBe("active");
+  const [sitting] = await rows("tasks");
+  expect(sitting).toMatchObject({ work_item_id: item.id, status: "doing" });
 });

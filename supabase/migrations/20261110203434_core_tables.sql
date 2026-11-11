@@ -688,9 +688,19 @@ begin
 
   update public.tasks set status = 'dropped'
    where module_id = p_module_id and status in ('todo', 'doing', 'waiting');
-  update public.work_items set status = 'dropped'
+  -- Records the module proposed (they carry a key) get the same mark a withdrawal leaves, so
+  -- that switching the module on again and proposing them again brings them back. Work the user
+  -- added by hand has no key and stays dropped.
+  update public.work_items
+     set status = 'dropped',
+         provenance = case when key is null then provenance
+                           else provenance || '{"status": "module"}'::jsonb end
    where module_id = p_module_id and status in ('proposed', 'active', 'waiting');
-  update public.rhythms set active = false where module_id = p_module_id and active;
+  update public.rhythms
+     set active = false,
+         provenance = case when key is null then provenance
+                           else provenance || '{"active": "module"}'::jsonb end
+   where module_id = p_module_id and active;
   update public.prompts set status = 'expired' where module_id = p_module_id and status = 'pending';
 
   update public.block_series set valid_to = v_today - 1
@@ -699,7 +709,10 @@ begin
     from public.block_series bs
    where b.series_id = bs.id and bs.module_id = p_module_id
      and b.status = 'planned' and b.ends_at > now();
-  update public.blocks set status = 'cancelled'
+  update public.blocks
+     set status = 'cancelled',
+         provenance = case when key is null then provenance
+                           else provenance || '{"status": "module"}'::jsonb end
    where module_id = p_module_id and series_id is null and status = 'planned' and ends_at > now();
 
   return m;

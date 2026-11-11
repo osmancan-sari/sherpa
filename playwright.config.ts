@@ -23,6 +23,7 @@ const storageState = "playwright/.auth/user.json";
 const shots = Boolean(process.env.SHERPA_SHOTS);
 
 const GATE_SPECS = /(^|[\\/])(guard|login|session)\.spec\.ts$/;
+const LIVE_SPECS = /(^|[\\/])sync\.spec\.ts$/;
 const BOTH_SPECS = /\.both\.spec\.ts$/;
 const SHOT_SPECS = /screenshots\.spec\.ts$/;
 
@@ -42,6 +43,7 @@ export default defineConfig({
   },
   // Every *.spec.ts file runs somewhere without being listed here: "pano" takes whatever the
   // other projects do not claim, so a new spec file can never be silently left out.
+  //   sync                      -> "esitleme" (live sync between devices; runs first, see below)
   //   guard, login, session     -> "giris" (signed-out behaviour; no stored session)
   //   *.both.spec.ts            -> "pano" and "telefon"
   //   everything else           -> "pano"
@@ -49,25 +51,36 @@ export default defineConfig({
   projects: [
     { name: "setup", testMatch: /auth\.setup\.ts/ },
     {
+      // Live sync, before everything else. Supabase Realtime keeps the subscription of a page
+      // that was closed for about 15 seconds, and every change is sent once per subscription
+      // of the account. After dozens of tests have opened and closed pages, one change counts
+      // dozens of times and the local limit (100 messages a second) drops them. Real use is two
+      // devices, not a hundred; so these tests run while the service is still quiet.
+      name: "esitleme",
+      testMatch: LIVE_SPECS,
+      dependencies: ["setup"],
+      use: { storageState, viewport: { width: 1920, height: 1080 } },
+    },
+    {
       // The gate: signed-out behaviour, the login flow, sessions.
       name: "giris",
       testMatch: GATE_SPECS,
-      dependencies: ["setup"],
+      dependencies: ["setup", "esitleme"],
       use: { viewport: { width: 1280, height: 800 } },
     },
     {
       // Second screen.
       name: "pano",
       testMatch: /\.spec\.ts$/,
-      testIgnore: shots ? [GATE_SPECS] : [GATE_SPECS, SHOT_SPECS],
-      dependencies: ["setup"],
+      testIgnore: shots ? [GATE_SPECS, LIVE_SPECS] : [GATE_SPECS, LIVE_SPECS, SHOT_SPECS],
+      dependencies: ["setup", "esitleme"],
       use: { storageState, viewport: { width: 1920, height: 1080 } },
     },
     {
       // Phone.
       name: "telefon",
       testMatch: shots ? [BOTH_SPECS, SHOT_SPECS] : BOTH_SPECS,
-      dependencies: ["setup"],
+      dependencies: ["setup", "esitleme"],
       use: {
         storageState,
         viewport: { width: 390, height: 844 },

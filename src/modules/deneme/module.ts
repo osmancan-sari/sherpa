@@ -2,7 +2,7 @@ import type { ModuleDefinition } from "@/core/contract/types";
 import { dayKey, shiftDay } from "@/lib/date";
 import { ItemsTab } from "./components/ItemsTab";
 import { KitTab } from "./components/KitTab";
-import { FocusView, ItemPage, SettingsForm } from "./components/Views";
+import { FocusView, HistoryView, ItemPage, SettingsForm } from "./components/Views";
 import { type DenemeKind, listItems, SOURCE_TYPE } from "./queries";
 import { addItem, EVENTS, listeners, onOutcome, proposalFor, settingsOf } from "./rules";
 
@@ -43,11 +43,12 @@ export const deneme: ModuleDefinition = {
       (item) => !item.done && item.due_on !== null && item.due_on < today,
     );
     if (late.length === 0) return [];
-    // One alert, one action; no pile of overdue items.
+    // One alert, one action; no count and no pile of overdue items (product rule 2).
+    // The core shows module alerts from Ç3 on (AlertBar); until then this is only declared.
     return [
       {
         key: "tarihi-gecen",
-        text: `${late.length} kaydın tarihi geçti; yeni bir tarih verilebilir.`,
+        text: "Tarihi geçen kayıtlara yeni bir tarih verilebilir.",
         action: { label: "Kayıtlara bak", href: "/m/deneme" },
       },
     ];
@@ -148,10 +149,16 @@ export const deneme: ModuleDefinition = {
 
   // 6. Life cycle
   async onActivate(ctx) {
-    // Proposing again on activation brings back the work of records that are still open.
+    // Proposing again on activation brings back the work of records that are still open:
+    // archiving left the module's mark on what it dropped, and a new proposal undoes that.
     for (const item of await listItems(ctx)) {
       if (!item.done) await ctx.propose(proposalFor(item, settingsOf(ctx), ctx.now()));
     }
+  },
+
+  async onArchive(ctx) {
+    // The last word before the module goes quiet: it notes when it was put away.
+    await ctx.saveSettings({ ...settingsOf(ctx), archived_on: dayKey(ctx.now()) });
   },
 
   // Work envelope
@@ -180,5 +187,6 @@ export const deneme: ModuleDefinition = {
       },
     ],
     settings: SettingsForm,
+    history: HistoryView,
   },
 };

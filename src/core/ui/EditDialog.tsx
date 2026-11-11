@@ -74,7 +74,9 @@ export function EditDialog({
 
   return (
     <Dialog open onOpenChange={(open) => (open ? undefined : onClose())} title={title}>
-      <form onSubmit={submit} className="flex flex-col gap-4">
+      {/* The form checks its own fields; the browser's check would refuse a length like 12 or 37
+          minutes because of the step. */}
+      <form noValidate onSubmit={submit} className="flex flex-col gap-4">
         <div className="flex flex-wrap items-end gap-3">
           {fields.map((field) => {
             const label = field.required ? field.label : `${field.label} (isteğe bağlı)`;

@@ -310,6 +310,8 @@ function QuickAddDialog({
       initialFocus={inputRef}
     >
       <form
+        // Checked here, not by the browser: its step rule would refuse "12dk".
+        noValidate
         className="flex flex-col gap-4"
         onSubmit={(event) => {
           event.preventDefault();

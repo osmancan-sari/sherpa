@@ -342,8 +342,9 @@ describe("moduleUpcoming", () => {
     });
     expect(list.map((c) => [c.type, c.title])).toEqual([
       ["task", "bekleyen"],
-      ["task", "oturum"],
       ["task", "yarına planlı"],
+      // The item stands for its open sitting; the sitting is not listed next to it.
+      ["item", "oturumu açık kalem"],
       ["item", "ileride başlayacak"],
       ["rhythm", "ritim"],
     ]);

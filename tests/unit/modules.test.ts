@@ -1,6 +1,6 @@
 import { readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { createRegistry, definitionProblems } from "@/core/contract/registry";
 import { sablon } from "@/modules/_sablon/module";
 import { deneme } from "@/modules/deneme/module";
@@ -60,10 +60,22 @@ describe("the deneme module", () => {
     expect(deneme.ui.settings).toBeTypeOf("function");
   });
 
-  it("is registered only where the demo switch is on", () => {
-    expect(registry.get("deneme") !== undefined).toBe(
-      process.env.NEXT_PUBLIC_SHERPA_DEMO_MODULE === "1",
-    );
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    vi.resetModules();
+  });
+
+  it.each([
+    ["1", true],
+    ["", false],
+    ["0", false],
+    ["true", false],
+  ])("is registered only where the demo switch is on (%j)", async (value, expected) => {
+    vi.stubEnv("NEXT_PUBLIC_SHERPA_DEMO_MODULE", value);
+    vi.resetModules();
+    const fresh = await import("@/modules/registry");
+    expect(fresh.DEMO_MODULE_ENABLED).toBe(expected);
+    expect(fresh.registry.get("deneme") !== undefined).toBe(expected);
   });
 });
 
@@ -112,16 +124,22 @@ describe("module boundaries", () => {
       "sessions",
       "days",
       "week_plans",
+      "horizon_reviews",
+      "life_mode_periods",
       "inbox_entries",
       "prompts",
       "events",
+      "weekly_reviews",
+      "planner_stats",
       "settings",
     ];
     for (const folder of folders) {
       for (const file of sourceFiles(path.join(modulesRoot, folder))) {
         const source = readFileSync(file, "utf8");
         for (const table of coreTables) {
-          expect(source.includes(`.from("${table}")`), `${file} touches ${table}`).toBe(false);
+          // .from("table"), with any quote and any spacing or line break after the bracket.
+          const reached = new RegExp("\\.from\\(\\s*[\"'`]" + table + "[\"'`]").test(source);
+          expect(reached, `${file} touches ${table}`).toBe(false);
         }
       }
     }

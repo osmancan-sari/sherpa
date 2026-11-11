@@ -510,8 +510,14 @@ test("pausing hides the module's work; archiving drops it and keeps the data", a
     () => rows("modules"),
     (list) => list[0].status === "archived",
   );
-  expect((await rows("work_items"))[0].status).toBe("dropped");
+  const [droppedWork] = await rows("work_items");
+  expect(droppedWork.status).toBe("dropped");
   expect(await rows("deneme_items")).toHaveLength(1);
+  // onArchive: the module had its last word.
+  await waitFor(
+    () => rows("modules"),
+    (list) => typeof (list[0].settings as { archived_on?: string }).archived_on === "string",
+  );
 
   await page.goto("/m/deneme");
   await expect(page.getByRole("main")).toContainText("Bu modül arşivde.");
@@ -523,8 +529,13 @@ test("pausing hides the module's work; archiving drops it and keeps the data", a
     () => rows("modules"),
     (list) => list[0].status === "active",
   );
-  // Archiving dropped the work as the user's own act, so it stays dropped.
-  expect((await rows("work_items")).map((work) => work.status)).toEqual(["dropped"]);
+  await waitFor(
+    () => rows("work_items"),
+    (list) => list[0].status === "active",
+  );
+  expect(await rows("work_items")).toHaveLength(1);
+  await page.goto("/m/deneme");
+  await expect(page.getByRole("region", { name: "Yaklaşanlar" })).toContainText("Örnek hedef");
 });
 
 test("a module row without code has a page with the core's defaults", async ({ page }) => {

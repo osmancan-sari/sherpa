@@ -42,13 +42,16 @@
 | Modül sözleşmesine eklenenler (Ç1): `ctx.ask`, `ctx.work`, `ctx.saveSettings`, `ctx.module`, `blocks` (yapılı blok kancası), `tables`, `ui.history`, `ModuleUiContext`; `area` nesne oldu; `nowCard` içeriği `detail` ve `links` | Sözleşme dokümanı bu noktaları "…" ile bırakmıştı; çekirdeğin veri katmanı ve `deneme` modülü için gerekli | Bütün modüller |
 | Olaylar yayınlandıkları yerde dağıtılır (ayrı tüketici yok); duraklatılmış modül olay almaz (Ç1) | Tek kullanıcı, tek yazan; kuyruk ve imleç gereksiz karmaşıklık | Modül sözleşmesi |
 | Planlayıcı gelene kadar kalemin oturum işi "Başla" anında üretilir (Ç1) | Kalemler oturumlara haftalık planda bölünür (Ç3); o zamana kadar kalem Bugün listesinden başlatılabilmeli, uzak kalemler de önceden bölünmemeli | Ç3 |
-
 | `deneme` modülü yalnızca `NEXT_PUBLIC_SHERPA_DEMO_MODULE=1` iken kaydolur (Ç1) | Sınama modülü üretim verisiyle hiç karşılaşmasın; yerel geliştirme ve testlerde açık | Yayın ortam değişkenleri (D1) |
 | Tam ekran görünümler ayrı bir rota grubunda (`(tam)`), uygulama kabuğu olmadan çizilir (Ç1) | Kabuğu koşulla gizlemek yerine hiç çizmemek; aynı veri ve oturum sağlayıcıları | Modül arayüzü |
 | Modül sayfasının "Yaklaşanlar" bölgesi elle düzenlemenin yeridir: iş, kalem ve ritim burada düzenlenir, bırakılır, durdurulur; elle ritim buradan eklenir (Ç1) | Bugün ekranı seyrek kalsın; düzenleme modülün bütün resminin durduğu yerde yapılsın | Arayüz |
 | Bir günün blokları o güne değen bütün bloklardır; gece yarısını aşan blok iki güne de aittir (Ç1) | Gece vardiyası ertesi sabahın şeridinde de görünmeli | Bugün ekranı, Ç3 yuva hesabı |
 | Oturum işi kalemin `source_type` ve `source_id` değerlerini taşır (Ç1) | Modül kendi işini şimdi kartında tanıyıp içerik verebilsin (`nowCard`) | Modül sözleşmesi |
 | Gelen kutusunda 90 dakikayı aşan giriş iş kalemi olarak kaydedilir (Ç1) | Hızlı girişteki kuralın aynısı: uzun iş tek oturuma sığmaz | Gelen kutusu |
+| Arşiv, modülün teklif ettiği kayıtlara geri çekme işaretini bırakır; yeniden etkinleştirilen modül aynı `key` ile teklif edince kayıt geri gelir (Ç1) | Modülü yeniden açan kullanıcı açık kayıtlarının işlerini geri ister; elle eklenen ve kullanıcının kendi kapattığı işler geri gelmez | Modül sözleşmesi, `archive_module` |
+| Modül sayfasında açık oturum işi olan kalem tek satırdır: kalem görünür, oturum işi ayrıca listelenmez (Ç1) | Kalemin düzenleme, bitirme ve bırakma eylemleri her zaman erişilebilir olsun; "Başla" açık oturum işini sürdürür | Arayüz |
+| Başarısız okuma istemcide ikinci kez yeniden denenmez (Ç1) | Supabase istemcisi okumayı kendisi 3 kez dener (1, 2, 4 sn); üstüne deneme "Veri okunamadı" bildirimini 15 saniyeye geciktiriyordu | İstemci verisi |
+| `deneme_items` tablosu üretim veritabanında da açılır; `deneme` kodu pakette bulunur ama `NEXT_PUBLIC_SHERPA_DEMO_MODULE` verilmediği için kaydolmaz (Ç1) | Migration zinciri ortamlar arasında aynı kalsın; boş bir tablo zararsız. İstenirse modül hattı başlarken ayrı bir karar ile kaldırılır | D1 |
 
 ## Açık sorular
 

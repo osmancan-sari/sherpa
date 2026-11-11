@@ -96,3 +96,49 @@ test("without a module an entry cannot become a task, and the screen says where 
   );
   await expect(entry.getByRole("button", { name: "Kaydet" })).toBeDisabled();
 });
+
+test("an entry longer than one sitting is saved as a work item", async ({ page }) => {
+  const mod = await seedModule();
+  await insert("inbox_entries", { raw_text: "tez bölümü 3s" });
+
+  await page.goto("/gelen");
+  const entry = page.getByRole("listitem").filter({ hasText: "tez bölümü 3s" });
+  await entry.getByRole("button", { name: "İşe çevir" }).click();
+  await expect(entry.getByLabel("Süre (dk)")).toHaveValue("180");
+  // Longer than 90 minutes: the screen says what will happen instead of refusing.
+  await expect(entry.getByRole("note")).toContainText("90 dakikadan uzun iş tek oturuma sığmaz");
+  await entry.getByRole("button", { name: "İş kalemi olarak kaydet" }).click();
+
+  await expect(page.getByText("Gelen kutusu boş.")).toBeVisible();
+  const [item] = await waitFor(
+    () => rows("work_items"),
+    (list) => list.length === 1,
+  );
+  expect(item).toMatchObject({
+    title: "tez bölümü",
+    module_id: mod.id,
+    effort_total_minutes: 180,
+    status: "active",
+  });
+  expect(await rows("tasks")).toHaveLength(0);
+  const [routed] = await waitFor(
+    () => rows("inbox_entries"),
+    (list) => list[0].status === "routed",
+  );
+  expect(routed.routed).toEqual([{ type: "work_item", id: item.id, module: mod.slug }]);
+});
+
+test("when the entries cannot be read the screen says so and offers to try again", async ({
+  page,
+}) => {
+  await insert("inbox_entries", { raw_text: "okunamayan giriş" });
+  await page.route("**/rest/v1/inbox_entries*", (route) => route.abort());
+  await page.goto("/gelen");
+  const failed = page.getByRole("alert").filter({ hasText: "Veri okunamadı." });
+  await expect(failed).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByText("Gelen kutusu boş.")).toHaveCount(0);
+
+  await page.unroute("**/rest/v1/inbox_entries*");
+  await failed.getByRole("button", { name: "Yeniden dene" }).click();
+  await expect(page.getByRole("listitem").filter({ hasText: "okunamayan giriş" })).toBeVisible();
+});

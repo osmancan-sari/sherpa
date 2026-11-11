@@ -85,6 +85,92 @@ test("a task is edited, put on hold and given up from its module's page", async 
   expect(dropped.title).toBe("Rapor yaz (son hali)");
 });
 
+test("a length that is not a multiple of five does not stand in the way of a save", async ({
+  page,
+}) => {
+  // Such lengths are real: a sitting gets what is left of its item, and "12dk" can be typed.
+  const mod = await seedModule();
+  await insert("tasks", { module_id: mod.id, title: "Fatura", est_minutes: 12 });
+  await page.goto(`/m/${mod.slug}`);
+  const dialog = await openEditor(page, "Düzenle: Fatura", "İşi düzenle");
+  await expect(dialog.getByLabel("Süre (dk)")).toHaveValue("12");
+  await dialog.getByLabel("Ad", { exact: true }).fill("Fatura öde");
+  await dialog.getByRole("button", { name: "Kaydet" }).click();
+  await expect(dialog).toBeHidden();
+  const [task] = await waitFor(
+    () => rows("tasks"),
+    (list) => list[0].title === "Fatura öde",
+  );
+  expect(task.est_minutes).toBe(12);
+
+  // The same in quick add: one sentence with an odd length.
+  await page.keyboard.press("n");
+  const quick = page.getByRole("dialog", { name: "Yeni giriş" });
+  await quick.getByLabel("Giriş", { exact: true }).fill("Kargo 37dk");
+  await page.keyboard.press("Tab");
+  await page.keyboard.press("Enter");
+  await expect(quick).toBeHidden();
+  const tasks = await waitFor(
+    () => rows("tasks"),
+    (list) => list.length === 2,
+  );
+  expect(tasks[1]).toMatchObject({ title: "Kargo", est_minutes: 37 });
+});
+
+test("a work item with an open sitting is still edited and closed from its own row", async ({
+  page,
+}) => {
+  const mod = await seedModule();
+  const [item] = await insert("work_items", {
+    module_id: mod.id,
+    title: "Bitirme raporu",
+    effort_total_minutes: 240,
+  });
+  await page.goto(`/m/${mod.slug}`);
+  const upcoming = page.getByRole("region", { name: "Yaklaşanlar" });
+  await upcoming.getByRole("button", { name: "Başla: Bitirme raporu" }).click();
+  const [sitting] = await waitFor(
+    () => rows("tasks"),
+    (list) => list.length === 1,
+  );
+  expect(sitting.work_item_id).toBe(item.id);
+
+  // The sitting is stopped without finishing; it stays open, and the item keeps its one row.
+  await page.goto("/");
+  await page.getByRole("region", { name: "Şimdi" }).getByRole("button", { name: "Durdur" }).click();
+  await waitFor(
+    () => rows("sessions"),
+    (list) => list[0].ended_at !== null,
+  );
+  await page.goto(`/m/${mod.slug}`);
+  await expect(upcoming.getByRole("listitem")).toHaveCount(1);
+
+  const dialog = await openEditor(page, "Düzenle: Bitirme raporu", "İş kalemini düzenle");
+  await dialog.getByLabel("Toplam efor (dk) (isteğe bağlı)").fill("300");
+  await dialog.getByRole("button", { name: "Kaydet" }).click();
+  await waitFor(
+    () => rows("work_items"),
+    (list) => list[0].effort_total_minutes === 300,
+  );
+
+  // Starting from the item's row goes on with the open sitting instead of adding another.
+  await upcoming.getByRole("button", { name: "Başla: Bitirme raporu" }).click();
+  const sessions = await waitFor(
+    () => rows("sessions"),
+    (list) => list.length === 2,
+  );
+  expect(sessions[1].task_id).toBe(sitting.id);
+  expect(await rows("tasks")).toHaveLength(1);
+
+  await upcoming.getByRole("button", { name: "Kalemi bırak: Bitirme raporu" }).click();
+  await expect(upcoming).toContainText("Bu modülde sırada iş yok.");
+  await waitFor(
+    () => rows("work_items"),
+    (list) => list[0].status === "dropped",
+  );
+  expect((await rows("tasks"))[0].status).toBe("dropped");
+});
+
 test("what the user changes on a proposed work item survives the module's next proposal", async ({
   page,
 }) => {

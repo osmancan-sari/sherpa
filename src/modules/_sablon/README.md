@@ -34,6 +34,7 @@ Buraya kadar çekirdekte tek satır değişmez; değişen dosyalar yalnızca `sr
 | Giriş türü | `module.ts` → `intake`: alanlar ve `handle`; hızlı girişte kendiliğinden görünür |
 | Olay | `emits` içinde bildir, `ctx.emit` ile yayınla; dinlemek için `rules.ts` → `listeners` |
 | Sekme, alt sayfa, tam ekran, hızlı eylem, ayar formu | `module.ts` → `ui`; bileşenler `components/` altında, `useModule()` ile bağlama ulaşır |
+| Çekirdekten içe aktarılabilenler | `docs/06-modul-sozlesmesi.md`, "Modül çekirdekten neyi içe aktarabilir": `useModule()`, `useModuleQuery`, `useRefreshAll`, `useNotify`. Bağlam üzerinden yazdıktan sonra `refreshAll()` çağır |
 | Ortak bileşenler | `@/core/ui/kit`: tablo, grafikler, ızgara, zaman çizelgesi, adımlayıcı, çipler, zamanlayıcı, boş ve hata durumları |
 
 Her bağlantı noktasının çalışan bir örneği `src/modules/deneme` içindedir.
