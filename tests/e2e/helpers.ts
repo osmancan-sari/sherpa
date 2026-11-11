@@ -68,5 +68,5 @@ export async function signIn(page: Page, email = ALLOWED_EMAIL): Promise<void> {
   const code = await requestCode(page, email);
   await page.getByLabel("Giriş kodu").fill(code);
   await page.getByRole("button", { name: "Giriş yap" }).click();
-  await expect(page.getByRole("heading", { name: "Bugün" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Bugün", exact: true })).toBeVisible();
 }

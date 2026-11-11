@@ -829,6 +829,7 @@ export type Database = {
       };
       sessions: {
         Row: {
+          confirmed_at: string | null;
           created_at: string;
           ended_at: string | null;
           id: string;
@@ -843,6 +844,7 @@ export type Database = {
         };
         ComputedFields: never;
         Insert: {
+          confirmed_at?: string | null;
           created_at?: string;
           ended_at?: string | null;
           id?: string;
@@ -856,6 +858,7 @@ export type Database = {
           user_id?: string;
         };
         Update: {
+          confirmed_at?: string | null;
           created_at?: string;
           ended_at?: string | null;
           id?: string;
@@ -1274,6 +1277,29 @@ export type Database = {
           isSetofReturn: false;
         };
       };
+      close_unanswered_session: {
+        Args: { p_session_id: string };
+        Returns: {
+          confirmed_at: string | null;
+          created_at: string;
+          ended_at: string | null;
+          id: string;
+          measured: boolean;
+          module_id: string | null;
+          rhythm_id: string | null;
+          started_at: string;
+          task_id: string | null;
+          title: string | null;
+          updated_at: string;
+          user_id: string;
+        };
+        SetofOptions: {
+          from: "*";
+          to: "sessions";
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
       complete_task: {
         Args: { p_task_id: string };
         Returns: {
@@ -1312,6 +1338,7 @@ export type Database = {
       end_session: {
         Args: { p_outcome?: string; p_session_id: string };
         Returns: {
+          confirmed_at: string | null;
           created_at: string;
           ended_at: string | null;
           id: string;
@@ -1341,6 +1368,7 @@ export type Database = {
           p_work_item_id?: string;
         };
         Returns: {
+          confirmed_at: string | null;
           created_at: string;
           ended_at: string | null;
           id: string;

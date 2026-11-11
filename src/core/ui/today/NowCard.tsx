@@ -14,13 +14,14 @@ import {
 import type { KnownModule } from "@/core/app/hooks";
 import {
   useAnswerFollowUp,
+  useConfirmSession,
   useDefer,
   useSmallerStep,
   useStopForStuck,
   useWaitOn,
 } from "@/core/app/plan-actions";
 import type { NowCardContent } from "@/core/contract/types";
-import type { Assignment, Candidate, NowState } from "@/core/planner";
+import { type Assignment, type Candidate, type NowState, overrun } from "@/core/planner";
 import { elapsedMinutes } from "@/core/today/select";
 import type { Session, Task } from "@/core/types";
 import { formatMinutes, formatTime } from "@/lib/date";
@@ -33,9 +34,6 @@ export function sessionTargetOf(candidate: Pick<Candidate, "type" | "id">) {
   if (candidate.type === "item") return { workItemId: candidate.id };
   return { rhythmId: candidate.id };
 }
-
-/** A running session asks whether it still goes on after twice its estimate. */
-export const OVERRUN_FACTOR = 2;
 
 type Props = {
   state: NowState;
@@ -64,7 +62,23 @@ const TITLE = "text-3xl leading-tight font-semibold tracking-tight md:text-5xl";
 const BIG = "h-12 px-6 text-base";
 const SECOND = "h-12 px-5 text-base";
 
-export function NowCard({ state, now, date, modules, tomorrowFirst, onShowRest }: Props) {
+export function NowCard(props: Props) {
+  // "Takıldım" closes the session, so the plan's state moves on; the three ways on stay on the
+  // card until one is chosen.
+  const [stuck, setStuck] = useState<Task | null>(null);
+  if (stuck) return <Stuck task={stuck} date={props.date} onDone={() => setStuck(null)} />;
+  return <CardFor {...props} onStuck={setStuck} />;
+}
+
+function CardFor({
+  state,
+  now,
+  date,
+  modules,
+  tomorrowFirst,
+  onShowRest,
+  onStuck,
+}: Props & { onStuck: (task: Task) => void }) {
   if (state.kind === "running") {
     return (
       <Running
@@ -74,6 +88,7 @@ export function NowCard({ state, now, date, modules, tomorrowFirst, onShowRest }
         now={now}
         date={date}
         modules={modules}
+        onStuck={onStuck}
       />
     );
   }
@@ -308,6 +323,7 @@ function Running({
   now,
   date,
   modules,
+  onStuck,
 }: {
   session: Session;
   task: Task | null;
@@ -315,12 +331,12 @@ function Running({
   now: Date;
   date: string;
   modules: Map<string, KnownModule>;
+  onStuck: (task: Task) => void;
 }) {
   const end = useEndSession();
   const defer = useDefer();
   const stop = useStopForStuck();
-  const [stuck, setStuck] = useState(false);
-  const [continued, setContinued] = useState(false);
+  const confirm = useConfirmSession();
   const mod = session.module_id ? modules.get(session.module_id) : undefined;
   const title = task?.title ?? rhythm?.title ?? session.title ?? "Oturum";
   const estimate = task?.est_minutes ?? rhythm?.est_minutes ?? null;
@@ -328,9 +344,7 @@ function Running({
   const extra: NowCardContent | null = task ? (mod?.definition?.nowCard?.(task) ?? null) : null;
   // A session that has not reached the server yet has no id to end.
   const pending = session.id === "pending";
-  const overrun = estimate !== null && elapsed > estimate * OVERRUN_FACTOR && !continued;
-
-  if (stuck && task) return <Stuck task={task} date={date} onDone={() => setStuck(false)} />;
+  const asking = overrun(session, estimate, now) !== "none" && !pending;
 
   const asCandidate: Candidate | null = task
     ? ({ type: "task", id: task.id, task } as Candidate)
@@ -365,7 +379,7 @@ function Running({
             />
           </div>
         ) : null}
-        {overrun ? (
+        {asking ? (
           <p role="status" className="md:text-lg">
             Devam ediyor musun?
           </p>
@@ -379,8 +393,8 @@ function Running({
         >
           Bitti
         </Button>
-        {overrun ? (
-          <Button variant="outline" className={SECOND} onClick={() => setContinued(true)}>
+        {asking ? (
+          <Button variant="outline" className={SECOND} onClick={() => confirm.mutate(session)}>
             Devam ediyorum
           </Button>
         ) : null}
@@ -401,7 +415,7 @@ function Running({
             disabled={pending}
             onClick={() => {
               stop.mutate(session);
-              setStuck(true);
+              onStuck(task);
             }}
           >
             Takıldım

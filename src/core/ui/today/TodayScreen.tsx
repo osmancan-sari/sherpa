@@ -130,8 +130,10 @@ function TodayBody() {
         : null;
   const assignments = plan.slots.flatMap((slot) => (slot.assignment ? [slot.assignment] : []));
   const ahead = assignments.filter((row) => row.candidate.id !== currentId);
-  const upNext = state.kind === "return" ? [] : ahead.slice(0, 3);
-  const rest = [...ahead.slice(3).map((row) => row.candidate), ...plan.overflow];
+  // When the day is done, what is still planned waits behind "Vakit kalırsa" with the rest.
+  const finished = state.kind === "done";
+  const upNext = state.kind === "return" || finished ? [] : ahead.slice(0, 3);
+  const rest = [...ahead.slice(finished ? 0 : 3).map((row) => row.candidate), ...plan.overflow];
   const doneToday = input.tasks.filter(
     (task) =>
       task.status === "done" && task.done_at && dayKey(new Date(task.done_at)) === input.date,

@@ -171,6 +171,7 @@ export function useStartSession() {
         started_at: now,
         ended_at: null,
         measured: true,
+        confirmed_at: null,
         created_at: now,
         updated_at: now,
       };

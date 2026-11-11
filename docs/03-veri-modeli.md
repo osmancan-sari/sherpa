@@ -203,6 +203,7 @@ title text null               -- plansız iş için ("Başka bir şey yapıyorum
 started_at timestamptz
 ended_at timestamptz null
 measured boolean default true -- false ise öğrenmeye girmez
+confirmed_at timestamptz null -- "Devam ediyor musun?" sorusuna "devam" denen an
 ```
 Aynı anda en fazla bir açık oturum olur (tekil indeks). Oturumlar üç veritabanı fonksiyonuyla yürür, hepsi çağıranın yetkisiyle: `start_session` (iş, kalem, ritim ya da yalnızca başlıkla plansız iş; açık oturum varsa önce onu durdurur), `end_session` (`done`: iş biter ya da ritim kaydı düşer; `stopped`: iş havuza döner; iki durumda da süre kalemin `effort_done_minutes` değerine eklenir), `complete_task` (tek dokunuşla bitirme).
 

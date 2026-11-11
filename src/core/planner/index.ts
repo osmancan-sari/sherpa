@@ -31,5 +31,7 @@ export {
 } from "./week";
 export type { WeekAdvice, WeekInput, WeekLoad, WeekPlan, LoadInput, RecommitReason } from "./week";
 export { capacityFactors, estimateMultipliers } from "./learn";
+export { ANSWER_MINUTES, OVERRUN_FACTOR, overrun } from "./overrun";
+export type { Overrun } from "./overrun";
 export { planInput, tomorrowInput, lifeModeOn, readShares, storedPlan } from "./input";
 export type { PlanRows, StoredDayPlan } from "./input";

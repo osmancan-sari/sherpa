@@ -139,3 +139,24 @@ test("a change made outside the app reaches an open screen too", async ({ page }
   });
   expect(navigations()).toBe(0);
 });
+
+test("a fixed block added elsewhere re-plans the open screen at once (Ç3)", async ({ page }) => {
+  const mod = await seedModule();
+  await insert("tasks", { module_id: mod.id, title: "Rapor yazımı", est_minutes: 45 });
+  await page.goto("/");
+  const now = page.getByRole("region", { name: "Şimdi" });
+  await expect(now.getByRole("heading")).toHaveText("Rapor yazımı");
+  const navigations = forbidReloads(page);
+
+  // A meeting that started five minutes ago, added on another device.
+  await insert("blocks", {
+    title: "Acil toplantı",
+    starts_at: new Date(Date.now() - 5 * 60_000).toISOString(),
+    ends_at: new Date(Date.now() + 60 * 60_000).toISOString(),
+  });
+  await expect(now).toContainText("Sabit blok", { timeout: 3000 });
+  await expect(now.getByRole("heading")).toHaveText("Acil toplantı");
+  // The work is still on the day, after the block (or, late at night, for if there is time).
+  await expect(page.getByRole("main")).toContainText("Rapor yazımı");
+  expect(navigations()).toBe(0);
+});

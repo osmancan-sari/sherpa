@@ -7,7 +7,7 @@ import {
   skipToday,
   waitOnTask,
 } from "@/core/data/planning";
-import { endSession } from "@/core/data/sessions";
+import { confirmSession, endSession } from "@/core/data/sessions";
 import { createTask } from "@/core/data/work";
 import { buildPlan, type Candidate, isFinished, type PlanInput } from "@/core/planner";
 import type { Session, Task } from "@/core/types";
@@ -55,6 +55,21 @@ export function useDefer() {
           ]
         : []),
       ...(session ? [{ key: keys.openSession, update: () => null }] : []),
+    ],
+    onError,
+  });
+}
+
+/** "Devam ediyorum": the question goes away, on every screen. */
+export function useConfirmSession() {
+  const onError = useFailureNotice();
+  return useCoreMutation({
+    mutate: (db, session: Session) => confirmSession(db, session.id, new Date()),
+    optimistic: (session) => [
+      {
+        key: keys.openSession,
+        update: () => ({ ...session, confirmed_at: new Date().toISOString() }),
+      },
     ],
     onError,
   });

@@ -4,7 +4,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef } from "react";
 import { keepWeek, storedWeek, weekInput } from "@/core/data/keep";
 import { clearPastPlannedDays, planDay, touchDay } from "@/core/data/planning";
-import { buildPlan, isReturning } from "@/core/planner";
+import { closeUnanswered } from "@/core/data/sessions";
+import { buildPlan, isReturning, overrun } from "@/core/planner";
 import { weekAction } from "@/core/planner/week";
 import { CORE, MODULE, useDb } from "./CoreProvider";
 import { useTodayPlan } from "./hooks";
@@ -29,14 +30,23 @@ export function PlanKeeper() {
     );
     const day = rows.days.find((row) => row.date === input.date) ?? null;
     const needsPlan = !day?.plan_source;
-    if (!action && !needsPlan) return;
+    // A session nobody answered for is closed at its estimate, unmeasured.
+    const open = rows.openSession;
+    const task = open ? rows.tasks.find((row) => row.id === open.task_id) : undefined;
+    const rhythm = open ? rows.rhythms.find((row) => row.id === open.rhythm_id) : undefined;
+    const unanswered =
+      open && open.id !== "pending"
+        ? overrun(open, task?.est_minutes ?? rhythm?.est_minutes ?? null, now) === "close"
+        : false;
+    if (!action && !needsPlan && !unanswered) return;
 
     busy.current = true;
     void (async () => {
       try {
         // The week first; the day is planned once the sittings it made have been read back.
         // keepWeek reads the rows again itself: this screen's may be older than its own write.
-        if (action) await keepWeek(db, now);
+        if (unanswered && open) await closeUnanswered(db, open.id);
+        else if (action) await keepWeek(db, now);
         else {
           // Back after days away: what was planned for the days missed is spread again.
           if (isReturning(input)) await clearPastPlannedDays(db, input.date);

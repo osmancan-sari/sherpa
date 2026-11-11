@@ -45,7 +45,7 @@ test("the allowed e-mail signs in with the code, stays signed in, and can sign o
   await page.getByRole("button", { name: "Giriş yap" }).click();
 
   await expect(page).toHaveURL(/\/$/);
-  await expect(page.getByRole("heading", { name: "Bugün" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Bugün", exact: true })).toBeVisible();
 
   // The API now answers, and only with this user's own address.
   const me = await page.request.get("/api/me");
@@ -62,7 +62,7 @@ test("the allowed e-mail signs in with the code, stays signed in, and can sign o
 
   // A reload and a second window are still signed in; the login page sends you back in.
   await page.reload();
-  await expect(page.getByRole("heading", { name: "Bugün" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Bugün", exact: true })).toBeVisible();
   const second = await context.newPage();
   await second.goto("/giris");
   await expect(second).toHaveURL(/\/$/);
@@ -100,7 +100,7 @@ test("the code step survives a reload, as when the phone app comes back from the
   // The code sent before the reloads is the one that signs in.
   await page.getByLabel("Giriş kodu").fill(code);
   await page.getByRole("button", { name: "Giriş yap" }).click();
-  await expect(page.getByRole("heading", { name: "Bugün" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Bugün", exact: true })).toBeVisible();
 
   // Once signed in, nothing of the login step is left on the device.
   await page.goto("/ayarlar");

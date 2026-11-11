@@ -14,6 +14,7 @@ import {
   touchDay,
   waitOnTask,
 } from "@/core/data/planning";
+import { closeUnanswered, confirmSession, startSession } from "@/core/data/sessions";
 import { createTask, createWorkItem } from "@/core/data/work";
 import { buildPlan, planInput, storedPlan, tomorrowInput } from "@/core/planner";
 import { dayKey, istanbulInstant, shiftDay, weekStart } from "@/lib/date";
@@ -387,5 +388,49 @@ describe("life modes", () => {
     expect((await listLifeModes(db)).map((row) => [row.mode, row.starts_on, row.ends_on])).toEqual([
       ["busy", "2026-11-23", "2026-11-29"],
     ]);
+  });
+});
+
+describe("a session nobody answered for", () => {
+  it("is closed at its estimate, unmeasured; the task goes back, the item counts the estimate", async () => {
+    const mod = await makeModule(db);
+    const item = await createWorkItem(db, {
+      module_id: mod.id,
+      title: "Tez",
+      effort_total_minutes: 300,
+    });
+    const sitting = await createTask(db, {
+      module_id: mod.id,
+      title: "Tez",
+      work_item_id: item.id,
+      est_minutes: 40,
+    });
+    const session = await startSession(db, { taskId: sitting.id });
+    const start = new Date(Date.now() - 3 * 60 * 60_000);
+    await db.from("sessions").update({ started_at: start.toISOString() }).eq("id", session.id);
+    const closed = await closeUnanswered(db, session.id);
+    expect(closed.measured).toBe(false);
+    expect(Date.parse(closed.ended_at!) - start.getTime()).toBe(40 * 60_000);
+    expect(ok(await db.from("tasks").select("status").eq("id", sitting.id).single())).toEqual({
+      status: "todo",
+    });
+    expect(
+      ok(await db.from("work_items").select("effort_done_minutes").eq("id", item.id).single()),
+    ).toEqual({
+      effort_done_minutes: 40,
+    });
+    // Closing it again changes nothing.
+    expect((await closeUnanswered(db, session.id)).ended_at).toBe(closed.ended_at);
+  });
+
+  it("keeps 'devam' on the session for every screen", async () => {
+    const mod = await makeModule(db);
+    const task = await createTask(db, { module_id: mod.id, title: "Okuma" });
+    const session = await startSession(db, { taskId: task.id });
+    await confirmSession(db, session.id, NOW);
+    expect(
+      ok(await db.from("sessions").select("confirmed_at").eq("id", session.id).single())
+        .confirmed_at,
+    ).not.toBeNull();
   });
 });

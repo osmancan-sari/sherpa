@@ -54,6 +54,21 @@ export async function stopSessionsOnItem(db: Db, workItemId: string): Promise<vo
   if (task.work_item_id === workItemId) await endSession(db, open.id, "stopped");
 }
 
+/** "Devam ediyorum": the session runs past its time on purpose; asked again one estimate on. */
+export async function confirmSession(db: Db, sessionId: string, now: Date): Promise<void> {
+  const { error } = await db
+    .from("sessions")
+    .update({ confirmed_at: now.toISOString() })
+    .eq("id", sessionId)
+    .is("ended_at", null);
+  if (error) throw new Error(error.message);
+}
+
+/** Nobody answered "Devam ediyor musun?": closed at its estimate, unmeasured. */
+export async function closeUnanswered(db: Db, sessionId: string): Promise<Session> {
+  return unwrap(await db.rpc("close_unanswered_session", { p_session_id: sessionId }));
+}
+
 /** Bitti ("done") or stop without finishing ("stopped"). */
 export async function endSession(
   db: Db,

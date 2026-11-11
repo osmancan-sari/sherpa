@@ -81,7 +81,19 @@ Geniş ekranda tek sayfa, kaydırma yok:
 - **Durdur** (çalışan kartta): oturumu işi bitirmeden kapatır; geçen süre sayılır, iş havuza döner. Yanlışlıkla başlatılan iş için.
 - **Bugün bitenler:** ekranın altında bugün biten işlerin sayısı ve listesi; her satırda **Geri al** (yanlışlıkla bitirilen iş havuza döner).
 
-Ç3'te kart `plan.now` durumlarına göre yeniden kurulurken bu üçünün kalıp kalmayacağına bakılır.
+Ç3'te kart `plan.now` durumlarına göre yeniden kuruldu; **Durdur** (çalışan kartta) ve **Bugün bitenler** kaldı, ikisi de yanlış dokunuşun geri alınması için. Ç3'te kartın eklentileri:
+
+- **Devam ediyor musun?** Oturum tahminin iki katını geçince kart sorar; "Devam ediyorum" cevabı oturumda saklanır (`sessions.confirmed_at`, her ekran bilir) ve soru bir tahmin süresi sonra yeniden gelir. 30 dakika cevap gelmezse oturum tahmini sürede bitmiş sayılarak kapatılır, ölçülmez (`close_unanswered_session`).
+- **Takıldım → Adımı küçült** aynı modülde (kalemin oturumuysa aynı kalemde) bugüne 15 dakikalık bir iş açar; **Birini bekliyorum** işi (oturumsa kalemiyle birlikte) bekletir, takip üç gün sonra gelir; **Bugün değil** ertelemedir.
+- **Takip** günü gelen bekleyen iş kartta "… bekleniyor. Takip et." olarak çıkar: Cevap geldi, Hâlâ bekliyor.
+- **Sıradakiler** sonraki üç atamadır; kalanı ve sığmayanlar "Vakit kalırsa" altında kapalı durur. Gün tamamlanınca planda kalanlar da oraya geçer.
+- **Gece** büyük saat ve "Yarın ilk iş: …"; **geri dönüş** "Kaldığın yerden devam", günün üç işi ve Başla; sıradakiler ve uyarılar gösterilmez.
+- Alt satırda **X dk'm var** (`X`) ve **Yeniden planla** (`R`); Yeniden planla günün üç işinin bitmiş olanlarını tutar, kalanını yeniden seçer (yapay zeka açıkken 7. adımda `replan`).
+- **TopBar:** tarih ve saat, "Bugün n/3", bitiş çizgisi, hayat modu (Hafta'ya bağlantı), telefonda bağlam seçici (cihazda saklanır).
+- **DayStrip:** günün başından bitiş çizgisine şerit; sabit bloklar gri, atanan işler modül rengiyle, şimdiki an çizgisi. Telefonda yana kayar.
+- **AlertBar:** en çok iki uyarı; son tarih ve taban uyarısında "Haftaya bak", öbürlerinde "Modüle git".
+
+**Görüşün gerek:** Durdur ve Bugün bitenler'in kalması; 30 dakikalık cevap süresi; uyarı eylemlerinin bağlantı olması; bağlam seçicinin gün değişince sorulmaması (yalnızca seçilir).
 
 ### Klavye (ikinci ekran)
 
