@@ -10,6 +10,7 @@
 #   - a phase is still unfinished after -MaxAttempts sessions.
 # Only one copy may run at a time (logs/runner.pid).
 #
+# When the usage limit is hit, it waits until the limit resets; those sessions do not count as attempts.
 # A phase is "done" only when its tag exists. An unfinished phase is continued in a new session.
 # After a session sets the tag, this script runs "npm run check:full" itself. If that fails,
 # the tag is removed and the next session is told to fix it first.
@@ -73,6 +74,28 @@ function Test-Tag([string]$name) {
   return [bool](git tag --list $name)
 }
 
+# If the session log says the usage limit was hit, returns the minutes to wait until it resets. Otherwise 0.
+function Get-LimitWaitMinutes([string]$logPath) {
+  if (-not (Test-Path $logPath)) { return 0 }
+  $text = (Get-Content $logPath -ErrorAction SilentlyContinue | Out-String)
+  # The limit message is a single short line; a normal session report is much longer.
+  if ($text.Length -gt 1500) { return 0 }
+  if ($text -notmatch 'limit') { return 0 }
+  if ($text -match 'resets\s+(\d{1,2})(?::(\d{2}))?\s*(am|pm)') {
+    $hour = [int]$Matches[1] % 12
+    if ($Matches[3] -eq 'pm') { $hour += 12 }
+    $minute = 0
+    if ($Matches[2]) { $minute = [int]$Matches[2] }
+    $reset = (Get-Date).Date.AddHours($hour).AddMinutes($minute)
+    if ($reset -lt (Get-Date)) { $reset = $reset.AddDays(1) }
+    $wait = [int][math]::Ceiling(($reset - (Get-Date)).TotalMinutes) + 3
+    if ($wait -gt 330) { $wait = 330 }
+    return $wait
+  }
+  if ($text -match 'usage limit|hit your') { return 30 }
+  return 0
+}
+
 function Get-Stamp {
   return (Get-Date -Format 'yyyyMMdd-HHmmss')
 }
@@ -92,6 +115,7 @@ function Test-Gate([string]$gateLog) {
 foreach ($phase in $phases) {
   $tag = "$phase-tamam"
   $attempt = 0
+  $limitWaits = 0
   $note = ''
 
   while ($true) {
@@ -123,8 +147,24 @@ foreach ($phase in $phases) {
     $note = ''
     $minutes = ((Get-Date) - $started).TotalMinutes
 
-    # A session that ends within a few minutes without finishing usually means a usage limit or a startup error.
-    if (-not (Test-Tag $tag) -and $minutes -lt 5) {
+    if (Test-Tag $tag) { continue }
+
+    # Usage limit: wait for the reset. A session that ended on the limit does not count as an attempt.
+    $limitWait = Get-LimitWaitMinutes $log
+    if ($limitWait -gt 0) {
+      $limitWaits++
+      if ($limitWaits -gt 12) {
+        Write-Host 'Stopped: the usage limit was hit 12 times in this phase.'
+        exit 1
+      }
+      $attempt--
+      Write-Host "[$(Get-Date -Format 'HH:mm')] Usage limit. Waiting $limitWait min for the reset, then continuing."
+      Start-Sleep -Seconds ($limitWait * 60)
+      continue
+    }
+
+    # Any other session that ends within a few minutes without finishing: probably a startup error.
+    if ($minutes -lt 5) {
       Write-Host "Session ended after $([int]$minutes) min without finishing the phase. Waiting $RetryWaitMinutes min before the next try."
       Start-Sleep -Seconds ($RetryWaitMinutes * 60)
     }
