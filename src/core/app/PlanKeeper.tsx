@@ -88,17 +88,23 @@ export function PlanKeeper() {
     // Only what this step wrote is read again: refreshing everything would undo the optimistic
     // change of a touch that is still being written.
     let wrote: string[] = [];
+    // Looked at again at once only when the step changed something; a step that failed or
+    // found nothing to do waits for the next change or tick of the clock.
+    let changed = false;
     void (async () => {
       try {
         if (unanswered && open) {
           wrote = ["sessions", "tasks", "work_items"];
           await closeUnanswered(db, open.id);
+          changed = true;
         } else if (action) {
           // The week first; the day is planned once the sittings it made have been read back.
           // keepWeek reads the rows again itself: this screen's may be older than its own write.
           wrote = ["week_plans", "tasks", "planner_stats"];
-          const viaAi = aiOn && action.kind === "commit" ? await postAi("week", {}) : null;
-          if (!viaAi) await keepWeek(db, now);
+          const viaAi =
+            aiOn && action.kind === "commit" ? await postAi<{ action: unknown }>("week", {}) : null;
+          if (viaAi) changed = viaAi.action !== null;
+          else changed = (await keepWeek(db, now)).action !== null;
         } else if (needsPlan) {
           wrote = ["days"];
           // Back after days away: what was planned for the days missed is spread again.
@@ -107,10 +113,11 @@ export function PlanKeeper() {
             await clearPastPlannedDays(db, input.date);
           }
           await planDay(db, { plan: buildPlan(input), day: input });
+          changed = true;
         } else if (askPlan) {
           wrote = ["days", "tasks"];
           asked.current.add(`plan:${input.date}`);
-          await postAi("plan", { date: input.date });
+          await postAi("plan", { date: input.date, context: input.context });
         } else if (askMonth) {
           wrote = ["horizon_reviews"];
           asked.current.add(`month:${month}`);
@@ -121,7 +128,8 @@ export function PlanKeeper() {
           await postAi("review", {});
         }
       } catch {
-        // The next change or minute tries again; the screens plan live from the data anyway.
+        // The next change or tick of the clock tries again; the screens plan live from the data
+        // anyway.
       } finally {
         // Free again only once the screens hold what was written.
         await Promise.all(
@@ -129,7 +137,7 @@ export function PlanKeeper() {
         );
         if (wrote.includes("tasks")) void queryClient.invalidateQueries({ queryKey: [MODULE] });
         busy.current = false;
-        setRound((value) => value + 1);
+        if (changed) setRound((value) => value + 1);
       }
     })();
   }, [

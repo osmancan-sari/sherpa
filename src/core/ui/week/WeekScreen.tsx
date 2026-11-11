@@ -4,6 +4,7 @@ import { type FormEvent, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   type KnownModule,
+  useAiStatus,
   useHorizonReviews,
   useModules,
   useTodayPlan,
@@ -44,6 +45,7 @@ function WeekBody() {
   const { modules } = useModules();
   const { input, rows, failed, retry, now } = useTodayPlan();
   const recommit = useRecommitWeek();
+  const aiOn = useAiStatus().data?.state === "on";
   const notify = useNotify();
   const moduleMap = useMemo(() => new Map(modules.map((mod) => [mod.row.id, mod])), [modules]);
 
@@ -85,7 +87,10 @@ function WeekBody() {
           className="h-11 md:h-9"
           disabled={recommit.isPending}
           onClick={() =>
-            recommit.mutate(new Date(), { onSuccess: () => notify("Hafta yeniden kuruldu.") })
+            recommit.mutate(
+              { now: new Date(), ai: aiOn },
+              { onSuccess: () => notify("Hafta yeniden kuruldu.") },
+            )
           }
         >
           Haftayı yeniden kur

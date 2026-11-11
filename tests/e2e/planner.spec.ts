@@ -443,3 +443,37 @@ test("the week: the days, the capacity, the week's items, the life mode and the 
   await page.goto("/");
   await expect(page.getByRole("link", { name: "Hayat modu: Yoğun" })).toBeVisible();
 });
+
+test("the week shows the AI's reasons and notes when it has them", async ({ page }) => {
+  const mod = await seedModule();
+  const [item] = await insert("work_items", {
+    module_id: mod.id,
+    title: "Gerekçeli kalem",
+    effort_total_minutes: 90,
+    due_at: at(3 * 24 * 60),
+  });
+  await page.goto("/");
+  const [week] = await waitFor(
+    () => rows("week_plans"),
+    (list) => list.length === 1,
+  );
+  // As the AI's `week` and `review` would leave them.
+  await update("week_plans", week.id as string, {
+    reasons: { [item.id as string]: "Bu hafta teslim." },
+  });
+  await insert("weekly_reviews", {
+    week_start: week.week_start,
+    summary: {
+      summary: "Bu hafta iki modülde çalışıldı.",
+      suggestions: ["Pazartesi erken başla."],
+      mode: null,
+    },
+  });
+  await page.goto("/hafta");
+  await expect(page.getByRole("region", { name: "Haftanın kalemleri" })).toContainText(
+    "Bu hafta teslim.",
+  );
+  const notes = page.getByRole("region", { name: "Yapay zekanın notları" });
+  await expect(notes).toContainText("Bu hafta iki modülde çalışıldı.");
+  await expect(notes).toContainText("Pazartesi erken başla.");
+});

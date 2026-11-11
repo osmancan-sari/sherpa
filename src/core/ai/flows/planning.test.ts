@@ -1,8 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { buildPlan, DEFAULT_SETTINGS, type PlanInput, type PlanRows } from "@/core/planner";
-import { moduleRow, task } from "@/core/testing/factories";
+import {
+  buildPlan,
+  commitWeek,
+  DEFAULT_SETTINGS,
+  type PlanInput,
+  type PlanRows,
+} from "@/core/planner";
+import { moduleRow, rhythm, task, workItem } from "@/core/testing/factories";
 import { istanbulInstant } from "@/lib/date";
-import { adviceOf, MAX_CANDIDATES, planCallInput } from "./planning";
+import { adviceOf, MAX_CANDIDATES, planCallInput, weekCallInput } from "./planning";
 
 // The planning flows' pure parts (src/core/ai/flows/planning.ts).
 
@@ -85,5 +91,39 @@ describe("the AI's answer as advice", () => {
       defer: [],
       reasons: { [known.id]: "En önemlisi." },
     });
+  });
+});
+
+describe("the week call's input", () => {
+  it("gives each module only what its rhythms and floor need as the floor, and the engine's shares", () => {
+    const mod = moduleRow({ kind: "lifelong", weekly_floor_minutes: 120 });
+    const walk = rhythm({ module_id: mod.id, target_count: 2, est_minutes: 30 });
+    const item = workItem({ module_id: mod.id, title: "Proje", effort_total_minutes: 300 });
+    const monday = "2026-11-16";
+    const week = {
+      now: istanbulInstant(monday, "08:00"),
+      weekStart: monday,
+      items: [item],
+      tasks: [],
+      rhythms: [walk],
+      modules: [mod],
+      blocks: [],
+      settings: DEFAULT_SETTINGS,
+      stats: [],
+      lifeMode: "normal" as const,
+    };
+    const base = commitWeek(week);
+    const call = weekCallInput(
+      week,
+      base,
+      rows({ modules: [mod], workItems: [item], rhythms: [walk] }),
+    );
+    // The floor (120) is more than the rhythm (60); the item's share is not part of it.
+    expect(call.fixed_minutes).toEqual([{ module: "Deneme", minutes: 120 }]);
+    expect(call.items).toMatchObject([
+      { id: item.id, module: "Deneme", share_minutes: 45, required: false },
+    ]);
+    expect(call.base).toEqual([item.id]);
+    expect(call.last_week).toBeNull();
   });
 });

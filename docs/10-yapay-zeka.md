@@ -159,6 +159,8 @@ Planlama çağrıları `src/core/ai/calls/planning.ts` (istem ve şema) ve `src/
 
 - Öneri hiçbir koruma kuralını aşamaz: zorunlu işi ertelemek reddedilir ve uyarı olur (`advice_rejected`); kapasiteyi aşan üç iş kırpılır.
 - `plan`'ın `splits` (bölünecek işler) çıktısı kurulmadı: büyük işin bölünmesi `decompose`'un ("Adımlara böl") işi.
+- Kullanıcının notu: `replan`'a not alanı yok ("Yeniden planla" tek dokunuştur); `plan` önceki akşamın kapanış notunu (`days.closing_note`) alır. Kapanışta not alanı yok; not yalnızca veride varsa gider. **Görüşün gerek.**
+- Yapay zeka açıkken "Haftayı yeniden kur" sunucuya gider (`week`, `force`); yanıt yoksa motor kurar. "Yeniden planla" önce motorun planını yazar (sabahın önerisi bırakılır), `replan` üstüne gelir. `review` sunucuda da Cumartesiden önce yapılmaz.
 - Sahte sağlayıcının yanıtları (`fake.ts`): üç iş motorun ilk üç adayı, başlığında `[ai:defer]` olan ertelenir; `week` motorun taahhüdünü gerekçeyle döndürür; `month` sıkışan hafta için Yoğun mod önerir.
 
 ## Plan çağrısının akışı
@@ -166,7 +168,7 @@ Planlama çağrıları `src/core/ai/calls/planning.ts` (istem ve şema) ve `src/
 1. Motor `buildPlan` ile taban planı kurar (yapay zekasız geçerli bir plan).
 2. Sunucu taban planı, aday özetlerini ve bağlamı `plan` çağrısına gönderir.
 3. Yapay zeka düzeltmeleri döndürür: `top3`, `prefer` (öne alınacaklar), `defer` (ertelenecekler ve gerekçesi), `estimates` (süre düzeltmeleri), `splits` (bölünecek işler ve adımları), `warnings`.
-4. Sunucu düzeltmeleri veriye yazar (`planned_date`, `est_minutes`, yeni adım işleri) ve motoru yeniden çalıştırır.
+4. Sunucu öneriyi günün kaydına yazar (`days.plan.advice`: üç iş, öne alınacaklar, ertelenecekler; `planned_date` değişmez), süre düzeltmelerini yalnızca yapay zekanın kendi tahmin ettiği sürelere uygular ve motoru yeniden çalıştırır. Adım işleri (`splits`) yazılmaz ("Akışlar (Ç3)").
 5. Sonuç `days.plan` olur; `plan_source = ai`. Gerekçeler planla birlikte saklanır ve ekranda "neden?" ile açılır.
 6. Herhangi bir adım başarısız olursa 1. adımdaki taban plan geçerlidir (`plan_source = auto`).
 

@@ -159,7 +159,11 @@ export function useSetLifeMode() {
 export function useRecommitWeek() {
   const onError = useFailureNotice();
   return useCoreMutation({
-    mutate: (db, now: Date) => keepWeek(db, now, { force: true }),
+    mutate: async (db, { now, ai }: { now: Date; ai: boolean }) => {
+      // With the AI on, the server commits with its advice; without an answer, the engine here.
+      if (ai && (await postAi("week", { force: true }))) return null;
+      return keepWeek(db, now, { force: true });
+    },
     onError,
   });
 }
@@ -191,12 +195,13 @@ export function useReplan() {
         plan: { ...plan, top3 },
         day: input,
         source: "auto",
-        // The user's own new plan: the morning's AI plan is not asked for again over it.
-        stored: { aiAsked: true },
+        // The user's own new plan: the morning's AI plan is not asked for again over it, and
+        // the morning's advice no longer steers it.
+        stored: { aiAsked: true, advice: null },
       });
       // With the AI on, its `replan` comes on top a few seconds later (through the live
       // connection); nothing is lost if it does not come.
-      if (ai) void postAi("plan", { date: input.date, kind: "replan" });
+      if (ai) void postAi("plan", { date: input.date, kind: "replan", context: input.context });
       return saved;
     },
     onError,

@@ -240,6 +240,41 @@ describe("week", () => {
   });
 });
 
+describe("week, the AI's hours and drops", () => {
+  it("takes the AI's minutes per module by its name, never under the floor, and its reasons", async () => {
+    const mod = await makeModule(db, "spor", "Spor");
+    await db
+      .from("modules")
+      .update({ kind: "lifelong", weekly_floor_minutes: 120 })
+      .eq("id", mod.id);
+    const keep = await createWorkItem(db, {
+      module_id: mod.id,
+      title: "Kalan",
+      effort_total_minutes: 90,
+    });
+    const later = await createWorkItem(db, {
+      module_id: mod.id,
+      title: "Sonraya",
+      effort_total_minutes: 90,
+    });
+    const choosy = fakeProvider({
+      week: () => ({
+        committed: [{ id: keep.id, reason: "Önce bu." }],
+        drop: [{ id: later.id, reason: "Gelecek haftaya kalabilir." }],
+        module_budgets: [{ module: "Spor", minutes: 30 }],
+      }),
+    });
+    const result = await weekFlow(deps(choosy), NOW, false);
+    expect(result.plan).toMatchObject({
+      committed: [keep.id],
+      plan_source: "ai",
+      reasons: { [keep.id]: "Önce bu.", [later.id]: "Gelecek haftaya kalabilir." },
+    });
+    // 30 is under what the floor needs for the rest of the week: the floor stands.
+    expect((result.plan!.module_budgets as Record<string, number>).spor).toBeGreaterThan(30);
+  });
+});
+
 describe("month and review", () => {
   it("keeps the AI's proposals for a tight week, and its look back at the week", async () => {
     const mod = await makeModule(db);

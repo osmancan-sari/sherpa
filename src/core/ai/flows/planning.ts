@@ -92,7 +92,8 @@ export function planCallInput(
           ).length,
         }
       : null,
-    note,
+    // The user's note: the one given now, else the one left at the evening closing.
+    note: note ?? yesterday?.closing_note ?? null,
     ...(replan
       ? {
           done_today: rows.tasks
@@ -214,15 +215,15 @@ export async function planDayFlow(
   const advice = adviceOf(result.output, base);
   if (options.preview) return { status: "applied", advice, warnings: result.output.warnings };
 
-  await applyEstimates(deps.db, rows, result.output, result, now);
+  // The closing was confirmed while the AI answered: the user's plan stands.
+  const latest = await loadPlanRows(deps.db, now);
+  if (!replan && latest.days.find((row) => row.date === options.date)?.plan_source === "closing") {
+    return { status: "skipped", reason: "already_planned" };
+  }
+  await applyEstimates(deps.db, latest, result.output, result, now);
   // The engine again, with the advice: it keeps the rules, the AI only chooses within them.
   const fresh = await loadPlanRows(deps.db, now);
   const again = planInput(fresh, { date: options.date, now, context });
-  const current = fresh.days.find((row) => row.date === options.date);
-  // The closing was confirmed while the AI answered: the user's plan stands.
-  if (!replan && current?.plan_source === "closing") {
-    return { status: "skipped", reason: "already_planned" };
-  }
   const planned = buildPlan({ ...again, top3: undefined, advice });
   // What is finished of the day's three stays in them.
   const finished = (again.top3 ?? []).filter((id) => isFinished(id, again));
@@ -352,12 +353,13 @@ export async function monthFlow(deps: AiDeps, now: Date) {
   if (callInput.items.length === 0 || !loads.some((load) => load.over)) {
     return { status: "skipped" as const, reason: "nothing_to_plan" };
   }
-  const { data: kept } = await deps.db
+  const { data: kept, error: readError } = await deps.db
     .from("horizon_reviews")
     .select("id")
     .eq("scope", "month")
     .eq("period_start", `${dayKey(now).slice(0, 7)}-01`)
     .maybeSingle();
+  if (readError) throw new Error(readError.message);
   if (kept) return { status: "skipped" as const, reason: "already_planned" };
   const result = await runAiCall(deps, monthSpec, callInput);
   if (result.status !== "ok") return { status: result.status, reason: result.reason };
@@ -419,11 +421,14 @@ export async function reviewFlow(deps: AiDeps, registry: ModuleRegistry, now: Da
     })),
     life_mode: planInput(rows, { date: dayKey(now), now, context: "desk" }).lifeMode,
   };
-  const { data: done } = await deps.db
+  // The week is looked back at from Saturday on (docs/10-yapay-zeka.md, "Akışlar (Ç3)").
+  if (weekdayOf(dayKey(now)) < 6) return { status: "skipped" as const, reason: "too_early" };
+  const { data: done, error: readError } = await deps.db
     .from("weekly_reviews")
     .select("id")
     .eq("week_start", week)
     .maybeSingle();
+  if (readError) throw new Error(readError.message);
   if (done) return { status: "skipped" as const, reason: "already_planned" };
   if (modules.length === 0 && callInput.worked.length === 0) {
     return { status: "skipped" as const, reason: "nothing_to_review" };
