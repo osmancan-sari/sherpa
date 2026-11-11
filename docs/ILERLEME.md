@@ -5,8 +5,8 @@ Bu dosyayı Claude Code günceller. Yeni bir oturum yalnızca bu dosyayı ve `pr
 ## Durum
 
 - Faz: **Ç2 (Yapay zeka geçidi) sürüyor** (başlangıç 11 Kas 2026). Ç0 ve Ç1 bitti (`c0-tamam`, `c1-tamam`); yayın ve telefon D1 ve D2'yi bekliyor. D3 (`ANTHROPIC_API_KEY`) verilmedi: faz sahte sağlayıcıyla geliştiriliyor
-- Adım: Ç2 planı aşağıda; 1. adım (şema) bitti ve denetlendi, 2. adım (geçit) sırada
-- Son commit: Ç2 adım 1 denetim düzeltmeleri
+- Adım: Ç2 planı aşağıda; 2. adım (geçit) yazıldı, adım denetimi sürüyor
+- Son commit: Ç2 adım 2, geçit
 
 ### Ç2 planı
 
@@ -15,7 +15,7 @@ Her adımın sonunda `npm run check` ve commit; şema, geçit ve zarf adımları
 | # | Adım | Durum |
 | --- | --- | --- |
 | 1 | Migration: `ai_calls`, `ai_feedback` (RLS, yalnızca eklenir), `work_items` efor sınırı sütunları, aylık harcama ve kullanım fonksiyonları; tipler; dışa aktarım ve test listeleri; veritabanı testleri | bitti (`49fa181`); denetim (adım kipi): GEÇTİ, engelleyici yok, 2 önemli bulgu (kararlar ve ilerleme kaydı yazılmamıştı) düzeltildi. Notlardan örnek verinin sıfırlama listesi ve tip kapısının hata çıktısı düzeltildi; kapının şema farkında kırmızıya düştüğü bir kez elle denendi. Kalan notlar sonraki adımlara: harcama fonksiyonları oturumsuz çağrıda ya da boş tarihte hata versin (2), SDK içe aktarımı yalnızca `src/core/ai/` içinde (2), zarf efor sınırını sütunlara yazsın (3), `ai_calls` canlı yayında olsun mu (4) |
-| 2 | Geçit (`src/core/ai/`): sağlayıcı arayüzü (Anthropic, sahte), fiyat tablosu, bütçe, çıktı şemaları, istemler, zaman aşımı, kayıt; birim ve veritabanı testleri | bekliyor |
+| 2 | Geçit (`src/core/ai/`): sağlayıcı arayüzü (Anthropic, sahte), fiyat tablosu, bütçe, çıktı şemaları, istemler, zaman aşımı, kayıt; birim ve veritabanı testleri | kod ve testler bitti (`tests/db/ai-gateway.test.ts` 17, `src/core/ai/*.test.ts` 24); adım denetimi sürüyor |
 | 3 | Çağrılar ve rotalar: `enrich`, `size`, `decompose`, `extract`; zarfın sınırı saklaması; `/api/ai/*`; düzeltmelerin `ai_feedback`'e düşmesi | bekliyor |
 | 4 | Arayüz: hızlı giriş ve gelen kutusu onay kartı, yapay zeka işareti ve gerekçesi, kalemi adımlara bölme, `deneme` için metinden çıkarma, Ayarlar'da kullanım ve maliyet | bekliyor |
 | 5 | `scripts/ai-eval/`, dokümanlar, örnek veri | bekliyor |
@@ -226,7 +226,7 @@ Benim yapacaklarım (D1 tamamlanınca): iki Supabase projesini açmak (bölge: F
 Ç2 sahte sağlayıcıyla geliştirilip sınanır; gerçek çağrılar için:
 
 1. Anthropic Console'da bir API anahtarı aç (ücretli; aylık sınır `docs/10-yapay-zeka.md` içinde 5 $ olarak tasarlandı, Console'da ayrıca harcama sınırı koyabilirsin).
-2. Anahtarı sohbete yazma; depo kökündeki `.env.local` dosyasına `ANTHROPIC_API_KEY=...` satırı olarak ekle (`.env*` depoya girmez).
+2. Anahtarı sohbete yazma; depo kökündeki `.env.local` dosyasına `ANTHROPIC_API_KEY=...` satırı olarak ekle (`.env*` depoya girmez). Aynı dosyaya modelleri de yaz: `AI_MODEL_FAST=claude-haiku-5-5` ve `AI_MODEL_PLAN=claude-sonnet-5-5` (`.env.example` içinde hazır).
 3. Bu başlığa "tamamlandı" yaz. Ç2 oturumu gerçek çağrı gerektiren testleri o zaman çalıştırır.
 
 ### Ç1'den sana kalanlar (elle doğrulanacak)
@@ -329,6 +329,19 @@ Benim yapacaklarım (D1 tamamlanınca): iki Supabase projesini açmak (bölge: F
 | 11 Kas 2026 | Ç2: `work_items` modülün önerdiği efor sınırını saklar (`effort_min_minutes`, `effort_max_minutes`; ikisi birlikte dolu ya da boş, min ≤ max) | `size` teklif yazıldıktan sonra sunucuda çalışır; tahminini sınırın içinde tutmak için sınırı veriden okuyabilmeli. Zarfın bu sütunlara yazması 3. adımda | migration, `docs/03-veri-modeli.md` |
 | 11 Kas 2026 | Ç2: aylık bütçe 0 ya da daha büyük olmalı; 0 o ay yapay zekayı kapatır | Kabul ölçütü "bütçe sınırı 0 yapılınca çağrı yapılmıyor"; eksi değer anlamsız | migration (`settings_ai_budget_check`) |
 | 11 Kas 2026 | Ç2: aylık harcama ve kullanım veritabanında toplanır (`ai_spend_since`, `ai_usage_since`, çağıranın yetkisiyle); ay İstanbul saatiyle ayın ilk günü 00:00'da başlar | Bir ayın satırları API'nin tek sayfasına sığmayabilir; toplam RLS'den geçsin | migration, `docs/10-yapay-zeka.md` |
+| 11 Kas 2026 | Ç2: geçidin tek giriş noktası `runAiCall(deps, spec, input)`; çağrı türü bir `spec` (tür, sürüm, istem, Zod şeması, belirteç sınırı). Yapay zeka hatası hiçbir zaman fırlatılmaz: sonuç `ok`, `skipped` (çağrı yapılmadı, satır yok) ya da `failed` (satır var) | Kural: her özellik yapay zekasız da çalışmalı; çağıran tek bir sonuca bakıp varsayılanla devam eder | `src/core/ai/gateway.ts`, `src/core/ai/types.ts` |
+| 11 Kas 2026 | Ç2: yapılı çıktı araç şemasıyla değil API'nin yapılı çıktı biçimiyle (`output_config.format`, SDK'nın `zodOutputFormat` yardımcısı) alınır; geçit çıktıyı aynı Zod şemasıyla yeniden doğrular | Güncel modellerde (Sonnet 5.5, Opus 5.5) zorunlu araç seçimi (`tool_choice: any/tool`) 400 veriyor; yapılı çıktı JSON'u doğrudan verir. Doğrulama sağlayıcıdan bağımsız tek yerde. `docs/10-yapay-zeka.md` kural 2 güncellendi | `src/core/ai/anthropic.ts`, `docs/10-yapay-zeka.md`, `docs/09-kararlar.md` |
+| 11 Kas 2026 | Ç2: hızlı çağrılar `effort: low`, planlama çağrıları `effort: medium`; düşünme modelin varsayılanında (uyarlamalı); SDK yeniden denemesi kapalı | Hızlı çağrının 8 saniyede bitmesi gerekiyor; yeniden deneme zaman aşımını katlıyordu. Kalite yetmezse `scripts/ai-eval/` ile ölçülüp yükseltilir | `src/core/ai/anthropic.ts` |
+| 11 Kas 2026 | Ç2: fiyat tablosunda olmayan model çağrılmaz (`no_price`) | Maliyeti sayılamayan çağrı bütçeyi delerdi. Bedeli: `AI_MODEL_*` yeni bir modele çevrilince `pricing.ts`'e satır eklenmeli | `src/core/ai/pricing.ts` |
+| 11 Kas 2026 | Ç2: sıra: sağlayıcı/model/fiyat → ayarlarda açık mı → aynı sorunun önceki yanıtı → bütçe → çağrı. Önceki yanıt bütçe dolmuşken de kullanılır; kapalı yapay zekada kullanılmaz | Önceki yanıtı kullanmak çağrı değildir, maliyeti yok; "kapalı" ise yapay zekanın hiç görünmemesi demek | `src/core/ai/gateway.ts`, `tests/db/ai-gateway.test.ts` |
+| 11 Kas 2026 | Ç2: zaman aşımı hızlı çağrıda 8, planlama çağrısında 30 sn (ortam değişkeniyle değişir); sağlayıcı sinyali dinlemese de geçit bekleme süresini keser. Zaman aşımında belirteç bilinmez, satır 0 maliyetle yazılır | Doküman yalnızca hızlı çağrının süresini veriyordu (8 sn). Kesilen çağrının faturası sağlayıcıda kalabilir; aylık sınır bu yüzden "ikinci güvenlik" (Console sınırı birinci) | `src/core/ai/gateway.ts`, `src/core/ai/config.ts` |
+| 11 Kas 2026 | Ç2: kaydedilemeyen yanıt kullanılmaz (`log_failed`) | Bütçe kayıttan hesaplanıyor; kayıtsız yanıt bütçenin dışından geçmiş olurdu | `src/core/ai/gateway.ts` |
+| 11 Kas 2026 | Ç2: sahte sağlayıcı yalnızca `SHERPA_AI_FAKE=1` ve yerel Supabase ile devreye girer; işaretlerle (`[ai:invalid]`, `[ai:timeout]`, `[ai:error]`, `[ai:refusal]`) bilerek bozulur; maliyeti hızlı modelin fiyatıyla sayılır (`fake-fast`, `fake-plan`) | D3 gelene kadar bütün yollar anahtarsız sınanabilsin; üretimde yanlışlıkla açılamasın | `src/core/ai/fake.ts`, `src/core/ai/config.ts`, `.env.example` |
+| 11 Kas 2026 | Ç2: istemler İngilizce, kullanıcıya görünen çıktı (başlık, gerekçe, adım adı) Türkçe ve CLAUDE.md'deki dil kuralıyla (ünlemsiz, övgüsüz). Her alan `{ value, confidence, reason }` biçiminde gelir; doğrudan `ai.fields` olarak saklanabilir | Kod dili İngilizce; çıktı kullanıcı metni. Biçim `docs/10-yapay-zeka.md` içindeki `tasks.ai` örneğiyle aynı. **Görüşün gerek:** istem metinleri ve gerekçe üslubu | `src/core/ai/calls/*` |
+| 11 Kas 2026 | Ç2: `extract` çekirdekte genel bir kalıptır: modül bir `Extractor` verir (anahtar, sürüm, talimat, tek önerinin Zod şeması, en çok kaç öneri); çekirdek çağrıyı taşır, yanıtı modüle verir | Kapsam: "modüller kendi şemalarını verir". Sözleşmeye bağlanması 3. adımda | `src/core/ai/calls/extract.ts` |
+| 11 Kas 2026 | Ç2: `decompose` adımları yalnızca kendinden önce gelen adımlara bağlanabilir (döngü olamaz); 2–12 adım | Bağımlılık sırası şemada zorlanınca motor döngüyle karşılaşmaz | `src/core/ai/calls/decompose.ts` |
+| 11 Kas 2026 | Ç2: harcama fonksiyonları oturumsuz çağrıda ve boş başlangıçta hata verir (yeni migration) | 1. adım denetimi: ilk hal 0 döndürüyordu; yanlış istemciyle çağrılan geçit bütçeyi sessizce geçerdi | `supabase/migrations/20261111143857_ai_spend_guard.sql`, `tests/db/ai-tables.test.ts` |
+| 11 Kas 2026 | Ç2: `@anthropic-ai/*` yalnızca `src/core/ai/` içinde içe aktarılabilir (lint kuralı, `tests/unit/core-imports.test.ts`) | Mimari kural: yapay zeka çağrıları tek geçitten | `eslint.config.mjs`, `tests/unit/core-imports.test.ts` |
 | 11 Kas 2026 | Ç2: tip kapısı (`npm run db:types:check`, `check:full` içinde): depodaki tipler yerel şemadan üretilenle aynı değilse kırmızı | Ç0'dan beri açık not: migration'dan sonra tiplerin yeniden üretildiğini denetleyen bir şey yoktu. Kapının farkı yakaladığı bir kez elle denendi (dosyaya satır ekleyince çıkış kodu 1) | `scripts/check-db-types.mjs`, `package.json`, `CLAUDE.md` |
 
 ## Bilinen sorunlar

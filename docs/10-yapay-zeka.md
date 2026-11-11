@@ -43,7 +43,7 @@ AI_MODEL_PLAN=claude-sonnet-5-5      # plan, replan, week, month, review, decomp
 ## Tasarım kuralları
 
 1. **Yalnızca sunucuda.** API anahtarı Vercel ortam değişkenindedir; istemciye hiçbir zaman gitmez. Bütün çağrılar `src/core/ai/` içindeki tek geçitten yapılır.
-2. **Yapılı çıktı.** Her çağrı, çıktısını bir araç şemasıyla (JSON) verir ve şemayla doğrulanır. Şemaya uymayan çıktı atılır, o işlem yapay zekasız devam eder.
+2. **Yapılı çıktı.** Her çağrı, çıktısını bir JSON şemasıyla verir (API'nin yapılı çıktı biçimi, `output_config.format`; şema Zod ile yazılır) ve geçit çıktıyı aynı şemayla yeniden doğrular. Şemaya uymayan çıktı atılır, o işlem yapay zekasız devam eder.
 3. **Öneri, emir değil.** Yapay zeka son tarih değiştiremez, iş silemez, kayıt tamamlayamaz. Bunları yalnızca önerir; kullanıcı tek dokunuşla onaylar. Doğrudan yazabildikleri: yeni işin alanları, süre tahmini, önem, planlanan gün, günün 3 işi.
 4. **Kaynağı belli.** Yapay zekanın koyduğu her değer işaretlidir (`tasks.ai`) ve gerekçesiyle saklanır. Kullanıcının elle değiştirdiği alanı yapay zeka bir daha değiştirmez.
 5. **Motor son sözü söyler.** `plan` çıktısı motora girdi olur. Kapasiteyi aşan, bloklarla çakışan, 90 dakika sınırını ya da bitiş çizgisini çiğneyen öneri motor tarafından düzeltilir ve düzeltme uyarı olarak gösterilir.
@@ -113,6 +113,15 @@ Aylık toplam veritabanında hesaplanır (`ai_spend_since`, `ai_usage_since`; ç
 ```
 
 `settings` tablosuna: `ai_enabled boolean`, `ai_monthly_budget_usd numeric default 5`.
+
+## Geçit (`src/core/ai/`)
+
+- `runAiCall(deps, spec, input)` tek giriş noktasıdır; sağlayıcının SDK'sını yalnızca bu klasör içe aktarır (lint kuralı ve test).
+- Sıra: sağlayıcı ve fiyatı olan model var mı → ayarlarda açık mı → aynı soru daha önce yanıtlandı mı (`fingerprint`) → ayın harcaması bütçenin altında mı → çağrı (zaman aşımıyla) → şema doğrulaması → kayıt. İlk dört adımın herhangi birinde çağrı yapılmaz ve satır yazılmaz; önceki yanıt bütçe dolmuş olsa da kullanılır.
+- Fiyat tablosu `pricing.ts` içindedir; tabloda olmayan model çağrılmaz (maliyeti sayılamaz). Model değiştirmek tabloya satır eklemeyi gerektirir.
+- Zaman aşımı hızlı çağrılarda 8, planlama çağrılarında 30 saniyedir (`AI_TIMEOUT_FAST_MS`, `AI_TIMEOUT_PLAN_MS` ile değişir). Sağlayıcı yeniden denemez; bekleme süresinin tamamı zaman aşımıdır.
+- Kaydedilemeyen yanıt kullanılmaz: bütçe kayıttan hesaplanır.
+- Sahte sağlayıcı (`fake.ts`) kayıtlı kurallarla yanıt verir; yalnızca `SHERPA_AI_FAKE=1` verilmiş ve veritabanı yerel olduğunda devreye girer (testler, anahtarsız geliştirme).
 
 ## Plan çağrısının akışı
 

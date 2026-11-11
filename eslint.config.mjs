@@ -9,23 +9,51 @@ const CORE_TO_MODULES = "^(@/|\\.{1,2}/)(.*/)?modules(/|$)";
 const CORE_TO_MODULES_ESQUERY = CORE_TO_MODULES.replaceAll("/", "\\/");
 const CORE_TO_MODULES_MESSAGE =
   "src/core must not import from src/modules. Use the module contract (docs/06-modul-sozlesmesi.md).";
+const CORE_TO_MODULES_PATTERN = { regex: CORE_TO_MODULES, message: CORE_TO_MODULES_MESSAGE };
+
+// Architecture rule (CLAUDE.md): AI calls go through the single gateway in src/core/ai.
+// Nothing else imports the provider's SDK.
+const AI_SDK_PATTERN = {
+  regex: "^@anthropic-ai/",
+  message: "Only src/core/ai may use the AI provider's SDK. Call the gateway (runAiCall).",
+};
+const AI_GATEWAY = "src/core/ai/**";
 
 const eslintConfig = defineConfig([
   ...nextVitals,
   ...nextTs,
   prettier,
   {
+    // Outside the core: only the AI SDK rule. (A later block that sets the same rule replaces
+    // it, so the core blocks below repeat this pattern.)
+    files: ["src/**/*.{ts,tsx,mts,js,jsx,mjs}", "scripts/**/*.{ts,mts,js,mjs}"],
+    ignores: ["src/core/**"],
+    rules: {
+      "no-restricted-imports": ["error", { patterns: [AI_SDK_PATTERN] }],
+    },
+  },
+  {
+    files: ["src/core/**/*.{ts,tsx,mts,js,jsx,mjs}"],
+    ignores: [AI_GATEWAY],
+    rules: {
+      "no-restricted-imports": ["error", { patterns: [CORE_TO_MODULES_PATTERN, AI_SDK_PATTERN] }],
+    },
+  },
+  {
+    files: [AI_GATEWAY],
+    rules: {
+      "no-restricted-imports": ["error", { patterns: [CORE_TO_MODULES_PATTERN] }],
+    },
+  },
+  {
     // Architecture rule (CLAUDE.md): the core never knows the modules.
     // Modules attach to the core only through the contract and src/modules/registry.ts.
     // Inside src/core, no project path (alias or relative) may pass through a "modules" folder,
     // however it is spelled: "@/modules/x", "../../modules/x", "./../../modules/x",
     // "../../../src/modules/x", "@/core/../modules/x". Static, dynamic and require() alike.
+    // (The import half of this rule is in the blocks above, together with the AI SDK rule.)
     files: ["src/core/**/*.{ts,tsx,mts,js,jsx,mjs}"],
     rules: {
-      "no-restricted-imports": [
-        "error",
-        { patterns: [{ regex: CORE_TO_MODULES, message: CORE_TO_MODULES_MESSAGE }] },
-      ],
       "no-restricted-syntax": [
         "error",
         {

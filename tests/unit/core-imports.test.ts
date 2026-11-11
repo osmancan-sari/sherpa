@@ -98,3 +98,46 @@ describe("core does not import modules", () => {
     ).toHaveLength(0);
   });
 }, 60_000);
+
+// Architecture rule: AI calls go through the single gateway; only src/core/ai uses the SDK.
+describe("only the AI gateway imports the provider's SDK", () => {
+  const SDK = 'import Anthropic from "@anthropic-ai/sdk";\nexport const x = Anthropic;\n';
+  const HELPER =
+    'import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";\nexport const x = zodOutputFormat;\n';
+
+  it("rejects the SDK everywhere else: routes, components, the rest of the core, modules, scripts", async () => {
+    for (const filePath of [
+      "src/app/api/ai/example/route.ts",
+      "src/core/ui/Example.tsx",
+      "src/core/data/example.ts",
+      "src/modules/deneme/example.ts",
+      "src/lib/example.ts",
+      "scripts/example.ts",
+    ]) {
+      for (const code of [SDK, HELPER]) {
+        const errors = await restrictedImportErrors(code, filePath);
+        expect(errors, filePath).toHaveLength(1);
+        expect(errors[0]).toContain("Only src/core/ai may use the AI provider's SDK");
+      }
+    }
+  });
+
+  it("keeps the module rule in the core next to the SDK rule", async () => {
+    const errors = await restrictedImportErrors(
+      'import Anthropic from "@anthropic-ai/sdk";\nimport { m } from "@/modules/registry";\nexport const x = [Anthropic, m];\n',
+      "src/core/data/example.ts",
+    );
+    expect(errors).toHaveLength(2);
+  });
+
+  it("allows the SDK inside the gateway, where the module rule still holds", async () => {
+    expect(await restrictedImportErrors(SDK, "src/core/ai/anthropic.ts")).toHaveLength(0);
+    expect(await restrictedImportErrors(HELPER, "src/core/ai/example.ts")).toHaveLength(0);
+    expect(
+      await restrictedImportErrors(
+        'import { m } from "@/modules/registry";\nexport const x = m;\n',
+        "src/core/ai/example.ts",
+      ),
+    ).toHaveLength(1);
+  });
+}, 60_000);

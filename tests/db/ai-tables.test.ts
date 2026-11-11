@@ -137,6 +137,21 @@ describe("spending", () => {
     expect((await anonDb().rpc("ai_spend_since", { p_since: since })).error).not.toBeNull();
     expect((await anonDb().rpc("ai_usage_since", { p_since: since })).error).not.toBeNull();
   });
+
+  it("refuses to answer without a signed-in user or without a start, instead of saying 0", async () => {
+    const since = "2026-11-01T00:00:00Z";
+    // The secret key bypasses RLS but has no user: the budget check must not pass silently.
+    const admin = adminDb();
+    expect((await admin.rpc("ai_spend_since", { p_since: since })).error?.message).toContain(
+      "signed-in user",
+    );
+    expect((await admin.rpc("ai_usage_since", { p_since: since })).error?.message).toContain(
+      "signed-in user",
+    );
+    const noStart = { p_since: null as unknown as string };
+    expect((await db.rpc("ai_spend_since", noStart)).error?.message).toContain("needs a start");
+    expect((await db.rpc("ai_usage_since", noStart)).error?.message).toContain("needs a start");
+  });
 });
 
 describe("settings and effort bounds", () => {

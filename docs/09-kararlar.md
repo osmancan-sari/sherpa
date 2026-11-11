@@ -62,6 +62,9 @@
 | `ai_calls` çağrının girdi özetini (`fingerprint`) ve doğrulanmış çıktısını (`output`) saklar; aynı girdi yeniden sorulmaz, önceki çıktı kullanılır (Ç2) | Kural 10 (istikrar) ayrı bir önbellek tablosu olmadan sağlansın | Yapay zeka geçidi |
 | `work_items` modülün önerdiği efor sınırını saklar (`effort_min_minutes`, `effort_max_minutes`) (Ç2) | `size` sunucuda, teklif yazıldıktan sonra çalışır; tahminini sınırın içinde tutmak için sınırı veriden okur | Veri modeli, iş zarfı |
 | Aylık bütçe 0 ya da daha büyüktür; 0 o ay yapay zekayı kapatır (Ç2) | Bütçe sınırı kapatma düğmesi olarak da çalışsın | Ayarlar |
+| Yapay zekanın yapılı çıktısı araç şemasıyla değil API'nin yapılı çıktı biçimiyle (`output_config.format`) alınır; geçit aynı Zod şemasıyla yeniden doğrular (Ç2) | Güncel modellerde zorunlu araç seçimi desteklenmiyor; doğrulama tek yerde | Yapay zeka geçidi |
+| Fiyat tablosunda olmayan model çağrılmaz (Ç2) | Maliyeti sayılamayan çağrı bütçeyi delerdi | Model değişikliği `pricing.ts`'e satır ister |
+| Planlama çağrılarında zaman aşımı 30 saniye (Ç2; hızlı çağrılar 8) | Doküman yalnızca hızlı çağrının süresini veriyordu | Yapay zeka geçidi |
 
 ## Açık sorular
 
