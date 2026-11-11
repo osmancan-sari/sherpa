@@ -1,3 +1,4 @@
+import { istanbulInstant } from "@/lib/date";
 import { insert, rows, seedModule, update, waitFor } from "./data";
 import { expect, test } from "./fixtures";
 
@@ -231,7 +232,8 @@ test("the day is done once its three are; what is left waits behind 'Vakit kalı
     module_id: mod.id,
     title: "Bitmiş iş",
     status: "done",
-    done_at: at(-30),
+    // Finished today, whatever the hour the test runs at.
+    done_at: istanbulInstant(today(), "00:01").toISOString(),
     est_minutes: 30,
   });
   await insert("tasks", { module_id: mod.id, title: "Fazladan iş" });
@@ -299,7 +301,12 @@ test("back after three days the screen opens on 'Kaldığın yerden devam' and p
 
 test("'Neden?' tells why this work, why now", async ({ page }) => {
   const mod = await seedModule();
-  await insert("tasks", { module_id: mod.id, title: "Bugün teslim", due_at: at(120) });
+  // Due at the end of today, whatever the hour the test runs at.
+  await insert("tasks", {
+    module_id: mod.id,
+    title: "Bugün teslim",
+    due_at: istanbulInstant(today(), "23:58").toISOString(),
+  });
   await page.goto("/");
   const now = page.getByRole("region", { name: "Şimdi" });
   await now.getByRole("button", { name: "Neden?" }).click();

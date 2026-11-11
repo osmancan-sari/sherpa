@@ -768,3 +768,31 @@ describe("warnings", () => {
     ]);
   });
 });
+
+describe("a sitting and its item", () => {
+  it("waits for the item's start and for what the item depends on, unless it runs", () => {
+    const first = workItem({ title: "Önce" });
+    const later = workItem({ title: "Sonra başlar", earliest_at: iso("08:00", shiftDay(DATE, 2)) });
+    const blocked = workItem({ title: "Bağlı", depends_on: [first.id], depends_on_keys: [] });
+    const sittings = [later, blocked].map((item) =>
+      task({ work_item_id: item.id, title: item.title }),
+    );
+    const ids = buildCandidates(input({ workItems: [first, later, blocked], tasks: sittings })).map(
+      (row) => row.id,
+    );
+    expect(ids).not.toContain(sittings[0].id);
+    expect(ids).not.toContain(sittings[1].id);
+    const running = { ...sittings[1], status: "doing" as const };
+    expect(
+      buildCandidates(input({ workItems: [first, blocked], tasks: [running] })).map(
+        (row) => row.id,
+      ),
+    ).toContain(running.id);
+  });
+
+  it("is not offered once its item is closed", () => {
+    const done = workItem({ status: "done" });
+    const sitting = task({ work_item_id: done.id });
+    expect(buildCandidates(input({ workItems: [done], tasks: [sitting] }))).toEqual([]);
+  });
+});

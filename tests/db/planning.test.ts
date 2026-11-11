@@ -15,7 +15,7 @@ import {
   waitOnTask,
 } from "@/core/data/planning";
 import { closeUnanswered, confirmSession, startSession } from "@/core/data/sessions";
-import { createTask, createWorkItem } from "@/core/data/work";
+import { createTask, createWorkItem, reopenTask } from "@/core/data/work";
 import { buildPlan, planInput, storedPlan, tomorrowInput } from "@/core/planner";
 import { dayKey, istanbulInstant, shiftDay, weekStart } from "@/lib/date";
 import { makeModule, ok, ownerDb, wipe } from "./helpers";
@@ -150,6 +150,34 @@ describe("the day's record", () => {
       { id: missed.id, planned_date: null },
       { id: later.id, planned_date: shiftDay(TODAY, 2) },
     ]);
+  });
+});
+
+describe("Geri al", () => {
+  it("on a sitting finished with its item opens the item again", async () => {
+    const mod = await makeModule(db);
+    const item = await createWorkItem(db, {
+      module_id: mod.id,
+      title: "Tez",
+      effort_total_minutes: 120,
+    });
+    const sitting = await createTask(db, {
+      module_id: mod.id,
+      title: "Tez",
+      work_item_id: item.id,
+    });
+    await db
+      .from("tasks")
+      .update({ status: "done", done_at: NOW.toISOString() })
+      .eq("id", sitting.id);
+    await db.from("work_items").update({ status: "done" }).eq("id", item.id);
+    await reopenTask(db, sitting.id);
+    expect(ok(await db.from("work_items").select("status").eq("id", item.id).single())).toEqual({
+      status: "active",
+    });
+    expect(ok(await db.from("tasks").select("status").eq("id", sitting.id).single())).toEqual({
+      status: "todo",
+    });
   });
 });
 

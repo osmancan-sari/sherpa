@@ -281,6 +281,9 @@ function Suggest({
           >
             Devam et
           </Button>
+          <Button variant="ghost" className={SECOND} onClick={() => setUnplanned(true)}>
+            Başka bir şey yapıyorum
+          </Button>
         </div>
       </Frame>
     );

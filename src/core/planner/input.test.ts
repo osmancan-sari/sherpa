@@ -99,6 +99,23 @@ describe("planInput", () => {
     expect(input.startedToday).toBe(true);
   });
 
+  it("counts a day's first touch and its closing as use", () => {
+    const touched = dayRow({
+      date: "2026-11-11",
+      started_at: at("07:30", "2026-11-11").toISOString(),
+    });
+    const closed = dayRow({
+      date: "2026-11-10",
+      closed_at: at("22:00", "2026-11-10").toISOString(),
+    });
+    const input = planInput(rows({ days: [closed, touched] }), {
+      date: DATE,
+      now: at("09:00"),
+      context: "desk",
+    });
+    expect(input.lastSeenAt).toEqual(at("07:30", "2026-11-11"));
+  });
+
   it("adds up this week's minutes per module", () => {
     const mod = moduleRow();
     const monday = session({

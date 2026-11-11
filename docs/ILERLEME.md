@@ -4,9 +4,9 @@ Bu dosyayı Claude Code günceller. Yeni bir oturum yalnızca bu dosyayı ve `pr
 
 ## Durum
 
-- Faz: **Ç3 (Planlayıcı) sürüyor** (başlangıç 11 Kas 2026, gece; kullanıcı bu gece için "bir oturumda tek faz" kuralını esnetti, Ç2 ile aynı oturumda). Ç0, Ç1, Ç2 bitti (`c0-tamam`, `c1-tamam`, `c2-tamam`); D1 ve D2 tamamlandı; D3 (`ANTHROPIC_API_KEY`) bekliyor, yapay zeka sahte sağlayıcıyla
-- Adım: Ç3 planı aşağıda; 1–8. adım bitti; 9. adım (faz denetimi, rapor, etiket) sürüyor
-- Son commit: Ç3 adım 8
+- Faz: **Ç3 (Planlayıcı)**: bütün adımlar bitti, faz denetiminin 2. turu sürüyor; geçerse `c3-tamam` etiketi atılır. Ç0–Ç3 bitti; D1 ve D2 tamamlandı; D3 (`ANTHROPIC_API_KEY`) bekliyor: yapay zekalı her şey sahte sağlayıcıyla sınandı
+- Sıradaki: Ç4 (Pano ve telefon cilası). Kullanıcı bu gece Ç3'ten sonra durulmasını istedi; Ç4 yeni oturumda
+- Son commit: Ç3 faz raporu
 
 ### Ç3 planı
 
@@ -22,7 +22,7 @@ Her adımın sonunda `npm run check` ve commit; şema, planlayıcı motoru ve ya
 | 6 | Hafta ekranı: 7 günlük şerit, kapasite çubuğu, haftanın kalemleri ve modül payları, hayat modu, 8 haftalık yük | bitti: `src/core/ui/week/WeekScreen.tsx`, `useSetLifeMode`, `useRecommitWeek`. Test: `planner.spec.ts` +1. Denetim (adım kipi, 4–6. adım): GEÇTİ, 6 önemli bulgu düzeltildi (aşağıda) |
 | 7 | Yapay zeka: `plan`, `replan`, `week`, `month`, `review` (geçitten; sahte sağlayıcıya yanıtları); motor öneriyi denetler | bitti; denetim (adım kipi): 1. tur GEÇMEDİ, 2. tur GEÇTİ (4 önemli); düzeltildi (aşağıda): `src/core/ai/calls/planning.ts`, `src/core/ai/flows/planning.ts`, rotalar `/api/ai/{plan,week,month,review}`, sahte sağlayıcının yanıtları; bekçi yapay zeka açıkken haftayı sunucuya bırakır, günde bir `plan`, ayda bir `month`, Cumartesiden `review` ister; "Yeniden planla" `replan`; kapanışın taslağı `plan` önizlemesi; Hafta'da "Yapay zekanın notları". Testler: `tests/db/ai-planning.test.ts` 9, `src/core/ai/flows/planning.test.ts` 3, `tests/e2e/planlama.ai.spec.ts` 4, korumalı API listesine dört rota |
 | 8 | Örnek veri, uçtan uca testler, ekran görüntüleri, dokümanlar | bitti: örnek veride modüllerin mod davranışı, gelecek haftanın Yoğun modu ("Vize haftası"), dün akşamki bir oturum (hesap "geri dönüş"te açılmasın) ve haftanın taahhüdü; `seed.test.ts` +2 (Yoğun modda ömürlük modülün tabanı: kabul ölçütü). Ekran görüntüleri `docs/ekran-goruntuleri/c3/` (86 dosya; yeni: `kapanis`, `kapanis-bugun`, `kapanis-yarin`, `bugun-neden`, `x-dk`, `bugun-gece`). Görüntülerden çıkan iki düzeltme: gece ve geri dönüşte ekran sakin (şerit, uyarı, liste yok); taahhüt edilip oturum işleri yazılamamış kalem kendini onarır |
-| 9 | `check:full`, faz denetimi, düzeltmeler, faz raporu, etiket | bekliyor |
+| 9 | `check:full`, faz denetimi, düzeltmeler, faz raporu, etiket | bitti (ayrıntı "Biten fazlar" → Ç3) |
 
 ### Ç2 planı
 
@@ -230,9 +230,70 @@ Adım denetimleri:
 - **Canlı bağlantı yükü**: uzun uçtan uca koşularda Realtime iletileri düşebiliyor; ekranın tahmini beklediği yerlerde tarayıcı yanıt gelince ayrıca yeniden okur. Arka arkaya iki tam koşu arasında yaklaşık bir dakika beklenmeli.
 - Kapı süresi: `check:full` yaklaşık 6 dakika (iki sunucu).
 
+### Ç3: Planlayıcı (12 Kas 2026)
+
+Kullanıcı bu gece için "bir oturumda tek faz" kuralını esnetti; Ç3, Ç2 ile aynı oturumda, gözetimsiz yapıldı. Yapay zekalı yollar sahte sağlayıcıyla (3101 sunucusu) ve sağlayıcısız (3100) sınandı; gerçek modelle ölçüm D3'ü bekliyor.
+
+#### Kabul ölçütleri
+
+| Ölçüt | Durum | Kanıt |
+| --- | --- | --- |
+| `docs/04-planlayici.md` içindeki test listesinin tamamı yazılmış ve geçiyor | Sağlandı | Listenin her maddesi: `src/core/planner/plan.test.ts` (yuvalar, süzgeçler, zorunlular, taban, bitiş çizgisi ve `done`, otomatik plan = kapanış, geri dönüş, bekleyen iş ve takip, öneri), `learn.test.ts` (ölçülmemiş oturum), `week.test.ts` (`loadByWeek`, `commitWeek`, istikrar), `input.test.ts` (otomatik plan satırlardan) |
+| Akşam kapanışı yapılmadan da sabah Bugün ekranı dolu geliyor | Sağlandı | `tests/e2e/planner.spec.ts` "opening the app plans the week and the day…": hiçbir şey yapılmadan haftanın kaydı, oturum işleri, günün kaydı (`auto`) ve dolu "Şimdi" kartı |
+| Günün işleri bitince ekran "Bugün tamam"a geçiyor | Sağlandı | `planner.spec.ts` "the day is done once its three are…", `sync.spec.ts`, `work-sessions.spec.ts`, `plan.test.ts` |
+| Bir sabit blok eklenince plan anında yeniden kuruluyor | Sağlandı | `sync.spec.ts` "a fixed block added elsewhere re-plans the open screen at once": başka cihazdan eklenen blok 3 sn içinde kartta, sayfa yeniden yüklenmeden |
+| Yoğun modda örnek verideki ömürlük modülün tabanı korunuyor (testle) | Sağlandı | `tests/db/seed.test.ts` "keeps the lifelong module's weekly floor in busy mode", `plan.test.ts` (modül ve ritim tabanı) |
+| 3 gün kullanılmadıktan sonra geri dönüş ekranı açılıyor ve gecikmiş iş yığını göstermiyor | Sağlandı | `planner.spec.ts` "back after three days…", `plan.test.ts`, `tests/db/planning.test.ts` (geçmiş planlı günler temizlenir) |
+| Uzak bir kalem haftası gelene kadar oturumlara bölünmüyor; haftası gelince yalnızca o haftanın eforu bölünüyor | Sağlandı | `week.test.ts` "does not split an item whose week has not come…", "cuts only this week's share…", `planning.test.ts` |
+| Sabah planı yapay zekanın önerisini ve gerekçelerini taşıyor; yapay zeka kapatılınca plan yine geliyor | Sahte sağlayıcıyla sağlandı. **Gerçek modelle D3'te doğrulanacak** | `tests/e2e/planlama.ai.spec.ts` (sabah planı ve "neden?" gerekçesi; yapay zeka kapalıyken motorun planı, hiç çağrı yok), `tests/db/ai-planning.test.ts` |
+| Yapay zekanın zorunlu bir işi erteleme önerisi motor tarafından reddediliyor (testle) | Sağlandı | `plan.test.ts` (son tarih ve haftalık taban), `ai-planning.test.ts` "cannot put off mandatory work" |
+| Hafta içinde tetikleyici yokken haftalık taahhüt değişmiyor | Sağlandı | `week.test.ts` "plan stability", `planning.test.ts` "without a trigger it stays". Yorum: taahhütten sonra gelen yeni kalem haftada yer varsa taahhüde eklenir, var olanların payı değişmez (**Görüşün gerek**, `docs/04` "Yeni kalem") |
+
+Kapsamdan eksik kalan: `plan` çağrısının `splits` çıktısı (bölme `decompose`'ta); "her gece" yerine günün ilk açılışında `plan` (sunucuda zamanlanmış iş yok); ayın önerileri tek dokunuşla uygulanmıyor, yalnızca gösteriliyor; kapanışta ve "Yeniden planla"da not alanı yok; öğrenme kuruldu ama gerçek veriyle (en az 5 örnek) henüz çalışmadı.
+
+#### Ne kuruldu
+
+1. Planlayıcı motoru `src/core/planner/` (saf, lint kuralıyla korunuyor): yuvalar, adaylar ve skor, süzgeçler, zorunlular, gün planı, "şimdi" durumları (çalışan, blok, gece, geri dönüş, soru, öneri, tamam, boş), uyarılar, "X dk'm var", hafta yükü (`loadByWeek`), haftanın taahhüdü (`commitWeek`), oturumlara bölme, istikrar (`recommitReason`), yeni kalem ve onarım (`weekAction`), öğrenme (tahmin ve kapasite çarpanları), uzayan oturum (`overrun`), girdinin satırlardan kurulması (adım 1–2)
+2. Veri: `tasks.defer_count`, `sessions.confirmed_at`, `week_plans.life_mode`, `shares`, `day_capacity`, açık oturum işlerinin sırası için tekil indeks, `close_unanswered_session`; günün kaydı, kapanış, Ertele, bekleme ve takip, haftanın kaydı ve oturum işleri, hayat modları, öğrenilenler; plan bekçisi (`PlanKeeper`) (adım 1, 3)
+3. Bugün ekranı `plan.now` durumlarıyla: TopBar, NowCard, sıradakiler ve "vakit kalırsa", DayStrip, AlertBar, "neden?", Ertele, Takıldım (üç yol), takip, "Devam ediyor musun?", "X dk'm var", "Yeniden planla", tuşlar (adım 4)
+4. Akşam kapanışı `/kapanis` (adım 5), Hafta ekranı (adım 6)
+5. Yapay zeka: `plan`, `replan`, `week`, `month`, `review` geçitten; motor öneriyi kurallarıyla uygular (adım 7)
+6. Örnek veri: modüllerin mod davranışı, gelecek haftanın Yoğun modu, haftanın taahhüdü (adım 8)
+
+Testler: 289 birim, 172 veritabanı, 139 uçtan uca (`npm run check:full` yeşil; ekran görüntüsü çekimiyle 6 fazlası). Ekran görüntüleri: `docs/ekran-goruntuleri/c3/` (86 dosya). Baktıklarım: Bugün (pano, telefon), Hafta, kapanışın yarın adımı, gece. Görüntülerden iki düzeltme çıktı (gecenin sakin ekranı; oturum işleri yazılamamış kalemin onarımı).
+
+#### Denetim
+
+Adım denetimleri (her biri bağımsız alt ajan; yalnızca `prompts/denetci.md`, kip ve kapsam verildi):
+
+| Denetim | Karar | Bulgular | Ne yapıldı |
+| --- | --- | --- | --- |
+| Adım 1–2 (migration, motor), 1. tur | GEÇMEDİ | 1 engelleyici (yapay zekanın `defer`'i haftalık tabanı aşabiliyordu), 2 önemli, 7 not | Hepsi düzeltildi ("Verdiğim kararlar") |
+| Adım 1–2, 2. tur | GEÇTİ | 5 önemli (fiziksel iş, acil kalemin oturumları, haftanın payı, yapay zekanın modül payları, `empty` durumu), 7 not | Önemliler ve çoğu not düzeltildi |
+| Adım 3 (veri katmanı, bekçi) | GEÇTİ | 5 önemli (Ertele ve bekleme kalemde, ilk dokunuş, günün yuva süresi, eksik testler, `days` sütunları), 10 not | Önemliler ve çoğu not düzeltildi |
+| Adım 4–6 (Bugün, kapanış, Hafta) | GEÇTİ | 6 önemli (küçük adım, bugün teslim kalemin oturumları, "Bitti mi?" sırası, gevşetilen test, eksik testler, doküman), 5 not | Hepsi düzeltildi |
+| Adım 7 (yapay zeka), 1. tur | GEÇMEDİ | 1 engelleyici (kararsız test: bekçi adım bitince değil saatin tikinde yeniden bakıyordu), 8 önemli, 7 not | Hepsi düzeltildi |
+| Adım 7, 2. tur | GEÇTİ | 4 önemli ("Haftayı yeniden kur", bekçinin yeniden çalışması, eksik testler, not girdisi), 7 not | Önemliler ve çoğu not düzeltildi |
+
+Faz denetimi:
+
+| Tur | Karar | Bulgular | Ne yapıldı |
+| --- | --- | --- | --- |
+| Faz, 1. tur (`60542bb`) | GEÇTİ | Engelleyici yok. 3 önemli: (1) iki uçtan uca test günün saatine bağlıydı ("neden?" 22:00'den sonra, "Bugün tamam" 00:00–00:30 arasında kırılırdı); (2) geri dönüş ilk dokunuşu ve kapanışı kullanım saymıyordu; (3) Ç3'e bırakılmış bilinen sorunlar açıktı. 5 not: depoda boş, adı bozuk bir dosya; `advice_rejected` uyarısının iki uyarı sınırında düşebilmesi; `days.plan` anahtarları dokümanda eksik; iki aynı ekran görüntüsü; yeni kalemin taahhüde eklenmesinin yorumu | (1) testler bugünün sabit saatleriyle; (2) `lastActivityBefore` günün ilk dokunuşunu ve kapanışını sayar (testli); (3) "Bitti mi?" kartında "Başka bir şey yapıyorum", açık oturum işi kalemin başlangıç ve bağımlılık denetimine uyar, kapanmış kalemin oturumu önerilmez, kalemiyle bitirilen oturumda "Geri al" kalemi de açar (testli); kalanlar "Bilinen sorunlar"da. Notlar: dosya silindi, uyarı sırası `docs/04`'te, `docs/03` güncellendi, yorum yukarıdaki tabloda |
+
+#### Ç4 için notlar
+
+- **Bekçi** (`src/core/app/PlanKeeper.tsx`) haftayı, günü, yapay zekanın planlama çağrılarını ve cevapsız oturumu yönetir; yazdığından sonra yalnızca yazdığı tabloları yeniden okur (her şeyi yeniden okumak iyimser değişikliği geri alıyordu). Ç4'te bağlantısız çalışma kurulurken bekçinin yazmaları kuyruğa girmemeli: plan her an veriden yeniden kurulabilir.
+- **Ekranın planı** her değişiklikte ve 30 saniyede bir yeniden kurulur (`useTodayPlan`). Ç4'te pano gün boyu açık kalacak; uzak son tarihlerin kapasite hesabı plan başına bir kez yapılıyor, ama 8 haftalık Hafta ekranı ayrıca hesaplıyor.
+- **Klavye:** `Space`, `E`, `X`, `R` Bugün'de, kapanışta `Enter`/`Escape`; `G` dizileri ve `1`–`9` Ç4'ün kapsamında.
+- **Telefon:** bağlam seçici TopBar'da (cihazda saklanır); gün değişince sorulmuyor. Yüzen düğme telefonda listenin son satırını ve Hafta'nın alt satırını örtüyor.
+- **Tarih kutuları** test tarayıcısında İngilizce görünüyor (Hafta'daki hayat modu).
+- **Uçtan uca testler** gece de çalışabilsin diye hesabın günü 00:00–23:59 (`tests/e2e/data.ts`); bitiş çizgisi ya da gece sınayan test kendi saatini yazar. Bir önceki testin sunucudaki yapay zeka isteği sonraki testin hesabına düşebiliyor; giriş çağrılarını sayan testler yalnızca kendi türlerine bakıyor.
+- **Kapı süresi:** `check:full` yaklaşık 7 dakika (ekran görüntüleriyle 9).
+
 ## Sıradaki adım
 
-Ç3'ün planındaki ilk "bekliyor" adımı.
+Ç4 (Pano ve telefon cilası): yeni oturumda `docs/05-arayuz.md` ve `docs/11-yayin-ve-cihazlar.md` okunarak başlanır. Önce "Senden bekleyenler" (D3) ve Ç3'ün "Görüşün gerek" satırları.
 
 ## Senden bekleyenler
 
@@ -279,11 +340,11 @@ Adımlar:
 
 ### D3. Yapay zeka anahtarı: bekliyor
 
-Ç2 sahte sağlayıcıyla geliştirilip sınandı; gerçek çağrılar için:
+Ç2 ve Ç3 sahte sağlayıcıyla geliştirilip sınandı; gerçek çağrılar için:
 
 1. Anthropic Console'da bir API anahtarı aç (ücretli; aylık sınır `docs/10-yapay-zeka.md` içinde 5 $ olarak tasarlandı, Console'da ayrıca harcama sınırı koyabilirsin).
 2. Anahtarı sohbete yazma; depo kökündeki `.env.local` dosyasına `ANTHROPIC_API_KEY=...` satırı olarak ekle (`.env*` depoya girmez). Aynı dosyaya modelleri de yaz: `AI_MODEL_FAST=claude-haiku-5-5` ve `AI_MODEL_PLAN=claude-sonnet-5-5` (`.env.example` içinde hazır).
-3. Bu başlığa "tamamlandı" yaz. Sonraki oturum `npm run ai:eval` ile gerçek modeli ölçer (isabet, süre, maliyet) ve "Sunum slaytları cuma" ölçütünü gerçek modelle dener.
+3. Bu başlığa "tamamlandı" yaz. Sonraki oturum `npm run ai:eval` ile gerçek modeli ölçer (isabet, süre, maliyet), "Sunum slaytları cuma" ölçütünü ve Ç3'ün planlama çağrılarını (`plan`, `week`, `month`, `review`, `replan`: şemaların kabulü, 30 sn zaman aşımı, gerekçelerin dili) gerçek modelle dener.
 
 ### Ç1'den sana kalanlar (elle doğrulanacak)
 
@@ -462,6 +523,8 @@ Adımlar:
 
 ## Bilinen sorunlar
 
+- Ç3 sonunda açık (Ç4 ya da sonrası): bağlam seçicinin gün değişince sorulması (`docs/05`, Telefon); `useWeeklyReviews` ve `useHorizonReviews` uygulamanın saatini değil `new Date()` kullanır; `defer_count` istemcinin değerinden artar (iki ekrandan art arda Ertele'de bir artış kaybolabilir); iki ekranın haftayı aynı anda kurmasının testi yok (tekil indeks koruyor); `aiAsked` yazılırken kayıt yeniden okunmuyor; kullanıcının bıraktığı son oturum işi, haftanın payı bitmediyse yeniden açılır (`missingSittings`); uçtan uca koşuda bir önceki testin sunucudaki yapay zeka isteği yeni testin sıfırlanmış hesabına yazmaya çalışıp yabancı anahtar hatası günlüğe düşebilir (test sonucu etkilenmez); `telefon-x-dk-alt-dark.png` ana görüntüyle aynı; kapanışta ve "Yeniden planla"da not alanı yok.
+- Ç3'ten kapananlar: "Ayrılan süre doldu" kartında "Başka bir şey yapıyorum" var; açık oturum işi kalemin başlangıç ve bağımlılık denetimine uyar (çalışan hariç), kapanmış kalemin oturum işi önerilmez; kalemiyle birlikte bitirilen oturum işinde "Geri al" kalemi de açar; durdurulmuş oturum işinde "Bitti mi?" sorulur (eforu dolan kalemin başlanmamış oturumları kalemin yerine geçmez).
 - Ç2 2. tur denetim notları (açık): üç olumsuz yapay zeka testi (`yapay-zeka.ai.spec.ts`: bütçe 0, yeniden adlandırma sonrası efor, sağlayıcısız) rotanın yanıtını beklemeden 1,5 sn bekleyip yokluğu denetliyor; Ayarlar'da aylık toplam ile satırların toplamı yuvarlamadan farklı görünebilir; bütçe denetimiyle kayıt arasında kilit yok (aynı anda giden iki çağrı sınırı bir çağrı kadar aşabilir).
 - **Realtime sınırı.** Yerel Realtime saniyede 100 iletide değişiklikleri düşürüyor; kapanan sayfaların abonelikleri 15 sn kaldığı için bu yalnızca uzun test koşularında oluyor (testler buna göre sıralandı). Gerçek kullanımda iki cihaz var, ama toplu yazma (uzun bir seri, örnek veri) bulut projesinde de sınıra yaklaşabilir; o durumda öbür cihaz değişikliği güvenlik ağıyla (en geç 1 dakika, pencere öne gelince) alır. Bulut projesinin sınırlarına D1'de bakılacak.
 - Modül eylemleri tarayıcıda art arda yazar (kayıt → teklif → olay); arada sayfa kapanırsa kayıt teklifsiz kalır ("Ç2 için notlar").
@@ -477,12 +540,8 @@ Adımlar:
 - İyimser olmayan yazmalar: iş kalemi ekleme, ritim ekleme, seri ekleme ve bitirme (yanıt gelince görünür; hata olursa bildirim çıkar). Öbür yazmalar iyimser ve hata olursa geri alınır (`work-sessions.spec.ts`, "a write that fails…").
 - İptal edilip geri alınan seri bloğu "kullanıcı dokundu" işaretini taşımaya devam eder; serinin saati sonradan değişirse bu blok eski saatinde kalır. Testi yok.
 - Telefonda yüzen "Yeni giriş" düğmesi, listenin o an ekranın altına denk gelen satırındaki "Bitti" işaretini örter (kaydırınca erişilir); Ç4 telefon cilasında ele alınacak.
-- "Ayrılan süre doldu. Bitti mi?" kartında "Başka bir şey yapıyorum" yok (yalnızca Bitti ve Devam et); Ç3'te kart yeniden kurulurken.
 - Vitest, oturumun çalışma klasörü küçük harfli sürücüyle (`d:\Projects\sherpa`) verilince kendini iki kez yüklüyor ve her test dosyası `Cannot read properties of undefined (reading 'config')` hatasıyla düşüyor (en basit test de; `npm ci` düzeltmiyor). Komutlar `D:\Projects\sherpa` (büyük harf) üzerinden çalıştırılınca sorun yok. Kod hatası değil; ortam notu.
 - `ai_calls` tablosuna oturum açmış istemci doğrudan satır yazabiliyor (maliyet ve `created_at` dahil); "her çağrı geçitten kaydedilir" kuralı veritabanında zorlanmıyor. Tek kullanıcılı uygulamada kendi bütçesini kendisi bozabilir yalnızca; kabul edildi (Ç2, 1. adım denetimi notu).
-- Kalem "Bitti" ile kapanınca açık oturum işi de biter ve "Bugün bitenler"e düşer; oradaki "Geri al" oturum işini açar, kalem kapalı kalır (kapalı kalemin işi Bugün'e döner). Kod okumasıyla bulundu (3. tur notu), çalıştırılarak doğrulanmadı; Ç3'te "Bugün bitenler" yeniden ele alınırken düzeltilecek.
-- Durdurulmuş oturum işi kalemin yerine geçtiği sürece "Ayrılan süre doldu. Bitti mi?" sorulmaz (kart kalemi değil oturum işini görür); Ç3'te kart yeniden kurulurken.
-- Açık oturum işi Bugün listesinde kalemin `earliest_at`, bağımlılık ve durum denetimlerinden geçmez (bunlar yalnızca açık oturum işi olmayan kaleme uygulanır): durdurulmuş oturum işi varken kalem ileri bir başlangıç ya da yeni bir bağımlılık alırsa iş listede kalır. Oturum işi kalemin kaynağındaki (`source_type`, `source_id`) değişikliği de izlemez. İkisi de kod okumasıyla bulundu (son adım denetiminin notları); Ç3'te oturum işleri haftalık planda üretilirken ele alınacak.
 - `tests/e2e/sync.spec.ts` içindeki "a change made outside the app…" testi gelen kutusu girişi ve blok da ekliyor ama yalnızca işin ekrana ulaştığını bekliyor.
 - Alan sayfası (`/a/[slug]`) `docs/05-arayuz.md` ve `docs/02-mimari.md` içinde var, hiçbir fazın kapsamında yok ve kodda yok; `areas` satırları açılıyor ama hiçbir ekran okumuyor. **Görüşün gerek:** hangi faza girsin?
 - `formatDue` için birim testi yok; telefon genişliğinde yalnızca kabuk, Bugün ve modül sayfası testleri çalışıyor (gelen kutusu, sabit bloklar ve hızlı girişin telefon yerleşimi ekran görüntüsüyle duruyor; Ç4).

@@ -216,7 +216,7 @@ life_mode enum(normal, busy, minimum, holiday)   -- gün planlanırken geçerli 
 started_at timestamptz null   -- günün ilk dokunuşu
 finish_line time              -- bu saatten sonra derin iş önerilmez
 top3 uuid[]                   -- günün 3 işi
-plan jsonb                    -- planın özeti: yapay zekanın önerisi (`advice`), bugün ertelenenler (`skipped`), bütün günün yuva süresi (`slotMinutes`). Yuvalar ve atamalar kaydedilmez: ekran planı her değişiklikte aynı fonksiyonla yeniden kurar
+plan jsonb                    -- planın özeti: yapay zekanın önerisi (`advice`), bugün ertelenenler (`skipped`), bütün günün yuva süresi (`slotMinutes`), kullanılabilir süre (`usableMinutes`), yapay zekaya günün planının soruldu mu (`aiAsked`). Yuvalar ve atamalar kaydedilmez: ekran planı her değişiklikte aynı fonksiyonla yeniden kurar
 plan_source enum(closing, ai, auto)   -- kapanışta onaylandı / yapay zeka önerdi / yalnızca motor
 plan_reasons jsonb null       -- yapay zekanın gerekçeleri ("neden?")
 closed_at timestamptz null    -- akşam kapanışı yapıldıysa

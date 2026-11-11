@@ -189,6 +189,15 @@ export function buildCandidates(input: PlanInput): Candidate[] {
       ? input.workItems.find((row) => row.id === task.work_item_id)
       : undefined;
     if (item && (item.status === "waiting" || item.status === "proposed")) continue;
+    if (item && (item.status === "done" || item.status === "dropped")) continue;
+    // A sitting waits with its item: for the item's start and for what the item depends on.
+    // One that is running is not stopped by it.
+    if (item && task.status !== "doing") {
+      const startsAt = item.earliest_at ? Date.parse(item.earliest_at) : null;
+      const from = Math.max(input.now.getTime(), input.dayStart.getTime());
+      if (startsAt !== null && startsAt > from) continue;
+      if (isBlocked(item, input.workItems)) continue;
+    }
     const minutes = round5(task.est_minutes * estimateMultiplier(input, task.module_id, task.kind));
     const itemLeft =
       item && item.effort_total_minutes !== null

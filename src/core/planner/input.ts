@@ -81,7 +81,10 @@ export function lifeModeOn(periods: LifeModePeriod[], day: string): LifeMode {
   return covering[0]?.mode ?? "normal";
 }
 
-/** The latest sign of use before the given instant: a session, a rhythm log, an entry. */
+/**
+ * The latest sign of use before the given instant: a session, a rhythm log, an entry, finished
+ * work, a day's first touch or its closing.
+ */
 export function lastActivityBefore(rows: PlanRows, before: Date): Date | null {
   const limit = before.getTime();
   let latest = 0;
@@ -94,6 +97,11 @@ export function lastActivityBefore(rows: PlanRows, before: Date): Date | null {
   rows.rhythmLogs.forEach((row) => see(row.created_at));
   rows.inbox.forEach((row) => see(row.created_at));
   rows.tasks.forEach((row) => see(row.done_at));
+  // Opening a screen and touching it, and the evening closing, are use as well.
+  rows.days.forEach((row) => {
+    see(row.started_at);
+    see(row.closed_at);
+  });
   return latest > 0 ? new Date(latest) : null;
 }
 

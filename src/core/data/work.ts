@@ -123,7 +123,18 @@ export async function completeTask(db: Db, id: string): Promise<Task> {
 
 /** Back to the pool: a task that was marked done by mistake. */
 export async function reopenTask(db: Db, id: string): Promise<Task> {
-  return updateTask(db, id, { status: "todo", done_at: null });
+  const task = await updateTask(db, id, { status: "todo", done_at: null });
+  // A sitting finished by mistake with its item ("Bitti" closes both): the item opens again.
+  if (task.work_item_id) {
+    check(
+      await db
+        .from("work_items")
+        .update({ status: "active" })
+        .eq("id", task.work_item_id)
+        .eq("status", "done"),
+    );
+  }
+  return task;
 }
 
 /**

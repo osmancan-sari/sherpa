@@ -139,7 +139,7 @@ Her biri ayrı test edilir.
 - **Bitiş çizgisi.** `finishLine`'dan sonra derin yuva açılmaz. Günün işleri bitince `now = done` olur ve `overflow` yalnızca kullanıcı isterse gösterilir.
 - **Otomatik plan.** `days.plan` yoksa (akşam kapanışı yapılmadıysa) plan günün ilk dokunuşunda aynı fonksiyonla kurulur; `plan_source = auto`.
 - **Geri dönüş.** `return` durumunda: son tarihi geçmiş işler bugüne yığılmaz, `planned_date` değerleri temizlenir ve normal kurallarla yeniden dağıtılır. Kullanıcıya yalnızca bugünün 3 işi gösterilir.
-- **Tek uyarı.** Aynı anda en fazla 2 uyarı üretilir; öncelik: yetişmeyecek son tarih, taban tehlikesi, tanımsız sıradaki adım.
+- **Tek uyarı.** Aynı anda en fazla 2 uyarı üretilir; öncelik: yetişmeyecek son tarih, taban tehlikesi, tanımsız sıradaki adım, reddedilen öneri, üç kez ertelenen iş. Sonrakiler öncekilere yer kalmazsa gösterilmez (öneri yine reddedilir).
 
 ## Yeniden planlama
 
