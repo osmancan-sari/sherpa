@@ -4,7 +4,9 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useDismissEntry, useRouteEntry } from "@/core/app/actions";
+import { Sparkles } from "lucide-react";
+import { readSuggestion } from "@/core/ai/flows/enrich-apply";
+import { useConfirmSuggestion, useDismissEntry, useRouteEntry } from "@/core/app/actions";
 import { type KnownModule, useInbox, useModules, useNow } from "@/core/app/hooks";
 import { dueAtEndOfDay, parseQuickText } from "@/core/intake/parse";
 import {
@@ -13,15 +15,18 @@ import {
   TASK_MAX_MINUTES,
   TASK_MIN_MINUTES,
 } from "@/core/types";
-import { dayKey, istanbulInstant } from "@/lib/date";
+import { dayKey, formatDue, formatMinutes, istanbulInstant } from "@/lib/date";
 import { cn } from "@/lib/utils";
 import { ClientOnly } from "../ClientOnly";
 import { EmptyState, PageShell } from "../PageShell";
 import { QuickAddButton } from "../QuickAdd";
+import { useNotify } from "../Notices";
 import { LoadFailed } from "../today/TodayScreen";
 
-// Inbox: entries that have not been routed yet. Without the AI (Ç2) the user routes them by
-// hand: one touch to open "işe çevir" or "bloğa çevir", one to confirm; or "sil".
+// Inbox: entries that have not been routed yet. An entry the AI read but was not sure about
+// shows its suggestion: one touch confirms it (the module can be changed first). Every entry can
+// also be routed by hand: one touch to open "işe çevir" or "bloğa çevir", one to confirm; or
+// "sil".
 
 export function InboxScreen() {
   return (
@@ -128,6 +133,10 @@ function EntryRow({ entry, modules }: { entry: InboxEntry; modules: KnownModule[
   return (
     <li className="border-border flex flex-col gap-3 rounded-xl border p-4">
       <p className="break-words whitespace-pre-wrap">{entry.raw_text}</p>
+
+      {mode === "idle" && entry.status === "needs_confirm" ? (
+        <SuggestionCard entry={entry} modules={modules} />
+      ) : null}
 
       {mode === "idle" ? (
         <div className="flex flex-wrap gap-2">
@@ -253,6 +262,94 @@ function EntryRow({ entry, modules }: { entry: InboxEntry; modules: KnownModule[
         </div>
       ) : null}
     </li>
+  );
+}
+
+const IMPORTANCE = ["", "düşük önem", "normal önem", "yüksek önem", "çok yüksek önem"];
+
+/** The AI's reading of the entry, to confirm with one tap. */
+function SuggestionCard({ entry, modules }: { entry: InboxEntry; modules: KnownModule[] }) {
+  const now = useNow();
+  const confirm = useConfirmSuggestion();
+  const notify = useNotify();
+  const suggestion = readSuggestion(entry);
+  const aiSlug = suggestion?.output.module.value ?? null;
+  const [slug, setSlug] = useState<string | null>(
+    modules.some(({ row }) => row.slug === aiSlug) ? aiSlug : null,
+  );
+  if (!suggestion) return null;
+
+  const { output, parsed } = suggestion;
+  const minutes = parsed.minutes ?? output.est_minutes.value;
+  const asItem = output.target.value === "work_item" || (minutes ?? 0) > TASK_MAX_MINUTES;
+  const day = parsed.dueDay ?? output.due.value;
+  const parts = [
+    asItem ? "iş kalemi" : "iş",
+    minutes ? formatMinutes(minutes) : null,
+    day ? formatDue(dueAtEndOfDay(day), now) : null,
+    output.importance.value ? IMPORTANCE[output.importance.value] : null,
+  ].filter(Boolean);
+  const chosen = modules.find(({ row }) => row.slug === slug);
+  const reason = output.module.reason || output.target.reason;
+
+  return (
+    <div className="bg-muted/40 flex flex-col gap-3 rounded-lg p-3">
+      <div className="flex flex-col gap-1">
+        <p className="flex items-center gap-1.5 text-sm">
+          <Sparkles aria-hidden className="text-muted-foreground size-3.5 shrink-0" />
+          <span>
+            <span className="text-muted-foreground">Öneri:</span> {parts.join(" · ")}
+          </span>
+        </p>
+        {reason ? <p className="text-muted-foreground text-sm">{reason}</p> : null}
+      </div>
+      {modules.length > 0 ? (
+        <div role="group" aria-label="Önerilen modül" className="flex flex-wrap gap-2">
+          {modules.map(({ row }) => (
+            <button
+              key={row.id}
+              type="button"
+              aria-pressed={slug === row.slug}
+              onClick={() => setSlug(row.slug)}
+              className={cn(
+                "border-border focus-visible:ring-ring/50 flex h-11 items-center gap-2 rounded-full border px-4 text-sm outline-none focus-visible:ring-3 md:h-9 md:px-3",
+                slug === row.slug
+                  ? "bg-foreground text-background border-transparent"
+                  : "hover:bg-muted",
+              )}
+            >
+              <span
+                aria-hidden
+                className="size-2 rounded-full"
+                style={{ backgroundColor: row.color }}
+              />
+              {row.name}
+            </button>
+          ))}
+        </div>
+      ) : null}
+      <div>
+        <Button
+          className="h-11 md:h-9"
+          disabled={!chosen || confirm.isPending}
+          onClick={() => {
+            if (!chosen) return;
+            confirm.mutate(
+              { entry, module: chosen.row },
+              {
+                onSuccess: (outcome) => {
+                  if (outcome.status === "applied") {
+                    notify(outcome.target === "task" ? "İş eklendi." : "İş kalemi eklendi.");
+                  }
+                },
+              },
+            );
+          }}
+        >
+          Onayla
+        </Button>
+      </div>
+    </div>
   );
 }
 

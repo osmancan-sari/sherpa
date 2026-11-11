@@ -14,6 +14,7 @@ import {
   useStartSession,
 } from "@/core/app/actions";
 import {
+  useAiStatus,
   type KnownModule,
   useActiveModuleIds,
   useBlocks,
@@ -36,6 +37,7 @@ import { cn } from "@/lib/utils";
 import { ClientOnly } from "../ClientOnly";
 import { QuickAddButton } from "../QuickAdd";
 import { NowCard, sessionTargetOf } from "./NowCard";
+import { AiBadge } from "../ai/AiMarks";
 
 // The first Today screen (Ç1): no planner yet. The "now" card, the pool in order of deadline
 // and importance, the day's fixed blocks, one line per module. One page on the second screen,
@@ -117,6 +119,8 @@ function TodayBody() {
       </header>
 
       {prompt ? <PromptCard prompt={prompt} mod={moduleMap.get(prompt.module_id)} /> : null}
+
+      <AiBudgetNotice />
 
       {/* minmax(0, …) and min-w-0: a long title is cut with an ellipsis instead of widening
           the column past the screen. */}
@@ -222,7 +226,10 @@ function CandidateRow({
         <p className="truncate font-medium">{candidate.title}</p>
         <p className="text-muted-foreground truncate text-sm tabular-nums">{parts.join(" · ")}</p>
       </div>
-      <div className="flex shrink-0 gap-1">
+      <div className="flex shrink-0 items-center gap-1">
+        {(candidate.task ?? candidate.item) ? (
+          <AiBadge row={(candidate.task ?? candidate.item)!} align="right" />
+        ) : null}
         <IconButton
           label={`Başla: ${candidate.title}`}
           onClick={() => start.mutate(sessionTargetOf(candidate))}
@@ -386,6 +393,17 @@ export function ModuleChip({ mod }: { mod: KnownModule }) {
 }
 
 /** One question after an event. At most one is on screen at a time. */
+/** Rule 9: when the month's AI budget is used up, the screen says so in one quiet line. */
+function AiBudgetNotice() {
+  const status = useAiStatus();
+  if (status.data?.state !== "budget") return null;
+  return (
+    <p role="note" className="text-muted-foreground text-sm">
+      Bu ayın yapay zeka bütçesi doldu; girişler ay sonuna kadar elle yönlendirilir.
+    </p>
+  );
+}
+
 function PromptCard({ prompt, mod }: { prompt: Prompt; mod: KnownModule | undefined }) {
   const answer = useAnswerPrompt();
   const snooze = useSnoozePrompt();

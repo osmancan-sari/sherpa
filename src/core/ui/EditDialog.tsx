@@ -3,6 +3,7 @@
 import { type FormEvent, type ReactNode, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { AiHint } from "./ai/AiMarks";
 import { Dialog } from "./Dialog";
 
 // A small form in a dialog, for changing a record by hand: a task, a work item, a rhythm, a
@@ -41,6 +42,7 @@ export function EditDialog({
   onSave,
   onClose,
   extra,
+  hints = {},
 }: {
   title: string;
   fields: EditField[];
@@ -53,6 +55,8 @@ export function EditDialog({
   onClose: () => void;
   /** Secondary actions next to the save button ("Bırak", "Durdur"). */
   extra?: ReactNode;
+  /** Field name → the AI's reason, for values the AI set (shown under the field). */
+  hints?: Record<string, string>;
 }) {
   const [values, setValues] = useState<EditValues>(initial);
   const set = (name: string, value: string) => setValues((old) => ({ ...old, [name]: value }));
@@ -113,6 +117,10 @@ export function EditDialog({
                     }
                   />
                 )}
+                {/* Only while untouched: once the user types, the value is theirs. */}
+                {hints[field.name] && value === (initial[field.name] ?? "") ? (
+                  <AiHint reason={hints[field.name]} />
+                ) : null}
               </label>
             );
           })}

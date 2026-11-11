@@ -55,6 +55,7 @@ export const sablon: ModuleDefinition = {
   //   onActivate / onArchive                        life cycle
   //   sizingHints: "..."                            effort hints for the AI
   //   onOutcome: async (outcome, ctx) => {}         what a proposed item cost
+  //   extractors: [{ key, version, instructions, item }]   readers of pasted text (ctx.extract)
   //   tables: ["sablon_..."]                        own tables (included in the export)
   //   ui.routes / ui.fullscreen / ui.actions / ui.settings / ui.history
 };

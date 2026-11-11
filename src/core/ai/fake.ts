@@ -2,6 +2,7 @@ import { parseQuickText } from "@/core/intake/parse";
 import { dayKey, istanbulInstant, shiftDay } from "@/lib/date";
 import type { DecomposeOutput } from "./calls/decompose";
 import type { EnrichInput, EnrichOutput } from "./calls/enrich";
+import type { ExtractInput, ExtractOutput } from "./calls/extract";
 import type { SizeInput, SizeOutput } from "./calls/size";
 import { type AiKind, type AiProvider, ProviderError, type ProviderRequest } from "./types";
 
@@ -14,7 +15,7 @@ import { type AiKind, type AiProvider, ProviderError, type ProviderRequest } fro
 //   [ai:error]    fails like an unreachable API
 //   [ai:refusal]  refuses, after using some tokens
 
-type Answer = (input: unknown) => unknown;
+type Answer = (input: unknown, request: ProviderRequest) => unknown;
 
 const none = { value: null, confidence: 0, reason: "" };
 
@@ -113,11 +114,31 @@ function decompose(): DecomposeOutput {
   };
 }
 
+/**
+ * Every line of the text as one suggestion `{ title, due_on, minutes }` (the day and duration
+ * typed at its end, as quick add reads them), kept only where the extractor's item takes that
+ * shape. Enough for a module's reader to be tried end to end without a key.
+ */
+function extract(input: unknown, request: ProviderRequest): ExtractOutput<unknown> {
+  const { text, today } = input as ExtractInput;
+  const now = istanbulInstant(today, "12:00");
+  const suggestions = text
+    .split(/\r?\n/)
+    .map((line) => line.replace(/^[\s\-*•\d.)]+/, "").trim())
+    .filter((line) => line.length > 0 && !line.startsWith("[ai:"))
+    .map((line) => {
+      const parsed = parseQuickText(line, now);
+      return { title: parsed.title, due_on: parsed.dueDay, minutes: parsed.minutes };
+    })
+    .filter((item) => request.schema.safeParse({ suggestions: [item], note: null }).success);
+  return { suggestions, note: null };
+}
+
 const ANSWERS: Record<AiKind, Answer> = {
   enrich,
   size,
   decompose,
-  extract: () => ({ suggestions: [], note: null }),
+  extract,
 };
 
 /** Rough token count, so the fake's calls have a cost and the budget is exercised. */
@@ -149,7 +170,7 @@ export function fakeProvider(answers: Partial<Record<AiKind, Answer>> = {}): AiP
         return { ...usage, text: JSON.stringify({ title: 42 }) };
       }
       const answer = answers[request.kind] ?? ANSWERS[request.kind];
-      const text = JSON.stringify(answer(JSON.parse(request.user)));
+      const text = JSON.stringify(answer(JSON.parse(request.user), request));
       return { ...usage, outputTokens: tokens(text), text };
     },
   };

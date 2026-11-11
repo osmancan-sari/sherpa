@@ -4,7 +4,8 @@ import { useRouter } from "next/navigation";
 import { createContext, type ReactNode, useContext, useMemo } from "react";
 import { useDb, useRegistry } from "@/core/app/CoreProvider";
 import type { KnownModule } from "@/core/app/hooks";
-import type { ModuleDefinition, ModuleUiContext } from "@/core/contract/types";
+import { postAi } from "@/core/ai/client";
+import type { ExtractResult, ModuleDefinition, ModuleUiContext } from "@/core/contract/types";
 import { createModuleContext } from "@/core/data/context";
 import type { ModuleRow } from "@/core/types";
 import { useQuickAdd } from "../QuickAdd";
@@ -43,6 +44,19 @@ export function useModuleScope(mod: KnownModule): ModuleScope {
         ...createModuleContext({ db, registry, module: row }),
         openIntake: (key: string) => quickAdd.open({ moduleSlug: row.slug, intakeKey: key }),
         navigate: (path: string) => router.push(`/m/${row.slug}/${path.replace(/^\/+/, "")}`),
+        extract: async <T,>(
+          extractor: string,
+          text: string,
+          options: { publishedAt?: string | null; context?: Record<string, unknown> } = {},
+        ): Promise<ExtractResult<T>> => {
+          const outcome = await postAi<ExtractResult<T>>("extract", {
+            module: row.slug,
+            extractor,
+            text,
+            ...options,
+          });
+          return outcome ?? { status: "failed", reason: "unreachable" };
+        },
       },
     }),
     [db, registry, router, quickAdd, row, definition],

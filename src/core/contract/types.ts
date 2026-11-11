@@ -122,10 +122,28 @@ export type ModuleContext = {
   saveSettings: (settings: Record<string, unknown>) => Promise<void>;
 };
 
+/** What one of the module's extractors made of a text (docs/10-yapay-zeka.md, `extract`). */
+export type ExtractResult<T> =
+  | { status: "ok"; suggestions: T[]; note: string | null }
+  /**
+   * No suggestions: the AI is off or used up ("skipped"), it failed or the server could not be
+   * reached ("failed"), or the module has no active extractor of that key ("unknown").
+   */
+  | { status: "skipped" | "failed" | "unknown"; reason?: string };
+
 /** The context of a quick action or a module screen: the data context plus what the shell can do. */
 export type ModuleUiContext = ModuleContext & {
   /** Opens quick add on one of the module's intake types. */
   openIntake: (key: string) => void;
+  /**
+   * Reads pasted text with one of the module's `extractors`. Nothing is written; the module
+   * decides what the suggestions become. Without the AI the answer is "skipped".
+   */
+  extract: <T>(
+    extractor: string,
+    text: string,
+    options?: { publishedAt?: string | null; context?: Record<string, unknown> },
+  ) => Promise<ExtractResult<T>>;
   /** Goes to a path under /m/<slug>/. */
   navigate: (path: string) => void;
 };

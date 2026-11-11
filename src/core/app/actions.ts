@@ -37,10 +37,14 @@ import {
   updateWorkItem,
   type WorkItemEdit,
 } from "@/core/data/work";
+import { saveAiSettings } from "@/core/ai/budget";
+import { applyEnrichment, readSuggestion } from "@/core/ai/flows/enrich-apply";
+import { acceptSplit, declineSplit } from "@/core/ai/flows/split";
 import type {
   Block,
   BlockSeries,
   InboxEntry,
+  ModuleRow,
   Prompt,
   Rhythm,
   RhythmLog,
@@ -376,6 +380,64 @@ export function useRouteEntry() {
       { key: keys.inbox, update: list.remove<InboxEntry>(args.entryId) },
       ...("task" in args ? [{ key: keys.tasks, update: list.add(draftTask(args.task)) }] : []),
     ],
+    onError,
+  });
+}
+
+// --- AI ----------------------------------------------------------------------------------------
+
+/** "Onayla" on an inbox card: the AI's suggestion becomes work, in the module the user chose. */
+export function useConfirmSuggestion() {
+  const onError = useFailureNotice();
+  return useCoreMutation({
+    mutate: async (db, args: { entry: InboxEntry; module: ModuleRow }) => {
+      const suggestion = readSuggestion(args.entry);
+      if (!suggestion) throw new Error("the entry carries no suggestion");
+      const outcome = await applyEnrichment(db, {
+        entry: args.entry,
+        output: suggestion.output,
+        parsed: suggestion.parsed,
+        callId: suggestion.call_id,
+        model: suggestion.model,
+        moduleId: args.module.id,
+        moduleSlug: args.module.slug,
+        aiModuleSlug: suggestion.output.module.value,
+        now: new Date(),
+      });
+      return outcome;
+    },
+    optimistic: (args) => [{ key: keys.inbox, update: list.remove<InboxEntry>(args.entry.id) }],
+    onError,
+  });
+}
+
+/** "Böl" / "Bölme" on a suggested split. */
+export function useAnswerSplit() {
+  const onError = useFailureNotice();
+  return useCoreMutation({
+    mutate: (db, args: { parentId: string; accept: boolean }) =>
+      args.accept ? acceptSplit(db, args.parentId) : declineSplit(db, args.parentId),
+    optimistic: ({ parentId, accept }) => [
+      {
+        key: keys.workItems,
+        update: (current: unknown) =>
+          ((current as WorkItem[] | undefined) ?? []).map((item) =>
+            item.parent_id === parentId && item.status === "proposed"
+              ? { ...item, status: accept ? ("active" as const) : ("dropped" as const) }
+              : item,
+          ),
+      },
+    ],
+    onError,
+  });
+}
+
+/** The AI switch and the monthly limit. */
+export function useSaveAiSettings() {
+  const onError = useFailureNotice();
+  return useCoreMutation({
+    mutate: (db, patch: { enabled?: boolean; budgetUsd?: number }) => saveAiSettings(db, patch),
+    invalidate: [keys.settings],
     onError,
   });
 }

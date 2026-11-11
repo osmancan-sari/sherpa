@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Suspense, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { PageShell } from "@/core/ui/PageShell";
+import { AiSettings } from "@/core/ui/settings/AiSettings";
 import { getCurrentUser } from "@/lib/auth/session";
 import { signOut } from "./actions";
 import { ThemeSwitch } from "./theme-switch";
@@ -24,6 +25,10 @@ export default function SettingsPage() {
         <SettingsLink href="/ayarlar/bloklar">
           Haftalık seriler ve tek seferlik bloklar
         </SettingsLink>
+      </Section>
+
+      <Section title="Yapay zeka">
+        <AiSettings />
       </Section>
 
       <Section title="Dışa aktarım">

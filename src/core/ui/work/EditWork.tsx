@@ -24,6 +24,8 @@ import {
 } from "@/core/types";
 import { dayKey } from "@/lib/date";
 import type { TablesUpdate } from "@/lib/supabase/database.types";
+import { aiHints } from "../ai/AiMarks";
+import { SplitButton } from "../ai/Splits";
 import { EditDialog, type EditField, type EditValues } from "../EditDialog";
 
 // Changing work by hand: a task, a work item or a rhythm. What the user sets here is the
@@ -158,6 +160,7 @@ function TaskEditor({ task, onClose }: { task: Task; onClose: () => void }) {
       title="İşi düzenle"
       fields={TASK_FIELDS}
       initial={initial}
+      hints={aiHints(task, { due_at: "due", est_minutes: "est_minutes", importance: "importance" })}
       onClose={onClose}
       onSave={(changed) => {
         const patch: TablesUpdate<"tasks"> = {};
@@ -202,6 +205,13 @@ function ItemEditor({ item, onClose }: { item: WorkItem; onClose: () => void }) 
       title="İş kalemini düzenle"
       fields={ITEM_FIELDS}
       initial={initial}
+      hints={aiHints(item, {
+        due_at: "due",
+        effort_total_minutes: "effort_total_minutes",
+        session_minutes: "session_minutes",
+        importance: "importance",
+      })}
+      extra={<SplitButton item={item} onDone={onClose} />}
       onClose={onClose}
       onSave={(changed) => {
         const patch: WorkItemEdit = {};

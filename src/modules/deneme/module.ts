@@ -1,8 +1,10 @@
 import type { ModuleDefinition } from "@/core/contract/types";
 import { dayKey, shiftDay } from "@/lib/date";
+import { ExtractPage } from "./components/ExtractPage";
 import { ItemsTab } from "./components/ItemsTab";
 import { KitTab } from "./components/KitTab";
 import { FocusView, HistoryView, ItemPage, SettingsForm } from "./components/Views";
+import { kayitReader } from "./extract";
 import { type DenemeKind, listItems, SOURCE_TYPE } from "./queries";
 import { addItem, EVENTS, listeners, onOutcome, proposalFor, settingsOf } from "./rules";
 
@@ -168,6 +170,9 @@ export const deneme: ModuleDefinition = {
     "Deneme kayıtları küçük işlerdir: bir hedef genellikle 30 dakika ile 4 saat arasında sürer.",
   onOutcome,
 
+  // Pasted text → suggested records (AI `extract`); the page /m/deneme/metin uses it.
+  extractors: [kayitReader],
+
   tables: ["deneme_items"],
 
   // Interface
@@ -176,10 +181,14 @@ export const deneme: ModuleDefinition = {
       { key: "kayitlar", label: "Kayıtlar", component: ItemsTab },
       { key: "bilesenler", label: "Bileşenler", component: KitTab },
     ],
-    routes: [{ path: "kayit/:id", title: "Kayıt", component: ItemPage }],
+    routes: [
+      { path: "kayit/:id", title: "Kayıt", component: ItemPage },
+      { path: "metin", title: "Metinden çıkar", component: ExtractPage },
+    ],
     fullscreen: [{ key: "odak", label: "Odak", component: FocusView }],
     actions: [
       { key: "yeni", label: "Kayıt ekle", run: (ctx) => ctx.openIntake("kayit") },
+      { key: "metin", label: "Metinden çıkar", run: (ctx) => ctx.navigate("metin") },
       {
         key: "ornek",
         label: "Örnek kayıt",

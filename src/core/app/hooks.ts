@@ -8,6 +8,8 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 import { useMemo, useSyncExternalStore } from "react";
+import { usageThisMonth } from "@/core/ai/budget";
+import type { AiStatus } from "@/core/ai/status";
 import type { ModuleDefinition } from "@/core/contract/types";
 import { listBlocks, listSeries } from "@/core/data/blocks";
 import { createModuleContext } from "@/core/data/context";
@@ -59,6 +61,9 @@ export const keys = {
   inbox: [CORE, "inbox_entries"] as const,
   prompts: [CORE, "prompts"] as const,
   settings: [CORE, "settings"] as const,
+  // Under "settings": a change of the AI switch or budget refreshes both.
+  aiStatus: [CORE, "settings", "ai_status"] as const,
+  aiUsage: [CORE, "settings", "ai_usage"] as const,
 };
 
 export function useModuleRows() {
@@ -123,6 +128,30 @@ export function useDuePrompts() {
 export function useSettings() {
   const db = useDb();
   return useQuery({ queryKey: keys.settings, queryFn: () => getSettings(db) });
+}
+
+/**
+ * Whether the AI answers now, and this month's spending (`/api/ai/status`; the key stays on the
+ * server). Null when the server could not be asked: the screens then say nothing about the AI.
+ */
+export function useAiStatus() {
+  return useQuery({
+    queryKey: keys.aiStatus,
+    queryFn: async (): Promise<AiStatus | null> => {
+      try {
+        const response = await fetch("/api/ai/status");
+        return response.ok ? ((await response.json()) as AiStatus) : null;
+      } catch {
+        return null;
+      }
+    },
+  });
+}
+
+/** This month's AI calls by kind and model. */
+export function useAiUsage() {
+  const db = useDb();
+  return useQuery({ queryKey: keys.aiUsage, queryFn: () => usageThisMonth(db, new Date()) });
 }
 
 // --- Modules -----------------------------------------------------------------------------------

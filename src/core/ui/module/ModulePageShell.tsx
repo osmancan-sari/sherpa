@@ -37,6 +37,8 @@ import { BarChart } from "../kit";
 import { SAVE_FAILED, useNotify } from "../Notices";
 import { useQuickAdd } from "../QuickAdd";
 import { sessionTargetOf } from "../today/NowCard";
+import { AiBadge } from "../ai/AiMarks";
+import { SplitSuggestions } from "../ai/Splits";
 import { AddRhythmButton, EditWorkButton } from "../work/EditWork";
 import { useModule } from "./ModuleProvider";
 
@@ -240,6 +242,7 @@ function Upcoming({ mod }: { mod: KnownModule }) {
   return (
     <section aria-label="Yaklaşanlar" className="flex flex-col gap-3">
       <RegionTitle>Yaklaşanlar</RegionTitle>
+      <SplitSuggestions moduleId={mod.row.id} />
       {loading ? null : list.length === 0 ? (
         <p className="text-muted-foreground text-sm">Bu modülde sırada iş yok.</p>
       ) : (
@@ -279,7 +282,10 @@ function UpcomingRow({ candidate, now }: { candidate: Candidate; now: Date }) {
         <p className="truncate font-medium">{candidate.title}</p>
         <p className="text-muted-foreground truncate text-sm tabular-nums">{parts.join(" · ")}</p>
       </div>
-      <div className="flex shrink-0 gap-1">
+      <div className="flex shrink-0 items-center gap-1">
+        {(candidate.task ?? candidate.item) ? (
+          <AiBadge row={(candidate.task ?? candidate.item)!} align="right" />
+        ) : null}
         <EditWorkButton candidate={candidate} />
         <Button
           variant="ghost"

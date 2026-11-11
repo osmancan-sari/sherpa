@@ -169,6 +169,9 @@ type ModuleViewProps = { params: Record<string, string> }   // alt sayfalarda ':
 // Ekran bileşenleri bağlama `useModule()` ile ulaşır (src/core/ui/module/ModuleProvider).
 type ModuleUiContext = ModuleContext & {
   openIntake: (key: string) => void  // hızlı girişi modülün bir giriş türünde açar
+  extract: <T>(extractor: string, text: string, options?: { publishedAt?, context? })
+    => Promise<{ status: "ok", suggestions: T[], note } | { status: "skipped" | "failed" | "unknown" }>
+                                     // yapıştırılan metni modülün okuyucusuyla okutur (yapay zeka)
   navigate: (path: string) => void   // /m/<slug>/ altında bir yola gider
 }
 ```
@@ -282,7 +285,7 @@ type Extractor<T> = {
 }
 ```
 
-Modül `POST /api/ai/extract` ile `{ module, extractor, text, publishedAt?, context? }` gönderir; çekirdek çağrıyı yapar, şemaya uyan önerileri döndürür ve hiçbir şey yazmaz. `context`, modülün metni okumaya yarayan bilgisidir (örneğin dersin açık değerlendirmeleri). Önerilerin ne olacağına (genelde kullanıcının onayladığı bir kart) modül karar verir. Yapay zeka yoksa yanıt `skipped` olur; modül elle girişe döner.
+Modül ekranından `ctx.extract(extractor, text, { publishedAt, context })` çağrılır (arkada `POST /api/ai/extract`); çekirdek çağrıyı yapar, şemaya uyan önerileri döndürür ve hiçbir şey yazmaz. `context`, modülün metni okumaya yarayan bilgisidir (örneğin dersin açık değerlendirmeleri). Önerilerin ne olacağına (genelde kullanıcının onayladığı bir kart) modül karar verir. Yapay zeka yoksa yanıt `skipped` olur; modül elle girişe döner.
 
 ## Kurallar
 

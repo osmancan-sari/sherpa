@@ -7,6 +7,7 @@ import { runExtract } from "@/core/ai/flows/extract";
 import { sizeWorkItem } from "@/core/ai/flows/size";
 import { acceptSplit, declineSplit } from "@/core/ai/flows/split";
 import { fakeProvider } from "@/core/ai/fake";
+import { saveAiSettings, usageThisMonth } from "@/core/ai/budget";
 import { readMark } from "@/core/ai/marks";
 import { aiStatus } from "@/core/ai/status";
 import type { AiConfig, AiProvider } from "@/core/ai/types";
@@ -15,6 +16,7 @@ import { addInboxEntry } from "@/core/data/inbox";
 import { onProposal, propose } from "@/core/data/propose";
 import { updateTask, updateWorkItem } from "@/core/data/work";
 import { todayCandidates } from "@/core/today/select";
+import { kayitReader } from "@/modules/deneme/extract";
 import { makeModule, ok, ownerDb, wipe } from "./helpers";
 
 // The AI flows end to end against the real database, with the recorded fake provider: what an
@@ -604,5 +606,59 @@ describe("extract", () => {
         NOW,
       ),
     ).toMatchObject({ status: "failed", reason: "invalid_output" });
+  });
+});
+
+describe("settings and usage", () => {
+  it("saves the switch and the limit (creating the row), and the status follows them", async () => {
+    await saveAiSettings(db, { budgetUsd: 2.5 });
+    expect(ok(await db.from("settings").select("*").single())).toMatchObject({
+      ai_enabled: true,
+      ai_monthly_budget_usd: 2.5,
+    });
+    expect((await aiStatus(deps(), NOW)).state).toBe("on");
+    await saveAiSettings(db, { enabled: false });
+    expect(ok(await db.from("settings").select("*"))).toHaveLength(1);
+    expect(await aiStatus(deps(), NOW)).toMatchObject({ state: "disabled", budgetUsd: 2.5 });
+    expect((await aiStatus(deps(null), NOW)).state).toBe("no_provider");
+  });
+
+  it("sums this month's calls by kind and model", async () => {
+    await makeModule(db);
+    const entry = await addInboxEntry(db, "Sınama sunum");
+    await enrichEntry(deps(), registry, entry.id, new Date());
+    const failing = await addInboxEntry(db, "Sınama [ai:invalid]");
+    await enrichEntry(deps(), registry, failing.id, new Date());
+    const usage = await usageThisMonth(db, new Date());
+    expect(usage).toMatchObject([{ kind: "enrich", model: "fake-fast", calls: 2, failed: 1 }]);
+    expect(usage[0].costUsd).toBeGreaterThan(0);
+  });
+
+  it("the fake reads a pasted list with a module's extractor, line by line", async () => {
+    await makeModule(db);
+    const withReader: ModuleRegistry = {
+      list: [],
+      get: (slug) =>
+        slug === "sinama"
+          ? ({ ...sinama, extractors: [kayitReader] } as ModuleDefinition)
+          : undefined,
+    };
+    const outcome = await runExtract(
+      deps(),
+      withReader,
+      {
+        module: "sinama",
+        extractor: "kayitlar",
+        text: "- Rapor taslağı cuma 45dk\n- Kitap iade et",
+      },
+      NOW,
+    );
+    expect(outcome).toMatchObject({
+      status: "ok",
+      suggestions: [
+        { title: "Rapor taslağı", due_on: "2026-11-13", minutes: 45 },
+        { title: "Kitap iade et", due_on: null, minutes: null },
+      ],
+    });
   });
 });
