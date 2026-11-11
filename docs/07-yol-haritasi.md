@@ -56,14 +56,14 @@ Her faz tek başına kullanılabilir bir şey bırakır. Bir fazın kabul ölç�
 
 **Kabul ölçütleri**
 - [ ] Telefonda eklenen iş, masaüstündeki Bugün ekranında yenilemeden görünüyor
-- [ ] 90 dakikadan uzun iş kaydedilemiyor; arayüz iş kalemine çevirmeyi öneriyor
-- [ ] Başla → Bitti bir oturum kaydı üretiyor; aynı anda iki açık oturum olamıyor
-- [ ] Haftalık bir blok serisi gelecek haftaların bloklarını üretiyor; tek bir blok iptal edilebiliyor
-- [ ] Aynı `key` ile iki kez teklif edilen zarf tek kayıt üretiyor; kullanıcının değiştirdiği alan ikinci teklifte ezilmiyor
-- [ ] `deneme` modülü çipini, sayfasını, girişini ve tekliflerini yalnızca sözleşme üzerinden veriyor; `src/core/` içinde `src/modules/` içe aktarımı yok (lint kuralıyla denetleniyor)
-- [ ] `deneme` modülü kendi sekmesini, alt sayfasını, tam ekran görünümünü, hızlı eylemini ve ayar formunu çekirdeğe dokunmadan ekliyor
+- [x] 90 dakikadan uzun iş kaydedilemiyor; arayüz iş kalemine çevirmeyi öneriyor
+- [x] Başla → Bitti bir oturum kaydı üretiyor; aynı anda iki açık oturum olamıyor
+- [x] Haftalık bir blok serisi gelecek haftaların bloklarını üretiyor; tek bir blok iptal edilebiliyor
+- [x] Aynı `key` ile iki kez teklif edilen zarf tek kayıt üretiyor; kullanıcının değiştirdiği alan ikinci teklifte ezilmiyor
+- [x] `deneme` modülü çipini, sayfasını, girişini ve tekliflerini yalnızca sözleşme üzerinden veriyor; `src/core/` içinde `src/modules/` içe aktarımı yok (lint kuralıyla denetleniyor)
+- [x] `deneme` modülü kendi sekmesini, alt sayfasını, tam ekran görünümünü, hızlı eylemini ve ayar formunu çekirdeğe dokunmadan ekliyor
 - [ ] `_sablon` kopyalanarak yeni bir boş modül 15 dakikada ayağa kalkıyor (adımlar modül README'sinde yazılı)
-- [ ] Bütün veri JSON olarak dışa aktarılabiliyor
+- [x] Bütün veri JSON olarak dışa aktarılabiliyor
 
 ### Ç2: Yapay zeka geçidi
 

@@ -4,9 +4,9 @@ Bu dosyayı Claude Code günceller. Yeni bir oturum yalnızca bu dosyayı ve `pr
 
 ## Durum
 
-- Faz: **Ç1 (Çekirdek ve modül temeli): 8. adımda, faz denetimi sürüyor.** Ç0 bitti (`c0-tamam`); yayın ve telefon D1 ve D2'yi bekliyor
-- Adım: 8 / 8 (aşağıdaki plan); 1–7 bitti
-- Son commit: faz denetimi 3. tur düzeltmeleri (açık oturum işi kalemini izler, zarf tanımadığı alanı reddeder)
+- Faz: **Ç1 (Çekirdek ve modül temeli) bitti (`c1-tamam`, 11 Kas 2026).** Sıradaki faz Ç2 (Yapay zeka geçidi). Ç0 da bitti (`c0-tamam`); yayın ve telefon D1 ve D2'yi bekliyor
+- Adım: Ç1'in 8 adımı da bitti; Ç2 başlamadı
+- Son commit: Ç1 faz raporu; son adım denetiminin düzeltmeleri (oturum işi kalemin oturum süresini de izler)
 
 ### Ç1 planı
 
@@ -21,7 +21,7 @@ Her adımın sonunda `npm run check` ve commit; şema, RLS, iş zarfı ve eşitl
 | 5 | Modül arayüzü zemini: `ModulePageShell`, sekmeler, alt sayfalar, tam ekran, hızlı eylemler, modül ayarları, bileşen takımı. `_sablon` ve `deneme` | bitti (`deneme-module.spec.ts` 13 test, `module-page.both.spec.ts` iki genişlikte 2 test) |
 | 6 | Ayarlar: modüller, sabit bloklar, dışa aktarım | bitti (`settings.spec.ts`, `tests/db/blocks.test.ts` içinde dışa aktarım) |
 | 7 | `scripts/seed-demo.ts`, elle düzenleme arayüzü (iş, kalem, ritim, blok, seri), ekran görüntüleri | bitti; 5–7. adımların denetimi (adım kipi, `cac1403..a4281f3`): engelleyici yok, 7 önemli bulgu; ayrıntı faz raporunda |
-| 8 | `check:full`, faz denetimi, düzeltmeler, faz raporu, etiket | sürüyor |
+| 8 | `check:full`, faz denetimi, düzeltmeler, faz raporu, etiket | bitti; faz denetimi üç tur (üçü de GEÇTİ, engelleyici yok), ardından 3. tur düzeltmelerinin adım denetimi (GEÇTİ) |
 
 ## Biten fazlar
 
@@ -126,7 +126,7 @@ Faz denetimi (her biri bağımsız bir alt ajan; yalnızca `prompts/denetci.md`,
 | --- | --- | --- | --- |
 | Faz, 1. tur (`639a0cf`) | GEÇTİ | Engelleyici yok. 4 önemli: (1) telefonda Bugün ekranı uzun başlıkla yana taşıyor, alt çubuk ve hızlı girişteki "Ekle" ekran dışına kayıyor (ekran görüntülerinden ölçüldü; raporum "bozuk ekran yok" diyordu, yanlıştı); (2) bunu yakalayan test yok; (3) `_sablon` ölçütünün kalıcı kanıtı yok; (4) "modül çekirdekten neyi içe aktarabilir" kuralını denetleyen kapı yok, `deneme` listede olmayan bir yolu içe aktarıyor. 7 not: düzenleme penceresinde kaleme çevirme önerisi yok; iki eski doküman satırı; "Seriyi bitir" blokları siliyor ve yazılı değil; `deneme` 5 dakikadan kısa hedefte teklifsiz kayıt bırakıyor; yapılı blok ayrıştırıcısının birim testi yok; ekran görüntüsü verisi zarfsız yazılıyor; pano Bugün örnek veriyle kayıyor | Dört önemli bulgu düzeltildi: ızgara sütunu daralabiliyor (`TodayScreen.tsx`); `today.both.spec.ts` iki genişlikte uzun başlıklarla taşmayı, alt çubuğu ve hızlı giriş penceresini sınıyor (düzeltme geri alınınca telefonda 394 px taşmayla kırmızıya düştüğü denendi); şablonun adı değiştirilmiş kopyası kalıcı uçtan uca testte (`template-module.spec.ts`); içe aktarım izin listesi testte ve dokümanda. Notlardan: iki doküman satırı, seri kararı (doküman ve kararlar), `deneme` alt sınırı ve hızlı girişte sınır dışı sayının kaydı kapatması (Enter dahil; testiyle), `blocks.test.ts`, ekran görüntüsü verisi düzeltildi; görüntüler yeniden alındı ve telefon görüntülerine yeniden baktım. Açık kalan notlar: düzenleme penceresindeki öneri ("Bilinen sorunlar"), pano kaydırması (Ç4 kapsamı) |
 | Faz, 2. tur (`c2fe453`) | GEÇTİ | Engelleyici yok. 2 önemli: (1) "modül başka modülü içe aktarmaz" testi tek `../` ile yazılan kardeş modül yolunu kaçırıyor; (2) "hata olursa geri alınır" kuralının testi yok (kod var). 10 not: ilerleme kaydında iki yanlış ayrıntı (90 dk kısıtının test dosyası; tek seferlik blokta gün tipi); blok ve seride tür ve gün tipi düzenlenemiyor, elle doğrudan iş kalemi eklenemiyor; "Durdur", "Bugün bitenler", "Geri al" dokümanda yok; dört yazma iyimser değil; telefonda yüzen düğme o an altında kalan satırın "Bitti" işaretini örtüyor; tip üretimi kapısı yok, lint `it.fails` ve `test.fail` yazımlarını kaçırıyor; `/api/export` içindeki oturum denetimi ayrı sınanmıyor; şablonda `source.type` sabit ve README söylemiyor; "süre doldu" kartında "Başka bir şey yapıyorum" yok; iptal edilip geri alınan seri bloğu serinin sonraki düzenlemelerini izlemiyor | İki önemli bulgu düzeltildi: test göreli yolu çözüp modülün kendi klasöründe kaldığına bakıyor, sekiz yazım örneğiyle kendini de sınıyor (`tests/unit/modules.test.ts`); `work-sessions.spec.ts` içinde yazma isteği kesilerek listedeki "Bitti" ve karttaki "Başla" için önce ekranın değiştiği, sonra geri alındığı, bildirimin çıktığı ve veritabanının değişmediği sınanıyor. Notlardan: iki kayıt düzeltildi; `docs/05-arayuz.md` "Ç1 ara hali"; lint `fails` ve `fail` yazımlarını da reddediyor (testiyle); `/api/export` için oturumsuz birim testi; README satırı. Açık kalan notlar "Bilinen sorunlar"da: elle iş kalemi, iyimser olmayan dört yazma, geri alınan seri bloğu, yüzen düğme (Ç4), "süre doldu" kartı (Ç3), tip üretimi kapısı |
-| Faz, 3. tur (`3170917`) | GEÇTİ | Engelleyici yok. 2 önemli: (1) kalemin oturum işi açıkken (Başla → Durdur) kalemin adı, son tarihi ya da önemi değişirse Bugün listesi oturum işinin eski değerlerini gösteriyor ve onlarla sıralıyor; (2) zarf tanımadığı ya da yanlış yazılmış alanı sessizce atıyor (`when.deu` kabul edilip iş son tarihsiz açılıyor). 8 not: eşitleme testindeki iki satırın beklentisi yok; kapatılan kalemin biten oturum işi "Geri al" ile açılabiliyor; durdurulmuş oturum işi varken "süre doldu" sorusu sorulmuyor; veri modeli örneğinde zarfta olmayan `module` alanı; mimari dokümanında `src/core/app/` yok (eklendi); alan sayfası (`/a/[slug]`) hiçbir fazın kapsamında değil; `formatDue` birim testi yok; telefon genişliğinde yalnızca üç test dosyası çalışıyor | Üçüncü tur son turdu; iki önemli bulgu yine de düzeltildi ve düzeltme ayrıca adım kipinde denetletildi (aşağıda). (1) Yeni migration: açık oturum işi kalemin adını, son tarihini, önemini, enerji ve bağlamını izler (`sync_open_sittings` tetikleyicisi); veritabanı testi ve uçtan uca test (`edit-work.spec.ts`, "a stopped sitting follows its item"). (2) Zarf şeması iç nesneleriyle birlikte katı; on yanlış yazım örneğiyle testi var; dokümandaki örnekten `module` çıkarıldı. Açık kalan notlar "Bilinen sorunlar"da |
+| Faz, 3. tur (`3170917`) | GEÇTİ | Engelleyici yok. 2 önemli: (1) kalemin oturum işi açıkken (Başla → Durdur) kalemin adı, son tarihi ya da önemi değişirse Bugün listesi oturum işinin eski değerlerini gösteriyor ve onlarla sıralıyor; (2) zarf tanımadığı ya da yanlış yazılmış alanı sessizce atıyor (`when.deu` kabul edilip iş son tarihsiz açılıyor). 8 not: eşitleme testindeki iki satırın beklentisi yok; kapatılan kalemin biten oturum işi "Geri al" ile açılabiliyor; durdurulmuş oturum işi varken "süre doldu" sorusu sorulmuyor; veri modeli örneğinde zarfta olmayan `module` alanı; mimari dokümanında `src/core/app/` yok (eklendi); alan sayfası (`/a/[slug]`) hiçbir fazın kapsamında değil; `formatDue` birim testi yok; telefon genişliğinde yalnızca üç test dosyası çalışıyor | Üçüncü tur son turdu; iki önemli bulgu yine de düzeltildi ve düzeltme sonradan adım kipinde denetletildi (sonucu aşağıdaki "Adım denetimleri" tablosunun son satırında). (1) Yeni migration: açık oturum işi kalemin adını, son tarihini, önemini, enerji ve bağlamını, doluysa oturum süresini izler (`sync_open_sittings` tetikleyicisi); veritabanı testi ve uçtan uca test (`edit-work.spec.ts`, "a stopped sitting follows its item"). (2) Zarf şeması iç nesneleriyle birlikte katı; on yanlış yazım örneğiyle testi var; dokümandaki örnekten `module` çıkarıldı. Açık kalan notlar "Bilinen sorunlar"da |
 
 Not: 1. turun düzeltmeleri sürerken oturum kullanım sınırına takıldı ve değişiklikler commit'siz kaldı; sonraki oturum denetçi raporunu oturum kaydından okuyup işi tamamladı.
 
@@ -137,6 +137,7 @@ Adım denetimleri:
 | Adım 2: şema ve RLS | (önceki oturum) | 2 engelleyici, 5 önemli | Hepsi düzeltildi (`bca9f33`) |
 | Adım 3: iş zarfı ve sözleşme | (önceki oturum) | Engelleyici yok, 8 önemli | Hepsi düzeltildi (`2cd1cd1`) |
 | Adım 5–7: modül arayüzü, `deneme`, ayarlar, örnek veri, düzenleme (`cac1403..a4281f3`) | GEÇTİ | Engelleyici yok, 7 önemli: (1) 5'in katı olmayan süre tarayıcı doğrulamasına takılıyor, hızlı girişte de; (2) açık oturum işi olan kalemin eylemlerine ulaşılamıyor; (3) arşivlenip yeniden açılan modülün işleri geri gelmiyor, davranış yazılı değil; (4) bazı yeni davranışların testi yok; (5) bu dosya güncel değil; (6) sözleşme dokümanı ile kod örtüşmüyor; (7) `deneme` her bağlantı noktasını örneklemiyor | Hepsi düzeltildi: formlar kendi doğrulamasını yapıyor (12 ve 37 dk testleri); modül sayfasında kalem tek satır, oturum işi ayrıca listelenmiyor; arşiv geri çekme işareti bırakıyor, yeniden teklif geri getiriyor (veritabanı ve uçtan uca test); eksik testler yazıldı (gelen kutusunda uzun giriş, okuma hatası, "Devam et", `Shift+Enter`, iki genişlikte düzenleme); sözleşmeye "modül çekirdekten neyi içe aktarabilir" eklendi, dosya listesi düzeltildi; `deneme`'ye `onArchive` ve `ui.history` eklendi. Notlardan: grafik anahtarları, kararlar tablosundaki boşluk, iki zayıf birim testi, sayı içeren uyarı metni düzeltildi; kalanlar "Bilinen sorunlar"da |
+| Faz denetimi 3. tur düzeltmeleri: oturum işi tetikleyicisi, katı zarf (`3170917..9ee52bc`) | GEÇTİ | Engelleyici yok, 2 önemli: (1) bu dosya adım denetimini, denetim çalışmadan önce "yapıldı" diye yazmıştı; (2) açık oturum işi kalemin oturum süresini izlemiyordu. 4 not: test `doing`, `waiting` ve `dropped` durumlarını sınamıyor; oturum işi kalemin kaynak değişimini izlemiyor; açık oturum işi kalemin en erken başlangıç ve bağımlılık denetimlerinden geçmiyor; tetikleyici beş alanı birlikte kopyalıyor (bugün sorun değil) | İkisi de düzeltildi: kayıt düzeltildi (bu satır); tetikleyici oturum süresini de izliyor, test `doing` ve `dropped` durumlarını ve süreyi de sınıyor. Test, ilk yazdığım ifadedeki bir hatayı yakaladı (Postgres'te `greatest` boş değeri atlıyor; süre silinince oturum işi 5 dakikaya düşüyordu) ve düzeltildi. Kalan notlar "Bilinen sorunlar"da. **Bu son düzeltme (migration'daki tek ifade ve testi) ayrıca denetlenmedi**; `npm run check:full` onunla yeşil |
 
 Denetçinin 14. notu doğru: 5. ve 6. adımlar ile örnek veri tek commit'te (`9486fea`) geldi ve adım denetimi 7. adımdan sonra yapıldı. Önceki oturum kullanım sınırına takılıp bu adımları commit'siz bıraktığı için kurtarılan iş tek parça olarak işlendi; sonraki fazlarda adım başına commit ve denetim.
 
@@ -151,10 +152,14 @@ Denetçinin 14. notu doğru: 5. ve 6. adımlar ile örnek veri tek commit'te (`9
 - Başarısız okuma: Supabase istemcisi okumayı kendisi 3 kez dener; TanStack tarafında yeniden deneme kapalı. Yapay zeka rotaları için ayrı düşün (POST yeniden denenmez).
 - Kapı süresi: `check:full` yaklaşık 3 dakika. Veritabanı testleri dosya dosya, uçtan uca testler tek işçiyle çalışır (tek hesap, tek posta kutusu).
 - Uçtan uca testler her testten önce yerel hesabı boşaltır; örnek veriyle bakmak için `npm run db:seed` (dolu hesapta `-- --reset`).
+- **Zarf artık tanımadığı alanı reddediyor** (iç nesneler dahil). Ç2'de zarfa alan eklenecekse (ör. yapay zeka gerekçesi) önce şemaya ve sözleşme dokümanına eklenmeli; model çıktısı zarfa çevrilirken fazladan alan hata verir, sessizce atılmaz.
+- **Açık oturum işi kalemini izler** (`sync_open_sittings`): `size` çağrısı kalemin önemini ya da oturum süresini değiştirince açık oturum işi de değişir. Oturum işine doğrudan yazılan değer kalemin bir sonraki değişikliğinde ezilir.
+- Yeni migration her zaman yeni dosyadır; `c1-tamam` etiketinden sonra var olan migration yerinde düzenlenmez.
+- Açık kalan Ç1 notları "Bilinen sorunlar"da toplu duruyor; Ç2'nin dokunduğu yerlerde (hızlı giriş, gelen kutusu, düzenleme pencereleri) fırsat olursa kapatılabilir: düzenleme penceresinde kaleme çevirme önerisi, elle iş kalemi ekleme, tip üretimi kapısı.
 
 ## Sıradaki adım
 
-Ç1'in 8. adımı: faz denetimi (denetçi, faz kipi), engelleyici ve önemli bulguların düzeltilmesi, faz raporundaki "Denetim" başlığı, `c1-tamam` etiketi.
+Ç2 (Yapay zeka geçidi): yeni oturumda `docs/10-yapay-zeka.md`, `docs/06-modul-sozlesmesi.md` ve `docs/03-veri-modeli.md` okunarak başlanır. D3 (`ANTHROPIC_API_KEY`) verilmediyse sahte sağlayıcıyla geliştirilir.
 
 ## Senden bekleyenler
 
@@ -190,6 +195,21 @@ Benim yapacaklarım (D1 tamamlanınca): iki Supabase projesini açmak (bölge: F
 3. E-postanı yaz, gelen 8 haneli kodu uygulamanın içinde yaz, giriş yap.
 4. Uygulamayı kapatıp yeniden aç: giriş istememeli.
 5. Sonucu (çalıştı ya da nerede takıldı) buraya yaz.
+
+### D3. Yapay zeka anahtarı (Ç2'nin başında)
+
+Ç2 sahte sağlayıcıyla geliştirilip sınanır; gerçek çağrılar için:
+
+1. Anthropic Console'da bir API anahtarı aç (ücretli; aylık sınır `docs/10-yapay-zeka.md` içinde 5 $ olarak tasarlandı, Console'da ayrıca harcama sınırı koyabilirsin).
+2. Anahtarı sohbete yazma; depo kökündeki `.env.local` dosyasına `ANTHROPIC_API_KEY=...` satırı olarak ekle (`.env*` depoya girmez).
+3. Bu başlığa "tamamlandı" yaz. Ç2 oturumu gerçek çağrı gerektiren testleri o zaman çalıştırır.
+
+### Ç1'den sana kalanlar (elle doğrulanacak)
+
+- Gerçek telefonda eklenen işin masaüstünde yenilemeden görünmesi (D1 ve D2'den sonra).
+- `src/modules/_sablon/README.md` adımlarıyla 15 dakikada boş modül: bir kez dene, süre tutuyor mu söyle.
+- "Verdiğim kararlar" ve "Bilinen sorunlar" içinde **Görüşün gerek** yazan satırlar.
+- Ekran görüntüleri: `docs/ekran-goruntuleri/c1/`.
 
 ## Verdiğim kararlar
 
@@ -277,7 +297,7 @@ Benim yapacaklarım (D1 tamamlanınca): iki Supabase projesini açmak (bölge: F
 | 11 Kas 2026 | Ç1: modül dosyalarının göreli içe aktarımları çözülür ve modülün kendi klasöründe kalmak zorundadır; `@/modules/…` ile yalnızca kendi klasörü yazılabilir. **Test değişikliği:** "imports no other module" testi sıkılaştırıldı (önce yalnızca `@/modules/<başka>` ve `../../` yakalanıyordu) | Faz denetimi (2. tur): kök dosyadan `../deneme/…` ya da `../registry` testten geçiyordu | `tests/unit/modules.test.ts` |
 | 11 Kas 2026 | Ç1: test dosyalarında `it.fails` ve `test.fail` de lint hatası | "Başarısız olması beklenen test" yeşil görünen atlanmış testtir (Ç0 notu, 2. tur faz denetimi) | `eslint.config.mjs`, `tests/unit/test-gates.test.ts` |
 | 11 Kas 2026 | Ç1: Bugün ekranındaki "Durdur", "Bugün bitenler" ve "Geri al" dokümana "Ç1 ara hali" olarak yazıldı; Ç3'te kart yeniden kurulurken kalıp kalmayacaklarına bakılır. **Görüşün gerek** | Faz denetimi (2. tur): kodda olup dokümanda olmayan davranış | `docs/05-arayuz.md`, `docs/09-kararlar.md` |
-| 11 Kas 2026 | Ç1: açık oturum işi kalemini izler; bunu veritabanı tetikleyicisi yapar (`sync_open_sittings`, yeni migration; çağıranın yetkisiyle çalışır). Bitmiş ve bırakılmış oturum işleri eski değerleriyle kalır | Faz denetimi (3. tur): durdurulmuş oturum işi listede kalemin yerine geçiyor, kalem değişince eski ad ve tarihle sıralanıyordu. Tetikleyici: kalemi değiştiren iki yol (kullanıcı düzenlemesi, modül teklifi) ve ileride gelecekler tek yerde, aynı işlemde çözülsün; ekranın her okuyanı aynı değeri görsün. Ç3'te oturum işleri kendi adını taşıyacaksa (ör. "2. oturum") yeniden bakılır | `supabase/migrations/20261111092223_open_sittings_follow_item.sql`, `docs/03-veri-modeli.md`, `tests/db/sessions.test.ts`, `tests/e2e/edit-work.spec.ts` |
+| 11 Kas 2026 | Ç1: açık oturum işi kalemini izler (ad, son tarih, önem, enerji, bağlam; kalemde oturum süresi doluysa süre de); bunu veritabanı tetikleyicisi yapar (`sync_open_sittings`, yeni migration; çağıranın yetkisiyle çalışır). Bitmiş ve bırakılmış oturum işleri eski değerleriyle kalır. Bu migration adım denetiminden sonra bir kez yerinde düzenlendi (oturum süresi eklendi); etiketten sonra yerinde düzenleme yok | Faz denetimi (3. tur): durdurulmuş oturum işi listede kalemin yerine geçiyor, kalem değişince eski ad ve tarihle sıralanıyordu. Tetikleyici: kalemi değiştiren iki yol (kullanıcı düzenlemesi, modül teklifi) ve ileride gelecekler tek yerde, aynı işlemde çözülsün; ekranın her okuyanı aynı değeri görsün. Ç3'te oturum işleri kendi adını taşıyacaksa (ör. "2. oturum") yeniden bakılır | `supabase/migrations/20261111092223_open_sittings_follow_item.sql`, `docs/03-veri-modeli.md`, `tests/db/sessions.test.ts`, `tests/e2e/edit-work.spec.ts` |
 | 11 Kas 2026 | Ç1: zarf tanımadığı alanı reddeder (iç nesneler dahil; `meta` serbest). **Test değişikliği:** `envelope.test.ts` içindeki "dokümandaki zarf" örneğinden üst düzey `module: "okul"` alanı çıkarıldı; dokümandaki örnekten de çıkarıldı (sözleşmedeki tipte hiç yoktu, modül bağlamdan bilinir) | Faz denetimi (3. tur): yanlış yazılmış alan sessizce atılıyor, iş son tarihsiz ya da eforsuz açılıyordu. Yapılı bloklar ve Ç5 köprüsü tip denetiminden geçmeyen girdi verir | `src/core/contract/envelope.ts`, `src/core/contract/envelope.test.ts`, `docs/03-veri-modeli.md`, `docs/06-modul-sozlesmesi.md` |
 
 ## Bilinen sorunlar
@@ -300,6 +320,7 @@ Benim yapacaklarım (D1 tamamlanınca): iki Supabase projesini açmak (bölge: F
 - Migration'dan sonra tiplerin yeniden üretildiğini denetleyen kapı hâlâ yok (Ç0 notu). Faz denetçileri elle karşılaştırdı: depodaki tipler şemayla aynı.
 - Kalem "Bitti" ile kapanınca açık oturum işi de biter ve "Bugün bitenler"e düşer; oradaki "Geri al" oturum işini açar, kalem kapalı kalır (kapalı kalemin işi Bugün'e döner). Kod okumasıyla bulundu (3. tur notu), çalıştırılarak doğrulanmadı; Ç3'te "Bugün bitenler" yeniden ele alınırken düzeltilecek.
 - Durdurulmuş oturum işi kalemin yerine geçtiği sürece "Ayrılan süre doldu. Bitti mi?" sorulmaz (kart kalemi değil oturum işini görür); Ç3'te kart yeniden kurulurken.
+- Açık oturum işi Bugün listesinde kalemin `earliest_at`, bağımlılık ve durum denetimlerinden geçmez (bunlar yalnızca açık oturum işi olmayan kaleme uygulanır): durdurulmuş oturum işi varken kalem ileri bir başlangıç ya da yeni bir bağımlılık alırsa iş listede kalır. Oturum işi kalemin kaynağındaki (`source_type`, `source_id`) değişikliği de izlemez. İkisi de kod okumasıyla bulundu (son adım denetiminin notları); Ç3'te oturum işleri haftalık planda üretilirken ele alınacak.
 - `tests/e2e/sync.spec.ts` içindeki "a change made outside the app…" testi gelen kutusu girişi ve blok da ekliyor ama yalnızca işin ekrana ulaştığını bekliyor.
 - Alan sayfası (`/a/[slug]`) `docs/05-arayuz.md` ve `docs/02-mimari.md` içinde var, hiçbir fazın kapsamında yok ve kodda yok; `areas` satırları açılıyor ama hiçbir ekran okumuyor. **Görüşün gerek:** hangi faza girsin?
 - `formatDue` için birim testi yok; telefon genişliğinde yalnızca kabuk, Bugün ve modül sayfası testleri çalışıyor (gelen kutusu, sabit bloklar ve hızlı girişin telefon yerleşimi ekran görüntüsüyle duruyor; Ç4).

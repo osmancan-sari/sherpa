@@ -229,7 +229,7 @@ describe("sessions", () => {
     expect(ok(await db.from("tasks").select("id").eq("work_item_id", item.id))).toHaveLength(1);
   });
 
-  it("an open sitting follows its item's name, deadline, importance and fit; a finished one does not", async () => {
+  it("an open sitting follows its item's name, deadline, importance, fit and length; a finished or dropped one does not", async () => {
     const mod = await makeModule(db);
     const make = async (title: string) =>
       ok(
@@ -260,6 +260,9 @@ describe("sessions", () => {
     const third = ok(await db.rpc("start_session", { p_work_item_id: other.id }));
     ok(await db.rpc("end_session", { p_session_id: third.id, p_outcome: "stopped" }));
     expect((await sittingsOf(item.id)).map((task) => task.status)).toEqual(["done", "todo"]);
+    // The open sitting is being worked on while the item changes.
+    const running = ok(await db.rpc("start_session", { p_work_item_id: item.id }));
+    expect((await sittingsOf(item.id)).map((task) => task.status)).toEqual(["done", "doing"]);
 
     ok(
       await db
@@ -281,9 +284,10 @@ describe("sessions", () => {
       importance: 4,
       energy: "deep",
       context: "desk",
-      status: "todo",
+      status: "doing",
       est_minutes: 30,
     });
+    ok(await db.rpc("end_session", { p_session_id: running.id, p_outcome: "stopped" }));
     expect(Date.parse(open.due_at!)).toBe(Date.parse("2026-11-12T10:00:00+03:00"));
     // History keeps what it had; the other item's sitting is not touched.
     expect(finished).toMatchObject({ title: "Eski ad", importance: 2, status: "done" });
@@ -305,6 +309,42 @@ describe("sessions", () => {
       energy: "light",
       context: "any",
     });
+
+    // The item's session length is the length of its open sitting; taking the length away
+    // leaves the sitting as long as it was.
+    const setLength = async (session_minutes: number | null) =>
+      ok(
+        await db.from("work_items").update({ session_minutes }).eq("id", item.id).select().single(),
+      );
+    await setLength(50);
+    expect((await sittingsOf(item.id)).map((task) => [task.status, task.est_minutes])).toEqual([
+      ["done", 30],
+      ["todo", 50],
+    ]);
+    await setLength(null);
+    expect((await sittingsOf(item.id))[1].est_minutes).toBe(50);
+
+    // A sitting that was dropped is history as well.
+    const [otherSitting] = await sittingsOf(other.id);
+    ok(
+      await db
+        .from("tasks")
+        .update({ status: "dropped" })
+        .eq("id", otherSitting.id)
+        .select()
+        .single(),
+    );
+    ok(
+      await db
+        .from("work_items")
+        .update({ title: "Başka kalemin yeni adı", importance: 4 })
+        .eq("id", other.id)
+        .select()
+        .single(),
+    );
+    expect(await sittingsOf(other.id)).toMatchObject([
+      { title: "Başka kalem", importance: 2, status: "dropped" },
+    ]);
 
     // A change that is none of these (the effort) leaves the sitting as it is.
     const before = (await sittingsOf(item.id))[1];
