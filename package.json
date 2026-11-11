@@ -27,6 +27,7 @@
     "db:push": "supabase db push",
     "db:user": "node --env-file=.env.local scripts/create-user.mjs",
     "db:seed": "tsx scripts/seed-demo.ts",
+    "ai:eval": "tsx --conditions=react-server scripts/ai-eval/run.ts",
     "icons": "node scripts/generate-icons.mjs"
   },
   "dependencies": {

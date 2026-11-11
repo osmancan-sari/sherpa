@@ -36,9 +36,10 @@ function enrich(input: unknown): EnrichOutput {
   const now = istanbulInstant(today, "12:00");
   const parsed = parseQuickText(text.replace(/\[ai:[a-z]+\]/g, " "), now);
 
+  // Whole words only: "ödev" does not name the module "Ev".
+  const lineWords = new Set(lower.split(/[^\p{L}\p{N}-]+/u));
   const named = modules.find(
-    (mod) =>
-      lower.includes(mod.name.toLocaleLowerCase("tr")) || lower.includes(mod.slug.toLowerCase()),
+    (mod) => lineWords.has(mod.name.toLocaleLowerCase("tr")) || lineWords.has(mod.slug),
   );
   const chosen = named ?? (modules.length === 1 ? modules[0] : undefined);
   const unsure = lower.includes("[ai:unsure]");

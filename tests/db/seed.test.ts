@@ -13,7 +13,14 @@ describe("sample data", () => {
     const now = new Date();
     const summary = await seedDemo(db, now);
 
-    expect(summary).toMatchObject({ modules: 4, work_items: 5, rhythms: 4, series: 5, inbox: 2 });
+    expect(summary).toMatchObject({
+      modules: 4,
+      work_items: 5,
+      rhythms: 4,
+      series: 5,
+      inbox: 3,
+      ai_calls: 3,
+    });
     expect(summary.blocks).toBeGreaterThan(30);
     expect(summary.sessions).toBe(25);
 
@@ -37,8 +44,22 @@ describe("sample data", () => {
       source_type: "okul.assessment",
     });
     expect(midterm.provenance).toMatchObject({ effort_total_minutes: "default", due_at: "module" });
-    // A dependency proposed earlier is resolved to its record.
+    // The AI's part, played by the fake provider: an estimate inside the bounds, a task it read
+    // from a line, and a card it was not sure about.
     const report = items.find((item) => item.key === "project:dl:report")!;
+    expect(report.provenance).toMatchObject({ effort_total_minutes: "ai" });
+    expect(report.effort_total_minutes).toBeGreaterThanOrEqual(180);
+    expect(report.effort_total_minutes).toBeLessThanOrEqual(480);
+    const read = ok(
+      await db.from("tasks").select("*").eq("title", "Okul sunum slaytları").single(),
+    );
+    expect(read.ai).not.toBeNull();
+    const card = ok(
+      await db.from("inbox_entries").select("*").eq("raw_text", "perde ölçüsünü al").single(),
+    );
+    expect(card.status).toBe("needs_confirm");
+
+    // A dependency proposed earlier is resolved to its record.
     const fixes = items.find((item) => item.key === "project:dl:proposal-fixes")!;
     expect(report.depends_on).toEqual([fixes.id]);
 

@@ -156,7 +156,7 @@ Her çağrının bir akışı vardır (`src/core/ai/flows/`): girdiyi kurar, ge�
 
 ## Kalite denetimi
 
-`scripts/ai-eval/`: kullanıcının gerçek girişlerinden 30 örnek ve beklenen sonuçları. İstem ya da model değişince çalıştırılır; yönlendirme doğruluğu ve süre tahmini sapması raporlanır. Maliyeti birkaç senttir.
+`scripts/ai-eval/` (`npm run ai:eval`): 30 örnek satır ve beklenen sonuçları. İstem ya da model değişince çalıştırılır; yönlendirme doğruluğu, iş / iş kalemi ayrımı, son tarih doğruluğu ve süre tahmini sapması raporlanır. Maliyeti birkaç senttir. Çağrılar uygulamanın geçidinden, yerel hesapla yapılır ve `ai_calls`'a yazılır. İlk örnekler elle yazıldı (Ç2); kullanıcının gerçek girişleri biriktikçe onlarla değiştirilir.
 
 ## Uygulama notu
 

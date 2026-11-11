@@ -1,0 +1,312 @@
+{
+  "today": "2026-11-11",
+  "weekday": "çarşamba",
+  "modules": [
+    {
+      "slug": "okul",
+      "name": "Okul",
+      "area": null,
+      "intake": [
+        {
+          "label": "Sınav/teslim",
+          "examples": ["BBF301E midterm 14.11", "YZV406E ödev 2 pazartesi"]
+        }
+      ]
+    },
+    {
+      "slug": "beslenme",
+      "name": "Beslenme",
+      "area": "Sağlık",
+      "intake": [
+        {
+          "label": "Alışveriş kalemi",
+          "examples": ["yulaf", "tavuk göğsü 1 kg"]
+        }
+      ]
+    },
+    {
+      "slug": "ev",
+      "name": "Ev",
+      "area": null,
+      "intake": []
+    },
+    {
+      "slug": "saglik",
+      "name": "Sağlık",
+      "area": "Sağlık",
+      "intake": []
+    }
+  ],
+  "cases": [
+    {
+      "text": "Sunum slaytları cuma",
+      "expect": {
+        "module": "okul",
+        "target": "task",
+        "minutes": 60,
+        "due": "2026-11-13"
+      }
+    },
+    {
+      "text": "BBF301E midterm çalış",
+      "expect": {
+        "module": "okul",
+        "target": "work_item",
+        "minutes": 480,
+        "due": null
+      }
+    },
+    {
+      "text": "YZV406E ödev 2 teslim pazartesi",
+      "expect": {
+        "module": "okul",
+        "target": "work_item",
+        "minutes": 180,
+        "due": "2026-11-16"
+      }
+    },
+    {
+      "text": "Lineer cebir quiz için 3. haftayı tekrar et",
+      "expect": {
+        "module": "okul",
+        "target": "task",
+        "minutes": 60,
+        "due": null
+      }
+    },
+    {
+      "text": "Hocaya proje konusu için mail at",
+      "expect": {
+        "module": "okul",
+        "target": "task",
+        "minutes": 15,
+        "due": null
+      }
+    },
+    {
+      "text": "Bitirme projesi literatür taraması",
+      "expect": {
+        "module": "okul",
+        "target": "work_item",
+        "minutes": 600,
+        "due": null
+      }
+    },
+    {
+      "text": "Kütüphaneden kitabı iade et yarın",
+      "expect": {
+        "module": "okul",
+        "target": "task",
+        "minutes": 20,
+        "due": "2026-11-12"
+      }
+    },
+    {
+      "text": "Derin öğrenme ara raporu 20.11",
+      "expect": {
+        "module": "okul",
+        "target": "work_item",
+        "minutes": 360,
+        "due": "2026-11-20"
+      }
+    },
+    {
+      "text": "Haftalık yemek planı yap",
+      "expect": {
+        "module": "beslenme",
+        "target": "task",
+        "minutes": 30,
+        "due": null
+      }
+    },
+    {
+      "text": "Pazar günü meal prep",
+      "expect": {
+        "module": "beslenme",
+        "target": "task",
+        "minutes": 90,
+        "due": "2026-11-15"
+      }
+    },
+    {
+      "text": "Market alışverişi: yulaf, yumurta, tavuk",
+      "expect": {
+        "module": "beslenme",
+        "target": "task",
+        "minutes": 40,
+        "due": null
+      }
+    },
+    {
+      "text": "Protein tozu sipariş et",
+      "expect": {
+        "module": "beslenme",
+        "target": "task",
+        "minutes": 10,
+        "due": null
+      }
+    },
+    {
+      "text": "Bu haftanın kalori takibini gözden geçir",
+      "expect": {
+        "module": "beslenme",
+        "target": "task",
+        "minutes": 15,
+        "due": null
+      }
+    },
+    {
+      "text": "Banyoyu temizle",
+      "expect": {
+        "module": "ev",
+        "target": "task",
+        "minutes": 45,
+        "due": null
+      }
+    },
+    {
+      "text": "Çamaşırları as",
+      "expect": {
+        "module": "ev",
+        "target": "task",
+        "minutes": 15,
+        "due": null
+      }
+    },
+    {
+      "text": "Mutfak lambasını değiştir cumartesi",
+      "expect": {
+        "module": "ev",
+        "target": "task",
+        "minutes": 20,
+        "due": "2026-11-14"
+      }
+    },
+    {
+      "text": "Kira ödemesini yap 15.11",
+      "expect": {
+        "module": "ev",
+        "target": "task",
+        "minutes": 10,
+        "due": "2026-11-15"
+      }
+    },
+    {
+      "text": "Dolabı düzenle, eski kıyafetleri ayır",
+      "expect": {
+        "module": "ev",
+        "target": "task",
+        "minutes": 90,
+        "due": null
+      }
+    },
+    {
+      "text": "Faturaları kontrol et",
+      "expect": {
+        "module": "ev",
+        "target": "task",
+        "minutes": 20,
+        "due": null
+      }
+    },
+    {
+      "text": "Diş hekiminden randevu al",
+      "expect": {
+        "module": "saglik",
+        "target": "task",
+        "minutes": 10,
+        "due": null
+      }
+    },
+    {
+      "text": "Koşu 5 km",
+      "expect": {
+        "module": "saglik",
+        "target": "task",
+        "minutes": 40,
+        "due": null
+      }
+    },
+    {
+      "text": "Kan tahlili sonuçlarına bak perşembe",
+      "expect": {
+        "module": "saglik",
+        "target": "task",
+        "minutes": 15,
+        "due": "2026-11-12"
+      }
+    },
+    {
+      "text": "Esneme rutini 20dk",
+      "expect": {
+        "module": "saglik",
+        "target": "task",
+        "minutes": 20,
+        "due": null
+      }
+    },
+    {
+      "text": "Spor salonu üyeliğini yenile",
+      "expect": {
+        "module": "saglik",
+        "target": "task",
+        "minutes": 15,
+        "due": null
+      }
+    },
+    {
+      "text": "Annemi ara",
+      "expect": {
+        "module": null,
+        "target": "task",
+        "minutes": 15,
+        "due": null
+      }
+    },
+    {
+      "text": "Doğum günü hediyesi al 22.11",
+      "expect": {
+        "module": null,
+        "target": "task",
+        "minutes": 45,
+        "due": "2026-11-22"
+      }
+    },
+    {
+      "text": "Pasaport yenileme başvurusu",
+      "expect": {
+        "module": null,
+        "target": "task",
+        "minutes": 60,
+        "due": null
+      }
+    },
+    {
+      "text": "Kişisel web sitesini baştan yap",
+      "expect": {
+        "module": null,
+        "target": "work_item",
+        "minutes": 900,
+        "due": null
+      }
+    },
+    {
+      "text": "Arabanın muayenesini yaptır cuma",
+      "expect": {
+        "module": null,
+        "target": "work_item",
+        "minutes": 120,
+        "due": "2026-11-13"
+      }
+    },
+    {
+      "text": "Fotoğrafları yedekle",
+      "expect": {
+        "module": null,
+        "target": "task",
+        "minutes": 30,
+        "due": null
+      }
+    }
+  ]
+}

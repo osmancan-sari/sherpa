@@ -58,6 +58,7 @@ Paket sürümlerini ezberden yazma; kurarken güncel kararlı sürümü kullan v
 | `npm run db:push` | Migration'ları bağlı bulut projesine uygular (`supabase link` sonrası) |
 | `npm run db:user` | `ALLOWED_EMAIL` hesabını oluşturur (yeni kayıt kapalı; hesap yalnızca böyle açılır) |
 | `npm run db:seed` | Yerel hesaba örnek veri yazar (sahte modüller, kalemler, ritimler, bloklar). Hesap doluysa `npm run db:seed -- --reset`. Yalnızca yerel Supabase |
+| `npm run ai:eval` | Yapay zeka kalite denetimi: `scripts/ai-eval/cases.json` örnekleri gerçek modelle (`-- --fake` ile sahte sağlayıcıyla), yerel hesap üzerinden geçitten; rapor yazdırır. İstem ya da model değişince |
 | `npm run icons` | Uygulama simgelerini yeniden üretir |
 
 Faz ekran görüntüleri: PowerShell'de `$env:SHERPA_SHOTS = "c0"; npm run test:e2e` → `docs/ekran-goruntuleri/c0/`.

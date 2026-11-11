@@ -1,3 +1,7 @@
+import { fakeProvider } from "@/core/ai/fake";
+import { enrichEntry } from "@/core/ai/flows/enrich";
+import { sizeWorkItem } from "@/core/ai/flows/size";
+import { createRegistry } from "@/core/contract/registry";
 import type { WorkProposal } from "@/core/contract/types";
 import { createBlock, createSeries } from "@/core/data/blocks";
 import { addInboxEntry } from "@/core/data/inbox";
@@ -11,12 +15,24 @@ import { dayKey, END_OF_DAY, istanbulInstant, shiftDay, weekStart } from "@/lib/
 // have no code behind them; their work arrives the way a real module's would, as envelopes
 // through `propose`, and the rest the way the user would add it by hand.
 //
+// The AI's part (Ç2) is played by the recorded fake provider through the real flows: a quick-add
+// line it read and turned into a task, a line it was not sure about (a card in the inbox), and a
+// work item whose effort it estimated. The calls show in Settings → Yapay zeka.
+//
 // Everything is dated relative to `now`, so the Today screen has something to show whenever
 // the seed runs. Meant for an account without data; it is never run against production
 // (scripts/seed-demo.ts refuses anything but the local stack).
 
 export type DemoSummary = Record<
-  "modules" | "work_items" | "rhythms" | "series" | "blocks" | "tasks" | "sessions" | "inbox",
+  | "modules"
+  | "work_items"
+  | "rhythms"
+  | "series"
+  | "blocks"
+  | "tasks"
+  | "sessions"
+  | "inbox"
+  | "ai_calls",
   number
 >;
 
@@ -98,7 +114,7 @@ export async function seedDemo(db: Db, now: Date): Promise<DemoSummary> {
         source: { type: "okul.assessment", id: SOURCE_IDS.midterm },
         title: "BBF301E Midterm hazırlığı",
         when: { due: at(6, "10:00"), hard: true },
-        // No length known: the core writes the middle of the bounds (the AI will decide in Ç2).
+        // No length known: the core writes the middle of the bounds, as it does without the AI.
         effort: { bounds: { min: 120, max: 600 } },
         fit: { energy: "deep", context: "desk" },
         importance: 4,
@@ -359,6 +375,28 @@ export async function seedDemo(db: Db, now: Date): Promise<DemoSummary> {
   const inbox = ["kırtasiyeden A4 defter", "Elif'in doğum günü hediyesi 22.11"];
   for (const text of inbox) await addInboxEntry(db, text);
 
+  // --- The AI, played by the fake provider ------------------------------------------------------
+  const ai = {
+    db,
+    config: {
+      provider: fakeProvider(),
+      models: { fast: "fake-fast", plan: "fake-plan" },
+      timeouts: { fast: 5_000, plan: 5_000 },
+    },
+  };
+  const noCode = createRegistry([]);
+  // Names its module: read and turned into a task, the AI's values marked.
+  const sure = await addInboxEntry(db, "Okul sunum slaytları cuma");
+  await enrichEntry(ai, noCode, sure.id, now);
+  // Names none: left as a card to confirm.
+  const unsure = await addInboxEntry(db, "perde ölçüsünü al");
+  await enrichEntry(ai, noCode, unsure.id, now);
+  // The report's effort was left to the AI: estimated inside the module's bounds, with a reason.
+  const report = unwrap(
+    await db.from("work_items").select("id").eq("key", "project:dl:report").single(),
+  );
+  await sizeWorkItem(ai, noCode, { id: report.id }, now);
+
   const count = async (table: "work_items" | "rhythms" | "block_series" | "blocks" | "tasks") => {
     const { count: total, error } = await db
       .from(table)
@@ -374,6 +412,8 @@ export async function seedDemo(db: Db, now: Date): Promise<DemoSummary> {
     blocks: await count("blocks"),
     tasks: await count("tasks"),
     sessions: sessions.length,
-    inbox: inbox.length,
+    // The plain entries and the card the AI left; the line it understood became a task.
+    inbox: inbox.length + 1,
+    ai_calls: unwrap(await db.from("ai_calls").select("id")).length,
   };
 }
