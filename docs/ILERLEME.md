@@ -5,7 +5,7 @@ Bu dosyayı Claude Code günceller. Yeni bir oturum yalnızca bu dosyayı ve `pr
 ## Durum
 
 - Faz: **Ç2 (Yapay zeka geçidi) sürüyor** (başlangıç 11 Kas 2026). Ç0 ve Ç1 bitti (`c0-tamam`, `c1-tamam`); yayın ve telefon D1 ve D2'yi bekliyor. D3 (`ANTHROPIC_API_KEY`) verilmedi: faz sahte sağlayıcıyla geliştiriliyor
-- Adım: Ç2 planı aşağıda; 5. adım bitti, 6. adım (uçtan uca testler, ekran görüntüleri) sırada. Araya kullanıcının isteğiyle D1 girdi: bulut projeleri, şema, e-posta (Resend), GitHub bağlantısı ve üretim yayını hazır; üretimde giriş denemesi sürüyor
+- Adım: Ç2 planı aşağıda; 5. adım bitti, 6. adım (uçtan uca testler, ekran görüntüleri) sırada. Araya kullanıcının isteğiyle D1 girdi ve tamamlandı: üretimde kodla giriş çalışıyor; sıradaki durak D2 (telefon)
 - Son commit: Ç2 adım 5
 
 ### Ç2 planı
@@ -181,7 +181,7 @@ Denetçinin 14. notu doğru: 5. ve 6. adımlar ile örnek veri tek commit'te (`9
 
 21:50'de başlatılan eski betik penceresi kapatıldı ve `docs/BEKLIYOR.md` silindi; kararı ben verdim (yeni betik kalsın). Betiğe aynı anda ikinci kez çalışmayı engelleyen bir kilit eklendi (`logs/runner.pid`). Bu konuda yapılacak bir şey yok; `c0-tamam` etiketi yerinde.
 
-### D1. Bulut ve yayın: bağlandı (11 Kas 2026); üretimde giriş denemesi sürüyor
+### D1. Bulut ve yayın: tamamlandı (11 Kas 2026)
 
 Senin isteğinle, başında durduğun oturumda bağlandı. Supabase'te ücretsiz planlı `sherpa` kuruluşu kullanıldı.
 
@@ -202,7 +202,7 @@ Senin isteğinle, başında durduğun oturumda bağlandı. Supabase'te ücretsiz
 | E-posta: Resend SMTP iki projede (`config.toml` içinde `[remotes.*.auth.email.smtp]`, anahtar `.env.d1`'deki `RESEND_API_KEY`'den gönderim anında okunur, dosyaya yazılmaz), kod şablonu (`supabase/templates/magic_link.html`), saatte en çok 10 kod e-postası. Yerelde kod e-postası Mailpit'e düşmeye devam eder | uygulandı; `config diff`: kimlik ayarları dosyayla aynı (8 haneli kod dahil) |
 | Vercel ↔ GitHub (`vercel git connect`): `main`'e gönderilen her commit üretime, öbür dallar önizlemeye yayınlanır | bağlandı |
 
-**Kalan:** üretim adresinde kodla giriş denemesi (kullanıcıyla), sonra D2 (telefon).
+**Üretimde giriş:** kullanıcı `https://sherpa-private.vercel.app` adresinde e-postasına gelen kodla giriş yaptı ve boş Bugün ekranına ulaştı (11 Kas 2026; üretim veritabanı boş, beklenen bu). Sıradaki durak D2 (telefon).
 
 Bulut ayarını değiştirmek: `supabase/config.toml` düzenlenir, `RESEND_API_KEY` ortamda olmalıdır (`.env.d1`), sonra `npx supabase config push --remote=<ref>` önce `dev`'e, sonra `prod`'a. Gönderim öncesi `--yes` olmadan çalıştırılırsa farkı gösterir.
 
