@@ -103,7 +103,8 @@ test("a session started on the phone runs on the desktop, and Bitti there ends i
   // Finish on the desktop; the phone follows.
   await desktopNow.getByRole("button", { name: "Bitti" }).click();
   await expect(mobileNow.getByRole("button", { name: "Bitti" })).toBeHidden({ timeout: 3000 });
-  await expect(mobileNow).toContainText("Bugün için planlanan bir şey yok.");
+  // The day's only work is finished: the day is done (Ç3, the finish line).
+  await expect(mobileNow).toContainText("Bugün tamam");
   expect(desktopNavigations()).toBe(0);
   expect(mobileNavigations()).toBe(0);
 

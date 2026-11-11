@@ -1,5 +1,5 @@
 import type { Context } from "@/core/types";
-import { blocksOfDay, currentBlock } from "@/core/today/select";
+import { blocksOfDay, currentBlock, effortUsedUp } from "@/core/today/select";
 import { dayKey, formatDue, formatTime, istanbulInstant, shiftDay } from "@/lib/date";
 import {
   availableUntil,
@@ -92,7 +92,7 @@ function engineReasons(candidate: Candidate, input: PlanInput): string[] {
 }
 
 /** Whether a member of the day's three is finished (or gone). */
-function isFinished(id: string, input: PlanInput): boolean {
+export function isFinished(id: string, input: PlanInput): boolean {
   const task = input.tasks.find((row) => row.id === id);
   if (task) return task.status === "done" || task.status === "dropped";
   const rhythm = input.rhythms.find((row) => row.id === id);
@@ -178,10 +178,11 @@ export function buildPlan(input: PlanInput): Plan {
   for (const candidate of mandatory) tryPlace(candidate, true);
 
   // 2. The day's three as fixed when the day was planned, else the AI's three; cut at capacity.
+  // They are placed by their score now, not in the order they were chosen in: a deadline that
+  // moved since puts its work first.
   const chosen = input.top3 ?? input.advice?.top3 ?? [];
-  for (const id of chosen) {
-    const candidate = candidates.find((row) => matches(id, row));
-    if (candidate) tryPlace(candidate, false);
+  for (const candidate of candidates) {
+    if (chosen.some((id) => matches(id, candidate))) tryPlace(candidate, false);
   }
 
   // 3. Fill: each free slot in time order takes the best candidate that fits it.
@@ -265,6 +266,15 @@ function nowOf(
     };
   }
   if (input.prompt) return { kind: "prompt", prompt: input.prompt };
+
+  // A work item whose effort is used up asks "Bitti mi?" before the day can be done.
+  const usedUp = slots.find(
+    (slot) =>
+      slot.assignment?.candidate.type === "item" &&
+      slot.assignment.candidate.item &&
+      effortUsedUp(slot.assignment.candidate.item),
+  )?.assignment;
+  if (usedUp) return { kind: "suggest", assignment: usedUp };
 
   const mandatoryLeft = candidates.some((candidate) => candidate.mandatory !== null);
   const finishedToday = input.tasks.filter(

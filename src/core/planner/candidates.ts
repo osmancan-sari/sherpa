@@ -341,15 +341,20 @@ export function buildCandidates(input: PlanInput): Candidate[] {
     scored.push({ ...rest, score, mandatory });
   }
 
-  // An urgent item needs today its next sitting, not all of them: the others are planned like
-  // the rest of the pool (the capacity holds).
-  const firstSitting = new Map<string, Candidate>();
-  for (const candidate of [...scored].sort((a, b) => sittingRank(a.task) - sittingRank(b.task))) {
-    const itemId = candidate.task?.work_item_id;
-    if (candidate.mandatory !== "urgent" || !itemId) continue;
-    if (firstSitting.has(itemId)) candidate.mandatory = null;
-    else firstSitting.set(itemId, candidate);
-  }
+  // An item's sittings are done one after the other: its next one (running, else the first by
+  // place) stands for it; when that is done the plan is made again and the next one comes.
+  const firstSitting = new Set<string>();
+  const nextOnly = [...scored]
+    .sort((a, b) => sittingRank(a.task) - sittingRank(b.task))
+    .filter((candidate) => {
+      const itemId = candidate.type === "task" ? candidate.task?.work_item_id : null;
+      if (!itemId) return true;
+      if (firstSitting.has(itemId)) return false;
+      firstSitting.add(itemId);
+      return true;
+    });
+  scored.length = 0;
+  scored.push(...nextOnly);
 
   markFloorWork(input, scored, modules);
   // The AI may put work off, but never mandatory work (the engine has the last word). This runs

@@ -7,6 +7,7 @@ export {
   pickForMinutes,
   fits,
   contextFits,
+  isFinished,
   planningDay,
   slotLabel,
   DEFER_LIMIT,

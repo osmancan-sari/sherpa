@@ -37,8 +37,9 @@ test("Başla then Bitti leaves one session record and finishes the task", async 
   await expect(now).toContainText("25 dk geçti · tahmin 45 dk");
 
   await now.getByRole("button", { name: "Bitti" }).click();
-  await expect(now).toContainText("Bugün için planlanan bir şey yok.");
-  await expect(page.getByRole("main")).toContainText("1 iş bitti");
+  // The day's only work is finished: the day is done (Ç3, the finish line).
+  await expect(now).toContainText("Bugün tamam");
+  await expect(now).toContainText("1 iş · 45 dk");
 
   const sessions = await waitFor(
     () => rows("sessions"),
@@ -372,10 +373,11 @@ test("a write that fails is taken back on the screen and said so", async ({ page
   // "Bitti" in the list: the row goes at once, and comes back when the write fails.
   await upcoming.getByRole("button", { name: "Bitti: İkinci iş" }).click();
   await expect(upcoming.getByRole("listitem")).toHaveCount(0);
-  await expect(page.getByRole("main")).toContainText("1 iş bitti");
+  const progress = page.getByLabel("Günün ilerlemesi");
+  await expect(progress).toHaveText("Bugün 1/2");
   await expect(failed).toBeVisible();
   await expect(upcoming.getByRole("listitem")).toHaveText([/İkinci iş/]);
-  await expect(page.getByRole("main")).not.toContainText("1 iş bitti");
+  await expect(progress).toHaveText("Bugün 0/2");
   expect((await rows("tasks")).map((task) => task.status)).toEqual(["todo", "todo"]);
 
   // "Başla" on the card: the clock shows at once, and the card goes back to the offer.

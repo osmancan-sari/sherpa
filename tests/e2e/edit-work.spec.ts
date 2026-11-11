@@ -184,10 +184,11 @@ test("a stopped sitting follows its item: the new name and deadline show on Toda
   await insert("tasks", {
     module_id: mod.id,
     title: "Araya giren iş",
-    due_at: new Date(Date.now() + 5 * 86_400_000).toISOString(),
+    importance: 4,
+    due_at: new Date(Date.now() + 1 * 86_400_000).toISOString(),
   });
 
-  // The task is due first, so it has the card; the item waits in the list.
+  // The task is due first and matters more, so it has the card; the item waits in the list.
   await page.goto("/");
   const now = page.getByRole("region", { name: "Şimdi" });
   const upcoming = page.getByRole("region", { name: "Sıradakiler" });
@@ -207,13 +208,17 @@ test("a stopped sitting follows its item: the new name and deadline show on Toda
   await dialog.getByLabel("Son tarih (isteğe bağlı)").fill(istanbulDay(1));
   await dialog.getByRole("button", { name: "Kaydet" }).click();
   await expect(dialog).toBeHidden();
-  const [, sitting] = await waitFor(
+  const tasks = await waitFor(
     () => rows("tasks"),
     (list) => list.some((task) => task.title === "Yeni ad"),
   );
   const [item] = await rows("work_items");
-  expect(sitting).toMatchObject({ work_item_id: item.id, title: "Yeni ad", status: "todo" });
-  expect(sitting.due_at).toBe(item.due_at);
+  // Every open sitting of the item (the stopped one, and the week's) follows it.
+  const sittings = tasks.filter((task) => task.work_item_id === item.id);
+  expect(sittings.length).toBeGreaterThan(0);
+  for (const sitting of sittings) {
+    expect(sitting).toMatchObject({ title: "Yeni ad", status: "todo", due_at: item.due_at });
+  }
 
   // Today offers it under its new name, ahead of the task it was behind.
   await page.goto("/");

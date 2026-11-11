@@ -2,46 +2,40 @@
 
 import { Check, Play } from "lucide-react";
 import Link from "next/link";
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
-  useAnswerPrompt,
   useCloseWorkItem,
   useCompleteTask,
+  useEndSession,
   useLogRhythm,
   useReopenTask,
-  useSnoozePrompt,
   useStartSession,
 } from "@/core/app/actions";
 import {
   useAiStatus,
   type KnownModule,
-  useActiveModuleIds,
-  useBlocks,
-  useDuePrompts,
   useModuleQuery,
-  useModuleRows,
   useModules,
-  useNow,
-  useOpenSession,
-  useRhythmLogs,
-  useRhythms,
-  useTasks,
-  useWorkItems,
+  useTodayPlan,
 } from "@/core/app/hooks";
+import { useAnswerFollowUp, useDefer, useReplan } from "@/core/app/plan-actions";
 import type { ChipData, Health } from "@/core/contract/types";
-import { blocksOfDay, type Candidate, nowState, todayCandidates } from "@/core/today/select";
-import type { Block, Prompt, Task } from "@/core/types";
-import { dayKey, formatDayLabel, formatDue, formatMinutes, formatTime } from "@/lib/date";
+import { buildPlan, type Candidate, tomorrowInput } from "@/core/planner";
+import { blocksOfDay } from "@/core/today/select";
+import type { Block, Task } from "@/core/types";
+import { dayKey, formatDue, formatMinutes, formatTime } from "@/lib/date";
 import { cn } from "@/lib/utils";
-import { ClientOnly } from "../ClientOnly";
-import { QuickAddButton } from "../QuickAdd";
-import { NowCard, sessionTargetOf } from "./NowCard";
 import { AiBadge } from "../ai/AiMarks";
+import { ClientOnly } from "../ClientOnly";
+import { useNotify } from "../Notices";
+import { QuickAddButton } from "../QuickAdd";
+import { AlertBar, DayStrip, isTyping, MinutesDialog, TopBar } from "./DayParts";
+import { NowCard, sessionTargetOf } from "./NowCard";
 
-// The first Today screen (Ç1): no planner yet. The "now" card, the pool in order of deadline
-// and importance, the day's fixed blocks, one line per module. One page on the second screen,
-// one column on the phone.
+// The Today screen (docs/05-arayuz.md): drawn from the planner's plan, re-made on every change
+// and every minute. The "now" card, the next things, the day as a strip, at most two warnings,
+// one line per module. One page on the second screen, one column on the phone.
 
 export function TodayScreen() {
   return (
@@ -56,115 +50,182 @@ export function TodayScreen() {
 }
 
 function TodayBody() {
-  const now = useNow();
   const { modules } = useModules();
-  const moduleRows = useModuleRows();
-  const activeModuleIds = useActiveModuleIds();
-  const tasks = useTasks();
-  const workItems = useWorkItems();
-  const rhythms = useRhythms();
-  const rhythmLogs = useRhythmLogs();
-  const blocks = useBlocks();
-  const openSession = useOpenSession();
-  const prompts = useDuePrompts();
-
+  const { input, plan, rows, loading, failed, retry, now } = useTodayPlan();
+  const start = useStartSession();
+  const end = useEndSession();
+  const defer = useDefer();
+  const replan = useReplan();
+  const notify = useNotify();
+  const [minutesOpen, setMinutesOpen] = useState(false);
+  const [restOpen, setRestOpen] = useState(false);
   const moduleMap = useMemo(() => new Map(modules.map((mod) => [mod.row.id, mod])), [modules]);
-  const today = dayKey(now);
 
-  const candidates = useMemo(
-    () =>
-      todayCandidates({
-        tasks: tasks.data ?? [],
-        workItems: workItems.data ?? [],
-        rhythms: rhythms.data ?? [],
-        rhythmLogs: rhythmLogs.data ?? [],
-        activeModuleIds,
-        now,
-      }),
-    [tasks.data, workItems.data, rhythms.data, rhythmLogs.data, activeModuleIds, now],
-  );
+  // The night screen shows the first work of tomorrow.
+  const tomorrowFirst = useMemo(() => {
+    if (!plan || plan.now.kind !== "night" || !rows) return null;
+    const tomorrow = buildPlan(tomorrowInput(rows, { now, context: input!.context }));
+    return tomorrow.slots.find((slot) => slot.assignment)?.assignment?.candidate ?? null;
+  }, [plan, rows, now, input]);
 
-  const state = nowState({
-    openSession: openSession.data ?? null,
-    tasks: tasks.data ?? [],
-    rhythms: rhythms.data ?? [],
-    blocks: blocks.data ?? [],
-    candidates,
-    now,
+  const state = plan?.now;
+  const doReplan = () => {
+    if (!input) return;
+    replan.mutate(input, { onSuccess: () => notify("Gün yeniden planlandı.") });
+  };
+
+  // The second screen's keys (docs/05-arayuz.md, "Klavye"): Space starts or finishes, E puts
+  // off, X asks for the minutes, R plans again. N (quick add) lives with quick add.
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if (event.ctrlKey || event.metaKey || event.altKey || isTyping(event.target)) return;
+      if (document.querySelector('[role="dialog"]')) return;
+      if (!state || !input) return;
+      const key = event.key.toLowerCase();
+      if (event.key === " ") {
+        if (state.kind === "suggest" && state.assignment.candidate.type !== "follow_up") {
+          event.preventDefault();
+          start.mutate(sessionTargetOf(state.assignment.candidate));
+        } else if (state.kind === "running" && state.session.id !== "pending") {
+          event.preventDefault();
+          end.mutate({ session: state.session, outcome: "done" });
+        }
+      } else if (key === "e" && state.kind === "suggest") {
+        event.preventDefault();
+        defer.mutate({ candidate: state.assignment.candidate, date: input.date });
+      } else if (key === "x") {
+        event.preventDefault();
+        setMinutesOpen(true);
+      } else if (key === "r") {
+        event.preventDefault();
+        doReplan();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
   });
 
-  const runningId = state.kind === "running" ? (state.task?.id ?? state.rhythm?.id ?? null) : null;
-  const suggestedId = state.kind === "suggest" ? state.candidate.id : null;
-  const upcoming = candidates.filter(
-    (candidate) => candidate.id !== runningId && candidate.id !== suggestedId,
+  if (failed) {
+    return (
+      <>
+        <h1 className="text-xl font-semibold tracking-tight md:text-2xl">Bugün</h1>
+        <LoadFailed onRetry={retry} />
+      </>
+    );
+  }
+  if (loading || !input || !plan || !state) {
+    return (
+      <>
+        <h1 className="text-xl font-semibold tracking-tight md:text-2xl">Bugün</h1>
+        <div className="border-border min-h-56 rounded-2xl border md:min-h-72" />
+      </>
+    );
+  }
+
+  const currentId =
+    state.kind === "running"
+      ? (state.task?.id ?? state.rhythm?.id ?? null)
+      : state.kind === "suggest"
+        ? state.assignment.candidate.id
+        : null;
+  const assignments = plan.slots.flatMap((slot) => (slot.assignment ? [slot.assignment] : []));
+  const ahead = assignments.filter((row) => row.candidate.id !== currentId);
+  const upNext = state.kind === "return" ? [] : ahead.slice(0, 3);
+  const rest = [...ahead.slice(3).map((row) => row.candidate), ...plan.overflow];
+  const doneToday = input.tasks.filter(
+    (task) =>
+      task.status === "done" && task.done_at && dayKey(new Date(task.done_at)) === input.date,
   );
-  const doneToday = (tasks.data ?? []).filter(
-    (task) => task.status === "done" && task.done_at && dayKey(new Date(task.done_at)) === today,
-  );
-  const todaysBlocks = blocksOfDay(blocks.data ?? [], today);
-  const prompt = (prompts.data ?? []).find((item) => activeModuleIds.has(item.module_id));
-  const queries = [tasks, workItems, rhythms, rhythmLogs, blocks, openSession, moduleRows];
-  const loading = queries.some((query) => query.isLoading);
-  // A failed read is not "nothing to do": the card says so instead of showing an empty day.
-  const failed = queries.some((query) => query.isError && query.data === undefined);
 
   return (
     <>
-      <header className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1">
-        <h1 className="text-xl font-semibold tracking-tight md:text-2xl">Bugün</h1>
-        <p className="text-muted-foreground text-sm tabular-nums md:text-base">
-          {formatDayLabel(now)} · {formatTime(now)}
-          {doneToday.length > 0 ? ` · ${doneToday.length} iş bitti` : ""}
-        </p>
-      </header>
-
-      {prompt ? <PromptCard prompt={prompt} mod={moduleMap.get(prompt.module_id)} /> : null}
+      <TopBar input={input} plan={plan} now={now} />
 
       <AiBudgetNotice />
+
+      <AlertBar warnings={plan.warnings} />
 
       {/* minmax(0, …) and min-w-0: a long title is cut with an ellipsis instead of widening
           the column past the screen. */}
       <div className="grid grid-cols-[minmax(0,1fr)] gap-5 lg:grid-cols-5">
         <div className="min-w-0 lg:col-span-3">
-          {failed ? (
-            <LoadFailed onRetry={() => queries.forEach((query) => void query.refetch())} />
-          ) : loading ? (
-            <div className="border-border min-h-56 rounded-2xl border md:min-h-72" />
-          ) : (
-            <NowCard state={state} now={now} modules={moduleMap} />
-          )}
+          <NowCard
+            state={state}
+            now={now}
+            date={input.date}
+            modules={moduleMap}
+            tomorrowFirst={tomorrowFirst}
+            onShowRest={rest.length > 0 ? () => setRestOpen(true) : undefined}
+          />
         </div>
 
         <section aria-label="Sıradakiler" className="flex min-w-0 flex-col gap-3 lg:col-span-2">
           <h2 className="text-muted-foreground text-xs font-medium tracking-widest uppercase">
             Sıradakiler
           </h2>
-          {failed || loading ? null : upcoming.length === 0 ? (
+          {upNext.length === 0 ? (
             <p className="text-muted-foreground text-sm">Sırada başka iş yok.</p>
           ) : (
             <ul className="divide-border border-border divide-y rounded-xl border">
-              {upcoming.map((candidate) => (
+              {upNext.map((row) => (
                 <CandidateRow
-                  key={`${candidate.type}-${candidate.id}`}
-                  candidate={candidate}
-                  mod={moduleMap.get(candidate.moduleId)}
+                  key={`${row.candidate.type}-${row.candidate.id}`}
+                  candidate={row.candidate}
+                  date={input.date}
+                  mod={moduleMap.get(row.candidate.moduleId)}
                   now={now}
                 />
               ))}
             </ul>
           )}
+          {rest.length > 0 && state.kind !== "return" ? (
+            <details
+              className="text-sm"
+              open={restOpen}
+              onToggle={(event) => setRestOpen((event.target as HTMLDetailsElement).open)}
+            >
+              <summary className="text-muted-foreground hover:text-foreground flex min-h-11 cursor-pointer items-center md:min-h-9">
+                Vakit kalırsa ({rest.length})
+              </summary>
+              <ul className="divide-border border-border divide-y rounded-xl border">
+                {rest.map((candidate) => (
+                  <CandidateRow
+                    key={`${candidate.type}-${candidate.id}`}
+                    candidate={candidate}
+                    date={input.date}
+                    mod={moduleMap.get(candidate.moduleId)}
+                    now={now}
+                  />
+                ))}
+              </ul>
+            </details>
+          ) : null}
           {doneToday.length > 0 ? <DoneToday tasks={doneToday} /> : null}
         </section>
       </div>
 
-      <DayBlocks blocks={todaysBlocks} now={now} />
+      <DayStrip input={input} plan={plan} now={now} modules={moduleMap} />
+      <DayBlocks blocks={blocksOfDay(input.blocks, input.date)} now={now} />
 
       <footer className="flex flex-wrap items-center gap-2">
         <ModuleChips modules={modules.filter(({ row }) => row.status === "active")} />
-        <div className="ml-auto">
+        <div className="ml-auto flex flex-wrap gap-2">
+          <Button variant="outline" className="h-11 md:h-9" onClick={() => setMinutesOpen(true)}>
+            X dk&apos;m var
+          </Button>
+          <Button variant="outline" className="h-11 md:h-9" onClick={doReplan}>
+            Yeniden planla
+          </Button>
           <QuickAddButton />
         </div>
       </footer>
+
+      <MinutesDialog
+        open={minutesOpen}
+        onOpenChange={setMinutesOpen}
+        input={input}
+        modules={moduleMap}
+      />
     </>
   );
 }
@@ -190,10 +251,12 @@ export function LoadFailed({ onRetry }: { onRetry: () => void }) {
 
 function CandidateRow({
   candidate,
+  date,
   mod,
   now,
 }: {
   candidate: Candidate;
+  date: string;
   mod: KnownModule | undefined;
   now: Date;
 }) {
@@ -201,11 +264,13 @@ function CandidateRow({
   const complete = useCompleteTask();
   const logRhythm = useLogRhythm();
   const closeItem = useCloseWorkItem();
+  const followUp = useAnswerFollowUp();
 
   const parts = [
     mod?.row.name,
     formatMinutes(candidate.minutes),
     candidate.progress,
+    candidate.type === "follow_up" ? "takip" : null,
     candidate.dueAt ? formatDue(candidate.dueAt, now) : null,
   ].filter(Boolean);
 
@@ -230,12 +295,22 @@ function CandidateRow({
         {(candidate.task ?? candidate.item) ? (
           <AiBadge row={(candidate.task ?? candidate.item)!} align="right" />
         ) : null}
-        <IconButton
-          label={`Başla: ${candidate.title}`}
-          onClick={() => start.mutate(sessionTargetOf(candidate))}
-        >
-          <Play aria-hidden />
-        </IconButton>
+        {candidate.type === "follow_up" ? (
+          <Button
+            variant="outline"
+            className="h-11 md:h-9"
+            onClick={() => followUp.mutate({ task: candidate.task!, came: true, date })}
+          >
+            Cevap geldi
+          </Button>
+        ) : (
+          <IconButton
+            label={`Başla: ${candidate.title}`}
+            onClick={() => start.mutate(sessionTargetOf(candidate))}
+          >
+            <Play aria-hidden />
+          </IconButton>
+        )}
         {candidate.type === "task" ? (
           <IconButton
             label={`Bitti: ${candidate.title}`}
@@ -392,7 +467,6 @@ export function ModuleChip({ mod }: { mod: KnownModule }) {
   );
 }
 
-/** One question after an event. At most one is on screen at a time. */
 /** Rule 9: when the month's AI budget is used up, the screen says so in one quiet line. */
 function AiBudgetNotice() {
   const status = useAiStatus();
@@ -401,37 +475,5 @@ function AiBudgetNotice() {
     <p role="note" className="text-muted-foreground text-sm">
       Bu ayın yapay zeka bütçesi doldu; girişler ay sonuna kadar elle yönlendirilir.
     </p>
-  );
-}
-
-function PromptCard({ prompt, mod }: { prompt: Prompt; mod: KnownModule | undefined }) {
-  const answer = useAnswerPrompt();
-  const snooze = useSnoozePrompt();
-  const options = (prompt.options as { value: string; label: string }[] | null) ?? [];
-  return (
-    <section
-      aria-label="Soru"
-      className="border-border flex flex-wrap items-center justify-between gap-3 rounded-xl border px-4 py-3"
-    >
-      <p className="text-sm md:text-base">
-        {mod ? <span className="text-muted-foreground">{mod.row.name} · </span> : null}
-        {prompt.question}
-      </p>
-      <div className="flex flex-wrap gap-2">
-        {options.map((option) => (
-          <Button
-            key={option.value}
-            variant="outline"
-            className="h-11 md:h-9"
-            onClick={() => answer.mutate({ prompt, value: option.value })}
-          >
-            {option.label}
-          </Button>
-        ))}
-        <Button variant="ghost" className="h-11 md:h-9" onClick={() => snooze.mutate(prompt.id)}>
-          Sonra
-        </Button>
-      </div>
-    </section>
   );
 }
