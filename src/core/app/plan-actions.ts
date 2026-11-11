@@ -2,6 +2,7 @@
 
 import {
   answerFollowUp,
+  closeDay,
   deferTask,
   saveDayPlan,
   skipToday,
@@ -137,6 +138,15 @@ export function useAnswerFollowUp() {
         ),
       },
     ],
+    onError,
+  });
+}
+
+/** The evening closing's "Onayla": tomorrow's plan is kept, today goes to night. */
+export function useCloseDay() {
+  const onError = useFailureNotice();
+  return useCoreMutation({
+    mutate: (db, input: Parameters<typeof closeDay>[1]) => closeDay(db, input),
     onError,
   });
 }

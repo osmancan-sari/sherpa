@@ -160,7 +160,8 @@ export async function closeDay(
   input: {
     today: string;
     now: Date;
-    tomorrow: { plan: Plan; day: PlannedDay; advice?: StoredDayPlan["advice"] };
+    /** Tomorrow's plan as confirmed; `stored` keeps what was taken out and the AI's advice. */
+    tomorrow: { plan: Plan; day: PlannedDay; stored?: Partial<StoredDayPlan> };
     note: string | null;
     reasons?: Record<string, string> | null;
   },
@@ -169,7 +170,7 @@ export async function closeDay(
     plan: input.tomorrow.plan,
     day: input.tomorrow.day,
     source: "closing",
-    stored: input.tomorrow.advice ? { advice: input.tomorrow.advice } : {},
+    stored: input.tomorrow.stored ?? {},
     reasons: input.reasons,
   });
   check(

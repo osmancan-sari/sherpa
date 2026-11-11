@@ -218,6 +218,12 @@ function TodayBody() {
           <Button variant="outline" className="h-11 md:h-9" onClick={doReplan}>
             Yeniden planla
           </Button>
+          <Link
+            href="/kapanis"
+            className="border-border hover:bg-muted flex h-11 items-center rounded-lg border px-3 text-sm md:h-9"
+          >
+            Günü kapat
+          </Link>
           <QuickAddButton />
         </div>
       </footer>

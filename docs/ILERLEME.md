@@ -5,8 +5,8 @@ Bu dosyayı Claude Code günceller. Yeni bir oturum yalnızca bu dosyayı ve `pr
 ## Durum
 
 - Faz: **Ç3 (Planlayıcı) sürüyor** (başlangıç 11 Kas 2026, gece; kullanıcı bu gece için "bir oturumda tek faz" kuralını esnetti, Ç2 ile aynı oturumda). Ç0, Ç1, Ç2 bitti (`c0-tamam`, `c1-tamam`, `c2-tamam`); D1 ve D2 tamamlandı; D3 (`ANTHROPIC_API_KEY`) bekliyor, yapay zeka sahte sağlayıcıyla
-- Adım: Ç3 planı aşağıda; 1–4. adım bitti; 5. adım (akşam kapanışı) sırada
-- Son commit: Ç3 adım 4
+- Adım: Ç3 planı aşağıda; 1–5. adım bitti; 6. adım (Hafta ekranı) sırada
+- Son commit: Ç3 adım 5
 
 ### Ç3 planı
 
@@ -18,7 +18,7 @@ Her adımın sonunda `npm run check` ve commit; şema, planlayıcı motoru ve ya
 | 2 | Planlayıcı motoru `src/core/planner/` (saf): yuvalar, adaylar, skor, süzgeçler, zorunlular, `buildPlan`, `pickForMinutes`, "şimdi" durumları, uyarılar; `loadByWeek`, `commitWeek`, oturumlara bölme, plan istikrarı; öğrenme (tahmin ve kapasite çarpanları); girdinin satırlardan kurulması | bitti (`f589b39`, düzeltmeler sonraki commit). Testler: `plan.test.ts` 51, `week.test.ts` 22, `learn.test.ts` 6, `input.test.ts` 9, `core-imports.test.ts` +3. Denetim (adım kipi, 1. ve 2. adım): 1. tur GEÇMEDİ, 2. tur GEÇTİ (5 önemli); hepsi düzeltildi (aşağıda "Verdiğim kararlar") |
 | 3 | Veri katmanı: günün kaydı (ilk dokunuş, otomatik plan, günün 3 işi, kapanış), haftanın taahhüdü ve oturum işleri, hayat modu dönemleri, öğrenilen değerler; Ertele, Takıldım, bekleyen iş ve takip; plan bekçisi (gün ve hafta değişince); veritabanı testleri | bitti; denetim (adım kipi): GEÇTİ, 5 önemli bulgu düzeltildi (aşağıda): `src/core/data/planning.ts` (gün kaydı, kapanış, Ertele, bekleme ve takip, haftanın kaydı ve oturum işleri, hayat modları, öğrenilenler), `src/core/data/keep.ts` (`keepWeek`: taahhüt, tetikleyiciyle yeniden taahhüt, yeni kalemi ekleme, haftanın başında öğrenme), `src/core/app/PlanKeeper.tsx` (uygulama açıkken hafta ve gün kendiliğinden kurulur), kancalar (`useTodayPlan`, `useDeviceContext`). Aynı kalemin açık iki oturum işi aynı sırayı paylaşamaz (tekil indeks). Testler: `tests/db/planning.test.ts` 17, birim +2, `tests/e2e/planner.spec.ts` 1 |
 | 4 | Bugün ekranı `plan.now` durumlarıyla: TopBar, NowCard (öneri, çalışan, blok, soru, tamam, gece, geri dönüş), UpNext, DayStrip, AlertBar, "neden?", "X dk'm var", "Yeniden planla", Ertele, Takıldım, klavye | bitti: `src/core/ui/today/` (`TodayScreen`, `NowCard`, `DayParts`: TopBar, DayStrip, AlertBar, "X dk'm var"), `src/core/app/plan-actions.ts` (Ertele, Takıldım ve üç yolu, bekleme, takip, "Devam ediyorum", Yeniden planla), tuşlar `Space`, `E`, `X`, `R`; uzayan oturumun sorusu ve cevapsız kapanışı (`close_unanswered_session`, `sessions.confirmed_at`, `src/core/planner/overrun.ts`). Testler: `tests/e2e/planner.spec.ts` 11, `sync.spec.ts` +1 (blok eklenince plan anında), `overrun.test.ts` 3, `planning.test.ts` +2. Adım denetimi 5. ve 6. adımla birlikte |
-| 5 | Akşam kapanışı (`/kapanis`) | bekliyor |
+| 5 | Akşam kapanışı (`/kapanis`) | bitti: `/kapanis` (`src/core/ui/closing/ClosingScreen.tsx`), `useCloseDay`, Bugün'de "Günü kapat". Test: `planner.spec.ts` +1 (beş adım, yarının kaydı, gelen kutusu, gece), korumalı sayfalar listesine `/kapanis` |
 | 6 | Hafta ekranı: 7 günlük şerit, kapasite çubuğu, haftanın kalemleri ve modül payları, hayat modu, 8 haftalık yük | bekliyor |
 | 7 | Yapay zeka: `plan`, `replan`, `week`, `month`, `review` (geçitten; sahte sağlayıcıya yanıtları); motor öneriyi denetler | bekliyor |
 | 8 | Örnek veri, uçtan uca testler, ekran görüntüleri, dokümanlar | bekliyor |

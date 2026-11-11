@@ -8,6 +8,7 @@ const pages = [
   "/hafta",
   "/m",
   "/gelen",
+  "/kapanis",
   "/ayarlar",
   "/ayarlar/moduller",
   "/ayarlar/moduller/deneme",

@@ -160,7 +160,7 @@ Alan sayfası (`/a/[slug]`) aynı iskeleti kullanır ve üye modüllerin durum �
 
 ## Akşam kapanışı
 
-`/kapanis`, 4 adımlı tek akış; her adım tek ekran, klavyeyle geçilir. İçerik `docs/04-planlayici.md` içinde. İstenirse hiç yapılmaz.
+`/kapanis`, tek akış; her adım tek ekran, klavyeyle geçilir (Enter ilerler, Escape geri döner; metin kutusunda Ctrl+Enter). İçerik `docs/04-planlayici.md` içinde: sorular (en çok 5), "Bugün başka ne yaptın?" (bugün için açık kalan işler ve ritimler, tek dokunuşla "Yaptım"), yarının taslağı (günün üç işi işaretli; dokunarak değişir, "Çıkar" yarının listesinden alır), aklında kalanlar (her satır gelen kutusuna), onay. Onayla yarının kaydını (`plan_source = closing`, çıkarılanlar `skipped`) ve bugünün kapanışını yazar, Bugün'e döner; ekran gece durumundadır. Bugün ekranının alt satırında "Günü kapat". İstenirse hiç yapılmaz. **Görüşün gerek** (adımlar ve metinler).
 
 ## Boş ve hata durumları
 
