@@ -52,7 +52,8 @@ src/
     planner/                saf fonksiyonlar + testler (Ç3)
     ai/                     tek geçit: istemler, şemalar, bütçe, kayıt (Ç2)
     contract/               modül sözleşmesi: tipler, kayıt, iş zarfının saf kuralları
-    data/                   sorgular, mutasyonlar, realtime
+    app/                    istemci tarafı: sorgu önbelleği, canlı bağlantı (Realtime), saat, iyimser yazmalar
+    data/                   sorgular ve yazmalar (Supabase istemcisini parametre alır; tarayıcıda ve sunucuda aynı)
     events/                 olay yayını ve abonelik
     intake/                 hızlı giriş, gelen kutusu, yönlendirme
     today/                  planlayıcı gelene kadar Bugün ekranının saf seçim kuralları

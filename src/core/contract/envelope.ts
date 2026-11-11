@@ -15,7 +15,7 @@ import type { ProposalTarget, WorkProposal } from "./types";
 const instant = z.iso.datetime({ offset: true });
 
 const proposalSchema = z
-  .object({
+  .strictObject({
     schema: z.literal(1),
     // No spaces, commas, braces, quotes or backslashes: keys travel inside array filters.
     key: z
@@ -23,22 +23,22 @@ const proposalSchema = z
       .min(1)
       .max(200)
       .regex(/^[^\s,{}"\\]+$/, "no spaces, commas, braces, quotes or backslashes"),
-    source: z.object({ type: z.string().trim().min(1), id: z.guid() }),
+    source: z.strictObject({ type: z.string().trim().min(1), id: z.guid() }),
     title: z.string().trim().min(1).max(300),
     when: z
-      .object({
+      .strictObject({
         due: instant.nullish(),
         hard: z.boolean().nullish(),
         earliest: instant.nullish(),
         recurrence: z
-          .object({
+          .strictObject({
             count: z.number().int().min(1),
             period: z.enum(["day", "week", "month"]),
             floor: z.number().int().min(0).optional(),
           })
           .nullish(),
         fixed: z
-          .object({
+          .strictObject({
             starts_at: instant,
             ends_at: instant,
             location: z.string().nullish(),
@@ -47,14 +47,16 @@ const proposalSchema = z
       })
       .optional(),
     effort: z
-      .object({
+      .strictObject({
         total_minutes: z.number().int().min(1).nullish(),
         session_minutes: z.number().int().min(TASK_MIN_MINUTES).max(TASK_MAX_MINUTES).nullish(),
-        bounds: z.object({ min: z.number().int().min(1), max: z.number().int().min(1) }).nullish(),
+        bounds: z
+          .strictObject({ min: z.number().int().min(1), max: z.number().int().min(1) })
+          .nullish(),
       })
       .optional(),
     fit: z
-      .object({
+      .strictObject({
         energy: z.enum(["deep", "light", "physical"]).nullish(),
         context: z.enum(["any", "desk", "home", "campus", "office", "out", "commute"]).nullish(),
       })
@@ -62,7 +64,7 @@ const proposalSchema = z
     importance: z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(4)]).nullish(),
     depends_on: z.array(z.string().regex(/^[^\s,{}"\\]+$/)).optional(),
     flex: z
-      .object({ splittable: z.boolean().nullish(), droppable: z.boolean().nullish() })
+      .strictObject({ splittable: z.boolean().nullish(), droppable: z.boolean().nullish() })
       .optional(),
     artifact: z.string().nullish(),
     meta: z.record(z.string(), z.unknown()).optional(),

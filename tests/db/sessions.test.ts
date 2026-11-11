@@ -229,6 +229,96 @@ describe("sessions", () => {
     expect(ok(await db.from("tasks").select("id").eq("work_item_id", item.id))).toHaveLength(1);
   });
 
+  it("an open sitting follows its item's name, deadline, importance and fit; a finished one does not", async () => {
+    const mod = await makeModule(db);
+    const make = async (title: string) =>
+      ok(
+        await db
+          .from("work_items")
+          .insert({
+            module_id: mod.id,
+            title,
+            effort_total_minutes: 300,
+            session_minutes: 30,
+            importance: 2,
+            due_at: "2026-11-20T10:00:00+03:00",
+          })
+          .select()
+          .single(),
+      );
+    const item = await make("Eski ad");
+    const other = await make("Başka kalem");
+    const sittingsOf = async (itemId: string) =>
+      ok(await db.from("tasks").select("*").eq("work_item_id", itemId).order("created_at"));
+
+    // One finished sitting and one that was started and stopped, on the item; one stopped
+    // sitting on the other item.
+    const first = ok(await db.rpc("start_session", { p_work_item_id: item.id }));
+    ok(await db.rpc("end_session", { p_session_id: first.id }));
+    const second = ok(await db.rpc("start_session", { p_work_item_id: item.id }));
+    ok(await db.rpc("end_session", { p_session_id: second.id, p_outcome: "stopped" }));
+    const third = ok(await db.rpc("start_session", { p_work_item_id: other.id }));
+    ok(await db.rpc("end_session", { p_session_id: third.id, p_outcome: "stopped" }));
+    expect((await sittingsOf(item.id)).map((task) => task.status)).toEqual(["done", "todo"]);
+
+    ok(
+      await db
+        .from("work_items")
+        .update({
+          title: "Yeni ad",
+          due_at: "2026-11-12T10:00:00+03:00",
+          importance: 4,
+          energy: "deep",
+          context: "desk",
+        })
+        .eq("id", item.id)
+        .select()
+        .single(),
+    );
+    const [finished, open] = await sittingsOf(item.id);
+    expect(open).toMatchObject({
+      title: "Yeni ad",
+      importance: 4,
+      energy: "deep",
+      context: "desk",
+      status: "todo",
+      est_minutes: 30,
+    });
+    expect(Date.parse(open.due_at!)).toBe(Date.parse("2026-11-12T10:00:00+03:00"));
+    // History keeps what it had; the other item's sitting is not touched.
+    expect(finished).toMatchObject({ title: "Eski ad", importance: 2, status: "done" });
+    expect(Date.parse(finished.due_at!)).toBe(Date.parse("2026-11-20T10:00:00+03:00"));
+    expect(await sittingsOf(other.id)).toMatchObject([{ title: "Başka kalem", importance: 2 }]);
+
+    // A deadline and a fit that are taken away again are taken away from the sitting too.
+    ok(
+      await db
+        .from("work_items")
+        .update({ due_at: null, energy: null, context: null })
+        .eq("id", item.id)
+        .select()
+        .single(),
+    );
+    expect((await sittingsOf(item.id))[1]).toMatchObject({
+      title: "Yeni ad",
+      due_at: null,
+      energy: "light",
+      context: "any",
+    });
+
+    // A change that is none of these (the effort) leaves the sitting as it is.
+    const before = (await sittingsOf(item.id))[1];
+    ok(
+      await db
+        .from("work_items")
+        .update({ effort_total_minutes: 600 })
+        .eq("id", item.id)
+        .select()
+        .single(),
+    );
+    expect((await sittingsOf(item.id))[1].updated_at).toBe(before.updated_at);
+  });
+
   it("the sitting of an item without a session length defaults to 45 minutes at most", async () => {
     const mod = await makeModule(db);
     const big = ok(

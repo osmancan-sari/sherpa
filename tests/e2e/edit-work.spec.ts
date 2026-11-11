@@ -171,6 +171,57 @@ test("a work item with an open sitting is still edited and closed from its own r
   expect((await rows("tasks"))[0].status).toBe("dropped");
 });
 
+test("a stopped sitting follows its item: the new name and deadline show on Today and decide the order", async ({
+  page,
+}) => {
+  const mod = await seedModule();
+  await insert("work_items", {
+    module_id: mod.id,
+    title: "Eski ad",
+    effort_total_minutes: 240,
+    due_at: new Date(Date.now() + 9 * 86_400_000).toISOString(),
+  });
+  await insert("tasks", {
+    module_id: mod.id,
+    title: "Araya giren iş",
+    due_at: new Date(Date.now() + 5 * 86_400_000).toISOString(),
+  });
+
+  // The task is due first, so it has the card; the item waits in the list.
+  await page.goto("/");
+  const now = page.getByRole("region", { name: "Şimdi" });
+  const upcoming = page.getByRole("region", { name: "Sıradakiler" });
+  await expect(now.getByRole("heading")).toHaveText("Araya giren iş");
+  await upcoming.getByRole("button", { name: "Başla: Eski ad" }).click();
+  await expect(now.getByRole("heading")).toHaveText("Eski ad");
+  await now.getByRole("button", { name: "Durdur" }).click();
+  await waitFor(
+    () => rows("sessions"),
+    (list) => list.length === 1 && list[0].ended_at !== null,
+  );
+
+  // The item gets a new name and a deadline before the task's.
+  await page.goto(`/m/${mod.slug}`);
+  const dialog = await openEditor(page, "Düzenle: Eski ad", "İş kalemini düzenle");
+  await dialog.getByLabel("Ad", { exact: true }).fill("Yeni ad");
+  await dialog.getByLabel("Son tarih (isteğe bağlı)").fill(istanbulDay(1));
+  await dialog.getByRole("button", { name: "Kaydet" }).click();
+  await expect(dialog).toBeHidden();
+  const [, sitting] = await waitFor(
+    () => rows("tasks"),
+    (list) => list.some((task) => task.title === "Yeni ad"),
+  );
+  const [item] = await rows("work_items");
+  expect(sitting).toMatchObject({ work_item_id: item.id, title: "Yeni ad", status: "todo" });
+  expect(sitting.due_at).toBe(item.due_at);
+
+  // Today offers it under its new name, ahead of the task it was behind.
+  await page.goto("/");
+  await expect(now.getByRole("heading")).toHaveText("Yeni ad");
+  await expect(upcoming.getByRole("listitem")).toHaveText([/Araya giren iş/]);
+  await expect(page.getByRole("main")).not.toContainText("Eski ad");
+});
+
 test("what the user changes on a proposed work item survives the module's next proposal", async ({
   page,
 }) => {

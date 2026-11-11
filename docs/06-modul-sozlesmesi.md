@@ -241,6 +241,7 @@ Zarfın kuralları (`src/core/contract/envelope.ts`, saf fonksiyonlar; yazma `sr
 - Zamanlar saat dilimi taşıyan ISO biçimindedir (`2026-11-12T10:00:00+03:00`). Boş alanlar `null` da yazılabilir.
 - `when` tek biçim taşır; biçim kaydın tablosunu belirler ve aynı `key` sonradan başka biçime çevrilemez.
 - `key` boşluk, virgül, süslü ayraç, tırnak ve ters eğik çizgi içeremez.
+- Zarfın tanımadığı alan (yanlış yazılmış ad, fazladan alan) reddedilir ve hata iletisinde adıyla söylenir; iç nesnelerde de böyledir. Modülün kendine ait bilgisi `meta` içinde taşınır; `meta` serbesttir. Modülün kim olduğu zarfta yazmaz, bağlamdan (`ctx`) bilinir.
 - Biçimin kullanmadığı alan reddedilir, sessizce atılmaz: tekrar biçiminde toplam efor, sınır, önem, bağımlılık, çıktı ve `flex`; sabit zaman biçiminde efor, `fit`, önem, bağımlılık, çıktı, `flex` ve `meta`.
 - **Olgu alanları** (başlık, son tarih, en erken, çıktı, bağımlılıklar, `meta`, tekrar ve sabit zaman değerleri) her teklifte yazılır; boş gelen olgu da yazılır (son tarih kalkabilir). **Yargı alanları** (efor, oturum süresi, önem, enerji, bağlam, bölünebilirlik) yalnızca dolu geldiğinde yazılır.
 - Kullanıcının değiştirdiği alan hiçbir teklifte ezilmez; teklif o alanı `kept` içinde geri bildirir.

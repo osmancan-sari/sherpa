@@ -21,7 +21,6 @@ Modüller çekirdek tablolara doğrudan yazmaz; çekirdeğe **iş zarfı** tekli
 ```json
 {
   "schema": 1,
-  "module": "okul",
   "key": "assessment:8f2c…:prep",
   "source": { "type": "okul.assessment", "id": "8f2c…" },
   "title": "BBF301E Midterm hazırlığı",
@@ -102,6 +101,7 @@ Kurallar:
 - `active` bir kalemin kalan eforu varsa ve haftası geldiyse en az bir `todo` oturum işi olmalı. Oturum işleri kalem haftalık plana girerken üretilir (bkz. `docs/04-planlayici.md`, "Plan ufukları").
 - Kalan efor = `effort_total_minutes − effort_done_minutes`; sıfıra inince kalem kullanıcıya "bitti mi?" diye sorulur, kendiliğinden kapanmaz.
 - Planlayıcı gelene kadar (Ç3) oturum işi, kalemde "Başla" denince o an üretilir: uzunluğu `session_minutes`, yoksa kalan eforun 45 dakikayı geçmeyen kısmı. Oturum işi kalemin `source_type` ve `source_id` değerlerini taşır; modül kendi işini böyle tanır.
+- Açık oturum işi (`todo`, `doing`, `waiting`) kalemin adını, son tarihini, önemini, enerji ve bağlamını izler: kalem değişince (kullanıcının düzenlemesi ya da modülün yeni teklifi) veritabanı açık oturum işlerini de günceller (`sync_open_sittings` tetikleyicisi). Bitmiş ve bırakılmış oturum işleri eski değerleriyle kalır.
 
 ### tasks
 Tek oturumda biten iş.

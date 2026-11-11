@@ -38,7 +38,6 @@ describe("parseProposal", () => {
   it("accepts the envelope from the data model document, nulls included", () => {
     const parsed = parseProposal({
       schema: 1,
-      module: "okul",
       key: "assessment:8f2c…:prep",
       source: SOURCE,
       title: "BBF301E Midterm hazırlığı",
@@ -90,6 +89,57 @@ describe("parseProposal", () => {
       expect(caught, path).toBeInstanceOf(ProposalError);
       expect((caught as ProposalError).issues.join(" "), path).toContain(path);
     }
+  });
+
+  it("refuses a field it does not know, wherever it is, and names it", () => {
+    // A misspelled field is a mistake in the sender (a module, a pasted block, later the
+    // bridge), not something to drop: dropped, the work would land without its deadline.
+    const recurrence = { count: 2, period: "week" as const };
+    const fixed = { starts_at: "2026-11-12T09:00:00+03:00", ends_at: "2026-11-12T10:00:00+03:00" };
+    const unknown: [string, string, unknown][] = [
+      ["proposal", "efort", { ...proposal(), efort: { total_minutes: 60 } }],
+      ["proposal", "module", { ...proposal(), module: "okul" }],
+      ["when", "deu", { ...proposal(), when: { deu: "2026-11-12T10:00:00+03:00" } }],
+      ["effort", "total_minute", { ...proposal(), effort: { total_minute: 60 } }],
+      ["effort.bounds", "mid", { ...proposal(), effort: { bounds: { min: 1, max: 2, mid: 1 } } }],
+      ["fit", "enerji", { ...proposal(), fit: { enerji: "deep" } }],
+      ["flex", "splitable", { ...proposal(), flex: { splitable: true } }],
+      ["source", "kind", { ...proposal(), source: { ...proposal().source, kind: "x" } }],
+      [
+        "when.recurrence",
+        "flor",
+        {
+          ...proposal({ importance: undefined }),
+          when: { recurrence: { ...recurrence, flor: 1 } },
+        },
+      ],
+      [
+        "when.fixed",
+        "place",
+        {
+          ...proposal({ importance: undefined, effort: undefined, fit: undefined }),
+          when: { fixed: { ...fixed, place: "B-104" } },
+        },
+      ],
+    ];
+    for (const [path, field, input] of unknown) {
+      let caught: unknown;
+      try {
+        parseProposal(input);
+      } catch (error) {
+        caught = error;
+      }
+      expect(caught, field).toBeInstanceOf(ProposalError);
+      const issues = (caught as ProposalError).issues;
+      expect(
+        issues.some((issue) => issue.startsWith(`${path}:`) && issue.includes(`"${field}"`)),
+        `${field}: ${issues.join("; ")}`,
+      ).toBe(true);
+    }
+    // What a module carries of its own goes in meta, which stays free.
+    expect(parseProposal(proposal({ meta: { anything: { goes: ["here"] } } })).meta).toEqual({
+      anything: { goes: ["here"] },
+    });
   });
 
   it("allows only one form of when", () => {

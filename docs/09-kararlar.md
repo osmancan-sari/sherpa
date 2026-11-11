@@ -56,6 +56,8 @@
 | Modülün çekirdekten içe aktarabileceği yollar kapalı bir listedir ve testle denetlenir (`tests/unit/modules.test.ts`); `@/lib/supabase/database.types` listeye eklendi (Ç1) | Listede olmayan bir çekirdek dosyası (ör. `@/core/data/*`) modüle çekirdek tablolara zarfsız yazma yolu açardı | Modül sözleşmesi |
 | Şablonun yalnızca adı değiştirilmiş bir kopyası (`sablon-kopya`) `deneme` ile aynı anahtarın arkasında kaydolur (Ç1) | "Şablondan kopyalanan modül çalışır" ölçütü kalıcı bir uçtan uca testle sınansın; üretimde kaydolmaz | Yerel geliştirmede modül listesinde "Şablon kopyası" görünür |
 | Ç1'in Bugün ekranında geçici olarak "Durdur", "Bugün bitenler" ve "Geri al" vardır (Ç1) | Ertele ve Takıldım Ç3'te geliyor; o zamana kadar yanlışlıkla başlatılan ya da bitirilen iş geri alınabilmeli | `docs/05-arayuz.md` "Ç1 ara hali"; Ç3'te yeniden bakılır |
+| Açık oturum işi kalemin adını, son tarihini, önemini, enerji ve bağlamını izler; veritabanı tetikleyicisi günceller (Ç1) | Durdurulmuş oturum işi listede kalemin yerine geçiyor; kalem değişince eski ad ve tarihle sıralanıyordu. Tek yerde ve aynı işlemde çözülsün; Ç3'te oturum işleri kendi adını taşıyacaksa yeniden bakılır | Veri modeli, Ç3 |
+| Zarf tanımadığı alanı reddeder (iç nesneler dahil); örnekteki `module` alanı kaldırıldı (Ç1) | Yanlış yazılmış alan sessizce atılınca iş son tarihsiz ya da eforsuz açılıyordu; yapılı bloklar ve Ç5 köprüsü tip denetiminden geçmeyen girdi verir | İş zarfı, Ç2 ve Ç5 |
 
 ## Açık sorular
 
