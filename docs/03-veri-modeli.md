@@ -290,7 +290,7 @@ occurred_at timestamptz default now()
 ### weekly_reviews
 ```
 week_start date unique per user
-summary jsonb                 -- modül raporları, kapasite, öneriler
+summary jsonb                 -- yapay zekanın haftalık bakışı: özet, en çok 3 öneri, gerekirse mod önerisi (`review`; modüllerin raporlarından)
 ```
 
 ### planner_stats

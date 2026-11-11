@@ -97,10 +97,11 @@ describe("plan", () => {
     expect(await day(TODAY)).toMatchObject({ plan_source: "auto" });
 
     // A spent budget: no new call (an earlier answer to the same question would still be
-    // reused, docs/10; here the question is new).
+    // reused, docs/10; here the question is new). The day's plan was asked once already, so
+    // "Yeniden planla" asks.
     await saveAiSettings(db, { enabled: true, budgetUsd: 0 });
     await createTask(db, { module_id: mod.id, title: "Yeni iş" });
-    const budget = await planDayFlow(deps(), { date: TODAY, kind: "plan" }, NOW);
+    const budget = await planDayFlow(deps(), { date: TODAY, kind: "replan" }, NOW);
     expect(budget).toEqual({ status: "skipped", reason: "budget" });
     expect(await day(TODAY)).toMatchObject({ plan_source: "auto" });
   });
@@ -124,6 +125,98 @@ describe("plan", () => {
       (row) => row.kind,
     );
     expect(kinds).toEqual(["plan", "replan"]);
+  });
+});
+
+describe("plan, once a day", () => {
+  it("is asked once a day, and never over the evening's plan", async () => {
+    const mod = await makeModule(db);
+    await createTask(db, { module_id: mod.id, title: "Rapor" });
+    const rows = await loadPlanRows(db, NOW);
+    const input = planInput(rows, { date: TODAY, now: NOW, context: "desk" });
+    await planDay(db, { plan: buildPlan(input), day: input });
+    // A provider that fails: the attempt still counts for the day.
+    const down = fakeProvider({
+      plan: () => {
+        throw new Error("down");
+      },
+    });
+    expect((await planDayFlow(deps(down), { date: TODAY, kind: "plan" }, NOW)).status).toBe(
+      "failed",
+    );
+    expect(await planDayFlow(deps(), { date: TODAY, kind: "plan" }, NOW)).toEqual({
+      status: "skipped",
+      reason: "already_planned",
+    });
+    expect(storedPlan(await day(TODAY)).aiAsked).toBe(true);
+
+    const tomorrow = shiftDay(TODAY, 1);
+    await db.from("days").insert({ date: tomorrow, plan_source: "closing", top3: [] });
+    expect(await planDayFlow(deps(), { date: tomorrow, kind: "plan" }, NOW)).toEqual({
+      status: "skipped",
+      reason: "already_planned",
+    });
+  });
+
+  it("corrects only the lengths the AI itself guessed", async () => {
+    const mod = await makeModule(db);
+    const guessed = await createTask(db, {
+      module_id: mod.id,
+      title: "Tahmin edilen",
+      est_minutes: 30,
+    });
+    await db
+      .from("tasks")
+      .update({
+        ai: {
+          kind: "enrich",
+          model: "fake-fast",
+          at: NOW.toISOString(),
+          call_id: "",
+          input: "Tahmin edilen",
+          user_edited: [],
+          fields: { est_minutes: { value: 30, confidence: 0.6, reason: "benzer işler" } },
+        },
+      })
+      .eq("id", guessed.id);
+    const typed = await createTask(db, {
+      module_id: mod.id,
+      title: "Elle yazılan",
+      est_minutes: 30,
+    });
+    const item = await createWorkItem(db, {
+      module_id: mod.id,
+      title: "Kalem",
+      effort_total_minutes: 120,
+    });
+    const sitting = await createTask(db, {
+      module_id: mod.id,
+      title: "Kalem",
+      work_item_id: item.id,
+      est_minutes: 30,
+    });
+    const longer = fakeProvider({
+      replan: (input) => ({
+        top3: [],
+        prefer: [],
+        defer: [],
+        estimates: (input as { candidates: { id: string }[] }).candidates.map((row) => ({
+          id: row.id,
+          minutes: 60,
+          reason: "Daha uzun sürer.",
+        })),
+        warnings: [],
+      }),
+    });
+    expect((await planDayFlow(deps(longer), { date: TODAY, kind: "replan" }, NOW)).status).toBe(
+      "applied",
+    );
+    const minutes = Object.fromEntries(
+      ok(await db.from("tasks").select("id, est_minutes")).map((row) => [row.id, row.est_minutes]),
+    );
+    expect(minutes[guessed.id]).toBe(60);
+    expect(minutes[typed.id]).toBe(30);
+    expect(minutes[sitting.id]).toBe(30);
   });
 });
 

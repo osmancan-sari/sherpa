@@ -99,7 +99,7 @@ Tasarım: `docs/04-planlayici.md`.
 - "X dk'm var", "Yeniden planla", "Ertele", "Takıldım"
 - Akşam kapanışı akışı
 - Hafta ekranı: kapasite çubuğu, haftanın kalemleri ve modül payları, hayat modu, 6–8 haftalık yük
-- Yapay zeka: gecelik `plan`, haftalık `week` ve `review`, aylık `month`, istek üzerine `replan`
+- Yapay zeka: günlük `plan` (kapanışta ya da günün ilk açılışında; sunucuda zamanlanmış iş yok), haftalık `week` ve `review`, aylık `month`, istek üzerine `replan`
 - İkinci yarı: öğrenme (tahmin ve kapasite çarpanları)
 
 **Kabul ölçütleri**

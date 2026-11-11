@@ -12,6 +12,7 @@ export const POST = aiRoute(
     kind: z.enum(["plan", "replan"]).default("plan"),
     note: z.string().max(500).nullable().optional(),
     preview: z.boolean().optional(),
+    context: z.enum(["any", "desk", "home", "campus", "office", "out", "commute"]).optional(),
   }),
   (deps, body) => planDayFlow(deps, body, new Date()),
 );

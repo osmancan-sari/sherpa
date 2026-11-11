@@ -181,21 +181,23 @@ export function useReplan() {
   const onError = useFailureNotice();
   return useCoreMutation({
     mutate: async (db, { input, ai }: { input: PlanInput; ai: boolean }) => {
-      // With the AI on, its `replan` (the server keeps what is finished of the three). Without
-      // an answer, the engine plans again here.
-      if (ai) {
-        const answer = await postAi<{ status?: string }>("plan", {
-          date: input.date,
-          kind: "replan",
-        });
-        if (answer?.status === "applied") return null;
-      }
-      // What is finished of the day's three stays in it (the day's progress is kept); the rest
-      // is chosen again.
+      // The engine plans again here at once: the screen does not wait for the AI. What is
+      // finished of the day's three stays in it (the day's progress is kept); the rest is
+      // chosen again.
       const finished = (input.top3 ?? []).filter((id) => isFinished(id, input));
       const plan = buildPlan({ ...input, top3: undefined });
       const top3 = [...finished, ...plan.top3.filter((id) => !finished.includes(id))].slice(0, 3);
-      return saveDayPlan(db, { plan: { ...plan, top3 }, day: input, source: "auto" });
+      const saved = await saveDayPlan(db, {
+        plan: { ...plan, top3 },
+        day: input,
+        source: "auto",
+        // The user's own new plan: the morning's AI plan is not asked for again over it.
+        stored: { aiAsked: true },
+      });
+      // With the AI on, its `replan` comes on top a few seconds later (through the live
+      // connection); nothing is lost if it does not come.
+      if (ai) void postAi("plan", { date: input.date, kind: "replan" });
+      return saved;
     },
     onError,
   });

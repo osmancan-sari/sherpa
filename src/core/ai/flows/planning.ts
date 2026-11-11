@@ -12,12 +12,14 @@ import {
   type PlanInput,
   planInput,
   type PlanRows,
+  storedPlan,
+  tomorrowInput,
   type WeekAdvice,
   type WeekInput,
   type WeekPlan,
 } from "@/core/planner";
-import { remainingEffort } from "@/core/planner/week";
-import { type Db, toJson } from "@/core/types";
+import { fixedDemand, remainingEffort } from "@/core/planner/week";
+import { check, type Context, type Db, toJson } from "@/core/types";
 import { dayKey, formatTime, istanbulInstant, shiftDay, weekStart, weekdayOf } from "@/lib/date";
 import {
   type MonthCallInput,
@@ -117,7 +119,11 @@ export function adviceOf(output: PlanOutput, plan: Plan): PlanAdvice {
   return { top3: ids(output.top3), prefer: ids(output.prefer), defer: ids(output.defer), reasons };
 }
 
-/** The AI's corrections to estimates, on tasks whose length the user has not set by hand. */
+/**
+ * The AI's corrections to estimates: only where the length is the AI's own guess (its mark has
+ * the field and the user did not change it). A length the user typed, or a sitting's (its
+ * length is the week's share), is never touched.
+ */
 async function applyEstimates(
   db: Db,
   rows: PlanRows,
@@ -127,9 +133,9 @@ async function applyEstimates(
 ): Promise<void> {
   for (const estimate of output.estimates) {
     const task = rows.tasks.find((row) => row.id === estimate.id && row.status === "todo");
-    if (!task) continue;
+    if (!task || task.work_item_id !== null) continue;
     const mark = readMark(task.ai);
-    if (mark?.user_edited.includes("est_minutes")) continue;
+    if (!mark?.fields.est_minutes || mark.user_edited.includes("est_minutes")) continue;
     const next = mergeMark(mark, {
       kind: "plan",
       model: call.model,
@@ -140,10 +146,12 @@ async function applyEstimates(
         est_minutes: { value: estimate.minutes, confidence: 0.6, reason: estimate.reason },
       },
     });
-    await db
-      .from("tasks")
-      .update({ est_minutes: estimate.minutes, ai: toJson(next) })
-      .eq("id", task.id);
+    check(
+      await db
+        .from("tasks")
+        .update({ est_minutes: estimate.minutes, ai: toJson(next) })
+        .eq("id", task.id),
+    );
   }
 }
 
@@ -152,23 +160,48 @@ export type PlanFlowResult =
   | { status: "skipped" | "failed"; reason: string };
 
 /**
- * `plan` (the day ahead, at the closing or on the day's first opening) and `replan` ("Yeniden
- * planla"). With `preview`, the advice is returned and nothing is written (the closing shows it
- * and writes it when the user confirms).
+ * `plan` (the day's plan, asked once a day; the closing's draft with `preview`) and `replan`
+ * ("Yeniden planla"). With `preview`, the advice is returned and nothing is written (the closing
+ * shows it and writes it when the user confirms). A day the closing planned is not planned
+ * again by `plan`; what is finished of the day's three always stays in them.
  */
 export async function planDayFlow(
   deps: AiDeps,
-  options: { date: string; kind: "plan" | "replan"; note?: string | null; preview?: boolean },
+  options: {
+    date: string;
+    kind: "plan" | "replan";
+    note?: string | null;
+    preview?: boolean;
+    context?: Context;
+  },
   now: Date,
 ): Promise<PlanFlowResult> {
   const rows = await loadPlanRows(deps.db, now);
-  const input = {
-    ...planInput(rows, { date: options.date, now, context: "desk" }),
-    advice: undefined,
-  };
+  const context = options.context ?? "desk";
+  // The day the screen means: tomorrow's as the closing sees it, or the day itself.
+  const tomorrow = tomorrowInput(rows, { now, context });
+  const own =
+    options.date === tomorrow.date
+      ? tomorrow
+      : planInput(rows, { date: options.date, now, context });
+  const input = { ...own, advice: undefined };
   const replan = options.kind === "replan";
-  // For a new plan the engine chooses afresh; the day's three as they were are its own answer.
-  const base = buildPlan({ ...input, top3: replan ? undefined : input.top3 });
+  const day = rows.days.find((row) => row.date === options.date) ?? null;
+  if (!options.preview && !replan) {
+    // Once a day, on any screen: the attempt is kept on the day, whatever comes of it.
+    if (day?.plan_source === "closing" || day?.plan_source === "ai" || storedPlan(day).aiAsked) {
+      return { status: "skipped", reason: "already_planned" };
+    }
+    if (day) {
+      check(
+        await deps.db
+          .from("days")
+          .update({ plan: toJson({ ...storedPlan(day), aiAsked: true }) })
+          .eq("id", day.id),
+      );
+    }
+  }
+  const base = buildPlan({ ...input, top3: undefined });
   // Nothing to plan, nothing to ask (and nothing to pay for).
   if (base.candidates.length === 0) return { status: "skipped", reason: "nothing_to_plan" };
   const result = await runAiCall(
@@ -184,19 +217,21 @@ export async function planDayFlow(
   await applyEstimates(deps.db, rows, result.output, result, now);
   // The engine again, with the advice: it keeps the rules, the AI only chooses within them.
   const fresh = await loadPlanRows(deps.db, now);
-  const again = planInput(fresh, { date: options.date, now, context: "desk" });
-  const planned = buildPlan({ ...again, top3: undefined, advice });
-  let top3 = planned.top3;
-  if (replan) {
-    // What is finished of the day's three stays in them.
-    const finished = (again.top3 ?? []).filter((id) => isFinished(id, again));
-    top3 = [...finished, ...top3.filter((id) => !finished.includes(id))].slice(0, 3);
+  const again = planInput(fresh, { date: options.date, now, context });
+  const current = fresh.days.find((row) => row.date === options.date);
+  // The closing was confirmed while the AI answered: the user's plan stands.
+  if (!replan && current?.plan_source === "closing") {
+    return { status: "skipped", reason: "already_planned" };
   }
+  const planned = buildPlan({ ...again, top3: undefined, advice });
+  // What is finished of the day's three stays in them.
+  const finished = (again.top3 ?? []).filter((id) => isFinished(id, again));
+  const top3 = [...finished, ...planned.top3.filter((id) => !finished.includes(id))].slice(0, 3);
   await saveDayPlan(deps.db, {
     plan: { ...planned, top3 },
     day: again,
     source: "ai",
-    stored: { advice },
+    stored: { advice, aiAsked: true },
     reasons: advice.reasons ?? {},
   });
   return { status: "applied", advice, warnings: result.output.warnings };
@@ -205,10 +240,26 @@ export async function planDayFlow(
 /** What the `week` call sees: the week's candidates with the engine's shares and its commitment. */
 export function weekCallInput(input: WeekInput, base: WeekPlan, rows: PlanRows): WeekCallInput {
   const [load] = loadByWeek(input, { from: input.weekStart, weeks: 1 });
-  const fixed = Object.entries(base.moduleBudgets).map(([slug, minutes]) => ({
-    module: slug,
-    minutes,
-  }));
+  // Only what the module's rhythms and floor need: the floor the AI may not go under.
+  const daysLeft = Math.max(
+    0,
+    Math.min(
+      7,
+      7 -
+        Math.round(
+          (istanbulInstant(dayKey(input.now)).getTime() -
+            istanbulInstant(input.weekStart).getTime()) /
+            86_400_000,
+        ),
+    ),
+  );
+  const fixed = rows.modules
+    .filter((mod) => mod.status === "active")
+    .map((mod) => ({
+      module: mod.name,
+      minutes: Math.round(fixedDemand(input, mod, input.weekStart, daysLeft)),
+    }))
+    .filter((row) => row.minutes > 0);
   const lastWeek = rows.weekPlans.find((row) => row.week_start === shiftDay(input.weekStart, -7));
   return {
     week_start: input.weekStart,
@@ -232,7 +283,7 @@ export function weekCallInput(input: WeekInput, base: WeekPlan, rows: PlanRows):
         };
       }),
     base: base.committed.map((row) => row.itemId),
-    last_week: lastWeek ? { committed: lastWeek.committed.length, finished: 0 } : null,
+    last_week: lastWeek ? { committed: lastWeek.committed.length } : null,
   };
 }
 
@@ -298,8 +349,16 @@ export async function monthFlow(deps: AiDeps, now: Date) {
       })),
   };
   const periodStart = `${dayKey(now).slice(0, 7)}-01`;
-  if (callInput.items.length === 0)
+  if (callInput.items.length === 0 || !loads.some((load) => load.over)) {
     return { status: "skipped" as const, reason: "nothing_to_plan" };
+  }
+  const { data: kept } = await deps.db
+    .from("horizon_reviews")
+    .select("id")
+    .eq("scope", "month")
+    .eq("period_start", `${dayKey(now).slice(0, 7)}-01`)
+    .maybeSingle();
+  if (kept) return { status: "skipped" as const, reason: "already_planned" };
   const result = await runAiCall(deps, monthSpec, callInput);
   if (result.status !== "ok") return { status: result.status, reason: result.reason };
   const { error } = await deps.db.from("horizon_reviews").upsert(
@@ -360,6 +419,12 @@ export async function reviewFlow(deps: AiDeps, registry: ModuleRegistry, now: Da
     })),
     life_mode: planInput(rows, { date: dayKey(now), now, context: "desk" }).lifeMode,
   };
+  const { data: done } = await deps.db
+    .from("weekly_reviews")
+    .select("id")
+    .eq("week_start", week)
+    .maybeSingle();
+  if (done) return { status: "skipped" as const, reason: "already_planned" };
   if (modules.length === 0 && callInput.worked.length === 0) {
     return { status: "skipped" as const, reason: "nothing_to_review" };
   }

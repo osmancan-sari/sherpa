@@ -74,6 +74,7 @@
 | Gün ve hafta uygulama açıkken kendiliğinden planlanır (`PlanKeeper`); günün ilk dokunuşu yalnızca kullanıcının dokunuşudur. Taahhütten sonra gelen kalem haftada yer varsa eklenir, elle eklenen her zaman (Ç3) | Kural 3: sistem ritüele bağımlı değil; ikinci ekran gece de açık | Planlayıcı, Bugün ekranı |
 | Bugün listesi ve planlayıcı bir kalemin yalnızca sıradaki oturum işini aday sayar (son tarihi bugün olan kalemde hepsini); uzayan oturum 30 dakika cevapsız kalınca tahmini sürede ölçülmeden kapanır (Ç3) | Aynı başlık listede tekrar etmesin; kural 2: suçluluk üreten açık oturum kalmasın | Planlayıcı, Bugün ekranı, `close_unanswered_session` |
 | Takıldım → "Adımı küçült" bugüne 15 dakikalık bir iş açar ve kalemin sıradaki adımı olur; "Birini bekliyorum" oturum işinin kalemini de bekletir (Ç3) | Takılınan yerde ilerlemenin yolu küçük bir adım; bekleyen adımı olan kalem ilerleyemez | Bugün ekranı, veri katmanı |
+| Planlama çağrılarının tetikleyicisi zamanlanmış iş değil, ekranın açılışıdır: `plan` günde bir kez (kapanışta ya da günün ilk açılışında; deneme gün kaydına yazılır, başka ekran yeniden sormaz), `week` haftanın ilk açılışında ve tetikleyicide, `month` ayın ilk açılışında ve yalnızca sıkışan hafta varsa, `review` Cumartesiden itibaren haftada bir. Yapay zeka ancak kendi tahmin ettiği süreyi düzeltebilir (Ç3) | Ücretsiz katmanda zamanlanmış iş yok; uygulama açık değilken plan da gerekmiyor. Maliyet yalnızca gerektiğinde. Kural 4: kullanıcının değeri ezilmez | Planlayıcı, `docs/10-yapay-zeka.md` |
 
 ## Açık sorular
 

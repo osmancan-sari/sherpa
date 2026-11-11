@@ -72,6 +72,8 @@ function WeekBody() {
   const plan = rows.weekPlans.find((row) => row.week_start === week);
   const shares = readShares(plan?.shares);
   const budgets = (plan?.module_budgets ?? {}) as Record<string, number>;
+  // The AI's reasons for the week's items, when it chose them (`week`).
+  const reasons = (plan?.reasons ?? {}) as Record<string, string>;
   const [thisWeek] = loads;
 
   return (
@@ -126,6 +128,9 @@ function WeekBody() {
                         .filter(Boolean)
                         .join(" · ")}
                     </p>
+                    {reasons[id] ? (
+                      <p className="text-muted-foreground truncate text-xs">{reasons[id]}</p>
+                    ) : null}
                   </div>
                 </li>
               );

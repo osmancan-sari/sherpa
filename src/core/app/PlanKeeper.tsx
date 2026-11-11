@@ -1,12 +1,12 @@
 "use client";
 
 import { useQueryClient } from "@tanstack/react-query";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { postAi } from "@/core/ai/client";
 import { keepWeek, storedWeek, weekInput } from "@/core/data/keep";
 import { clearPastPlannedDays, planDay, touchDay } from "@/core/data/planning";
 import { closeUnanswered } from "@/core/data/sessions";
-import { buildPlan, isReturning, overrun } from "@/core/planner";
+import { buildPlan, isReturning, overrun, storedPlan } from "@/core/planner";
 import { weekAction } from "@/core/planner/week";
 import { weekStart, weekdayOf } from "@/lib/date";
 import { CORE, MODULE, useDb } from "./CoreProvider";
@@ -37,18 +37,21 @@ export function PlanKeeper() {
   const weeklyReviews = useWeeklyReviews();
   const horizonReviews = useHorizonReviews();
   const busy = useRef(false);
+  // Changes that came while a step was running are looked at again once it is done, not at the
+  // next tick of the clock.
+  const [round, setRound] = useState(0);
   /** AI requests already made by this screen: one each, whatever the answer. */
   const asked = useRef(new Set<string>());
 
   useEffect(() => {
-    if (!input || !rows || busy.current) return;
+    // Until the server has said whether the AI answers, nothing is planned: the week would be
+    // committed without its advice, the day planned before the week's sittings.
+    if (!input || !rows || busy.current || !aiKnown) return;
     const week = weekInput(rows, now);
-    const action = !aiKnown
-      ? null
-      : weekAction(
-          storedWeek(rows.weekPlans.find((row) => row.week_start === week.weekStart)),
-          week,
-        );
+    const action = weekAction(
+      storedWeek(rows.weekPlans.find((row) => row.week_start === week.weekStart)),
+      week,
+    );
     const day = rows.days.find((row) => row.date === input.date) ?? null;
     const needsPlan = !day?.plan_source;
     // A session nobody answered for is closed at its estimate, unmeasured.
@@ -60,7 +63,12 @@ export function PlanKeeper() {
         ? overrun(open, task?.est_minutes ?? rhythm?.est_minutes ?? null, now) === "close"
         : false;
     // The AI's steps, each once per screen (the server reuses an answer to the same question).
-    const askPlan = aiOn && day?.plan_source === "auto" && !asked.current.has(`plan:${input.date}`);
+    // The day's plan is asked once a day on any screen: the attempt is kept on the day.
+    const askPlan =
+      aiOn &&
+      day?.plan_source === "auto" &&
+      !storedPlan(day).aiAsked &&
+      !asked.current.has(`plan:${input.date}`);
     const month = `${input.date.slice(0, 7)}-01`;
     const askMonth =
       aiOn &&
@@ -121,9 +129,21 @@ export function PlanKeeper() {
         );
         if (wrote.includes("tasks")) void queryClient.invalidateQueries({ queryKey: [MODULE] });
         busy.current = false;
+        setRound((value) => value + 1);
       }
     })();
-  }, [input, rows, now, db, queryClient, aiOn, aiKnown, weeklyReviews.data, horizonReviews.data]);
+  }, [
+    input,
+    rows,
+    now,
+    db,
+    queryClient,
+    aiOn,
+    aiKnown,
+    weeklyReviews.data,
+    horizonReviews.data,
+    round,
+  ]);
 
   // The first touch of the day: a key or a tap on any screen, once a day.
   const date = input?.date;

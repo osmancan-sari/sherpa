@@ -43,11 +43,9 @@ test("the morning plan carries the AI's advice and its reasons behind 'neden?'",
 test("'Yeniden planla' asks the AI to plan the rest of the day", async ({ page }) => {
   await seedWork();
   await page.goto("/");
-  await waitFor(
-    () => rows("days"),
-    (list) => list[0]?.plan_source === "ai",
-    15_000,
-  );
+  // Whatever the morning's plan is by now, "Yeniden planla" plans again at once (the engine)
+  // and asks the AI for the rest of the day.
+  await expect(page.getByRole("region", { name: "Şimdi" }).getByRole("heading")).toBeVisible();
   await page.getByRole("button", { name: "Yeniden planla" }).click();
   await expect(page.getByRole("status")).toHaveText("Gün yeniden planlandı.");
   await waitFor(

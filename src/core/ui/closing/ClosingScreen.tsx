@@ -67,6 +67,7 @@ function ClosingBody() {
       postAi<{ status: string; advice?: PlanAdvice }>("plan", {
         date: tomorrowDate,
         preview: true,
+        context,
       }),
   });
   const advice = preview.data?.status === "applied" ? preview.data.advice : undefined;

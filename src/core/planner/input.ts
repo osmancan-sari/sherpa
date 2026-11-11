@@ -48,6 +48,8 @@ export type StoredDayPlan = {
   version: 1;
   advice?: PlanAdvice | null;
   skipped?: string[];
+  /** The AI was asked for the day's plan (`plan`), whatever came of it: once a day. */
+  aiAsked?: boolean;
   /** Slot minutes of the whole day when it was first planned; the capacity learning reads it. */
   slotMinutes?: number;
   usableMinutes?: number;

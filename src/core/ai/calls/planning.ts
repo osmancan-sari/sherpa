@@ -98,7 +98,7 @@ ${SHARED_RULES}`,
 export type WeekCallInput = {
   week_start: string;
   life_mode: string;
-  /** This week's usable minutes and the rhythms' and floors' fixed demand. */
+  /** This week's usable minutes; per module, what its rhythms and floor need (not less). */
   capacity_minutes: number;
   fixed_minutes: { module: string; minutes: number }[];
   /** At most 80 work items that could be worked on this week. */
@@ -116,8 +116,8 @@ export type WeekCallInput = {
   }[];
   /** The engine's own commitment. */
   base: string[];
-  /** Last week: committed items and how many of them got their share done. */
-  last_week: { committed: number; finished: number } | null;
+  /** Last week: how many items were committed. */
+  last_week: { committed: number } | null;
 };
 
 export const weekOutput = z.object({
