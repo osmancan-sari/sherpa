@@ -267,14 +267,14 @@ function nowOf(
   }
   if (input.prompt) return { kind: "prompt", prompt: input.prompt };
 
-  // A work item whose effort is used up asks "Bitti mi?" before the day can be done.
+  // A work item whose effort is used up asks "Bitti mi?" in its own slot, and before the day
+  // can be done.
   const usedUp = slots.find(
     (slot) =>
       slot.assignment?.candidate.type === "item" &&
       slot.assignment.candidate.item &&
       effortUsedUp(slot.assignment.candidate.item),
   )?.assignment;
-  if (usedUp) return { kind: "suggest", assignment: usedUp };
 
   const mandatoryLeft = candidates.some((candidate) => candidate.mandatory !== null);
   const finishedToday = input.tasks.filter(
@@ -284,6 +284,7 @@ function nowOf(
       dayKey(new Date(task.done_at)) === input.date,
   );
   if (top3.length > 0 && top3Done === top3.length && !mandatoryLeft) {
+    if (usedUp) return { kind: "suggest", assignment: usedUp };
     return {
       kind: "done",
       finished: finishedToday.length,
@@ -293,6 +294,7 @@ function nowOf(
   const next = slots.find((slot) => slot.assignment)?.assignment;
   if (next) return { kind: "suggest", assignment: next };
   if (finishedToday.length > 0 && !mandatoryLeft) {
+    if (usedUp) return { kind: "suggest", assignment: usedUp };
     return {
       kind: "done",
       finished: finishedToday.length,
@@ -383,7 +385,14 @@ function warningsOf(input: PlanInput, candidates: Candidate[], placed: Set<strin
     }
   }
 
-  return warnings.slice(0, MAX_WARNINGS);
+  // Each warning knows its module, so the screen can take the user there.
+  const moduleOf = (id: string) =>
+    candidates.find((row) => row.id === id || row.item?.id === id)?.moduleId ??
+    input.tasks.find((row) => row.id === id)?.module_id ??
+    input.workItems.find((row) => row.id === id)?.module_id;
+  return warnings
+    .slice(0, MAX_WARNINGS)
+    .map((warning) => ({ ...warning, moduleId: moduleOf(warning.subjectId) }));
 }
 
 /** "X dk'm var": the best work that fits in the given minutes, now, wherever it was planned. */

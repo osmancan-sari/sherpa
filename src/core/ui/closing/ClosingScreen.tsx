@@ -99,24 +99,32 @@ function ClosingBody() {
     );
   };
   const confirm = () => {
+    // One confirmation at a time: a second Enter while it is being written does nothing.
+    if (close.isPending || close.isSuccess) return;
     const lines = dump
       .split("\n")
       .map((line) => line.trim())
       .filter(Boolean);
-    for (const line of lines) addEntry.mutate({ id: crypto.randomUUID(), text: line });
-    const plan = buildPlan({
-      ...tomorrow.base,
-      top3,
-      skipped: [...(tomorrow.base.skipped ?? []), ...removed],
+    // What was taken out of tomorrow joins what was already off it; a sitting takes its item.
+    const takenOut = removed.flatMap((id) => {
+      const task = tomorrow.base.tasks.find((row) => row.id === id);
+      return task?.work_item_id ? [id, task.work_item_id] : [id];
     });
+    const skipped = [...new Set([...(tomorrow.base.skipped ?? []), ...takenOut])];
+    const plan = buildPlan({ ...tomorrow.base, top3, skipped });
     close.mutate(
       {
         today: input.date,
         now: new Date(),
-        tomorrow: { plan: { ...plan, top3 }, day: tomorrow.base, stored: { skipped: removed } },
+        tomorrow: { plan: { ...plan, top3 }, day: tomorrow.base, stored: { skipped } },
         note: null,
       },
-      { onSuccess: () => router.push("/") },
+      {
+        onSuccess: () => {
+          for (const line of lines) addEntry.mutate({ id: crypto.randomUUID(), text: line });
+          router.push("/");
+        },
+      },
     );
   };
   return (

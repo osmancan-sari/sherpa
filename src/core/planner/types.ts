@@ -134,7 +134,13 @@ export type Slot = {
 
 export type WarningKind = "deadline" | "floor" | "next_step" | "deferred_often" | "advice_rejected";
 
-export type Warning = { kind: WarningKind; subjectId: string; text: string };
+export type Warning = {
+  kind: WarningKind;
+  subjectId: string;
+  text: string;
+  /** The module of the work the warning is about. */
+  moduleId?: string;
+};
 
 export type NowState =
   | { kind: "running"; session: Session; task: Task | null; rhythm: Rhythm | null }

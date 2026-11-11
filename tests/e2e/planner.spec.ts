@@ -33,6 +33,7 @@ test("opening the app plans the week and the day; the first touch is the user's"
   );
   expect(day.started_at).toBeNull();
   await expect(page.getByRole("region", { name: "Şimdi" })).toContainText("Dönem projesi");
+  await expect(page.getByRole("region", { name: "Günün şeridi" })).toBeVisible();
 
   // The first tap of the day is its start.
   await page.getByRole("heading", { name: "Bugün", exact: true }).click();
@@ -76,6 +77,12 @@ test("Ertele moves the work to tomorrow; put off three times, the screen asks to
   await expect(page.getByRole("region", { name: "Uyarılar" })).toContainText(
     "Hep ertelenen: 3 kez ertelendi. Böl, bırak ya da bir tarihe bağla.",
   );
+  // The warning's one action takes the user to the work's module.
+  await page
+    .getByRole("region", { name: "Uyarılar" })
+    .getByRole("link", { name: "Modüle git" })
+    .click();
+  await expect(page).toHaveURL(new RegExp(`/m/${mod.slug}$`));
 });
 
 test("Takıldım closes the session and offers three ways on: a smaller step, waiting, not today", async ({
@@ -121,6 +128,16 @@ test("Takıldım closes the session and offers three ways on: a smaller step, wa
   ).then((list) => list.find((task) => task.id === other.id)!);
   expect(waiting).toMatchObject({ waiting_on: "Hoca" });
   expect(waiting.follow_up_on).not.toBeNull();
+
+  // Not today: put off to tomorrow.
+  await expect(now.getByRole("heading")).toHaveText("Zor bölüm");
+  await now.getByRole("button", { name: "Başla" }).click();
+  await now.getByRole("button", { name: "Takıldım" }).click();
+  await now.getByRole("button", { name: "Bugün değil" }).click();
+  await waitFor(
+    () => rows("tasks"),
+    (list) => list.some((task) => task.id === hard.id && task.planned_date === tomorrow()),
+  );
 });
 
 test("a waiting task's follow-up day brings a short reminder; the answer puts it back", async ({
@@ -137,6 +154,15 @@ test("a waiting task's follow-up day brings a short reminder; the answer puts it
   await page.goto("/");
   const now = page.getByRole("region", { name: "Şimdi" });
   await expect(now).toContainText("Bölüm sekreteri bekleniyor. Takip et.");
+  // Still waiting: asked again in three days.
+  await now.getByRole("button", { name: "Hâlâ bekliyor" }).click();
+  await waitFor(
+    () => rows("tasks"),
+    (list) => list[0].follow_up_on !== today(),
+  );
+  await expect(now).toContainText("Bugün için planlanan bir şey yok.");
+  await update("tasks", waiting.id as string, { follow_up_on: today() });
+  await page.reload();
   await now.getByRole("button", { name: "Cevap geldi" }).click();
   await waitFor(
     () => rows("tasks"),
@@ -341,14 +367,22 @@ test("the evening closing: what was done, tomorrow's three, what is on the mind,
     (list) => list.some((task) => task.id === left.id && task.status === "done"),
   );
   await page.getByRole("button", { name: "İleri" }).click();
-  // 3. Tomorrow's draft: "Yarın C" is taken out.
+  // Escape goes back a step.
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("region", { name: "Bugün" })).toBeVisible();
+  await page.getByRole("button", { name: "İleri" }).click();
+  // 3. Tomorrow's draft: "Yarın C" is taken out, "Yarın B" is not one of the three.
   const draft = page.getByRole("region", { name: "Yarın" });
   await draft.getByRole("button", { name: "Çıkar: Yarın C" }).click();
   await expect(draft).not.toContainText("Yarın C");
+  const pickB = draft.getByRole("button", { name: "Günün üç işi: Yarın B" });
+  await expect(pickB).toHaveAttribute("aria-pressed", "true");
+  await pickB.click();
+  await expect(pickB).toHaveAttribute("aria-pressed", "false");
   await page.getByRole("button", { name: "İleri" }).click();
-  // 4. What is on the mind goes to the inbox, a line each.
+  // 4. What is on the mind goes to the inbox, a line each; Ctrl+Enter goes on from the box.
   await page.getByLabel("Aklında kalanlar").fill("perde ölçüsü\nannemi ara");
-  await page.getByRole("button", { name: "İleri" }).click();
+  await page.keyboard.press("Control+Enter");
   // 5. Confirm: tomorrow is kept, today goes to night.
   await expect(page.getByRole("region", { name: "Onay" })).toContainText("Yarın A");
   await page.getByRole("button", { name: "Onayla" }).click();
@@ -358,7 +392,7 @@ test("the evening closing: what was done, tomorrow's three, what is on the mind,
     (list) => list.some((day) => day.date === tomorrow() && day.plan_source === "closing"),
   );
   const next = days.find((day) => day.date === tomorrow())!;
-  expect((next.top3 as string[]).length).toBe(2);
+  expect((next.top3 as string[]).length).toBe(1);
   expect(days.find((day) => day.date === today())!.closed_at).not.toBeNull();
   expect((await rows("inbox_entries")).map((entry) => entry.raw_text).sort()).toEqual([
     "annemi ara",

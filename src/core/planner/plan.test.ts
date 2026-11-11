@@ -455,10 +455,11 @@ describe("the AI's advice", () => {
     const ai = [tasks[3].id, tasks[2].id, tasks[1].id];
     // 90 minutes of slots × 0.7: room for two of the three.
     const plan = buildPlan(input({ tasks, advice: { top3: ai }, finishLine: at("09:30") }));
-    // Two of the AI's three fit (in score order); the fourth task, not chosen, does not get in.
-    expect(placedIds(plan)).toHaveLength(2);
-    expect(placedIds(plan).every((id) => ai.includes(id))).toBe(true);
-    expect([...plan.top3].sort()).toEqual([...placedIds(plan)].sort());
+    // Two of the AI's three fit (the scores are equal: which two is the engine's order, not the
+    // AI's); the fourth task, not chosen, does not get in.
+    const two = [tasks[1].id, tasks[2].id].sort();
+    expect([...placedIds(plan)].sort()).toEqual(two);
+    expect([...plan.top3].sort()).toEqual(two);
   });
 
   it("raises what it prefers", () => {
@@ -691,5 +692,79 @@ describe("a work item whose effort is used up", () => {
     const sitting = task({ work_item_id: item.id, position: 2 });
     const candidates = buildCandidates(input({ workItems: [item], tasks: [sitting] }));
     expect(candidates).toMatchObject([{ type: "item", id: item.id }]);
+  });
+});
+
+describe("an item's sittings", () => {
+  it("offers a step planned for today before the item's next sitting", () => {
+    const item = workItem({ effort_total_minutes: 300 });
+    const first = task({ work_item_id: item.id, position: 1 });
+    const second = task({ work_item_id: item.id, position: 2 });
+    const step = task({
+      work_item_id: item.id,
+      position: null,
+      planned_date: DATE,
+      est_minutes: 15,
+    });
+    const ids = buildCandidates(input({ workItems: [item], tasks: [first, second, step] })).map(
+      (row) => row.id,
+    );
+    expect(ids).toEqual([step.id]);
+  });
+
+  it("are all offered, and all mandatory, when the item is due today", () => {
+    const item = workItem({ effort_total_minutes: 135, due_at: iso("18:00") });
+    const sittings = [1, 2, 3].map((position) =>
+      task({ work_item_id: item.id, position, est_minutes: 45, due_at: item.due_at }),
+    );
+    const plan = buildPlan(input({ workItems: [item], tasks: sittings }));
+    expect(plan.candidates.map((row) => [row.id, row.mandatory])).toEqual(
+      sittings.map((row) => [row.id, "due_today"]),
+    );
+    expect(placedIds(plan).sort()).toEqual(sittings.map((row) => row.id).sort());
+  });
+});
+
+describe("the 'Bitti mi?' question", () => {
+  it("waits for its slot: urgent work placed first is offered first", () => {
+    const urgent = task({ title: "Acil", importance: 4, due_at: iso("12:00") });
+    const spent = workItem({ title: "Dolan", effort_total_minutes: 60, effort_done_minutes: 60 });
+    const plan = buildPlan(input({ tasks: [urgent], workItems: [spent] }));
+    expect(plan.now).toMatchObject({
+      kind: "suggest",
+      assignment: { candidate: { id: urgent.id } },
+    });
+  });
+
+  it("is asked before the day can be done", () => {
+    const finished = task({ status: "done", done_at: iso("09:00") });
+    const spent = workItem({ title: "Dolan", effort_total_minutes: 60, effort_done_minutes: 60 });
+    const plan = buildPlan(
+      input({ now: at("10:00"), tasks: [finished], workItems: [spent], top3: [finished.id] }),
+    );
+    expect(plan.now).toMatchObject({
+      kind: "suggest",
+      assignment: { candidate: { id: spent.id } },
+    });
+  });
+});
+
+describe("the day's three, fixed", () => {
+  it("are placed by their score now: a deadline moved forward puts its work first", () => {
+    const later = task({ title: "Sonra", due_at: iso("18:00", shiftDay(DATE, 6)) });
+    const sooner = task({ title: "Öne çekilen", due_at: iso("18:00", shiftDay(DATE, 1)) });
+    const plan = buildPlan(input({ tasks: [later, sooner], top3: [later.id, sooner.id] }));
+    expect(placedIds(plan)).toEqual([sooner.id, later.id]);
+    expect(plan.top3).toEqual([later.id, sooner.id]);
+  });
+});
+
+describe("warnings", () => {
+  it("know the module of their work", () => {
+    const mod = moduleRow();
+    const nagged = task({ module_id: mod.id, defer_count: 3 });
+    expect(buildPlan(input({ modules: [mod], tasks: [nagged] })).warnings).toMatchObject([
+      { kind: "deferred_often", moduleId: mod.id },
+    ]);
   });
 });

@@ -41,10 +41,14 @@ function WeekBody() {
   const notify = useNotify();
   const moduleMap = useMemo(() => new Map(modules.map((mod) => [mod.row.id, mod])), [modules]);
 
+  const date = input?.date;
   const loads = useMemo(() => {
     if (!rows) return null;
-    return loadByWeek(weekInput(rows, now), { from: weekStart(dayKey(now)), weeks: WEEKS_AHEAD });
-  }, [rows, now]);
+    return loadByWeek(weekInput(rows, now), {
+      from: weekStart(date ?? dayKey(now)),
+      weeks: WEEKS_AHEAD,
+    });
+  }, [rows, now, date]);
 
   if (failed) {
     return (
@@ -58,7 +62,7 @@ function WeekBody() {
     return <h1 className="text-xl font-semibold tracking-tight md:text-2xl">Hafta</h1>;
   }
 
-  const week = weekStart(dayKey(now));
+  const week = weekStart(input?.date ?? dayKey(now));
   const plan = rows.weekPlans.find((row) => row.week_start === week);
   const shares = readShares(plan?.shares);
   const budgets = (plan?.module_budgets ?? {}) as Record<string, number>;
@@ -135,7 +139,7 @@ function WeekBody() {
         ) : null}
       </section>
 
-      <LifeModePicker rows={rows} today={dayKey(now)} />
+      <LifeModePicker rows={rows} today={input.date} />
 
       <Horizon loads={loads} />
     </>
@@ -154,7 +158,7 @@ function DayStrip({
   input: NonNullable<ReturnType<typeof useTodayPlan>["input"]>;
   now: Date;
 }) {
-  const today = dayKey(now);
+  const today = input.date;
   return (
     <section aria-label="Haftanın günleri" className="overflow-x-auto">
       <ol className="grid min-w-[42rem] grid-cols-7 gap-2">

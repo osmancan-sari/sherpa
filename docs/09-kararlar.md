@@ -72,6 +72,8 @@
 | Modül sözleşmesine `extractors` eklendi; `extract` rotası hiçbir şey yazmaz, önerileri modüle döndürür (Ç2) | Çekirdek modülün verisini tanımaz; önerinin ne olacağına modül karar verir | Modül sözleşmesi |
 | Planlayıcının dokümanın açık bıraktığı yerlerdeki yorumları `docs/04-planlayici.md` içinde "Uygulama notları (Ç3)" başlığında: geçmiş son tarih zorunlu değil, Yoğun modda taban en az yarısıyla kalır, gece 05:00'te biter, hafta planı varken yalnızca taahhüt edilen kalemler önerilir (Ç3) | Doküman bu durumları tanımlamıyordu; kural 2 ve 3 | Planlayıcı, Bugün ekranı |
 | Gün ve hafta uygulama açıkken kendiliğinden planlanır (`PlanKeeper`); günün ilk dokunuşu yalnızca kullanıcının dokunuşudur. Taahhütten sonra gelen kalem haftada yer varsa eklenir, elle eklenen her zaman (Ç3) | Kural 3: sistem ritüele bağımlı değil; ikinci ekran gece de açık | Planlayıcı, Bugün ekranı |
+| Bugün listesi ve planlayıcı bir kalemin yalnızca sıradaki oturum işini aday sayar (son tarihi bugün olan kalemde hepsini); uzayan oturum 30 dakika cevapsız kalınca tahmini sürede ölçülmeden kapanır (Ç3) | Aynı başlık listede tekrar etmesin; kural 2: suçluluk üreten açık oturum kalmasın | Planlayıcı, Bugün ekranı, `close_unanswered_session` |
+| Takıldım → "Adımı küçült" bugüne 15 dakikalık bir iş açar ve kalemin sıradaki adımı olur; "Birini bekliyorum" oturum işinin kalemini de bekletir (Ç3) | Takılınan yerde ilerlemenin yolu küçük bir adım; bekleyen adımı olan kalem ilerleyemez | Bugün ekranı, veri katmanı |
 
 ## Açık sorular
 

@@ -109,7 +109,7 @@ Geniş ekranda tek sayfa, kaydırma yok:
 
 ## Telefon
 
-Aynı bileşenler dikey sıralanır: TopBar, NowCard, UpNext, ModuleChips; DayStrip yatay kaydırılır. Altta sabit bir hızlı giriş düğmesi durur. Bağlam seçici TopBar'dadır; seçim cihazda saklanır ve gün değişince sorulur.
+Aynı bileşenler dikey sıralanır: TopBar, NowCard, UpNext, ModuleChips; DayStrip yatay kaydırılır. Altta sabit bir hızlı giriş düğmesi durur. Bağlam seçici TopBar'dadır; seçim cihazda saklanır. Gün değişince sorulması Ç4'tedir (Ç3'te yalnızca seçilir).
 
 ## Hızlı giriş
 

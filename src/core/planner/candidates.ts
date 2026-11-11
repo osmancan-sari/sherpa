@@ -343,12 +343,15 @@ export function buildCandidates(input: PlanInput): Candidate[] {
 
   // An item's sittings are done one after the other: its next one (running, else the first by
   // place) stands for it; when that is done the plan is made again and the next one comes.
+  // An item due today needs all its sittings today: they all stay.
   const firstSitting = new Set<string>();
   const nextOnly = [...scored]
-    .sort((a, b) => sittingRank(a.task) - sittingRank(b.task))
+    .sort((a, b) => sittingRank(a.task, date) - sittingRank(b.task, date))
     .filter((candidate) => {
       const itemId = candidate.type === "task" ? candidate.task?.work_item_id : null;
       if (!itemId) return true;
+      const item = candidate.item;
+      if (item?.due_at && Date.parse(item.due_at) < dayEnd) return true;
       if (firstSitting.has(itemId)) return false;
       firstSitting.add(itemId);
       return true;
@@ -396,9 +399,14 @@ export function shareWorked(
  * The order of an item's sittings: the running one, then by place; one without a place (started
  * by hand) after them, as `start_session` picks them.
  */
-export function sittingRank(task: { status: string; position: number | null } | undefined) {
+export function sittingRank(
+  task: { status: string; position: number | null; planned_date?: string | null } | undefined,
+  date?: string,
+) {
   if (!task) return 0;
-  if (task.status === "doing") return -1;
+  if (task.status === "doing") return -2;
+  // A step planned for the day ("Adımı küçült" makes one) comes before the item's other sittings.
+  if (date && task.planned_date && task.planned_date <= date) return -1;
   return task.position ?? Number.MAX_SAFE_INTEGER;
 }
 

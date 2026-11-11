@@ -122,7 +122,7 @@ importance smallint default 2 check (importance between 1 and 4)
 status enum(todo, doing, waiting, done, dropped) default todo
 waiting_on text null          -- kimi ya da neyi bekliyor
 follow_up_on date null
-position int null             -- iş kalemi içindeki sıra
+position int null             -- iş kalemi içindeki sıra; kalemin açık iki oturum işi aynı sırayı paylaşamaz (kısmi tekil indeks)
 source_type text null, source_id uuid null
 meta jsonb default '{}'       -- modüle özel küçük veriler
 ai jsonb null                 -- yapay zekanın koyduğu alanlar, güven ve gerekçe; kullanıcının değiştirdikleri
@@ -205,7 +205,7 @@ ended_at timestamptz null
 measured boolean default true -- false ise öğrenmeye girmez
 confirmed_at timestamptz null -- "Devam ediyor musun?" sorusuna "devam" denen an
 ```
-Aynı anda en fazla bir açık oturum olur (tekil indeks). Oturumlar üç veritabanı fonksiyonuyla yürür, hepsi çağıranın yetkisiyle: `start_session` (iş, kalem, ritim ya da yalnızca başlıkla plansız iş; açık oturum varsa önce onu durdurur), `end_session` (`done`: iş biter ya da ritim kaydı düşer; `stopped`: iş havuza döner; iki durumda da süre kalemin `effort_done_minutes` değerine eklenir), `complete_task` (tek dokunuşla bitirme).
+Aynı anda en fazla bir açık oturum olur (tekil indeks). Oturumlar dört veritabanı fonksiyonuyla yürür, hepsi çağıranın yetkisiyle: `close_unanswered_session` ("Devam ediyor musun?" sorusu 30 dakika cevapsız kalınca oturumu tahmini sürede, ölçülmemiş olarak kapatır; iş havuza döner, tahmin kalemin eforuna eklenir), `start_session` (iş, kalem, ritim ya da yalnızca başlıkla plansız iş; açık oturum varsa önce onu durdurur), `end_session` (`done`: iş biter ya da ritim kaydı düşer; `stopped`: iş havuza döner; iki durumda da süre kalemin `effort_done_minutes` değerine eklenir), `complete_task` (tek dokunuşla bitirme).
 
 ### days
 Günün planı ve sonucu. `(user_id, date)` tekil.

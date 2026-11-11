@@ -163,7 +163,13 @@ export function DayStrip({
 }
 
 /** At most two warnings, each with one action (docs/05-arayuz.md, `AlertBar`). */
-export function AlertBar({ warnings }: { warnings: Warning[] }) {
+export function AlertBar({
+  warnings,
+  modules,
+}: {
+  warnings: Warning[];
+  modules: Map<string, KnownModule>;
+}) {
   if (warnings.length === 0) return null;
   return (
     <section aria-label="Uyarılar" className="flex flex-col gap-2">
@@ -175,29 +181,33 @@ export function AlertBar({ warnings }: { warnings: Warning[] }) {
           <span>
             <span className="health-attention">Uyarı</span> · {warning.text}
           </span>
-          <WarningAction warning={warning} />
+          <WarningAction warning={warning} modules={modules} />
         </p>
       ))}
     </section>
   );
 }
 
-function WarningAction({ warning }: { warning: Warning }) {
+const LINK = "text-muted-foreground hover:text-foreground underline-offset-4 hover:underline";
+
+/** One action per warning: the week for time, the work's module for the work itself. */
+function WarningAction({
+  warning,
+  modules,
+}: {
+  warning: Warning;
+  modules: Map<string, KnownModule>;
+}) {
   if (warning.kind === "deadline" || warning.kind === "floor") {
     return (
-      <Link
-        href="/hafta"
-        className="text-muted-foreground hover:text-foreground underline-offset-4 hover:underline"
-      >
+      <Link href="/hafta" className={LINK}>
         Haftaya bak
       </Link>
     );
   }
+  const slug = warning.moduleId ? modules.get(warning.moduleId)?.row.slug : undefined;
   return (
-    <Link
-      href="/m"
-      className="text-muted-foreground hover:text-foreground underline-offset-4 hover:underline"
-    >
+    <Link href={slug ? `/m/${slug}` : "/m"} className={LINK}>
       Modüle git
     </Link>
   );

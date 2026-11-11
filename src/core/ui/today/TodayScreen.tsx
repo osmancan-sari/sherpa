@@ -145,7 +145,7 @@ function TodayBody() {
 
       <AiBudgetNotice />
 
-      <AlertBar warnings={plan.warnings} />
+      <AlertBar warnings={plan.warnings} modules={moduleMap} />
 
       {/* minmax(0, …) and min-w-0: a long title is cut with an ellipsis instead of widening
           the column past the screen. */}
