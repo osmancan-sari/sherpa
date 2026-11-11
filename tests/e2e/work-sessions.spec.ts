@@ -206,13 +206,14 @@ test("a work item is started as its next sitting, and the time counts towards it
     (list) => (list[0].effort_done_minutes as number) > 0,
   );
   expect(items[0]).toMatchObject({ id: item.id, effort_done_minutes: 40, status: "active" });
-  // Due in three days, the item is committed with all its effort this week: five sittings of
-  // an hour (Ç3). The one that was started is open again.
+  // The week took the item in with its share of this week (all of it when it is due this
+  // week, a part of it late in the week), cut into sittings of an hour (Ç3). The one that was
+  // started is open again.
+  const [week] = await rows("week_plans");
+  const share = (week.shares as Record<string, { minutes: number }>)[item.id as string].minutes;
   const tasks = await rows("tasks");
-  expect(tasks).toHaveLength(5);
-  expect(tasks.every((task) => task.work_item_id === item.id && task.est_minutes === 60)).toBe(
-    true,
-  );
+  expect(tasks).toHaveLength(Math.ceil(share / 60));
+  expect(tasks.every((task) => task.work_item_id === item.id)).toBe(true);
   expect(tasks.every((task) => task.status === "todo")).toBe(true);
   // One sitting stands for the item: it is listed once, not once per sitting.
   await expect(page.getByRole("main").getByText("Midterm hazırlığı")).toHaveCount(1);

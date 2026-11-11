@@ -414,3 +414,16 @@ describe("a committed item without its sittings", () => {
     expect(missingSittings(stored, week({ items: [waiting] }))).toEqual([]);
   });
 });
+
+describe("the deadline's week", () => {
+  it("counts only the time before the deadline: work due early next week is done mostly this week", () => {
+    const friday = shiftDay(MONDAY, 4);
+    const item = workItem({
+      effort_total_minutes: 300,
+      due_at: istanbulInstant(shiftDay(MONDAY, 7), "10:00").toISOString(),
+    });
+    const plan = commitWeek({ ...week({ items: [item] }), now: at(friday, "10:00") });
+    // Friday to Sunday hold far more than Monday's first two hours.
+    expect(plan.committed[0].minutes).toBeGreaterThan(250);
+  });
+});

@@ -1,4 +1,4 @@
-import { istanbulInstant } from "@/lib/date";
+import { formatMinutes, istanbulInstant } from "@/lib/date";
 import { insert, rows, seedModule, update, waitFor } from "./data";
 import { expect, test } from "./fixtures";
 
@@ -418,7 +418,7 @@ test("the week: the days, the capacity, the week's items, the life mode and the 
   page,
 }) => {
   const mod = await seedModule();
-  await insert("work_items", {
+  const [item] = await insert("work_items", {
     module_id: mod.id,
     title: "Haftanın raporu",
     effort_total_minutes: 120,
@@ -436,7 +436,10 @@ test("the week: the days, the capacity, the week's items, the life mode and the 
   await expect(page.getByRole("region", { name: "Kapasite" })).toContainText("kullanılabilir");
   const items = page.getByRole("region", { name: "Haftanın kalemleri" });
   await expect(items).toContainText("Haftanın raporu");
-  await expect(items).toContainText("0 dk / 2 sa bu hafta");
+  // Its share of this week (all of it, or a part when the deadline is in the next week).
+  const [plan] = await rows("week_plans");
+  const share = (plan.shares as Record<string, { minutes: number }>)[item.id as string].minutes;
+  await expect(items).toContainText(`0 dk / ${formatMinutes(share)} bu hafta`);
   await expect(
     page.getByRole("region", { name: "Önümüzdeki haftalar" }).getByRole("listitem"),
   ).toHaveCount(8);

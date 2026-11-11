@@ -48,13 +48,19 @@ export function weekCapacity(
   blocks: Block[],
   settings: PlannerSettings,
   stats: PlannerStat[],
+  /** Only up to this moment (a deadline inside the week). */
+  until?: Date,
 ): number {
   const today = dayKey(now);
+  const last = until ? dayKey(until) : null;
   let total = 0;
   for (let index = 0; index < 7; index++) {
     const day = shiftDay(week, index);
-    if (day < today) continue;
-    total += dayCapacity(day, blocks, settings, stats, day === today ? { from: now } : {});
+    if (day < today || (last !== null && day > last)) continue;
+    total += dayCapacity(day, blocks, settings, stats, {
+      ...(day === today ? { from: now } : {}),
+      ...(day === last ? { until } : {}),
+    });
   }
   return Math.round(total);
 }
@@ -86,7 +92,8 @@ export function plannableItems(items: WorkItem[], activeModules: Set<string>): W
 export function spreadItem(
   item: WorkItem,
   weeks: string[],
-  capacityOf: (week: string) => number,
+  /** A week's capacity; with `until`, only up to that moment (the deadline's week). */
+  capacityOf: (week: string, until?: Date) => number,
   now: Date,
 ): Map<string, number> {
   const share = new Map<string, number>();
@@ -100,7 +107,11 @@ export function spreadItem(
   // A deadline that has passed, or lies beyond the range, still loads the weeks it reaches.
   const inRange = span.length > 0 ? span : weeks.filter((week) => week === lastWeek);
   if (inRange.length === 0) return share;
-  const capacities = inRange.map((week) => Math.max(1, capacityOf(week)));
+  // The deadline's week holds only the time before the deadline.
+  const due = new Date(item.due_at);
+  const capacities = inRange.map((week) =>
+    Math.max(1, week === lastWeek ? capacityOf(week, due) : capacityOf(week)),
+  );
   const total = capacities.reduce((sum, value) => sum + value, 0);
   // Weeks beyond the range would take their part too: the range only sees its own share.
   const beyond =
@@ -177,7 +188,11 @@ export function loadByWeek(input: LoadInput, range: WeekRange): WeekLoad[] {
   };
 
   for (const item of plannableItems(input.items, active)) {
-    for (const [week, minutes] of spreadItem(item, weeks, (w) => capacity.get(w) ?? 0, input.now)) {
+    const capacityOf = (w: string, until?: Date) =>
+      until
+        ? weekCapacity(w, input.now, input.blocks, input.settings, input.stats, until)
+        : (capacity.get(w) ?? 0);
+    for (const [week, minutes] of spreadItem(item, weeks, capacityOf, input.now)) {
       add(week, item.module_id, minutes);
     }
   }
@@ -331,7 +346,10 @@ export function commitWeek(input: WeekInput, advice?: WeekAdvice): WeekPlan {
   }
   let free = load.capacityMinutes - fixed;
 
-  const capacityOf = (w: string) => loads.find((row) => row.weekStart === w)?.capacityMinutes ?? 0;
+  const capacityOf = (w: string, until?: Date) =>
+    until
+      ? weekCapacity(w, input.now, input.blocks, input.settings, input.stats, until)
+      : (loads.find((row) => row.weekStart === w)?.capacityMinutes ?? 0);
   const weeks = loads.map((row) => row.weekStart);
   const dropped = new Set(advice?.drop ?? []);
   const items = plannableItems(input.items, active).filter((item) => {

@@ -4,8 +4,8 @@ Bu dosyayı Claude Code günceller. Yeni bir oturum yalnızca bu dosyayı ve `pr
 
 ## Durum
 
-- Faz: **Ç3 (Planlayıcı)**: bütün adımlar bitti, faz denetiminin 2. turu sürüyor; geçerse `c3-tamam` etiketi atılır. Ç0–Ç3 bitti; D1 ve D2 tamamlandı; D3 (`ANTHROPIC_API_KEY`) bekliyor: yapay zekalı her şey sahte sağlayıcıyla sınandı
-- Sıradaki: Ç4 (Pano ve telefon cilası). Kullanıcı bu gece Ç3'ten sonra durulmasını istedi; Ç4 yeni oturumda
+- Faz: **Ç3 (Planlayıcı) bitti** (12 Kas 2026, `c3-tamam`, yerel etiket; faz denetimi iki tur). Ç0–Ç3 bitti; D1 ve D2 tamamlandı; D3 (`ANTHROPIC_API_KEY`) bekliyor: yapay zekalı her şey sahte sağlayıcıyla sınandı. **Ç3'ün kodu GitHub'a gönderilmedi**: `main`'e gönderilen her commit üretime yayınlanıyor ve Ç3'ün migration'ı henüz `prod`'da yok ("Senden bekleyenler" → D4) Ç0–Ç3 bitti; D1 ve D2 tamamlandı; D3 (`ANTHROPIC_API_KEY`) bekliyor: yapay zekalı her şey sahte sağlayıcıyla sınandı
+- Sıradaki: önce D4 (Ç3'ü yayına almak), sonra Ç4 (Pano ve telefon cilası). Kullanıcı bu gece Ç3'ten sonra durulmasını istedi; Ç4 yeni oturumda
 - Son commit: Ç3 faz raporu
 
 ### Ç3 planı
@@ -260,7 +260,7 @@ Kapsamdan eksik kalan: `plan` çağrısının `splits` çıktısı (bölme `deco
 5. Yapay zeka: `plan`, `replan`, `week`, `month`, `review` geçitten; motor öneriyi kurallarıyla uygular (adım 7)
 6. Örnek veri: modüllerin mod davranışı, gelecek haftanın Yoğun modu, haftanın taahhüdü (adım 8)
 
-Testler: 289 birim, 172 veritabanı, 139 uçtan uca (`npm run check:full` yeşil; ekran görüntüsü çekimiyle 6 fazlası). Ekran görüntüleri: `docs/ekran-goruntuleri/c3/` (86 dosya). Baktıklarım: Bugün (pano, telefon), Hafta, kapanışın yarın adımı, gece. Görüntülerden iki düzeltme çıktı (gecenin sakin ekranı; oturum işleri yazılamamış kalemin onarımı).
+Testler: 290 birim, 172 veritabanı, 139 uçtan uca (`npm run check:full` yeşil; ekran görüntüsü çekimiyle 6 fazlası). Ekran görüntüleri: `docs/ekran-goruntuleri/c3/` (86 dosya). Baktıklarım: Bugün (pano, telefon), Hafta, kapanışın yarın adımı, gece. Görüntülerden iki düzeltme çıktı (gecenin sakin ekranı; oturum işleri yazılamamış kalemin onarımı).
 
 #### Denetim
 
@@ -280,6 +280,7 @@ Faz denetimi:
 | Tur | Karar | Bulgular | Ne yapıldı |
 | --- | --- | --- | --- |
 | Faz, 1. tur (`60542bb`) | GEÇTİ | Engelleyici yok. 3 önemli: (1) iki uçtan uca test günün saatine bağlıydı ("neden?" 22:00'den sonra, "Bugün tamam" 00:00–00:30 arasında kırılırdı); (2) geri dönüş ilk dokunuşu ve kapanışı kullanım saymıyordu; (3) Ç3'e bırakılmış bilinen sorunlar açıktı. 5 not: depoda boş, adı bozuk bir dosya; `advice_rejected` uyarısının iki uyarı sınırında düşebilmesi; `days.plan` anahtarları dokümanda eksik; iki aynı ekran görüntüsü; yeni kalemin taahhüde eklenmesinin yorumu | (1) testler bugünün sabit saatleriyle; (2) `lastActivityBefore` günün ilk dokunuşunu ve kapanışını sayar (testli); (3) "Bitti mi?" kartında "Başka bir şey yapıyorum", açık oturum işi kalemin başlangıç ve bağımlılık denetimine uyar, kapanmış kalemin oturumu önerilmez, kalemiyle bitirilen oturumda "Geri al" kalemi de açar (testli); kalanlar "Bilinen sorunlar"da. Notlar: dosya silindi, uyarı sırası `docs/04`'te, `docs/03` güncellendi, yorum yukarıdaki tabloda |
+| Faz, 2. tur (`e324912`) | GEÇTİ | Engelleyici yok. 3 önemli: (1) haftanın payında son tarihin haftası tam hafta sayılıyordu: gelecek haftanın başında teslim olan kalem bu haftaya çok az pay alıyor, pay bitince listeden çıkıp uyarısız kalıyordu; (2) iki uçtan uca test haftanın gününe bağlıydı (aynı nedenle Cuma–Pazar kırılırdı); (3) Ç3'ün migration'ı bulutta yoktu ve `main`'e gönderim üretime yayınlanıyor. 9 not: sağlayıcısız sunucu testi yalnızca giriş çağrılarını sayıyor; sabit saatli testlerde dakikalık gece yarısı pencereleri; ekran görüntüleri test hesabının 00:00–23:59 gününde, gece çekildi; telefonda "Başka bir şey yapıyorum" ikinci satırda; Hafta'da modülün iki sayısı (talep ve taahhüdün payı) yan yana; aynı iki görüntü; kalemiyle birlikte olmayan eski bir oturumun "Geri al"ı da kalemi açar; bağlam seçicinin testi yok; `listDays` uygulamanın saati yerine `new Date()` | (1) son tarihin haftası yalnızca son tarihe kadar sayılır (`weekCapacity(…, until)`, testli); (2) testler beklentiyi haftanın kaydındaki paydan alır; (3) migration `sherpa-dev`'e gönderildi (`db push --remote`); `prod` ve `git push` kullanıcının onayına bırakıldı (D4). Notlar "Bilinen sorunlar"da |
 
 #### Ç4 için notlar
 
@@ -337,6 +338,18 @@ Adımlar:
 3. E-postanı yaz, gelen 8 haneli kodu uygulamanın içinde yaz, giriş yap.
 4. Uygulamayı kapatıp yeniden aç: giriş istememeli.
 5. Sonucu (çalıştı ya da nerede takıldı) buraya yaz.
+
+### D4. Ç3'ü yayına almak: bekliyor
+
+Ç3'ün kodu yalnızca yerel depoda (`main`, `c3-tamam` etiketi). `main` GitHub'a gönderilince Vercel üretime yayınlar; Ç3'ün migration'ı (`20261111202959_planner.sql`: `tasks.defer_count`, `sessions.confirmed_at`, `week_plans` sütunları, oturum işi sırası için tekil indeks, `close_unanswered_session`, planlayıcı tablolarının canlı yayını) önce `prod`'da olmalı, yoksa üretimde Bugün ve Hafta bozulur. `sherpa-dev`'e gönderildi (12 Kas 2026, 02:50). Gözetimsiz oturumda `prod`'a dokunulmadı.
+
+Sırayla (PowerShell, depo kökünde):
+
+1. `npx supabase db push --remote=jqqvfdjrkpxbklocsqvq --dry-run` (yalnızca `20261111202959_planner.sql` görünmeli), sonra aynısı `--yes` ile.
+2. `git push origin main --follow-tags` (`c2-tamam`'dan sonraki commit'ler ve `c3-tamam`). Vercel üretimi kendisi yayınlar.
+3. Üretimde Bugün ve Hafta ekranını aç; bir dakika içinde Hafta'da haftanın kalemleri görünmeli.
+
+Ya da bana "D4'ü yap" de; bu adımları ben yaparım.
 
 ### D3. Yapay zeka anahtarı: bekliyor
 
@@ -524,6 +537,7 @@ Adımlar:
 ## Bilinen sorunlar
 
 - Ç3 sonunda açık (Ç4 ya da sonrası): bağlam seçicinin gün değişince sorulması (`docs/05`, Telefon); `useWeeklyReviews` ve `useHorizonReviews` uygulamanın saatini değil `new Date()` kullanır; `defer_count` istemcinin değerinden artar (iki ekrandan art arda Ertele'de bir artış kaybolabilir); iki ekranın haftayı aynı anda kurmasının testi yok (tekil indeks koruyor); `aiAsked` yazılırken kayıt yeniden okunmuyor; kullanıcının bıraktığı son oturum işi, haftanın payı bitmediyse yeniden açılır (`missingSittings`); uçtan uca koşuda bir önceki testin sunucudaki yapay zeka isteği yeni testin sıfırlanmış hesabına yazmaya çalışıp yabancı anahtar hatası günlüğe düşebilir (test sonucu etkilenmez); `telefon-x-dk-alt-dark.png` ana görüntüyle aynı; kapanışta ve "Yeniden planla"da not alanı yok.
+- Ç3 2. tur faz denetimi notları (açık, Ç4): ekran görüntüleri test hesabının bütün günü (00:00–23:59) ve gece saatiyle çekildi, gerçek bir günü göstermiyor; telefonda "Başka bir şey yapıyorum" düğmesi ikinci satıra kayıyor; Hafta'da kapasite çubuğu (o anki talep) ile "Modül payları" (taahhüt anındaki pay) aynı modül için farklı sayılar gösterebiliyor; kalemle aynı anda kapanmamış eski bir oturum işinde "Geri al" kalemi de açar (yalnızca veri testi var); telefondaki bağlam seçicinin uçtan uca testi yok; `listDays` uygulamanın saati yerine `new Date()` ile okur; sağlayıcısız sunucu testi yalnızca giriş çağrılarını sayıyor.
 - Ç3'ten kapananlar: "Ayrılan süre doldu" kartında "Başka bir şey yapıyorum" var; açık oturum işi kalemin başlangıç ve bağımlılık denetimine uyar (çalışan hariç), kapanmış kalemin oturum işi önerilmez; kalemiyle birlikte bitirilen oturum işinde "Geri al" kalemi de açar; durdurulmuş oturum işinde "Bitti mi?" sorulur (eforu dolan kalemin başlanmamış oturumları kalemin yerine geçmez).
 - Ç2 2. tur denetim notları (açık): üç olumsuz yapay zeka testi (`yapay-zeka.ai.spec.ts`: bütçe 0, yeniden adlandırma sonrası efor, sağlayıcısız) rotanın yanıtını beklemeden 1,5 sn bekleyip yokluğu denetliyor; Ayarlar'da aylık toplam ile satırların toplamı yuvarlamadan farklı görünebilir; bütçe denetimiyle kayıt arasında kilit yok (aynı anda giden iki çağrı sınırı bir çağrı kadar aşabilir).
 - **Realtime sınırı.** Yerel Realtime saniyede 100 iletide değişiklikleri düşürüyor; kapanan sayfaların abonelikleri 15 sn kaldığı için bu yalnızca uzun test koşularında oluyor (testler buna göre sıralandı). Gerçek kullanımda iki cihaz var, ama toplu yazma (uzun bir seri, örnek veri) bulut projesinde de sınıra yaklaşabilir; o durumda öbür cihaz değişikliği güvenlik ağıyla (en geç 1 dakika, pencere öne gelince) alır. Bulut projesinin sınırlarına D1'de bakılacak.
