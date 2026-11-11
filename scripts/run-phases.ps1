@@ -20,7 +20,9 @@ param(
   [ValidateSet('c0', 'c1', 'c2', 'c3', 'c4', 'c5')]
   [string]$LastPhase = 'c5',
   [int]$MaxAttempts = 6,
-  [int]$RetryWaitMinutes = 45
+  [int]$RetryWaitMinutes = 45,
+  # Model for the sessions. 'opus' uses far less of the usage limit than 'fable'.
+  [string]$Model = 'opus'
 )
 
 $ErrorActionPreference = 'Continue'
@@ -140,10 +142,10 @@ foreach ($phase in $phases) {
 
     $attempt++
     $log = "logs/$phase-$(Get-Stamp).log"
-    Write-Host "[$(Get-Date -Format 'HH:mm')] $phase, session $attempt. Log: $log"
+    Write-Host "[$(Get-Date -Format 'HH:mm')] $phase, session $attempt, model $Model. Log: $log"
 
     $started = Get-Date
-    claude -p ($prompt + $note) --permission-mode auto @extraArgs 2>&1 | Tee-Object -FilePath $log
+    claude -p ($prompt + $note) --model $Model --permission-mode auto @extraArgs 2>&1 | Tee-Object -FilePath $log
     $note = ''
     $minutes = ((Get-Date) - $started).TotalMinutes
 
