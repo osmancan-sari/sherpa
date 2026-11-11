@@ -107,7 +107,10 @@ test("a task longer than 90 minutes cannot be saved; the interface offers a work
     effort_total_minutes: 180,
     status: "active",
   });
-  expect(await rows("tasks")).toHaveLength(0);
+  // No task of its own: the only tasks are the item's sittings, opened when the week took it
+  // in (Ç3).
+  const tasks = await rows("tasks");
+  expect(tasks.every((task) => task.work_item_id === items[0].id)).toBe(true);
   // The item is offered on the Today screen as a sitting that fits.
   const now = page.getByRole("region", { name: "Şimdi" });
   await expect(now.getByRole("heading", { name: "Dönem raporu" })).toBeVisible();

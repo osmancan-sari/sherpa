@@ -1,6 +1,6 @@
 import { nextSessionMinutes } from "@/core/contract/envelope";
 import type { LifeMode, ModuleRow, Rhythm, RhythmLog } from "@/core/types";
-import { isBlocked } from "@/core/today/select";
+import { effortUsedUp, isBlocked } from "@/core/today/select";
 import { dayKey, istanbulInstant, monthStart, shiftDay, weekStart, weekdayOf } from "@/lib/date";
 import { dayCapacity, learned } from "./slots";
 import type { Candidate, MandatoryReason, PlanInput } from "./types";
@@ -171,8 +171,13 @@ export function buildCandidates(input: PlanInput): Candidate[] {
   // Tasks: open ones planned for today or no day. In the return state the planned days are
   // forgotten: what was planned during the absence is spread again by the usual rules.
   const returning = isReturning(input);
+  // An item whose effort is used up asks "Bitti mi?" itself; its unstarted sittings wait.
+  const usedUpItems = new Set(input.workItems.filter(effortUsedUp).map((item) => item.id));
   const openTasks = input.tasks.filter(
-    (task) => (task.status === "todo" || task.status === "doing") && modules.has(task.module_id),
+    (task) =>
+      (task.status === "todo" || task.status === "doing") &&
+      modules.has(task.module_id) &&
+      !(task.status === "todo" && task.work_item_id !== null && usedUpItems.has(task.work_item_id)),
   );
   for (const task of openTasks) {
     if (!returning && task.planned_date !== null && task.planned_date > date) continue;

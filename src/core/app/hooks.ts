@@ -16,9 +16,11 @@ import { createModuleContext } from "@/core/data/context";
 import { getSettings, listDuePrompts, listInbox } from "@/core/data/inbox";
 import { listModules } from "@/core/data/module-rows";
 import { getOpenSession, listSessions } from "@/core/data/sessions";
+import { listDays, listLifeModes, listStats, listWeekPlans } from "@/core/data/planning";
 import { listRhythmLogs, listRhythms, listTasks, listWorkItems } from "@/core/data/work";
-import type { Db, ModuleRow } from "@/core/types";
-import { dayKey, shiftDay } from "@/lib/date";
+import { buildPlan, type PlanRows, planInput, plannerSettings, planningDay } from "@/core/planner";
+import type { Context, Db, ModuleRow } from "@/core/types";
+import { dayKey, shiftDay, weekStart } from "@/lib/date";
 import { readClock, readServerClock, subscribeClock } from "./clock";
 import { CORE, MODULE, useDb, useRegistry } from "./CoreProvider";
 
@@ -64,6 +66,10 @@ export const keys = {
   // Under "settings": a change of the AI switch or budget refreshes both.
   aiStatus: [CORE, "settings", "ai_status"] as const,
   aiUsage: [CORE, "settings", "ai_usage"] as const,
+  days: [CORE, "days"] as const,
+  weekPlans: [CORE, "week_plans"] as const,
+  lifeModes: [CORE, "life_mode_periods"] as const,
+  stats: [CORE, "planner_stats"] as const,
 };
 
 export function useModuleRows() {
@@ -146,6 +152,167 @@ export function useAiStatus() {
       }
     },
   });
+}
+
+// --- The planner's own rows ---------------------------------------------------------------
+
+/** Day records of the last eight weeks (the return state, learning) and the days ahead. */
+export function useDays() {
+  const db = useDb();
+  return useQuery({
+    queryKey: keys.days,
+    queryFn: () => listDays(db, shiftDay(dayKey(new Date()), -56)),
+  });
+}
+
+/** This week's commitment and the ones around it. */
+export function useWeekPlans() {
+  const db = useDb();
+  return useQuery({
+    queryKey: keys.weekPlans,
+    queryFn: () => listWeekPlans(db, shiftDay(weekStart(dayKey(new Date())), -7)),
+  });
+}
+
+export function useLifeModes() {
+  const db = useDb();
+  return useQuery({ queryKey: keys.lifeModes, queryFn: () => listLifeModes(db) });
+}
+
+export function usePlannerStats() {
+  const db = useDb();
+  return useQuery({ queryKey: keys.stats, queryFn: () => listStats(db) });
+}
+
+// --- The device's context ------------------------------------------------------------------
+
+const CONTEXT_KEY = "sherpa:context";
+const CONTEXT_EVENT = "sherpa:context";
+const CONTEXTS: readonly Context[] = ["desk", "home", "office", "campus", "out", "commute"];
+
+function readContext(): Context {
+  try {
+    const value = window.localStorage.getItem(CONTEXT_KEY);
+    if (value && (CONTEXTS as readonly string[]).includes(value)) return value as Context;
+  } catch {
+    // Storage can be unavailable (private window); the default stands.
+  }
+  return "desk";
+}
+
+function subscribeContext(listener: () => void) {
+  window.addEventListener(CONTEXT_EVENT, listener);
+  window.addEventListener("storage", listener);
+  return () => {
+    window.removeEventListener(CONTEXT_EVENT, listener);
+    window.removeEventListener("storage", listener);
+  };
+}
+
+/**
+ * Where this device is (docs/04-planlayici.md, "Bağlam eşleşmesi"): the second screen is at the
+ * desk; on the phone the user chooses. Kept on the device, not in the database.
+ */
+export function useDeviceContext(): Context {
+  return useSyncExternalStore(subscribeContext, readContext, () => "desk" as Context);
+}
+
+export function setDeviceContext(context: Context): void {
+  try {
+    window.localStorage.setItem(CONTEXT_KEY, context);
+  } catch {
+    // Not kept, but this screen still follows the choice until it closes.
+  }
+  window.dispatchEvent(new Event(CONTEXT_EVENT));
+}
+
+// --- The plan ------------------------------------------------------------------------------
+
+/** Every row the planner reads, once all of them have arrived. */
+export function usePlanRows() {
+  const queries = {
+    settings: useSettings(),
+    modules: useModuleRows(),
+    tasks: useTasks(),
+    workItems: useWorkItems(),
+    rhythms: useRhythms(),
+    rhythmLogs: useRhythmLogs(),
+    blocks: useBlocks(),
+    sessions: useSessions(),
+    openSession: useOpenSession(),
+    prompts: useDuePrompts(),
+    inbox: useInbox(),
+    days: useDays(),
+    weekPlans: useWeekPlans(),
+    lifeModes: useLifeModes(),
+    stats: usePlannerStats(),
+  };
+  const all = Object.values(queries);
+  const loading = all.some((query) => query.isLoading);
+  // A failed read is not "nothing to do": the screen says so instead of showing an empty day.
+  const failed = all.some((query) => query.isError && query.data === undefined);
+  const q = queries;
+  const rows = useMemo<PlanRows | null>(
+    () =>
+      loading || failed
+        ? null
+        : {
+            settings: q.settings.data ?? null,
+            modules: q.modules.data ?? [],
+            tasks: q.tasks.data ?? [],
+            workItems: q.workItems.data ?? [],
+            rhythms: q.rhythms.data ?? [],
+            rhythmLogs: q.rhythmLogs.data ?? [],
+            blocks: q.blocks.data ?? [],
+            sessions: q.sessions.data ?? [],
+            openSession: q.openSession.data ?? null,
+            prompts: q.prompts.data ?? [],
+            inbox: q.inbox.data ?? [],
+            days: q.days.data ?? [],
+            weekPlans: q.weekPlans.data ?? [],
+            lifeModes: q.lifeModes.data ?? [],
+            stats: q.stats.data ?? [],
+          },
+    [
+      loading,
+      failed,
+      q.settings.data,
+      q.modules.data,
+      q.tasks.data,
+      q.workItems.data,
+      q.rhythms.data,
+      q.rhythmLogs.data,
+      q.blocks.data,
+      q.sessions.data,
+      q.openSession.data,
+      q.prompts.data,
+      q.inbox.data,
+      q.days.data,
+      q.weekPlans.data,
+      q.lifeModes.data,
+      q.stats.data,
+    ],
+  );
+  const retry = () => all.forEach((query) => void query.refetch());
+  return { rows, loading, failed, retry };
+}
+
+/**
+ * Today's plan, re-made on every change and every minute (docs/04-planlayici.md, "Yeniden
+ * planlama"). Null until the rows are in.
+ */
+export function useTodayPlan() {
+  const now = useNow();
+  const context = useDeviceContext();
+  const { rows, loading, failed, retry } = usePlanRows();
+  const result = useMemo(() => {
+    if (!rows || now.getTime() === 0) return null;
+    const settings = plannerSettings(rows.settings);
+    const date = planningDay(now, settings.dayStart);
+    const input = planInput(rows, { date, now, context });
+    return { input, plan: buildPlan(input), rows };
+  }, [rows, now, context]);
+  return { ...result, loading, failed, retry, now, context };
 }
 
 /** This month's AI calls by kind and model. */

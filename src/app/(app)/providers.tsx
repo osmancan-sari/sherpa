@@ -2,6 +2,7 @@
 
 import type { ReactNode } from "react";
 import { CoreProvider } from "@/core/app/CoreProvider";
+import { PlanKeeper } from "@/core/app/PlanKeeper";
 import { NoticeProvider } from "@/core/ui/Notices";
 import { QuickAddProvider } from "@/core/ui/QuickAdd";
 import { registry } from "@/modules/registry";
@@ -13,6 +14,7 @@ import { registry } from "@/modules/registry";
 export function AppProviders({ children }: { children: ReactNode }) {
   return (
     <CoreProvider registry={registry}>
+      <PlanKeeper />
       <NoticeProvider>
         <QuickAddProvider>{children}</QuickAddProvider>
       </NoticeProvider>

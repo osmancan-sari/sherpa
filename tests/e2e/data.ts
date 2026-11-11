@@ -43,7 +43,15 @@ export async function userId(): Promise<string> {
   return user.id;
 }
 
-/** Removes everything the test account owns. */
+/**
+ * The test account's day: from midnight to a minute before the next. The tests run at any hour
+ * (overnight too), and the planner leaves the time after the finish line to the night; with
+ * the whole day as working time, what a test adds is planned whenever it runs. Tests of the
+ * finish line and the night set their own times.
+ */
+export const TEST_DAY = { day_start_default: "00:00", finish_line_default: "23:59" };
+
+/** Removes everything the test account owns, and gives it the whole-day settings above. */
 export async function resetData(): Promise<void> {
   const admin = adminClient();
   const id = await userId();
@@ -51,6 +59,8 @@ export async function resetData(): Promise<void> {
     const { error } = await admin.from(table).delete().eq("user_id", id);
     if (error) throw new Error(`Could not clear ${table}: ${error.message}`);
   }
+  const { error } = await admin.from("settings").insert({ user_id: id, ...TEST_DAY });
+  if (error) throw new Error(`Could not write the test settings: ${error.message}`);
 }
 
 type Row = Record<string, unknown>;

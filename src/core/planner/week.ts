@@ -461,12 +461,13 @@ export function sittingChanges(plan: Pick<WeekPlan, "committed">, tasks: Task[])
     );
     const wanted = Math.max(0, row.sittings.length - busy);
     for (const extra of todos.slice(wanted)) changes.drop.push(extra.id);
+    // New sittings go after every sitting the item has had, so two never share a place.
+    const last = Math.max(
+      0,
+      ...tasks.filter((task) => task.work_item_id === row.itemId).map((task) => task.position ?? 0),
+    );
     row.sittings.slice(busy + todos.length).forEach((minutes, index) => {
-      changes.create.push({
-        itemId: row.itemId,
-        minutes,
-        position: todos.length + busy + index + 1,
-      });
+      changes.create.push({ itemId: row.itemId, minutes, position: last + index + 1 });
     });
   }
   return changes;

@@ -411,3 +411,25 @@ describe("minutesPerWeek", () => {
     ]);
   });
 });
+
+describe("sittings of a work item (Ç3)", () => {
+  it("lists the next sitting only, and none once the item's effort is used up", () => {
+    const item = workItem({ effort_total_minutes: 180, effort_done_minutes: 0 });
+    const sittings = [2, 1, 3].map((position) =>
+      task({ work_item_id: item.id, est_minutes: 60, position }),
+    );
+    const input = {
+      tasks: sittings,
+      workItems: [item],
+      rhythms: [],
+      rhythmLogs: [],
+      activeModuleIds: new Set([MODULE_ID]),
+      now: new Date("2026-11-12T09:00:00Z"),
+    };
+    expect(todayCandidates(input).map((row) => row.id)).toEqual([sittings[1].id]);
+    const spent = { ...item, effort_done_minutes: 180 };
+    expect(todayCandidates({ ...input, workItems: [spent] })).toMatchObject([
+      { type: "item", id: item.id },
+    ]);
+  });
+});

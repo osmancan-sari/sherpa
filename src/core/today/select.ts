@@ -55,6 +55,13 @@ export function compareCandidates(a: Candidate, b: Candidate): number {
   return Date.parse(a.createdAt) - Date.parse(b.createdAt);
 }
 
+/** The effort planned for an item is all spent; it does not close on its own (docs/03). */
+export function effortUsedUp(item: WorkItem): boolean {
+  return (
+    item.effort_total_minutes !== null && item.effort_done_minutes >= item.effort_total_minutes
+  );
+}
+
 /**
  * A work item is blocked while something it depends on is still open. A dependency that was
  * dropped no longer holds anything back.
@@ -87,11 +94,25 @@ export function todayCandidates(input: TodayInput): Candidate[] {
   const today = dayKey(now);
   const candidates: Candidate[] = [];
 
+  // An item whose effort is used up asks "Bitti mi?" itself; its unstarted sittings wait.
+  const usedUp = new Set(workItems.filter(effortUsedUp).map((item) => item.id));
   const openTasks = tasks.filter(
     (task) =>
-      (task.status === "todo" || task.status === "doing") && activeModuleIds.has(task.module_id),
+      (task.status === "todo" || task.status === "doing") &&
+      activeModuleIds.has(task.module_id) &&
+      !(task.status === "todo" && task.work_item_id !== null && usedUp.has(task.work_item_id)),
   );
+  // An item's sittings are done one after the other: the running one, else the next by place,
+  // stands for the item in the list.
+  const nextSitting = new Map<string, Task>();
   for (const task of openTasks) {
+    if (task.work_item_id === null) continue;
+    const current = nextSitting.get(task.work_item_id);
+    const rank = (row: Task) => (row.status === "doing" ? -1 : (row.position ?? 0));
+    if (!current || rank(task) < rank(current)) nextSitting.set(task.work_item_id, task);
+  }
+  for (const task of openTasks) {
+    if (task.work_item_id !== null && nextSitting.get(task.work_item_id) !== task) continue;
     // A task planned for a later day waits for that day.
     if (task.planned_date !== null && task.planned_date > today) continue;
     candidates.push({

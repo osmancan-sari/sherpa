@@ -120,7 +120,10 @@ test("an entry longer than one sitting is saved as a work item", async ({ page }
     effort_total_minutes: 180,
     status: "active",
   });
-  expect(await rows("tasks")).toHaveLength(0);
+  // No task of its own: the only tasks are the item's sittings, opened when the week took it
+  // in (Ç3).
+  const tasks = await rows("tasks");
+  expect(tasks.every((task) => task.work_item_id === item.id)).toBe(true);
   const [routed] = await waitFor(
     () => rows("inbox_entries"),
     (list) => list[0].status === "routed",

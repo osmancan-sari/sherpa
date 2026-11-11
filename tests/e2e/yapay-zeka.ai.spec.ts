@@ -349,7 +349,8 @@ test("without any provider every feature works: lines wait in the inbox, efforts
   expect(item.provenance).toMatchObject({ effort_total_minutes: "default" });
   const [entry] = await rows("inbox_entries");
   expect(entry.status).toBe("new");
-  expect(await rows("tasks")).toEqual([]);
+  // No task from the line; the record's work item has its sittings from the week (Ç3).
+  expect((await rows("tasks")).filter((task) => task.work_item_id === null)).toEqual([]);
   expect(await rows("ai_calls")).toEqual([]);
 
   // Nothing on screen breaks: the inbox shows the line with its manual actions.

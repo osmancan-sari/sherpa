@@ -2,7 +2,15 @@
 // this folder reads the database, the clock or the network.
 
 export * from "./types";
-export { buildPlan, pickForMinutes, fits, contextFits, slotLabel, DEFER_LIMIT } from "./plan";
+export {
+  buildPlan,
+  pickForMinutes,
+  fits,
+  contextFits,
+  planningDay,
+  slotLabel,
+  DEFER_LIMIT,
+} from "./plan";
 export { buildCandidates, compareScored, isReturning, rhythmState } from "./candidates";
 export { buildSlots, dayCapacity, dayTypeOf, plannerSettings, DEFAULT_SETTINGS } from "./slots";
 export {
@@ -15,5 +23,5 @@ export {
 } from "./week";
 export type { WeekAdvice, WeekInput, WeekLoad, WeekPlan, LoadInput, RecommitReason } from "./week";
 export { capacityFactors, estimateMultipliers } from "./learn";
-export { planInput, tomorrowInput, lifeModeOn, storedPlan } from "./input";
+export { planInput, tomorrowInput, lifeModeOn, readShares, storedPlan } from "./input";
 export type { PlanRows, StoredDayPlan } from "./input";

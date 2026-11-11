@@ -682,3 +682,12 @@ describe("an empty day", () => {
     });
   });
 });
+
+describe("a work item whose effort is used up", () => {
+  it("asks for itself; its unstarted sittings wait", () => {
+    const item = workItem({ effort_total_minutes: 90, effort_done_minutes: 90 });
+    const sitting = task({ work_item_id: item.id, position: 2 });
+    const candidates = buildCandidates(input({ workItems: [item], tasks: [sitting] }));
+    expect(candidates).toMatchObject([{ type: "item", id: item.id }]);
+  });
+});

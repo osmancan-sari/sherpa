@@ -1,5 +1,6 @@
 import type {
   Block,
+  DayType,
   Context,
   DayRow,
   InboxEntry,
@@ -19,7 +20,7 @@ import type {
 import { istanbulInstant, shiftDay, weekStart } from "@/lib/date";
 import { planningDay } from "./plan";
 import { dayTypeOf, plannerSettings } from "./slots";
-import type { PlanAdvice, PlanInput } from "./types";
+import type { PlanAdvice, PlanInput, WeekShare } from "./types";
 
 // The planner's input put together from the rows the app reads. Pure, and the same for the
 // screen (which re-plans on every change) and the server (which asks the AI): both plan the
@@ -48,7 +49,8 @@ export type StoredDayPlan = {
   version: 1;
   advice?: PlanAdvice | null;
   skipped?: string[];
-  /** Slot minutes of the day when it was planned; the capacity learning reads it. */
+  /** The day's type when it was planned, and its slot minutes; the capacity learning reads them. */
+  dayType?: DayType;
   slotMinutes?: number;
   usableMinutes?: number;
 };
@@ -56,6 +58,19 @@ export type StoredDayPlan = {
 export function storedPlan(day: DayRow | null | undefined): StoredDayPlan {
   const plan = day?.plan as Partial<StoredDayPlan> | null | undefined;
   return plan && typeof plan === "object" ? { version: 1, ...plan } : { version: 1 };
+}
+
+/** The week's shares as stored; a malformed entry is left out. */
+export function readShares(value: unknown): Record<string, WeekShare> {
+  const shares: Record<string, WeekShare> = {};
+  if (!value || typeof value !== "object") return shares;
+  for (const [id, share] of Object.entries(value as Record<string, unknown>)) {
+    const entry = share as Partial<WeekShare> | null;
+    if (entry && typeof entry.minutes === "number" && typeof entry.from === "number") {
+      shares[id] = { minutes: entry.minutes, from: entry.from };
+    }
+  }
+  return shares;
 }
 
 /** The life mode of a day: the period that covers it, else normal. */
@@ -134,6 +149,7 @@ export function planInput(
     })),
     spentThisWeek: minutesThisWeek(rows.sessions, date, now),
     committed: week ? week.committed : null,
+    shares: week ? readShares(week.shares) : {},
     top3: day && day.top3.length > 0 ? day.top3 : undefined,
     skipped: stored.skipped ?? [],
     openSession: rows.openSession,
