@@ -4,7 +4,7 @@ Bu dosyayı Claude Code günceller. Yeni bir oturum yalnızca bu dosyayı ve `pr
 
 ## Durum
 
-- Faz: **Ç2 (Yapay zeka geçidi) bitti** (11 Kas 2026, `c2-tamam`). Ç0, Ç1, Ç2 bitti; D1 (bulut ve yayın) ve D2 (telefon) tamamlandı. D3 (`ANTHROPIC_API_KEY`) verilmedi: Ç2 sahte sağlayıcıyla geliştirildi ve sınandı, gerçek modelle ölçüm D3'ü bekliyor
+- Faz: **Ç2 (Yapay zeka geçidi) bitti** (11 Kas 2026, `c2-tamam`; faz denetimi iki tur). Ç0, Ç1, Ç2 bitti; D1 (bulut ve yayın) ve D2 (telefon) tamamlandı. D3 (`ANTHROPIC_API_KEY`) verilmedi: Ç2 sahte sağlayıcıyla geliştirildi ve sınandı, gerçek modelle ölçüm D3'ü bekliyor
 - Sıradaki: Ç3 (Planlayıcı). Kullanıcı bu gece için "bir oturumda tek faz" kuralını esnetti; Ç3 aynı oturumda başlıyor
 - Son commit: Ç2 faz denetimi düzeltmeleri ve faz raporu
 
@@ -206,6 +206,7 @@ Faz denetimi (bağımsız alt ajan; yalnızca `prompts/denetci.md`, kip ve kapsa
 | Tur | Karar | Bulgular | Ne yapıldı |
 | --- | --- | --- | --- |
 | Faz, 1. tur (`7cf0705`) | GEÇTİ | Engelleyici yok. 2 önemli: (1) telefonda gerekçe kutusu ekranın solundan taşıyor, metin kesik (ekran görüntüsünden); (2) bu dosyanın "Durum", "Sıradaki adım" ve "Bilinen sorunlar" bölümleri eskimiş (D1 ve D2 hem bekliyor hem bitti). 8 not: telefonda çağrı tablosunun iki sütunu yana kaydırmadan görünmüyor; Ayarlar görüntüleri hem "anahtar yok" diyor hem çağrı listeliyor; `decompose`'un tetikleyicisi dokümanda iki yerde farklı; eskimiş kod yorumu (`envelope.ts`); zaman aşımında satır 0 maliyetle yazılıyor; "hatasız" ölçütünü sayfa hatasıyla denetleyen test yok; 4. adım sözleşmeyi değiştirdi ama adım denetimi yapılmadı; istemci `ai_calls`'a doğrudan yazabiliyor | (1) Kutu pencereye göre konumlanır ve ekrana sığacak biçimde kaydırılır (`AiMarks.tsx`); sayfa kayınca kapanır; testi: telefon genişliğinde kutu kenarlardan 16 px içeride (`yapay-zeka.ai.spec.ts`). (2) Bölümler bu raporla düzeltildi. Notlar: çağrı tablosu telefonda çağrı, sayı ve maliyetle sınırlı; Ayarlar görüntüsünün durumu yukarıda yazıldı; `docs/10` 28. satır kodla aynı; yorum düzeltildi; sağlayıcısız testte yakalanmamış sayfa hatası olmadığı bekleniyor. Zaman aşımı maliyeti D3'ten sonra Console harcamasıyla karşılaştırılacak (karar kayıtlı); `ai_calls` yazma izni "Bilinen sorunlar"da, Ç5 köprüsünde yeniden bakılacak. 4. adımın denetimi ayrıca yapılmadı; sözleşme değişikliği (`ctx.extract`, `extractors`) faz denetiminde dokümanla ve kodla karşılaştırıldı, sorun bulunmadı |
+| Faz, 2. tur (`29475fb`) | GEÇTİ | Engelleyici ve önemli yok. 8 not: ilerleme kaydı etiketi atılmış gibi yazıyordu (etiket bu denetimden sonra atıldı); zaman aşımı maliyeti ve bütçe denetimiyle kayıt arasında kilit olmaması (aynı anda giden çağrılar sınırı biraz aşabilir); üç olumsuz uçtan uca test sabit beklemeyle yokluğu denetliyor, rotanın çağrıldığını beklemiyor (aynı davranışlar veritabanı testlerinde sağlam); istemcinin `ai_calls`'a önceki yanıt yazabilmesi (kabul edildi, Ç5); Ayarlar'da aylık toplamla satırların yuvarlama farkı; tarih kutusu test tarayıcısında İngilizce; metinden çıkarma görüntüsü yalnızca boş hali gösteriyor; dokümanla küçük sapmalar (fiyat tarihi, uzun bağlam fiyatı) | Notlar Ç3'e ya da Ç4'e bırakıldı; "Bilinen sorunlar"a yazıldı |
 
 Düzeltmelerden sonraki tam koşuda iki şey daha çıktı ve düzeltildi: gerekçe kutusunun tıklamayla gelen kaydırmada kapanması (kutu artık kaydırmayla birlikte yer değiştirir) ve bölme önerisinin parçalarının rastgele sırayla görünmesi (tek yazmada aynı anda oluştukları için; her parçanın oluşturma anı sırasına göre bir milisaniye ayrılır, `flows.test.ts`). Gerçek kullanımda da olabilecek bir hataydı.
 
@@ -431,6 +432,7 @@ Adımlar:
 
 ## Bilinen sorunlar
 
+- Ç2 2. tur denetim notları (açık): üç olumsuz yapay zeka testi (`yapay-zeka.ai.spec.ts`: bütçe 0, yeniden adlandırma sonrası efor, sağlayıcısız) rotanın yanıtını beklemeden 1,5 sn bekleyip yokluğu denetliyor; Ayarlar'da aylık toplam ile satırların toplamı yuvarlamadan farklı görünebilir; bütçe denetimiyle kayıt arasında kilit yok (aynı anda giden iki çağrı sınırı bir çağrı kadar aşabilir).
 - **Realtime sınırı.** Yerel Realtime saniyede 100 iletide değişiklikleri düşürüyor; kapanan sayfaların abonelikleri 15 sn kaldığı için bu yalnızca uzun test koşularında oluyor (testler buna göre sıralandı). Gerçek kullanımda iki cihaz var, ama toplu yazma (uzun bir seri, örnek veri) bulut projesinde de sınıra yaklaşabilir; o durumda öbür cihaz değişikliği güvenlik ağıyla (en geç 1 dakika, pencere öne gelince) alır. Bulut projesinin sınırlarına D1'de bakılacak.
 - Modül eylemleri tarayıcıda art arda yazar (kayıt → teklif → olay); arada sayfa kapanırsa kayıt teklifsiz kalır ("Ç2 için notlar").
 - Gece yarısını aşan blok düzenleme penceresinden değiştirilemez (pencere bitişi aynı güne yazar ve "bitiş başlangıçtan sonra" ister). Böyle bir blok bugün yalnızca zarfla ya da veriyle oluşabilir.
