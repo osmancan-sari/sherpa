@@ -37,6 +37,7 @@ import { BarChart } from "../kit";
 import { SAVE_FAILED, useNotify } from "../Notices";
 import { useQuickAdd } from "../QuickAdd";
 import { sessionTargetOf } from "../today/NowCard";
+import { AddRhythmButton, EditWorkButton } from "../work/EditWork";
 import { useModule } from "./ModuleProvider";
 
 // The frame every module page shares (docs/05-arayuz.md, "Modül sayfası iskeleti"). Five
@@ -276,6 +277,7 @@ function UpcomingRow({ candidate, now }: { candidate: Candidate; now: Date }) {
         <p className="text-muted-foreground truncate text-sm tabular-nums">{parts.join(" · ")}</p>
       </div>
       <div className="flex shrink-0 gap-1">
+        <EditWorkButton candidate={candidate} />
         <Button
           variant="ghost"
           className="size-11 md:size-9"
@@ -382,6 +384,7 @@ function EntryAndSettings({ mod }: { mod: KnownModule }) {
             {type.label} ekle
           </Button>
         ))}
+        <AddRhythmButton moduleId={row.id} />
         <Link
           href={`/ayarlar/moduller/${row.slug}`}
           className="text-muted-foreground hover:text-foreground focus-visible:ring-ring/50 flex h-11 items-center rounded-lg px-2.5 text-sm underline-offset-4 outline-none hover:underline focus-visible:ring-3 md:h-9"

@@ -9,8 +9,10 @@ import {
   createRhythm,
   createTask,
   createWorkItem,
+  dropTask,
   listRhythmLogs,
   listRhythms,
+  listTasks,
   listWorkItems,
   logRhythm,
   reopenTask,
@@ -124,6 +126,27 @@ describe("tasks by hand", () => {
     expect(done.status).toBe("done");
     const reopened = await reopenTask(db, task.id);
     expect(reopened).toMatchObject({ status: "todo", done_at: null });
+  });
+
+  it("drops a task without deleting it; a session running on it is stopped and kept", async () => {
+    const mod = await makeModule(db);
+    const task = await createTask(db, { module_id: mod.id, title: "Vazgeçilecek iş" });
+    const other = await createTask(db, { module_id: mod.id, title: "Öbür iş" });
+    const session = await startSession(db, { taskId: task.id });
+
+    const dropped = await dropTask(db, task.id);
+    expect(dropped.status).toBe("dropped");
+    expect(await getOpenSession(db)).toBeNull();
+    const [kept] = ok(await db.from("sessions").select("*").eq("id", session.id));
+    expect(kept.ended_at).not.toBeNull();
+    expect(ok(await db.from("tasks").select("id")).length).toBe(2);
+    expect((await listTasks(db, new Date())).map((row) => row.id)).toEqual([other.id]);
+
+    // Dropping a task nobody is working on leaves a session on another task alone.
+    const running = await startSession(db, { taskId: other.id });
+    const second = await createTask(db, { module_id: mod.id, title: "Üçüncü iş" });
+    await dropTask(db, second.id);
+    expect((await getOpenSession(db))?.id).toBe(running.id);
   });
 });
 

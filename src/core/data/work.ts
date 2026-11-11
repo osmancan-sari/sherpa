@@ -12,6 +12,7 @@ import {
 } from "@/core/types";
 import type { TablesInsert, TablesUpdate } from "@/lib/supabase/database.types";
 import { dayKey, shiftDay } from "@/lib/date";
+import { endSession, getOpenSession } from "./sessions";
 
 // Tasks, work items and rhythms: the user's own creating, editing and status changes.
 // Modules do not call these; they propose (propose.ts).
@@ -69,6 +70,16 @@ export async function completeTask(db: Db, id: string): Promise<Task> {
 /** Back to the pool: a task that was marked done by mistake. */
 export async function reopenTask(db: Db, id: string): Promise<Task> {
   return updateTask(db, id, { status: "todo", done_at: null });
+}
+
+/**
+ * The user gives a task up. Nothing is deleted: the task is marked dropped and leaves the pool.
+ * A session running on it is stopped first, so the time spent is still counted.
+ */
+export async function dropTask(db: Db, id: string): Promise<Task> {
+  const open = await getOpenSession(db);
+  if (open?.task_id === id) await endSession(db, open.id, "stopped");
+  return updateTask(db, id, { status: "dropped" });
 }
 
 // --- Work items ------------------------------------------------------------------------------

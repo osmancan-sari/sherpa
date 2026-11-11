@@ -3,13 +3,20 @@
 import { type FormEvent, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useSetBlockCancelled } from "@/core/app/actions";
+import { useEditBlock, useEditSeries, useSetBlockCancelled } from "@/core/app/actions";
 import { useBlocks, useCoreMutation, useNow, useSeries } from "@/core/app/hooks";
-import { createBlock, createSeries, endSeries } from "@/core/data/blocks";
+import {
+  type BlockEdit,
+  createBlock,
+  createSeries,
+  endSeries,
+  type SeriesEdit,
+} from "@/core/data/blocks";
 import type { Block, BlockKind, BlockSeries, DayType } from "@/core/types";
 import { dayKey, formatDayLabel, formatTime, istanbulInstant, shiftDay } from "@/lib/date";
 import { cn } from "@/lib/utils";
 import { ClientOnly } from "../ClientOnly";
+import { EditDialog, type EditField } from "../EditDialog";
 import { SAVE_FAILED, useNotify } from "../Notices";
 import { PageShell } from "../PageShell";
 import { BackToSettings } from "./ModulesSettings";
@@ -32,6 +39,28 @@ const DAY_TYPES: { value: DayType | ""; label: string }[] = [
   { value: "home", label: "Ev" },
   { value: "office", label: "Ofis" },
   { value: "campus", label: "Kampüs" },
+];
+
+const TIME_FIELDS: EditField[] = [
+  { name: "start", label: "Başlangıç", type: "time", required: true },
+  { name: "end", label: "Bitiş", type: "time", required: true },
+  { name: "location", label: "Yer", type: "text" },
+];
+const SERIES_FIELDS: EditField[] = [
+  { name: "title", label: "Ad", type: "text", required: true },
+  {
+    name: "weekday",
+    label: "Gün",
+    type: "select",
+    required: true,
+    options: WEEKDAYS.map((name, index) => ({ value: String(index + 1), label: name })),
+  },
+  ...TIME_FIELDS,
+];
+const BLOCK_FIELDS: EditField[] = [
+  { name: "title", label: "Ad", type: "text", required: true },
+  { name: "day", label: "Tarih", type: "date", required: true },
+  ...TIME_FIELDS,
 ];
 
 const selectClass = "border-input bg-background h-11 rounded-lg border px-3 text-sm md:h-9";
@@ -118,6 +147,8 @@ function Labelled({ label, children }: { label: string; children: React.ReactNod
 
 function SeriesRow({ series }: { series: BlockSeries }) {
   const notify = useNotify();
+  const edit = useEditSeries();
+  const [editing, setEditing] = useState(false);
   const end = useCoreMutation({
     mutate: (db) => endSeries(db, series.id, new Date()),
     onError: () => notify(SAVE_FAILED),
@@ -133,14 +164,48 @@ function SeriesRow({ series }: { series: BlockSeries }) {
           {series.location ? ` · ${series.location}` : ""}
         </p>
       </div>
-      <Button
-        variant="ghost"
-        className="h-11 md:h-9"
-        aria-label={`Seriyi bitir: ${series.title}`}
-        onClick={() => end.mutate(undefined)}
-      >
-        Seriyi bitir
-      </Button>
+      <div className="flex gap-1">
+        <Button
+          variant="ghost"
+          className="h-11 md:h-9"
+          aria-label={`Seriyi düzenle: ${series.title}`}
+          onClick={() => setEditing(true)}
+        >
+          Düzenle
+        </Button>
+        <Button
+          variant="ghost"
+          className="h-11 md:h-9"
+          aria-label={`Seriyi bitir: ${series.title}`}
+          onClick={() => end.mutate(undefined)}
+        >
+          Seriyi bitir
+        </Button>
+      </div>
+      {editing ? (
+        <EditDialog
+          title="Seriyi düzenle"
+          fields={SERIES_FIELDS}
+          initial={{
+            title: series.title,
+            weekday: String(series.weekday),
+            start: series.start_time.slice(0, 5),
+            end: series.end_time.slice(0, 5),
+            location: series.location ?? "",
+          }}
+          validate={(values) => values.end > values.start}
+          onClose={() => setEditing(false)}
+          onSave={(changed) => {
+            const patch: SeriesEdit = {};
+            if ("title" in changed) patch.title = changed.title.trim();
+            if ("weekday" in changed) patch.weekday = Number(changed.weekday);
+            if ("start" in changed) patch.start_time = changed.start;
+            if ("end" in changed) patch.end_time = changed.end;
+            if ("location" in changed) patch.location = changed.location.trim() || null;
+            edit.mutate({ id: series.id, patch });
+          }}
+        />
+      ) : null}
     </li>
   );
 }
@@ -355,6 +420,8 @@ function BlockForm() {
 
 function BlockRow({ block }: { block: Block }) {
   const setCancelled = useSetBlockCancelled();
+  const edit = useEditBlock();
+  const [editing, setEditing] = useState(false);
   const cancelled = block.status === "cancelled";
   const start = new Date(block.starts_at);
   return (
@@ -366,14 +433,51 @@ function BlockRow({ block }: { block: Block }) {
         · {block.title}
         {block.location ? ` · ${block.location}` : ""}
       </p>
-      <Button
-        variant="ghost"
-        className="h-11 md:h-8"
-        aria-label={`${cancelled ? "Geri al" : "İptal et"}: ${block.title}, ${formatDayLabel(start)}`}
-        onClick={() => setCancelled.mutate({ blockId: block.id, cancelled: !cancelled })}
-      >
-        {cancelled ? "Geri al" : "İptal et"}
-      </Button>
+      <div className="flex gap-1">
+        {cancelled ? null : (
+          <Button
+            variant="ghost"
+            className="h-11 md:h-8"
+            aria-label={`Düzenle: ${block.title}, ${formatDayLabel(start)}`}
+            onClick={() => setEditing(true)}
+          >
+            Düzenle
+          </Button>
+        )}
+        <Button
+          variant="ghost"
+          className="h-11 md:h-8"
+          aria-label={`${cancelled ? "Geri al" : "İptal et"}: ${block.title}, ${formatDayLabel(start)}`}
+          onClick={() => setCancelled.mutate({ blockId: block.id, cancelled: !cancelled })}
+        >
+          {cancelled ? "Geri al" : "İptal et"}
+        </Button>
+      </div>
+      {editing ? (
+        <EditDialog
+          title="Bloğu düzenle"
+          fields={BLOCK_FIELDS}
+          initial={{
+            title: block.title,
+            day: dayKey(start),
+            start: formatTime(start),
+            end: formatTime(new Date(block.ends_at)),
+            location: block.location ?? "",
+          }}
+          validate={(values) => values.end > values.start}
+          onClose={() => setEditing(false)}
+          onSave={(changed, values) => {
+            const patch: BlockEdit = {};
+            if ("title" in changed) patch.title = changed.title.trim();
+            if ("location" in changed) patch.location = changed.location.trim() || null;
+            if ("day" in changed || "start" in changed || "end" in changed) {
+              patch.starts_at = istanbulInstant(values.day, values.start).toISOString();
+              patch.ends_at = istanbulInstant(values.day, values.end).toISOString();
+            }
+            edit.mutate({ id: block.id, patch });
+          }}
+        />
+      ) : null}
     </li>
   );
 }

@@ -43,6 +43,13 @@
 | Olaylar yayınlandıkları yerde dağıtılır (ayrı tüketici yok); duraklatılmış modül olay almaz (Ç1) | Tek kullanıcı, tek yazan; kuyruk ve imleç gereksiz karmaşıklık | Modül sözleşmesi |
 | Planlayıcı gelene kadar kalemin oturum işi "Başla" anında üretilir (Ç1) | Kalemler oturumlara haftalık planda bölünür (Ç3); o zamana kadar kalem Bugün listesinden başlatılabilmeli, uzak kalemler de önceden bölünmemeli | Ç3 |
 
+| `deneme` modülü yalnızca `NEXT_PUBLIC_SHERPA_DEMO_MODULE=1` iken kaydolur (Ç1) | Sınama modülü üretim verisiyle hiç karşılaşmasın; yerel geliştirme ve testlerde açık | Yayın ortam değişkenleri (D1) |
+| Tam ekran görünümler ayrı bir rota grubunda (`(tam)`), uygulama kabuğu olmadan çizilir (Ç1) | Kabuğu koşulla gizlemek yerine hiç çizmemek; aynı veri ve oturum sağlayıcıları | Modül arayüzü |
+| Modül sayfasının "Yaklaşanlar" bölgesi elle düzenlemenin yeridir: iş, kalem ve ritim burada düzenlenir, bırakılır, durdurulur; elle ritim buradan eklenir (Ç1) | Bugün ekranı seyrek kalsın; düzenleme modülün bütün resminin durduğu yerde yapılsın | Arayüz |
+| Bir günün blokları o güne değen bütün bloklardır; gece yarısını aşan blok iki güne de aittir (Ç1) | Gece vardiyası ertesi sabahın şeridinde de görünmeli | Bugün ekranı, Ç3 yuva hesabı |
+| Oturum işi kalemin `source_type` ve `source_id` değerlerini taşır (Ç1) | Modül kendi işini şimdi kartında tanıyıp içerik verebilsin (`nowCard`) | Modül sözleşmesi |
+| Gelen kutusunda 90 dakikayı aşan giriş iş kalemi olarak kaydedilir (Ç1) | Hızlı girişteki kuralın aynısı: uzun iş tek oturuma sığmaz | Gelen kutusu |
+
 ## Açık sorular
 
 Çekirdek:

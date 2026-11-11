@@ -151,7 +151,11 @@ type ModuleUiContext = ModuleContext & {
 }
 ```
 
+Sınama modülü `deneme` her bağlantı noktasının çalışan örneğidir; yalnızca `NEXT_PUBLIC_SHERPA_DEMO_MODULE=1` verilen ortamlarda (yerel geliştirme, testler) kaydolur, üretimde kaydolmaz.
+
 Adresler: `/m/<slug>` ilk sekmeyi, `/m/<slug>/<sekme>` adı verilen sekmeyi açar; öbür yollar `routes` ile eşlenir. `tam` parçası çekirdeğe ayrılmıştır: sekme ya da alt sayfa bu adı alamaz.
+
+Sayfalar arası geçişte çıkılan sayfa bir süre belgede gizli olarak kalır (Next.js gezinme durumunu korur); modül bileşeni yan etkilerini `useEffect` temizliğine bağlamalı, belgede tekil olduğunu varsaymamalıdır.
 
 Kurallar: modül arayüzü çekirdeğin tasarım dilini (tipografi, renk, aralık, tema) kullanır; kendi bileşenleri de bu dile uyar. Pano ve telefon yerleşimlerinin ikisinde de çalışır. Çekirdekteki bir ekranı değiştirmez; yalnızca kendisine ayrılan yerlere içerik verir.
 

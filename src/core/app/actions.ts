@@ -1,7 +1,16 @@
 "use client";
 
 import { useQueryClient } from "@tanstack/react-query";
-import { cancelBlock, createBlock, type NewBlock, restoreBlock } from "@/core/data/blocks";
+import {
+  type BlockEdit,
+  cancelBlock,
+  createBlock,
+  type NewBlock,
+  restoreBlock,
+  type SeriesEdit,
+  updateBlock,
+  updateSeries,
+} from "@/core/data/blocks";
 import {
   addInboxEntry,
   dismissEntry,
@@ -13,15 +22,24 @@ import { answerModulePrompt, closeWorkItem } from "@/core/data/outcome";
 import { endSession, type SessionTarget, startSession } from "@/core/data/sessions";
 import {
   completeTask,
+  createRhythm,
   createTask,
   createWorkItem,
+  dropTask,
   logRhythm,
+  type NewRhythm,
   type NewTask,
   type NewWorkItem,
   reopenTask,
+  type RhythmEdit,
+  updateRhythm,
+  updateTask,
+  updateWorkItem,
+  type WorkItemEdit,
 } from "@/core/data/work";
 import type {
   Block,
+  BlockSeries,
   InboxEntry,
   Prompt,
   Rhythm,
@@ -31,6 +49,7 @@ import type {
   WorkItem,
 } from "@/core/types";
 import { dayKey } from "@/lib/date";
+import type { TablesUpdate } from "@/lib/supabase/database.types";
 import { SAVE_FAILED, useNotify } from "@/core/ui/Notices";
 import { useRegistry } from "./CoreProvider";
 import { keys, list, useCoreMutation } from "./hooks";
@@ -228,6 +247,72 @@ export function useCloseWorkItem() {
   });
 }
 
+// --- Editing by hand ---------------------------------------------------------------------------
+
+export function useEditTask() {
+  const onError = useFailureNotice();
+  return useCoreMutation({
+    mutate: (db, args: { id: string; patch: TablesUpdate<"tasks"> }) =>
+      updateTask(db, args.id, args.patch),
+    optimistic: ({ id, patch }) => [
+      { key: keys.tasks, update: list.patch<Task>(id, patch as Partial<Task>) },
+    ],
+    onError,
+  });
+}
+
+/** "Bırak": the task leaves the pool; nothing is deleted. */
+export function useDropTask() {
+  const onError = useFailureNotice();
+  return useCoreMutation({
+    mutate: (db, taskId: string) => dropTask(db, taskId),
+    optimistic: (taskId, queryClient) => {
+      const open = queryClient.getQueryData<Session | null>(keys.openSession);
+      return [
+        { key: keys.tasks, update: list.remove<Task>(taskId) },
+        ...(open?.task_id === taskId ? [{ key: keys.openSession, update: () => null }] : []),
+      ];
+    },
+    onError,
+  });
+}
+
+/** The edited fields become the user's own; later proposals leave them alone. */
+export function useEditWorkItem() {
+  const onError = useFailureNotice();
+  return useCoreMutation({
+    mutate: (db, args: { id: string; patch: WorkItemEdit }) =>
+      updateWorkItem(db, args.id, args.patch),
+    optimistic: ({ id, patch }) => [
+      { key: keys.workItems, update: list.patch<WorkItem>(id, patch) },
+    ],
+    onError,
+  });
+}
+
+export function useAddRhythm() {
+  const onError = useFailureNotice();
+  return useCoreMutation({
+    mutate: (db, rhythm: NewRhythm) => createRhythm(db, rhythm),
+    onError,
+  });
+}
+
+export function useEditRhythm() {
+  const onError = useFailureNotice();
+  return useCoreMutation({
+    mutate: (db, args: { id: string; patch: RhythmEdit }) => updateRhythm(db, args.id, args.patch),
+    optimistic: ({ id, patch }) => [
+      {
+        key: keys.rhythms,
+        // A rhythm that is stopped leaves the list of running ones.
+        update: patch.active === false ? list.remove<Rhythm>(id) : list.patch<Rhythm>(id, patch),
+      },
+    ],
+    onError,
+  });
+}
+
 // --- Inbox -------------------------------------------------------------------------------------
 
 export function useAddInboxEntry() {
@@ -307,6 +392,29 @@ export function useSetBlockCancelled() {
         key: keys.blocks,
         update: list.patch<Block>(blockId, { status: cancelled ? "cancelled" : "planned" }),
       },
+    ],
+    onError,
+  });
+}
+
+/** One block is changed by hand; producing the series again leaves it as it is. */
+export function useEditBlock() {
+  const onError = useFailureNotice();
+  return useCoreMutation({
+    mutate: (db, args: { id: string; patch: BlockEdit }) => updateBlock(db, args.id, args.patch),
+    optimistic: ({ id, patch }) => [{ key: keys.blocks, update: list.patch<Block>(id, patch) }],
+    onError,
+  });
+}
+
+/** The series changes; its coming blocks follow, except the ones changed by hand. */
+export function useEditSeries() {
+  const onError = useFailureNotice();
+  return useCoreMutation({
+    mutate: (db, args: { id: string; patch: SeriesEdit }) =>
+      updateSeries(db, args.id, args.patch, new Date()),
+    optimistic: ({ id, patch }) => [
+      { key: keys.series, update: list.patch<BlockSeries>(id, patch) },
     ],
     onError,
   });

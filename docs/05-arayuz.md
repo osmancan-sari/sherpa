@@ -15,11 +15,15 @@
 | --- | --- |
 | `/` | Bugün |
 | `/hafta` | Haftalık kapasite |
-| `/m/[slug]` | Modül sayfası |
+| `/m` | Modüller: etkin ve duraklatılmış modüllerin çipleri |
+| `/m/[slug]` | Modül sayfası; `/m/[slug]/<sekme>` sekmeyi, `/m/[slug]/…` modülün alt sayfalarını açar |
+| `/m/[slug]/tam/[key]` | Modülün tam ekran görünümü (kabuk yok) |
 | `/a/[slug]` | Alan sayfası |
 | `/gelen` | Gelen kutusu |
 | `/kapanis` | Akşam kapanışı |
-| `/ayarlar` | Ayarlar, modüller, sabit bloklar, dışa aktarım |
+| `/ayarlar` | Ayarlar: tema, dışa aktarım, hesap |
+| `/ayarlar/moduller` | Modülleri etkinleştir, duraklat, arşivle; `/ayarlar/moduller/[slug]` modülün kendi ayarları |
+| `/ayarlar/bloklar` | Haftalık seriler, tek seferlik bloklar, önümüzdeki 4 haftanın blokları |
 
 ## Bugün (ikinci ekran yerleşimi)
 
@@ -95,6 +99,8 @@ Tek kutu, iki kullanım:
 1. **Yapılı:** Yazarken altta modül çipleri ve tür seçenekleri çıkar. `Tab` ile modül, ardından tarih ve süre seçilir. Tarihler doğal kısaltmalarla yazılabilir: `bugün`, `yarın`, `cuma`, `15.11`, `+3g` (gün), `+2h` (hafta). Süre de yazılabilir: `45dk`, `1s`, `1.5sa`, `1s30dk`. Bu sözcükler yalnızca satırın sonunda okunur; başlığın ortasındaki "cuma" başlıkta kalır. Haftanın günü, bir sonraki o gündür.
 2. **Serbest:** Hiçbir şey seçmeden `Enter`: metin gelen kutusuna düşer.
 
+Kutu tek satırla başlar ve yapıştırılan çok satırlı metinle büyür (`sherpa` bloğu satırlarını korur); `Enter` kaydeder, `Shift+Enter` satır ekler. Yapıştırılan yapılı bloğu tanıyan modül varsa giriş doğrudan ona işlenir.
+
 Yapay zeka açıkken serbest metin gelen kutusunda beklemez: iş hemen varsayılanlarla görünür, birkaç saniye içinde modül, süre ve önem yerinde dolar. Yapay zekanın koyduğu değerler küçük bir işaretle ayırt edilir; üzerine gelince gerekçesi görünür, tıklayınca değiştirilir. Emin olmadığı girişler gelen kutusuna onay kartı olarak düşer.
 
 Her modül hızlı girişe kendi türlerini ekler (sözleşmenin `intake` bölümü): Okul "sınav/teslim" ve "not", Beslenme "tartı" ve "alışveriş kalemi" gibi.
@@ -122,6 +128,15 @@ Her modül sayfası aynı 5 bölgeyi kullanır; çekirdek `ModulePageShell` bile
 | 4. Geçmiş ve trend | Zaman içindeki gidişat |
 | 5. Giriş ve ayarlar | Modülün kendi girişleri ve kuralları |
 
+Çekirdeğin doldurdukları (modül bir şey vermese de sayfa çalışır):
+
+- **Durum şeridi:** modülün çip metni ve sağlığı, haftalık raporunun sayıları ve en çok 2 önerisi; yanında hızlı eylemler ve tam ekran görünümlerin bağlantıları.
+- **Yaklaşanlar:** modülün açık işleri, kalemleri ve ritimleri, tarih sırasıyla; bekleyen ve henüz başlamamış olanlar da burada görünür (Bugün listesi yalnızca şimdi yapılabilenleri gösterir). Her satırda Başla, Bitti ve kalemle düzenleme: ad, son tarih, süre ya da efor, önem; iş "bekliyor" durumuna alınabilir ya da bırakılabilir, ritim durdurulabilir. Kullanıcının burada değiştirdiği alan onundur; modülün sonraki teklifi o alanı ezmez.
+- **Geçmiş:** modül kendi görünümünü vermezse son 8 haftada harcanan süre (hafta başına).
+- **Giriş ve ayarlar:** "İş ekle", modülün giriş türleri, "Ritim ekle" (elle ritim) ve modül ayarlarının bağlantısı.
+
+Kodu olmayan modül satırının (örnek veri, kodu kaldırılmış modül) sayfası da aynı iskeletle açılır; gövdesi boştur.
+
 Alan sayfası (`/a/[slug]`) aynı iskeleti kullanır ve üye modüllerin durum şeritlerini ve seçilmiş görünümlerini birleştirir.
 
 ## Akşam kapanışı
@@ -131,5 +146,7 @@ Alan sayfası (`/a/[slug]`) aynı iskeleti kullanır ve üye modüllerin durum �
 ## Boş ve hata durumları
 
 - Hiç iş yoksa: "Bugün için planlanan bir şey yok" ve hızlı giriş.
+- Veri okunamadıysa: boş gün gösterilmez; "Veri okunamadı" ve "Yeniden dene".
+- Kalemin ayrılan eforu dolduysa: kalem kendiliğinden kapanmaz; şimdi kartı "Bitti mi?" diye sorar (Bitti, Devam et).
 - Bağlantı koptuysa: TopBar'da küçük bir işaret; son bilinen plan ekranda kalır.
 - Oturum düştüyse: sessizce giriş sayfası.

@@ -40,10 +40,12 @@ src/
       hafta/
       gelen/
       kapanis/
-      m/[slug]/             modül sayfası
+      m/[slug]/[[...path]]/ modül sayfası, sekmeleri, alt sayfaları
       a/[slug]/             alan sayfası
-      ayarlar/
+      ayarlar/              moduller/, bloklar/
+    (tam)/                  kabuksuz yerleşim: m/[slug]/tam/[key] (modülün tam ekran görünümü)
     api/
+      export/               "Tümünü dışa aktar" (JSON)
       ai/                   enrich, extract, plan, replan, review
       mcp/                  Ç5
   core/                     modüllerden bağımsız çekirdek
@@ -60,10 +62,12 @@ src/
     registry.ts             kayıtlı modüller
     okul/                   module.ts, queries.ts, rules.ts, components/, page.tsx
     _sablon/                yeni modül için kopyalanacak iskelet
+    deneme/                 çekirdeğin sınandığı modül; yalnızca NEXT_PUBLIC_SHERPA_DEMO_MODULE=1 iken kaydolur
   lib/                      supabase istemcisi, tarih yardımcıları
 supabase/
   migrations/
 scripts/
+  seed-demo.ts              yerel hesaba örnek veri (demo-data.ts); yalnızca yerel Supabase
   import-notion.ts
 data/
   notion-export/            aktarım için JSON dosyaları (git'e girmez)
@@ -112,7 +116,7 @@ Vercel Cron ile, hepsi idempotent:
 ## Yedek
 
 - Supabase'in günlük yedeği.
-- Ayarlar sayfasında "Tümünü dışa aktar" (JSON). Veri hiçbir zaman uygulamaya kilitli kalmaz.
+- Ayarlar sayfasında "Tümünü dışa aktar" (JSON): `/api/export`, kullanıcının kendi yetkisiyle bütün çekirdek tabloları ve kayıtlı modüllerin `tables` listesindeki tabloları okur. Veri hiçbir zaman uygulamaya kilitli kalmaz.
 
 ## Performans hedefleri
 
