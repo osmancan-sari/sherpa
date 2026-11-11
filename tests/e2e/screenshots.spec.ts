@@ -135,7 +135,8 @@ function screensFor(itemId: string): Screen[] {
       name: "gelen",
       path: "/gelen",
       ready: async (page) => {
-        await expect(page.getByRole("main").getByRole("listitem")).toHaveCount(2);
+        // Two plain entries and the card the AI left (sample data, Ç2).
+        await expect(page.getByRole("main").getByRole("listitem")).toHaveCount(3);
       },
     },
     {
@@ -158,6 +159,11 @@ function screensFor(itemId: string): Screen[] {
       ready: async (page) => {
         await expect(page.getByRole("link", { name: "Deneme ayarları" })).toBeVisible();
       },
+    },
+    {
+      name: "modul-deneme-metin",
+      path: "/m/deneme/metin",
+      ready: heading("Metinden çıkar"),
     },
     {
       name: "ayarlar-modul-deneme",
@@ -222,6 +228,47 @@ for (const theme of ["dark", "light"] as const) {
     await page.getByRole("button", { name: "Düzenle: YZV406E HW2: lokalizasyon soruları" }).click();
     await expect(page.getByRole("dialog", { name: "İş kalemini düzenle" })).toBeVisible();
     await shot("duzenleme");
+    await page.keyboard.press("Escape");
+
+    // The AI's part (Ç2): the reasons of an estimate, the reason in the form, a suggested split.
+    // The sample data's report was sized by the fake provider; the split is written as data.
+    const [report] = (await rows("work_items")).filter((row) => row.key === "project:dl:report");
+    await insert(
+      "work_items",
+      ["Kaynakları topla", "Taslak bölümler", "Gözden geçir"].map((title, index) => ({
+        module_id: report.module_id,
+        parent_id: report.id,
+        title,
+        status: "proposed",
+        effort_total_minutes: [60, 150, 60][index],
+        ai: {
+          kind: "decompose",
+          model: "fake-plan",
+          at: new Date().toISOString(),
+          call_id: "",
+          input: "DL ara raporu",
+          user_edited: [],
+          fields: {
+            effort_total_minutes: {
+              value: [60, 150, 60][index],
+              confidence: 0.6,
+              reason: "Önce kaynaklar, sonra taslak, en son gözden geçirme.",
+            },
+          },
+        },
+      })),
+    );
+    await page.goto("/m/okul-ornek");
+    const reportRow = page
+      .getByRole("region", { name: "Yaklaşanlar" })
+      .getByRole("listitem")
+      .filter({ hasText: "DL ara raporu" });
+    await reportRow.getByRole("button", { name: "Yapay zekanın koyduğu değerler" }).click();
+    await expect(reportRow.getByRole("note")).toBeVisible();
+    await shot("yz-gerekce");
+    await reportRow.getByRole("button", { name: "Düzenle: DL ara raporu" }).click();
+    await expect(page.getByRole("dialog", { name: "İş kalemini düzenle" })).toBeVisible();
+    await shot("yz-duzenleme");
     await page.keyboard.press("Escape");
 
     await page.goto("/");

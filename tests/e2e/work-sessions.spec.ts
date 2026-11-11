@@ -117,7 +117,10 @@ test("the pool is ordered by deadline, then importance", async ({ page }) => {
     "Tarihsiz",
   ]);
   await expect(list).not.toContainText("Bekleyen");
-  await expect(list.getByText("Yarın").locator("..")).toContainText("Okul · 30 dk · yarın");
+  // The title exactly: after 22:00 "Bugün düşük" (due in two hours) reads "yarın 00:…" too.
+  await expect(list.getByText("Yarın", { exact: true }).locator("..")).toContainText(
+    "Okul · 30 dk · yarın",
+  );
 });
 
 test("one tap finishes a task from the list, and the finish can be taken back", async ({

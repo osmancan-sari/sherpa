@@ -16,6 +16,10 @@ if (!["127.0.0.1", "localhost"].includes(supabaseHost)) {
 
 const PORT = 3100;
 const baseURL = `http://127.0.0.1:${PORT}`;
+// The same build once more, with the recorded fake AI provider (SHERPA_AI_FAKE=1). The server
+// on PORT has no provider at all: both ways the app must work are tried in every run.
+const AI_PORT = 3101;
+const AI_BASE_URL = `http://127.0.0.1:${AI_PORT}`;
 const storageState = "playwright/.auth/user.json";
 
 // Set SHERPA_SHOTS to a phase folder (e.g. "c0") to also write the phase screenshots
@@ -26,6 +30,7 @@ const GATE_SPECS = /(^|[\\/])(guard|login|session)\.spec\.ts$/;
 const LIVE_SPECS = /(^|[\\/])sync\.spec\.ts$/;
 const BOTH_SPECS = /\.both\.spec\.ts$/;
 const SHOT_SPECS = /screenshots\.spec\.ts$/;
+const AI_SPECS = /\.ai\.spec\.ts$/;
 
 export default defineConfig({
   testDir: "tests/e2e",
@@ -46,6 +51,7 @@ export default defineConfig({
   //   sync                      -> "esitleme" (live sync between devices; runs first, see below)
   //   guard, login, session     -> "giris" (signed-out behaviour; no stored session)
   //   *.both.spec.ts            -> "pano" and "telefon"
+  //   *.ai.spec.ts              -> "yapay-zeka" (the server with the fake AI provider)
   //   everything else           -> "pano"
   //   screenshots.spec.ts       -> both, but only when SHERPA_SHOTS is set
   projects: [
@@ -72,9 +78,18 @@ export default defineConfig({
       // Second screen.
       name: "pano",
       testMatch: /\.spec\.ts$/,
-      testIgnore: shots ? [GATE_SPECS, LIVE_SPECS] : [GATE_SPECS, LIVE_SPECS, SHOT_SPECS],
+      testIgnore: shots
+        ? [GATE_SPECS, LIVE_SPECS, AI_SPECS]
+        : [GATE_SPECS, LIVE_SPECS, AI_SPECS, SHOT_SPECS],
       dependencies: ["setup", "esitleme"],
       use: { storageState, viewport: { width: 1920, height: 1080 } },
+    },
+    {
+      // The AI paths, against the server with the fake provider (second screen width).
+      name: "yapay-zeka",
+      testMatch: AI_SPECS,
+      dependencies: ["setup", "esitleme"],
+      use: { storageState, baseURL: AI_BASE_URL, viewport: { width: 1920, height: 1080 } },
     },
     {
       // Phone.
@@ -90,11 +105,21 @@ export default defineConfig({
       },
     },
   ],
-  webServer: {
-    command: `npx next start --port ${PORT}`,
-    url: `${baseURL}/giris`,
-    // Never reuse a server that is already running: it could be serving an older build.
-    reuseExistingServer: false,
-    timeout: 60_000,
-  },
+  webServer: [
+    {
+      command: `npx next start --port ${PORT}`,
+      url: `${baseURL}/giris`,
+      // Never reuse a server that is already running: it could be serving an older build.
+      reuseExistingServer: false,
+      timeout: 60_000,
+    },
+    {
+      command: `npx next start --port ${AI_PORT}`,
+      url: `${AI_BASE_URL}/giris`,
+      // Only ever with the local Supabase above; the app refuses the fake anywhere else.
+      env: { SHERPA_AI_FAKE: "1" },
+      reuseExistingServer: false,
+      timeout: 60_000,
+    },
+  ],
 });

@@ -29,7 +29,12 @@ const KIND: Record<string, string> = {
   extract: "Metinden çıkarma",
 };
 
-const usd = (value: number) => `${value.toFixed(value < 1 ? 3 : 2)} $`;
+/** Turkish digits; small amounts keep enough decimals to not read as zero. */
+const usd = (value: number) =>
+  `${value.toLocaleString("tr-TR", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: value > 0 && value < 0.01 ? 4 : 2,
+  })} $`;
 
 export function AiSettings() {
   return (

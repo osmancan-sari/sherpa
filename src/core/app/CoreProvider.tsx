@@ -131,8 +131,20 @@ function LiveSync() {
   }, [db, queryClient]);
 
   // A module's proposal may leave judgement fields empty: the server estimates them (`size`).
-  // The answer is written to the work item and arrives through the live connection above.
-  useEffect(() => onProposal((result) => void sizeAfterProposal(result)), []);
+  // The answer is written to the work item and arrives through the live connection above; when
+  // the request comes back with an estimate the screens re-read as well, in case a change
+  // message was lost.
+  useEffect(
+    () =>
+      onProposal((result) => {
+        void sizeAfterProposal(result)?.then((outcome) => {
+          if ((outcome as { status?: string } | null)?.status !== "applied") return;
+          void queryClient.invalidateQueries({ queryKey: [CORE] });
+          void queryClient.invalidateQueries({ queryKey: [MODULE] });
+        });
+      }),
+    [queryClient],
+  );
 
   return null;
 }

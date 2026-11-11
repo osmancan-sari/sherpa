@@ -334,16 +334,18 @@ function SuggestionCard({ entry, modules }: { entry: InboxEntry; modules: KnownM
           disabled={!chosen || confirm.isPending}
           onClick={() => {
             if (!chosen) return;
-            confirm.mutate(
-              { entry, module: chosen.row },
-              {
-                onSuccess: (outcome) => {
-                  if (outcome.status === "applied") {
-                    notify(outcome.target === "task" ? "İş eklendi." : "İş kalemi eklendi.");
-                  }
-                },
-              },
-            );
+            // On the promise, not on mutate's callbacks: the card leaves the list at once
+            // (optimistic) and its callbacks would never run.
+            void confirm
+              .mutateAsync({ entry, module: chosen.row })
+              .then((outcome) => {
+                if (outcome.status === "applied") {
+                  notify(outcome.target === "task" ? "İş eklendi." : "İş kalemi eklendi.");
+                }
+              })
+              .catch(() => {
+                // The failure notice comes from the mutation itself.
+              });
           }}
         >
           Onayla
