@@ -4,9 +4,23 @@ Bu dosyayı Claude Code günceller. Yeni bir oturum yalnızca bu dosyayı ve `pr
 
 ## Durum
 
-- Faz: **Ç1 (Çekirdek ve modül temeli) bitti (`c1-tamam`, 11 Kas 2026).** Sıradaki faz Ç2 (Yapay zeka geçidi). Ç0 da bitti (`c0-tamam`); yayın ve telefon D1 ve D2'yi bekliyor
-- Adım: Ç1'in 8 adımı da bitti; Ç2 başlamadı
-- Son commit: Ç1 faz raporu; son adım denetiminin düzeltmeleri (oturum işi kalemin oturum süresini de izler)
+- Faz: **Ç2 (Yapay zeka geçidi) sürüyor** (başlangıç 11 Kas 2026). Ç0 ve Ç1 bitti (`c0-tamam`, `c1-tamam`); yayın ve telefon D1 ve D2'yi bekliyor. D3 (`ANTHROPIC_API_KEY`) verilmedi: faz sahte sağlayıcıyla geliştiriliyor
+- Adım: Ç2 planı aşağıda; 1. adım (şema) sürüyor
+- Son commit: Ç2 planı
+
+### Ç2 planı
+
+Her adımın sonunda `npm run check` ve commit; şema, geçit ve zarf adımlarından sonra denetçi (adım kipi). Planlama çağrıları (`plan`, `week`, `month`, `review`, `replan`) bu fazda kurulmaz (Ç3).
+
+| # | Adım | Durum |
+| --- | --- | --- |
+| 1 | Migration: `ai_calls`, `ai_feedback` (RLS, yalnızca eklenir), `work_items` efor sınırı sütunları, aylık harcama ve kullanım fonksiyonları; tipler; dışa aktarım ve test listeleri; veritabanı testleri | sürüyor |
+| 2 | Geçit (`src/core/ai/`): sağlayıcı arayüzü (Anthropic, sahte), fiyat tablosu, bütçe, çıktı şemaları, istemler, zaman aşımı, kayıt; birim ve veritabanı testleri | bekliyor |
+| 3 | Çağrılar ve rotalar: `enrich`, `size`, `decompose`, `extract`; zarfın sınırı saklaması; `/api/ai/*`; düzeltmelerin `ai_feedback`'e düşmesi | bekliyor |
+| 4 | Arayüz: hızlı giriş ve gelen kutusu onay kartı, yapay zeka işareti ve gerekçesi, kalemi adımlara bölme, `deneme` için metinden çıkarma, Ayarlar'da kullanım ve maliyet | bekliyor |
+| 5 | `scripts/ai-eval/`, dokümanlar, örnek veri | bekliyor |
+| 6 | Uçtan uca testler (sahte sağlayıcılı ve sağlayıcısız sunucu), ekran görüntüleri | bekliyor |
+| 7 | `check:full`, faz denetimi, düzeltmeler, faz raporu, etiket | bekliyor |
 
 ### Ç1 planı
 
