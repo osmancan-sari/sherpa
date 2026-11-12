@@ -4,6 +4,7 @@ import { Suspense, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { PageShell } from "@/core/ui/PageShell";
 import { AiSettings } from "@/core/ui/settings/AiSettings";
+import { DayFrameSettings } from "@/core/ui/settings/DayFrameSettings";
 import { getCurrentUser } from "@/lib/auth/session";
 import { signOut } from "./actions";
 import { ThemeSwitch } from "./theme-switch";
@@ -15,6 +16,10 @@ export default function SettingsPage() {
     <PageShell title="Ayarlar">
       <Section title="Görünüm">
         <ThemeSwitch />
+      </Section>
+
+      <Section title="Günün çerçevesi">
+        <DayFrameSettings />
       </Section>
 
       <Section title="Modüller">

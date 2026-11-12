@@ -4,11 +4,12 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { postAi } from "@/core/ai/client";
 import { keepWeek, storedWeek, weekInput } from "@/core/data/keep";
+import { estimateWake, savePlannedSleep } from "@/core/data/frame";
 import { clearPastPlannedDays, planDay, touchDay } from "@/core/data/planning";
 import { closeUnanswered } from "@/core/data/sessions";
 import { buildPlan, isReturning, overrun, storedPlan } from "@/core/planner";
 import { weekAction } from "@/core/planner/week";
-import { weekStart, weekdayOf } from "@/lib/date";
+import { formatTime, shiftDay, weekStart, weekdayOf } from "@/lib/date";
 import { CORE, MODULE, useDb } from "./CoreProvider";
 import { useAiStatus, useHorizonReviews, useTodayPlan, useWeeklyReviews } from "./hooks";
 
@@ -82,7 +83,20 @@ export function PlanKeeper() {
       weeklyReviews.data !== undefined &&
       !weeklyReviews.data.some((row) => row.week_start === thisWeek) &&
       !asked.current.has(`review:${thisWeek}`);
-    if (!action && !needsPlan && !unanswered && !askPlan && !askMonth && !askReview) return;
+    // What the sleep plan chose, kept on the days for the record (Ç3c): tonight's bedtime and
+    // tomorrow's waking, whenever they change.
+    const sleepRecord = input.frame ? sleepChanges(input.date, input.frame, rows.days) : [];
+    if (
+      !action &&
+      !needsPlan &&
+      !unanswered &&
+      !askPlan &&
+      !askMonth &&
+      !askReview &&
+      sleepRecord.length === 0
+    ) {
+      return;
+    }
 
     busy.current = true;
     // Only what this step wrote is read again: refreshing everything would undo the optimistic
@@ -126,6 +140,10 @@ export function PlanKeeper() {
           wrote = ["weekly_reviews"];
           asked.current.add(`review:${thisWeek}`);
           await postAi("review", {});
+        } else if (sleepRecord.length > 0) {
+          wrote = ["days"];
+          await savePlannedSleep(db, sleepRecord);
+          changed = true;
         }
       } catch {
         // The next change or tick of the clock tries again; the screens plan live from the data
@@ -153,17 +171,24 @@ export function PlanKeeper() {
     round,
   ]);
 
-  // The first touch of the day: a key or a tap on any screen, once a day.
+  // The first touch of the day: a key or a tap on any screen, once a day. With the day's frame
+  // (Ç3c) it also stands for the waking when nobody said "Uyandım" (marked estimated); a touch
+  // on "Uyandım" itself writes the real one.
   const date = input?.date;
+  const framed = input?.frame !== undefined;
   const touched = useRef<string | null>(null);
   useEffect(() => {
     if (!date) return;
     const day = rows?.days.find((row) => row.date === date);
-    if (day?.started_at) touched.current = date;
-    const onTouch = () => {
+    if (day?.started_at && (!framed || day.woke_at)) touched.current = date;
+    const onTouch = (event: Event) => {
       if (touched.current === date) return;
       touched.current = date;
-      touchDay(db, date, new Date())
+      const onWake =
+        event.target instanceof Element && event.target.closest("[data-wake-action]") !== null;
+      const now = new Date();
+      touchDay(db, date, now)
+        .then(() => (framed && !onWake ? estimateWake(db, date, now) : null))
         .then(() => queryClient.invalidateQueries({ queryKey: [CORE, "days"] }))
         .catch(() => {
           touched.current = null;
@@ -175,7 +200,29 @@ export function PlanKeeper() {
       window.removeEventListener("pointerdown", onTouch);
       window.removeEventListener("keydown", onTouch);
     };
-  }, [date, rows, db, queryClient]);
+  }, [date, framed, rows, db, queryClient]);
 
   return null;
+}
+
+const clock = (instant: Date) => formatTime(instant);
+const stored = (value: string | null | undefined) => value?.slice(0, 5) ?? null;
+
+/** Tonight's planned bedtime and tomorrow's planned waking, where the days do not hold them yet. */
+function sleepChanges(
+  date: string,
+  frame: NonNullable<ReturnType<typeof useTodayPlan>["input"]>["frame"] & object,
+  days: { date: string; planned_wake: string | null; planned_bed: string | null }[],
+): { date: string; planned_wake?: string; planned_bed?: string }[] {
+  const tomorrow = shiftDay(date, 1);
+  const bed = clock(frame.tonight.bed);
+  const wake = clock(frame.tonight.expectedWake);
+  const out: { date: string; planned_wake?: string; planned_bed?: string }[] = [];
+  if (stored(days.find((row) => row.date === date)?.planned_bed) !== bed) {
+    out.push({ date, planned_bed: bed });
+  }
+  if (stored(days.find((row) => row.date === tomorrow)?.planned_wake) !== wake) {
+    out.push({ date: tomorrow, planned_wake: wake });
+  }
+  return out;
 }
