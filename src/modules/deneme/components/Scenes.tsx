@@ -10,9 +10,9 @@ import { useNotify } from "@/core/ui/Notices";
 import { SAVE_FAILED } from "@/core/ui/Notices";
 import { getItem, updateItem } from "../queries";
 
-// The module's scenes (docs/06-modul-sozlesmesi.md, "Sahne"): while a goal's sitting runs, a
-// free focus scene; while a workout runs, a step scene on the kit's StepRunner, its step kept in
-// the module's own row so both screens follow it. A goal named with "[hata]" throws: the core's
+// The module's scenes (docs/06-modul-sozlesmesi.md, "Sahne"): while a focused sitting ("odak")
+// runs, a free scene; while a workout runs, a step scene on the kit's StepRunner, its step kept in
+// the module's own row so both screens follow it. A record named with "[hata]" throws: the core's
 // fallback is tried against it.
 
 import { kindOf, sourceOf } from "../scene";

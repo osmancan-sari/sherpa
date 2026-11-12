@@ -402,6 +402,104 @@ for (const theme of ["dark", "light"] as const) {
     await page.goto("/hafta");
     await expect(page.getByRole("region", { name: "Uygun saat" })).toBeVisible();
     await shot("hafta-zaman");
+
+    // Ç3c: the day's frame. On, with an ordinary day (08:00–19:00) and last week's nights.
+    const [settings] = await rows("settings");
+    await update("settings", settings.id as string, {
+      day_frame: { wake: ["06:00", "09:00"], bed: ["22:00", "01:00"], sleep_minutes: 480 },
+      day_start_default: "08:00",
+      finish_line_default: "19:00",
+    });
+    await update("days", today.id as string, { finish_line: null, woke_at: null });
+    const at = (time: string, day = shotDay) => new Date(`${day}T${time}:00+03:00`);
+    const before = (days: number) =>
+      new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Istanbul" }).format(
+        new Date(shotNow.getTime() - days * 86_400_000),
+      );
+    for (const [days, wake, bed] of [
+      [3, "07:10", "23:40"],
+      [2, "07:30", "00:20"],
+    ] as const) {
+      const day = before(days);
+      const bedDay = bed < "12:00" ? before(days - 1) : day;
+      await insert("days", {
+        date: day,
+        woke_at: at(wake, day).toISOString(),
+        bed_at: at(bed, bedDay).toISOString(),
+      });
+    }
+
+    // The morning: nobody has said "Uyandım" yet.
+    await page.clock.setFixedTime(at("07:30"));
+    await page.goto("/");
+    await expect(now.getByRole("heading", { name: "Günaydın" })).toBeVisible();
+    await shot("bugun-gunaydin");
+
+    // The evening: up at 07:00, past the finish line.
+    await update("days", today.id as string, { woke_at: at("07:00").toISOString() });
+    await page.clock.setFixedTime(at("20:30"));
+    await page.goto("/");
+    await expect(page.getByTestId("sleep-line")).toBeVisible();
+    await shot("bugun-aksam");
+    await page.goto("/hafta");
+    await expect(page.getByTestId("sleep-summary")).toBeVisible();
+    await shot("hafta-uyku");
+
+    // The night after "Yatıyorum".
+    await page.goto("/");
+    await now.getByRole("button", { name: "Yatıyorum" }).click();
+    await expect(now).toContainText("Yarın uyanış");
+    await shot("bugun-gece-cerceve");
+
+    // The scenes: back in the day, the test module's goal, then a workout.
+    await update("days", today.id as string, { bed_at: null });
+    await page.clock.setFixedTime(at("15:00"));
+    const record = async (title: string, kind: string) => {
+      await page.goto("/");
+      await page.keyboard.press("n");
+      const entry = page.getByRole("dialog", { name: "Yeni giriş" });
+      await entry.getByLabel("Giriş").fill(title);
+      await page.keyboard.press("Tab");
+      await entry
+        .getByRole("group", { name: "Kayıt türü" })
+        .getByRole("button", { name: "Kayıt" })
+        .click();
+      await entry.getByLabel("Tür", { exact: true }).selectOption(kind);
+      await entry.getByRole("button", { name: "Kaydet" }).click();
+      await expect(entry).toBeHidden();
+    };
+    await record("Rapor odağı", "odak");
+    await page.goto("/m/deneme");
+    await page
+      .getByRole("region", { name: "Yaklaşanlar" })
+      .getByRole("button", { name: "Başla: Rapor odağı" })
+      .click();
+    await waitFor(
+      () => rows("sessions"),
+      (list) => list.some((row) => row.ended_at === null),
+    );
+    await page.goto("/");
+    await expect(page.getByTestId("deneme-focus")).toBeVisible();
+    await shot("bugun-sahne");
+
+    await record("Salon", "antrenman");
+    await page.goto("/m/deneme");
+    await page
+      .getByRole("region", { name: "Yaklaşanlar" })
+      .getByRole("button", { name: "Başla: Salon" })
+      .click();
+    await waitFor(
+      () => rows("sessions"),
+      (list) => list.some((row) => row.ended_at === null && row.rhythm_id !== null),
+    );
+    await page.goto("/");
+    await expect(page.getByTestId("deneme-workout")).toBeVisible();
+    await shot("bugun-sahne-adimlar");
+
+    // Settings with the frame and this device's voice.
+    await page.goto("/ayarlar");
+    await expect(page.getByRole("form", { name: "Günün çerçevesi" })).toBeVisible();
+    await shot("ayarlar-cerceve");
   });
 }
 

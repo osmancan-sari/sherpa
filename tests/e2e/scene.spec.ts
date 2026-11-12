@@ -7,7 +7,7 @@ import { activateDeneme, addRecord, recordSpeech, spoken, startFromModule } from
 
 test("Çık leaves the scene and the session runs on; Sahneye dön goes back", async ({ page }) => {
   await activateDeneme(page);
-  await addRecord(page, "Okuma notları", { minutes: "30" });
+  await addRecord(page, "Okuma notları", { minutes: "30", kind: "odak" });
   await startFromModule(page, "Okuma notları");
   await expect(page.getByTestId("scene")).toBeVisible();
 
@@ -27,7 +27,7 @@ test("a scene that fails gives the standard card back with one line; the session
   page,
 }) => {
   await activateDeneme(page);
-  await addRecord(page, "Kırık sahne [hata]", { minutes: "30" });
+  await addRecord(page, "Kırık sahne [hata]", { minutes: "30", kind: "odak" });
   await startFromModule(page, "Kırık sahne [hata]");
   await expect(
     page.getByRole("status").filter({ hasText: "Sahne açılamadı; iş sürüyor." }),
@@ -115,7 +115,7 @@ test("say: the scene's words are spoken on the device that was touched, and show
 }) => {
   await recordSpeech(page);
   await activateDeneme(page);
-  await addRecord(page, "Sunum", { minutes: "30" });
+  await addRecord(page, "Sunum", { minutes: "30", kind: "odak" });
   await startFromModule(page, "Sunum");
   const scene = page.getByTestId("deneme-focus");
   await scene.getByRole("button", { name: "Anlat" }).click();

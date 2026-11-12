@@ -10,7 +10,7 @@ test("starting the work opens the module's scene under the core's strip; Bitti b
   page,
 }) => {
   await activateDeneme(page);
-  await addRecord(page, "Rapor taslağı", { minutes: "30" });
+  await addRecord(page, "Rapor taslağı", { minutes: "30", kind: "odak" });
   await startFromModule(page, "Rapor taslağı");
 
   const scene = page.getByTestId("scene");

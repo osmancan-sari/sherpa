@@ -226,7 +226,12 @@ function TodayBody() {
           />
         </div>
 
-        <section aria-label="Sıradakiler" className="flex min-w-0 flex-col gap-3 lg:col-span-2">
+        {/* The evening's card holds what the evening has (Ç3c): no list beside it. */}
+        <section
+          aria-label="Sıradakiler"
+          hidden={state.kind === "evening"}
+          className="flex min-w-0 flex-col gap-3 lg:col-span-2"
+        >
           <h2 className="text-muted-foreground text-xs font-medium tracking-widest uppercase">
             Sıradakiler
           </h2>
