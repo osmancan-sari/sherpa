@@ -414,13 +414,13 @@ Giriş ucuna gelen, anahtarı doğrulanmış isteklerin kaydı. Hız sınırı v
 ```
 token_id -> device_tokens
 source text, kind text        -- 'core', 'wake'
-idempotency_key text null     -- isteğin `Idempotency-Key` başlığının SHA-256 özeti (başlık 1–200 görünür ASCII karakter); (token_id, idempotency_key) tekil
+idempotency_key text null     -- `<kaynak>/<tür>` ile isteğin `Idempotency-Key` başlığının SHA-256 özeti (başlık 1–200 görünür ASCII karakter); (token_id, idempotency_key) tekil: aynı anahtar başka türe gelirse başka istektir
 status enum(processing, done, rejected, failed)
 http_status int
 error text null               -- hatanın adı ('invalid_body: at', 'forbidden'); gövde ve anahtar yazılmaz
 finished_at timestamptz null
 ```
-Kayıt sunucuda, kullanıcı adına yazılır. Hata veren (`failed`) isteğin `idempotency_key`'i boşaltılır: aynı anahtarla yeniden denenebilir.
+Kayıt sunucuda, kullanıcı adına yazılır. İşlenemeyen isteğin (`failed`, ya da işleyicinin reddettiği `rejected`) `idempotency_key`'i boşaltılır: aynı anahtarla yeniden denenebilir. 5 dakikadan uzun `processing` kalan istek kesilmiş sayılır (`failed`, `abandoned`).
 
 ### job_runs (Ç3d)
 Zamanlanmış işlerin her çalışması (`docs/02-mimari.md`, "Zamanlanmış işler").

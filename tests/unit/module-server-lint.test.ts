@@ -67,6 +67,25 @@ describe("a module's server code", () => {
     for (const file of SERVER_FILES) expect(await problems(code, file), file).toEqual([]);
   });
 
+  it("imports inside the module only server code: no helper as a back door (phase audit)", async () => {
+    const restricted = async (code: string, file: string) =>
+      (await problems(code, file)).some((problem) => problem.startsWith("no-restricted-imports"));
+    const use = (from: string) => `import { x } from "${from}";\nexport const y = x;\n`;
+    for (const from of ["./helper", "./scene", "./subject", "./extract", "../okul/rules"]) {
+      expect(await restricted(use(from), "src/modules/ornek/jobs.ts"), from).toBe(true);
+    }
+    for (const from of ["./rules", "./queries", "./ingest", "./server/ninova"]) {
+      expect(await restricted(use(from), "src/modules/ornek/jobs.ts"), from).toBe(false);
+    }
+    // Inside server/: its own files, and the module's server files above it.
+    for (const from of ["./parse", "../rules", "../queries"]) {
+      expect(await restricted(use(from), "src/modules/ornek/server/ninova.ts"), from).toBe(false);
+    }
+    for (const from of ["../helper", "../components/View", "../scene"]) {
+      expect(await restricted(use(from), "src/modules/ornek/server/ninova.ts"), from).toBe(true);
+    }
+  });
+
   it("leaves the module's screens alone", async () => {
     const code = '"use client";\nimport { useState } from "react";\nexport const x = useState;\n';
     expect(await problems(code, "src/modules/ornek/components/View.tsx")).toEqual([]);

@@ -154,7 +154,10 @@ export async function handleIngest(
     if (key !== null && !IDEMPOTENCY_KEY.test(key)) {
       return log.reject(400, "invalid_idempotency_key");
     }
-    const claim = await log.claim(key === null ? null : await hashToken(key));
+    // The key belongs to this kind: the same key sent to another kind is another request.
+    const claim = await log.claim(
+      key === null ? null : await hashToken(`${scopeOf(source, kind)}\n${key}`),
+    );
     if (claim === "done") {
       await log.write("done", 200, "duplicate");
       return answer(200, { ok: true, duplicate: true }, { "Idempotent-Replayed": "true" });

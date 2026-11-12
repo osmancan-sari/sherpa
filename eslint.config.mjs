@@ -74,13 +74,26 @@ const AI_SDK_SYNTAX = dynamicImports(AI_SDK_ESQUERY, AI_SDK_PATTERN.message);
 // runs on the server (its rules, queries, ingest handlers and jobs) imports nothing made for
 // the browser and touches no browser object. It runs with no screen: in the ingest endpoint and
 // the scheduler.
-const MODULE_SERVER_FILES = [
+const MODULE_SERVER_TOP = [
   "src/modules/*/rules.ts",
   "src/modules/*/queries.ts",
   "src/modules/*/ingest.ts",
   "src/modules/*/jobs.ts",
-  "src/modules/*/server/**/*.ts",
 ];
+const MODULE_SERVER_DIR = ["src/modules/*/server/**/*.ts"];
+// Inside the module, server code imports only server code: the four files and server/. A helper
+// elsewhere in the module would let a browser import in through the back door.
+const SERVER_NEIGHBOURS = "(rules|queries|ingest|jobs)$|server/";
+const MODULE_SERVER_RELATIVE_MESSAGE =
+  'A module\'s server code imports, inside the module, only rules, queries, ingest, jobs and server/ (docs/06-modul-sozlesmesi.md, "Sunucu zemini").';
+const RELATIVE_FROM_TOP = {
+  regex: `^(\\./(?!${SERVER_NEIGHBOURS})|\\.\\./)`,
+  message: MODULE_SERVER_RELATIVE_MESSAGE,
+};
+const RELATIVE_FROM_DIR = {
+  regex: `^\\.\\./(?!${SERVER_NEIGHBOURS})`,
+  message: MODULE_SERVER_RELATIVE_MESSAGE,
+};
 const BROWSER_ONLY = {
   regex:
     "^(react(-dom)?|next/(navigation|link|image|router|dynamic|script)|next-themes|lucide-react|@tanstack/.*|@base-ui/.*|@/components/.*|@/core/(app|ui|voice)|@/lib/supabase/client|(\\.{1,2}/)+(.*/)?components)(/.*)?$",
@@ -130,9 +143,23 @@ const eslintConfig = defineConfig([
     },
   },
   {
-    files: MODULE_SERVER_FILES,
+    files: MODULE_SERVER_TOP,
     rules: {
-      "no-restricted-imports": ["error", { patterns: [AI_SDK_PATTERN, BROWSER_ONLY] }],
+      "no-restricted-imports": [
+        "error",
+        { patterns: [AI_SDK_PATTERN, BROWSER_ONLY, RELATIVE_FROM_TOP] },
+      ],
+      "no-restricted-syntax": ["error", ...AI_SDK_SYNTAX, ...MODULE_SERVER_SYNTAX],
+      "no-restricted-globals": ["error", ...BROWSER_GLOBALS],
+    },
+  },
+  {
+    files: MODULE_SERVER_DIR,
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        { patterns: [AI_SDK_PATTERN, BROWSER_ONLY, RELATIVE_FROM_DIR] },
+      ],
       "no-restricted-syntax": ["error", ...AI_SDK_SYNTAX, ...MODULE_SERVER_SYNTAX],
       "no-restricted-globals": ["error", ...BROWSER_GLOBALS],
     },

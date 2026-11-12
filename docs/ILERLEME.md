@@ -4,9 +4,9 @@ Bu dosyayı Claude Code günceller. Yeni bir oturum yalnızca bu dosyayı ve `pr
 
 ## Durum
 
-- Faz: **Ç3d (Sunucu zemini) sürüyor** (12 Kas 2026). Ç0–Ç3c bitti ve yayında; D1–D4 tamamlandı
-- Adım: 5 (kapanış): `check:full` yeşil (13 Kas 00:03), görüntüler alındı, `sherpa-dev`'e migration'lar gönderildi; faz denetimi
-- Son commit: C3d step 4: scheduled jobs
+- Faz: **Ç3d (Sunucu zemini) bitti** (13 Kas 2026; faz denetimi bir tur, GEÇTİ). Migration'lar `sherpa-dev`'de; `sherpa-prod`, Vercel `CRON_SECRET`, Vault ve `git push` senin onayını bekliyor ("Senden bekleyenler" → Ç3d). Ç0–Ç3c yayında; D1–D4 tamamlandı
+- Adım: 5 (kapanış) bitti; yayın onay bekliyor
+- Son commit: C3d phase audit fixes and the phase report
 
 ### Ç3d planı
 
@@ -19,7 +19,7 @@ Bu dosyayı Claude Code günceller. Yeni bir oturum yalnızca bu dosyayı ve `pr
 | 2 | Sunucuda modül bağlamı: istek öncesi fonksiyon ve `src/core/server/db.ts` (tek yardımcı, dönüşümün doğrulanması), sunucuda olay teslimi, sunucuda `size`; modülün sunucu kodu için lint kuralı; sınırın testleri | bitti (`20261112190922_server_act_as.sql`: `sherpa_pre_request`, `sherpa_acting_user`): `src/core/server/db.ts` (`actAs`, `deviceTokenOwner`), `src/core/server/context.ts` (`serverContext`, `activeModule`, `serverTold`; teklif hemen `size`), `createModuleContext`/`emitEvent`/`tell` için `onProposed` (dinleyicilerin bağlamına da geçer), `eslint.config.mjs` modül sunucu dosyaları kuralı. Testler: `tests/db/server.test.ts` 10 (yalnızca veri yolları açık, dinleyicinin teklifi ve çekirdek olayının sunucu yolu `size`'la; yalnızca sahibin satırları, varsayılan `user_id`, başka hesaba yazamama, `start_session` kullanıcı olarak, bozuk ve enjekte başlık 400, genel anahtar ve kullanıcı oturumunda başlığın etkisizliği, sunucu bağlamında teklif-olay-dinleyici, `size`), `tests/unit/server-boundary.test.ts` 3, `tests/unit/module-server-lint.test.ts` 3. Adım denetimi: GEÇTİ, 2 önemli bulgu düzeltildi ("Verdiğim kararlar") |
 | 3 | Giriş ucu: `ingest_requests`, `/api/ingest/<kaynak>/<tür>` (anahtar, kapsam, şema, `Idempotency-Key`, hız sınırı), `core/wake`, `core/bed`, `core/context`; uyanış ve yatış "son kullanım" sayılır; yatıştan sonra haftanın yeniden kurulmasının veritabanı testi; `deneme/kayit` | bitti (`20261112192519_ingest_requests.sql`): `src/core/server/ingest.ts` (`handleIngest`: sıra 401 → 404 → 403 → 409 → 429 → 413/400 → yineleme → işleyici; kayıt `ingest_requests`'e, anahtar ve gövde hiçbir yere), `core-ingest.ts` (`core/wake`, `core/bed` + haftanın sunucuda tutulması, `core/context` → `core.context_reported`), `plan.ts` (`keepWeekOnServer` = `weekFlow`), rota `src/app/api/ingest/[source]/[kind]/route.ts`, geçitte iki ucun kendi anahtarına bırakılması (`src/proxy.ts`), `lastActivityBefore` uyanışı ve yatışı sayar (önce test), `deneme/kayit` (`src/modules/deneme/ingest.ts`). Testler: `tests/db/ingest.test.ts` 11 (her red durumu, yineleme ve yeniden deneme, hız sınırı, başka hesap, anahtarın hiçbir kayıtta olmaması, üç çekirdek türü; Ç3c'nin iki açık notu: dışarıdan uyanış "geri dönüş"ü kapatır, 00:30 yatışı yarını kısaltıp haftayı sunucuda yeniden kurdurur), `input.test.ts` +1, `tests/e2e/ingest.spec.ts` 2 (oturumsuz cevaplar; açık ekranlar: Bugün'de uyanış, modül sayfasında kayıt, Ayarlar'da son kullanım), `guard.spec.ts` +1; denetim düzeltmelerinde `ingest.test.ts` +7, canlı test `sync.spec.ts`'e taşındı. Adım denetimi: GEÇMEDİ (saate bağlı eski testler; yukarıda), bulgular düzeltildi |
 | 4 | Zamanlanmış işler: `job_runs`, dönemin saf kuralları, `/api/jobs/tick`, çekirdeğin işleri (`core/week`, `core/blocks`, `core/sessions`), `deneme/ozet`, `pg_cron` + Vault, Vercel yedeği | bitti (`20261112200337_jobs.sql`: `job_runs`, `job_users`, `pg_cron` + `pg_net`, `sherpa_tick()`, 15 dakikalık `sherpa-tick`): `src/core/jobs/schedule.ts` (saf: `slotOf`, `dueJobs`, 3 deneme, 30 dk bayatlık), `src/core/server/jobs.ts` (`CORE_JOBS`, `runJobs`: hesap başına kullanıcı adına, (hesap, iş, dönem) tekil talep, hata yeniden denenir; `handleTick`, sabit zamanlı sır karşılaştırması), rota `src/app/api/jobs/tick/route.ts` (GET ve POST), `vercel.json` günlük yedek (UTC 00:20), `deneme/ozet` (`src/modules/deneme/jobs.ts`, güne anahtarlı özet). `sherpa_tick()` elle de sınandı: Vault'ta değerler varken doğru adres ve `Bearer` başlığıyla istek kuyruğa alınıyor, yokken hiçbir şey olmuyor. Testler: `schedule.test.ts` 7, `tests/db/jobs.test.ts` 13 (çekirdeğin ve modülün işleri, dönem başına bir kez, 3 deneme, saatini bekleme ve kaçanı bir kez, aynı anda iki tetik, hesap başına ad ve yalnızca etkin modül, blokların üretilmesi ve cevapsız oturumun kapanması, `deneme` özetinin idempotent olması, uç sırrı, satırların sahibi ve değişmez sütunlar), `tests/e2e/jobs.spec.ts` 1 (uygulama kapalıyken tetik; sırsız 401; GET ikinci kez çalıştırmaz), `guard.spec.ts` +1; denetim düzeltmelerinde `jobs.test.ts` +3. Adım denetimi: GEÇTİ, 3 önemli bulgu düzeltildi |
-| 5 | Kapanış: uçtan uca testler, ekran görüntüleri (`docs/ekran-goruntuleri/c3d/`), `check:full`, faz denetimi, rapor, `c3d-tamam`, yayın (`dev`, `prod`, kod) | |
+| 5 | Kapanış: uçtan uca testler, ekran görüntüleri (`docs/ekran-goruntuleri/c3d/`), `check:full`, faz denetimi, rapor, `c3d-tamam`, yayın (`dev`, `prod`, kod) | bitti: `check:full` yeşil, görüntüler, faz denetimi 1 tur GEÇTİ, rapor; `sherpa-dev` migration'ları gönderildi ve istek öncesi fonksiyon bulutta elle doğrulandı. `sherpa-prod`, Vercel `CRON_SECRET`, Vault, `git push`: onay bekliyor |
 
 ### Ç3c planı
 
@@ -355,7 +355,7 @@ Uygulama kapalıyken çalışan taraf: cihaz anahtarları, oturumsuz giriş ucu,
 
 Ç3c'den devralınanlar: dışarıdan yazılan uyanış ve yatış "son kullanım" sayılır (`lastActivityBefore`; `input.test.ts`, `ingest.test.ts`: dışarıdan uyanış "geri dönüş"ü kapatır); gerçek yatıştan sonra haftanın yeniden kurulmasının veritabanı testi (`ingest.test.ts`: 22:30'da taahhüt, 00:30 yatış `core/bed` ile, yarının kapasitesi 30 dakikadan çok düşer, hafta sunucuda yeniden kurulur).
 
-Testler: 433 birim, 255 veritabanı, 173 uçtan uca (`npm run check:full` yeşil, 13 Kas 00:03). Ekran görüntüleri `docs/ekran-goruntuleri/c3d/` (115 dosya; yeni: `ayarlar-baglantilar`, pano ve telefon). Baktıklarım: Ayarlar → Bağlantılar (pano ve telefon): yeni anahtar bir kez, liste, son kullanım.
+Testler: 434 birim, 256 veritabanı, 173 uçtan uca (`npm run check:full` yeşil, 13 Kas 00:19, faz denetiminin düzeltmelerinden sonra). Ekran görüntüleri `docs/ekran-goruntuleri/c3d/` (115 dosya; yeni: `ayarlar-baglantilar`, pano ve telefon). Baktıklarım: Ayarlar → Bağlantılar (pano ve telefon): yeni anahtar bir kez, liste, son kullanım.
 
 **Giriş ucunun güvenlik sınırları ve onları tutan testler**
 
@@ -386,7 +386,11 @@ Testler: 433 birim, 255 veritabanı, 173 uçtan uca (`npm run check:full` yeşil
 
 **Denetim**
 
-DENETIM_BURAYA
+- Adım denetimi 1 (cihaz anahtarları): GEÇTİ, 3 önemli (Ç1'in saate bağlı bir testi, başka hesabın iptal edememesinin testi, `docs/05`); düzeltildi.
+- Adım denetimi 2 (sunucu bağlamı): GEÇTİ, 2 önemli: `actAs` istemcisinin Auth, Storage ve Realtime yolları gizli anahtarın tam yetkisini taşıyordu (artık yalnızca `from`/`rpc`); dinleyicinin teklifinin sunucuda ölçülmesinin testi. Düzeltildi.
+- Adım denetimi 3 (giriş ucu): GEÇMEDİ. Tek engelleyici 22:30'dan sonra düşen eski uçtan uca testlerdi; kod değil. Önemli: hız sınırı redlerden sonraydı, takılı "işleniyor" anahtarı kilitliyordu, kırılgan iki test. Hepsi düzeltildi; saate bağlı testler için yaklaşım değişti (`roomInTheDay` ve 22:30–24:00 kapısı; aşağıda açık).
+- Adım denetimi 3 düzeltmeleri + 4 (zamanlanmış işler): GEÇTİ, 3 önemli (iki iş testi 00:00–00:30 arasında saate bağlıydı, `.env.example`'ta `CRON_SECRET`, kurulum adımları); düzeltildi.
+- Faz denetimi, 1. tur (`d4ecc45`): GEÇTİ, `check:full` denetçinin koşusunda da yeşil (433 / 255 / 173). Önemli: (1) `sherpa_tick()`'in testi yoktu: Vault boşken `null`, oturumlara ve genel anahtara kapalı, `job_users` yalnızca gizli anahtara (`jobs.test.ts` +1; `cron.job` API'den görünmediği için elle doğrulandı, yerelde ve `sherpa-dev`'e gönderimde); (2) lint yalnızca doğrudan içe aktarmaya bakıyordu, `jobs.ts` → `./yardimci` → `react` geçerdi: modülün sunucu dosyaları modül içinde artık yalnızca `rules`, `queries`, `ingest`, `jobs`, `server/` içe aktarır (`module-server-lint.test.ts` +1); (3) 22:30–24:00 kapısı açık kalıyor (Ç4); (4) kayıt özetleri güncellendi. Notlar: yineleme anahtarı artık türe bağlı (özete `<kaynak>/<tür>` girer; testli); hız sınırının sayıp sonra yazması `docs/02`'de; `docs/06` hata iletisinin nereye yazıldığı ve `docs/03` anahtarın ne zaman boşaltıldığı koda uyduruldu; telefonda Bağlantılar satırlarının dizilişi ve adresin bölünmesi Ç4 cilasına (aşağıda).
 
 **Sonraki faz (Ç3e) için notlar**
 
@@ -394,6 +398,8 @@ DENETIM_BURAYA
 - `core.context_reported` yayınlanıyor ama ekranlar kullanmıyor (Fikirler).
 - `onOutcome`, `onActivate`, modül sorusunun cevabı sunucudan çağrılmıyor; çağrılırsa bağlamlarına `onProposed` geçirilmeli.
 - Ç3e oturum olaylarına `facet` ekleyecek: sunucuda yayınlanan olaylar da aynı yükü taşımalı (`session-events.ts` tek yer).
+- Ç4 cilası: telefonda Bağlantılar satırlarında "İptal et" bazen sağda bazen altta, uzun adres kelime ortasından bölünüyor, "+" düğmesi kartın kenarına biniyor; Bağlantılar'ın açık tema görüntüsü yok.
+- `deneme/ozet`'in Next üzerinden çalışması yalnızca 05:00'ten sonraki koşularda görünür (uçtan uca test saate göre bekler).
 
 ### Ç3c: Sahne ve günün çerçevesi (12 Kas 2026)
 
@@ -525,7 +531,7 @@ Testler: 413 birim, 207 veritabanı, 166 uçtan uca (`npm run check:full` yeşil
 
 ## Sıradaki adım
 
-Ç3c bitti ve yayında; kalan elle denemeler "Senden bekleyenler" → Ç3c'de. Sıradaki faz **Ç3d (Sunucu zemini)**, yeni oturumda: istem `prompts/c3d-sunucu-zemini.md`, etiket `c3d-tamam`.
+Ç3d bitti (`c3d-tamam`); üretime çıkışı senin onayını bekliyor ("Senden bekleyenler" → Ç3d). Sıradaki faz **Ç3e (Modülün bölümleri)**, yeni oturumda: istem `prompts/c3e-modul-bolumleri.md`, etiket `c3e-tamam`.
 
 **Sıra (kullanıcının kararı, 12 Kas 2026): Ç3c → Ç3d → Ç3e → Ç4.** Modüller tasarlanmadan önce altyapı üç katmana hazır olmalı (`docs/12-sahne-ve-otomasyon.md`, "Neden").
 

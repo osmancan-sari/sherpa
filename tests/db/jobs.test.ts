@@ -2,7 +2,17 @@ import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import type { AiConfig } from "@/core/ai/types";
 import type { ModuleDefinition, ModuleRegistry } from "@/core/contract/types";
 import { jobs as denemeJobs } from "@/modules/deneme/jobs";
-import { adminDb, makeModule, ok, ownerDb, ownerId, strangerDb, strangerId, wipe } from "./helpers";
+import {
+  adminDb,
+  anonDb,
+  makeModule,
+  ok,
+  ownerDb,
+  ownerId,
+  strangerDb,
+  strangerId,
+  wipe,
+} from "./helpers";
 
 // Scheduled jobs (Ç3d; docs/02-mimari.md "Zamanlanmış işler"): the tick runs what is due, for
 // each account in its own name, once per period; a failing job is tried again at most three
@@ -315,6 +325,27 @@ describe("the tick endpoint", () => {
     } finally {
       process.env.CRON_SECRET = previous;
     }
+  });
+});
+
+describe("the database's trigger (phase audit)", () => {
+  it("sends nothing while Vault holds no address, and is the server's alone", async () => {
+    // pg_cron runs this every 15 minutes (migration 20261112200337_jobs.sql). Without the app's
+    // address and the secret in Vault (the local stack, a project not set up) it does nothing.
+    const quiet = await adminDb().rpc("sherpa_tick");
+    expect(quiet.error).toBeNull();
+    expect(quiet.data).toBeNull();
+    for (const db of [owner, stranger, anonDb()]) {
+      const { error } = await db.rpc("sherpa_tick");
+      expect(error?.message).toMatch(/permission denied/);
+    }
+    // Which accounts the jobs run for: the secret key's question only.
+    for (const db of [owner, anonDb()]) {
+      const { error } = await db.rpc("job_users");
+      expect(error?.message).toMatch(/permission denied/);
+    }
+    const users = ok(await adminDb().rpc("job_users"));
+    expect(users).toEqual(expect.arrayContaining([ownerId(), strangerId()]));
   });
 });
 

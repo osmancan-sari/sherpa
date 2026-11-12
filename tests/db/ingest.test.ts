@@ -285,6 +285,11 @@ describe("the ingest endpoint handles", () => {
     });
     expect(theirs.status).toBe(200);
     expect(seen).toHaveLength(2);
+    // So is the same key sent to another kind (phase audit): handled, not a "duplicate".
+    expect(await call({ path: "sinama/bozuk", token, body: {}, key: "k-1" })).toEqual({
+      status: 200,
+      body: { ok: true },
+    });
 
     // While the first is still running, the repeat waits.
     const [tokenRow] = ok(
@@ -297,7 +302,7 @@ describe("the ingest endpoint handles", () => {
           token_id: tokenRow.id,
           source: "sinama",
           kind: "kayit",
-          idempotency_key: await hashToken("k-2"),
+          idempotency_key: await hashToken("sinama/kayit\nk-2"),
           status: "processing",
           http_status: 102,
         })
@@ -507,7 +512,7 @@ describe("the ingest endpoint's edges (Ç3d step 3 audit)", () => {
     await makeModule(owner);
     const token = await tokenWith(["sinama/kayit"]);
     const [tokenRow] = ok(await owner.from("device_tokens").select("id"));
-    const digest = await hashToken("k-uzun");
+    const digest = await hashToken("sinama/kayit\nk-uzun");
     const stamp = (minutesAgo: number) => new Date(Date.now() - minutesAgo * 60_000).toISOString();
     const [recent] = ok(
       await adminDb()
