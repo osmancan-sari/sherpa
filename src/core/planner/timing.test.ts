@@ -463,6 +463,28 @@ describe("conflicts", () => {
     expect(plan.warnings.map((row) => row.kind)).toEqual(["deadline", "no_time_today"]);
   });
 
+  it("the week's committed work with no time left this week shows on the day, after no time today", () => {
+    const early = workItem({
+      title: "Erken",
+      effort_total_minutes: 60,
+      timing: { windows: [{ from: "06:00", to: "07:30" }] },
+    });
+    const bank = timed(
+      { windows: [{ from: "09:00", to: "12:00" }] },
+      { title: "Banka", due_at: iso("19:00") },
+    );
+    const plan = buildPlan(
+      input({ now: at("14:00"), workItems: [early], tasks: [bank], committed: [early.id] }),
+    );
+    expect(plan.warnings.map((row) => row.text)).toEqual([
+      "Bugün uygun saat kalmadı: Banka.",
+      "Bu hafta uygun saat yok: Erken.",
+    ]);
+    // Not committed and not due this week: no warning.
+    const loose = buildPlan(input({ workItems: [early], committed: [] }));
+    expect(loose.warnings).toEqual([]);
+  });
+
   it("the AI may not plan work outside its window: the advice is dropped and said", () => {
     const monday = timed(
       { windows: [{ days: [1], from: "09:00", to: "17:00" }] },

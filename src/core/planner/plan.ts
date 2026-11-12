@@ -12,6 +12,7 @@ import {
 } from "./candidates";
 import { buildSlots, capacityFactor, kindOf, slotMinutes } from "./slots";
 import { allowedOn, betterState, TIME_FACTOR, type TimeState, timeState } from "./timing";
+import { weekNoTime } from "./week";
 import type { Assignment, Candidate, NowState, Plan, PlanInput, Slot, Warning } from "./types";
 
 // The day plan (docs/04-planlayici.md, "Gün nasıl kurulur"): slots, capacity, the mandatory
@@ -614,6 +615,30 @@ function warningsOf(
       kind: "no_time_today",
       subjectId: candidate.id,
       text: `Bugün uygun saat kalmadı: ${candidate.title}.`,
+    });
+  }
+
+  // The week's committed or due work, and floors, whose windows the rest of the week cannot
+  // hold (rule 8).
+  const week = weekNoTime({
+    now: input.now > input.dayStart ? input.now : input.dayStart,
+    weekStart: input.date,
+    items: input.workItems,
+    tasks: input.tasks,
+    rhythms: input.rhythms,
+    modules: input.modules,
+    blocks: input.blocks,
+    settings: input.settings,
+    stats: input.stats,
+    lifeMode: input.lifeMode,
+    committed: input.committed ?? null,
+  });
+  for (const row of week) {
+    if (warnings.some((warning) => warning.subjectId === row.id)) continue;
+    warnings.push({
+      kind: "no_time_week",
+      subjectId: row.id,
+      text: `Bu hafta uygun saat yok: ${row.title}.`,
     });
   }
 

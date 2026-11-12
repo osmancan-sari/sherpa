@@ -5,8 +5,8 @@ Bu dosyayı Claude Code günceller. Yeni bir oturum yalnızca bu dosyayı ve `pr
 ## Durum
 
 - Faz: **Ç3b (Zaman kısıtları) sürüyor** (12 Kas 2026; istem `prompts/c3b-zaman-kisitlari.md`). Ç0–Ç3 bitti; D1–D4 tamamlandı
-- Adım: 3 (hafta yükü ve uyarılar)
-- Son commit: Ç3b adım 2 (planlayıcı motoru)
+- Adım: 4 (yapay zeka)
+- Son commit: Ç3b adım 3 (hafta yükü ve uyarılar)
 
 ### Ç3b planı
 
@@ -16,7 +16,7 @@ Her adımın sonunda `npm run check` ve commit; 1., 2. ve 4. adımdan sonra dene
 | --- | --- | --- |
 | 1 | Şema ve zarf: migration (`work_items`, `tasks`, `rhythms` → `timing jsonb`, yalnızca nesne denetimi), tipler, `timing` şeması ve doğrulaması (`src/core/contract/timing.ts`), biçime göre izinli alanlar, alt alan başına `provenance` (`timing.windows` …), sabit zaman biçiminde `travel` → bloğun yol sütunları, formun aynı şemadan geçmesi; veritabanı ve zarf testleri | bitti (`20261112091939_timing.sql`). Testler: `timing.test.ts` 14, `tests/db/envelope.test.ts` +4, `constraints.test.ts` +1 |
 | 2 | Planlayıcı motoru: önce `docs/04` Ç3b test listesinin tamamı, sonra kod (zaman süzgeci, ayak izi ve yol, bağlam ve yol, tercih ve kaçınma çarpanı, bekletme, dinlenme günü, aciliyet ve ulaşılabilir sayı, `pickForMinutes`, öneri reddi) | bitti: `src/core/planner/timing.ts`, `candidates.ts` (`candidatesOf`: bugün kapalı iş ayrı), `plan.ts` (`spotAt`, `placeAt`). Testler: `src/core/planner/timing.test.ts` 30 (hafta uyarısı 3. adımda); Ç3 testleri değişmedi. Yorumlar `docs/04` "Uygulama notları (Ç3b)" |
-| 3 | Hafta yükü ve uyarılar: `loadByWeek` yol talebi, "Bugün uygun saat kalmadı", "Bu hafta uygun saat yok", uyarı önceliği | bekliyor |
+| 3 | Hafta yükü ve uyarılar: `loadByWeek` yol talebi, "Bugün uygun saat kalmadı", "Bu hafta uygun saat yok", uyarı önceliği | bitti: `loadByWeek` ve `fixedDemand` oturum başına yolu ekler; `weekNoTime` (`src/core/planner/week.ts`) haftanın kalan günlerinde pencere içinde bir ayak izine yer olup olmadığına bakar (boş aralık × pencere; yol pencere dışına düşebilir); günün uyarılarında "Bugün uygun saat kalmadı"dan hemen sonra. Testler: `week.test.ts` +4, `timing.test.ts` +1 |
 | 4 | Yapay zeka: `enrich` şeması ve istemi (yalnızca açıkça yazılan), planlama girdisinde kısıt özeti, sahte sağlayıcı, `ai:eval` örnekleri | bekliyor |
 | 5 | Arayüz: formlarda "Zaman" bölümü, zaman çizelgesinde yol, kartta ve Sıradakiler'de yol, uyarılar; `deneme` modülünde `timing`'in her alanını kullanan kayıt türü; örnek veride kısıtlı işler | bekliyor |
 | 6 | Kapanış: uçtan uca testler, ekran görüntüleri (`docs/ekran-goruntuleri/c3b/`), `check:full`, faz denetimi, faz raporu, `c3b-tamam` | bekliyor |

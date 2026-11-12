@@ -1,8 +1,11 @@
 import type { Block, LifeMode, ModuleRow, Rhythm, Task, WorkItem } from "@/core/types";
 import { isBlocked } from "@/core/today/select";
 import { dayKey, istanbulInstant, shiftDay, weekStart } from "@/lib/date";
+import { nextSessionMinutes } from "@/core/contract/envelope";
+import { readTiming, type Timing } from "@/core/contract/timing";
 import { moduleWeight, rhythmTarget, weeklyFloor } from "./candidates";
-import { dayCapacity } from "./slots";
+import { busyRanges, dayCapacity, freeRanges } from "./slots";
+import { allowedOn } from "./timing";
 import type { PlannerSettings, PlannerStat, WeekShare } from "./types";
 
 // The far horizons (docs/04-planlayici.md, "Plan ufukları"): week by week demand and capacity,
@@ -146,7 +149,8 @@ export function fixedDemand(
         : rhythm.period === "week"
           ? target * (daysInWeek / 7)
           : (target * daysInWeek) / 30;
-    rhythms += perWeek * rhythm.est_minutes;
+    // Each doing brings its travel along (docs/04-planlayici.md, "Zaman kısıtları", rule 8).
+    rhythms += perWeek * (rhythm.est_minutes + travelMinutes(readTiming(rhythm.timing)));
   }
   const floor = mod.kind === "lifelong" ? weeklyFloor(mod, mode) * (daysInWeek / 7) : 0;
   return Math.max(rhythms, floor);
@@ -192,8 +196,14 @@ export function loadByWeek(input: LoadInput, range: WeekRange): WeekLoad[] {
       until
         ? weekCapacity(w, input.now, input.blocks, input.settings, input.stats, until)
         : (capacity.get(w) ?? 0);
+    // Each sitting of the share brings its travel along.
+    const travel = travelMinutes(readTiming(item.timing));
+    const sitting = Math.min(
+      SITTING_MAX,
+      Math.max(SITTING_MIN, item.session_minutes ?? SITTING_DEFAULT),
+    );
     for (const [week, minutes] of spreadItem(item, weeks, capacityOf, input.now)) {
-      add(week, item.module_id, minutes);
+      add(week, item.module_id, minutes + (travel > 0 ? (minutes / sitting) * travel : 0));
     }
   }
   for (const mod of input.modules) {
@@ -252,6 +262,81 @@ export function loadByWeek(input: LoadInput, range: WeekRange): WeekLoad[] {
     load.over = load.demandMinutes > load.capacityMinutes;
     return load;
   });
+}
+
+/** Travel before and after one doing of the work, in minutes. */
+export function travelMinutes(timing: Timing | null): number {
+  return (timing?.travel?.before ?? 0) + (timing?.travel?.after ?? 0);
+}
+
+export type NoTime = { id: string; title: string; moduleId: string };
+
+/**
+ * Work the week cannot hold for its windows (docs/04-planlayici.md, "Zaman kısıtları", rule 8):
+ * a committed item, or one due this week, or a rhythm with a floor, whose windows in the rest
+ * of the week leave no free stretch for one footprint (travel may lie outside the window, not
+ * outside the free time). "Bu hafta uygun saat yok".
+ */
+export function weekNoTime(input: WeekInput & { committed: string[] | null }): NoTime[] {
+  const week = weekStart(input.weekStart);
+  const weekEnd = istanbulInstant(shiftDay(week, 7)).getTime();
+  const mode = modeOf(input, week);
+  const active = new Set(
+    input.modules.filter((mod) => mod.status === "active").map((mod) => mod.id),
+  );
+  const committed = new Set(input.committed ?? []);
+  const today = dayKey(input.now);
+  const days: string[] = [];
+  for (let index = 0; index < 7; index++) {
+    const day = shiftDay(week, index);
+    if (day >= today) days.push(day);
+  }
+  const busy = busyRanges(input.blocks);
+  const free = new Map(
+    days.map((day) => {
+      const start = Math.max(
+        input.now.getTime(),
+        istanbulInstant(day, input.settings.dayStart).getTime(),
+      );
+      const end = istanbulInstant(day, input.settings.finishLine).getTime();
+      return [day, end > start ? freeRanges({ start, end }, busy, 0) : []];
+    }),
+  );
+  const holds = (timing: Timing, minutes: number) => {
+    const before = (timing.travel?.before ?? 0) * 60_000;
+    const after = (timing.travel?.after ?? 0) * 60_000;
+    return days.some((day) =>
+      (allowedOn(timing, day) ?? []).some((window) =>
+        free.get(day)!.some((range) => {
+          const workStart = Math.max(range.start + before, window.start);
+          const workEnd = workStart + minutes * 60_000;
+          return workEnd <= window.end && workEnd + after <= range.end;
+        }),
+      ),
+    );
+  };
+
+  const found: NoTime[] = [];
+  for (const item of plannableItems(input.items, active)) {
+    const timing = readTiming(item.timing);
+    if (!timing?.windows || remainingEffort(item) <= 0) continue;
+    const due = item.due_at !== null && Date.parse(item.due_at) < weekEnd;
+    if (!committed.has(item.id) && !due) continue;
+    if (!holds(timing, nextSessionMinutes(item))) {
+      found.push({ id: item.id, title: item.title, moduleId: item.module_id });
+    }
+  }
+  if (mode !== "holiday") {
+    for (const rhythm of input.rhythms) {
+      if (!rhythm.active || !active.has(rhythm.module_id) || rhythm.floor_count <= 0) continue;
+      const timing = readTiming(rhythm.timing);
+      if (!timing?.windows) continue;
+      if (!holds(timing, rhythm.est_minutes)) {
+        found.push({ id: rhythm.id, title: rhythm.title, moduleId: rhythm.module_id });
+      }
+    }
+  }
+  return found;
 }
 
 function daysBetweenKeys(from: string, to: string): number {

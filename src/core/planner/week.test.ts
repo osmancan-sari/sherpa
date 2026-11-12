@@ -13,6 +13,7 @@ import {
   appendable,
   missingSittings,
   weekAction,
+  weekNoTime,
 } from "./week";
 
 // The far horizons (docs/04-planlayici.md, "Plan ufukları", "Test kapsamı").
@@ -425,5 +426,99 @@ describe("the deadline's week", () => {
     const plan = commitWeek({ ...week({ items: [item] }), now: at(friday, "10:00") });
     // Friday to Sunday hold far more than Monday's first two hours.
     expect(plan.committed[0].minutes).toBeGreaterThan(250);
+  });
+});
+
+describe("time constraints in the week (Ç3b)", () => {
+  const travel = { travel: { before: 20, after: 20 } };
+
+  it("adds each sitting's travel to the demand", () => {
+    const walk = rhythm({ target_count: 3, est_minutes: 30, period: "week" });
+    const gym = rhythm({ ...walk, id: walk.id, timing: travel });
+    const plain = loadByWeek(load({ rhythms: [walk] }), { from: MONDAY, weeks: 1 });
+    const withTravel = loadByWeek(load({ rhythms: [gym] }), { from: MONDAY, weeks: 1 });
+    expect(plain[0].demandMinutes).toBe(90);
+    expect(withTravel[0].demandMinutes).toBe(210);
+    // An item due this week: 90 minutes in sittings of 45, two trips.
+    const item = workItem({
+      effort_total_minutes: 90,
+      session_minutes: 45,
+      due_at: due(shiftDay(MONDAY, 6)),
+      timing: travel,
+    });
+    expect(loadByWeek(load({ items: [item] }), { from: MONDAY, weeks: 1 })[0].demandMinutes).toBe(
+      170,
+    );
+  });
+
+  it("says when a committed or due item's windows hold no footprint in the rest of the week", () => {
+    const early = workItem({
+      title: "Erken",
+      effort_total_minutes: 60,
+      timing: { windows: [{ from: "06:00", to: "07:30" }] },
+    });
+    const weekend = workItem({
+      title: "Hafta sonu",
+      effort_total_minutes: 60,
+      timing: { windows: [{ days: [6, 7], from: "10:00", to: "12:00" }] },
+    });
+    // Tuesday 10–12 only, and Tuesday is taken by a block.
+    const tuesday = workItem({
+      title: "Salı",
+      effort_total_minutes: 60,
+      due_at: due(shiftDay(MONDAY, 3)),
+      timing: { windows: [{ days: [2], from: "10:00", to: "12:00" }] },
+    });
+    const notCommitted = workItem({
+      title: "Bekleyen",
+      effort_total_minutes: 60,
+      timing: { windows: [{ from: "06:00", to: "07:30" }] },
+    });
+    const result = weekNoTime({
+      ...week({
+        items: [early, weekend, tuesday, notCommitted],
+        blocks: [fullDay(shiftDay(MONDAY, 1))],
+      }),
+      committed: [early.id, weekend.id],
+    });
+    expect(result.map((row) => row.title)).toEqual(["Erken", "Salı"]);
+  });
+
+  it("counts the travel in the footprint, and the time already gone", () => {
+    // The window holds 60 minutes: the 45 of work fit, the travel lies outside the window.
+    const trip = workItem({
+      title: "Yol",
+      effort_total_minutes: 45,
+      session_minutes: 45,
+      timing: { windows: [{ days: [1], from: "17:00", to: "18:00" }], ...travel },
+    });
+    const short = workItem({
+      title: "Kısa",
+      effort_total_minutes: 45,
+      session_minutes: 45,
+      timing: { windows: [{ days: [1], from: "17:00", to: "18:00" }] },
+    });
+    expect(weekNoTime({ ...week({ items: [trip] }), committed: [trip.id] })).toHaveLength(0);
+    // Monday 17:30: the window has 30 minutes left, no other day has one.
+    expect(
+      weekNoTime({ ...week({ items: [short], now: at(MONDAY, "17:30") }), committed: [short.id] }),
+    ).toHaveLength(1);
+  });
+
+  it("a rhythm with a floor counts too", () => {
+    const yoga = rhythm({
+      title: "Yoga",
+      floor_count: 1,
+      est_minutes: 30,
+      timing: { windows: [{ from: "05:00", to: "06:00" }] },
+    });
+    const free = rhythm({
+      title: "Serbest",
+      est_minutes: 30,
+      timing: { windows: [{ from: "05:00", to: "06:00" }] },
+    });
+    expect(weekNoTime({ ...week({ rhythms: [yoga, free] }), committed: [] })).toEqual([
+      expect.objectContaining({ id: yoga.id, title: "Yoga" }),
+    ]);
   });
 });
