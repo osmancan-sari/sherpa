@@ -36,7 +36,10 @@ describe("the server boundary", () => {
   });
 
   it("is imported by the server's own code only: its routes and itself", () => {
-    const importers = files.filter((file) => /from "@\/core\/server\//.test(file.text));
+    // The alias, a relative path into src/core/server, or a dynamic import of either.
+    const importers = files.filter((file) =>
+      /(from |import\()["'](@\/core\/server\/|(\.{1,2}\/)+(core\/)?server\/)/.test(file.text),
+    );
     for (const file of importers) {
       expect(
         file.path.startsWith("src/core/server/") || file.path.startsWith("src/app/api/"),

@@ -37,6 +37,10 @@ begin
 end;
 $$;
 
+-- Execute stays open to every role on purpose (unlike the other functions here): PostgREST runs
+-- it as the request's own role (anon, authenticated, service_role) before every request, and
+-- revoking it would break the whole Data API. Called directly it does nothing for those roles.
+
 alter role authenticator set pgrst.db_pre_request = 'public.sherpa_pre_request';
 notify pgrst, 'reload config';
 

@@ -1,5 +1,5 @@
 import "server-only";
-import { sizeRequestFor } from "@/core/ai/client";
+import { sizeRequestFor } from "@/core/ai/flows/scope";
 import type { AiConfig } from "@/core/ai/types";
 import { sizeWorkItem } from "@/core/ai/flows/size";
 import type {

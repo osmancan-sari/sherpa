@@ -1,6 +1,8 @@
 import type { ProposalResult } from "@/core/contract/types";
 import type { EnrichOutcome } from "./flows/enrich-apply";
-import { SCOPE_FIELDS } from "./flows/scope";
+import { sizeRequestFor } from "./flows/scope";
+
+export { sizeRequestFor };
 
 // The browser's side of the AI routes. Every request is fire-and-forget for the screen: the
 // work is already saved and shown, the answer arrives through the live connection, and a
@@ -21,19 +23,6 @@ export async function postAi<T = unknown>(call: AiCallName, body: unknown): Prom
   } catch {
     return null;
   }
-}
-
-/**
- * After a module's proposal: a new work item, or one whose scope may have changed, is worth
- * asking about. Only a trigger: the server decides from the data what (if anything) to
- * estimate; most proposals need nothing. Pure.
- */
-export function sizeRequestFor(result: ProposalResult): { id: string } | null {
-  if (result.target !== "work_item") return null;
-  if (!result.created && !result.changed.some((field) => SCOPE_FIELDS.includes(field))) {
-    return null;
-  }
-  return { id: result.id };
 }
 
 export function sizeAfterProposal(result: ProposalResult): Promise<unknown> | null {

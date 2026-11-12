@@ -7,6 +7,7 @@ import type { ModuleDefinition, ModuleRegistry, WorkProposal } from "@/core/cont
 import { createTask } from "@/core/data/work";
 import { startSession } from "@/core/data/sessions";
 import { createDeviceToken, hashToken } from "@/core/data/tokens";
+import { tellDayStarted } from "@/core/data/session-events";
 import type { Database } from "@/lib/supabase/database.types";
 import {
   adminDb,
@@ -27,7 +28,7 @@ import {
 
 vi.mock("server-only", () => ({}));
 const { actAs, ActAsError, deviceTokenOwner } = await import("@/core/server/db");
-const { activeModule, serverContext } = await import("@/core/server/context");
+const { activeModule, serverContext, serverTold } = await import("@/core/server/context");
 
 const owner = ownerDb();
 const stranger = strangerDb();
@@ -130,6 +131,17 @@ describe("the server in a user's name", () => {
     expect(ok(await disguised.from("tasks").select("id"))).toEqual([]);
   });
 
+  it("opens the Data API only: no Auth, Storage, Realtime or Functions with the key", async () => {
+    const db = await actAs(ownerId());
+    for (const part of ["auth", "storage", "channel", "functions", "schema", "realtime"]) {
+      expect((db as unknown as Record<string, unknown>)[part], part).toBeUndefined();
+    }
+    expect(() => db.auth.admin.listUsers()).toThrow(TypeError);
+    // What the data layer uses still works.
+    expect(ok(await db.from("tasks").select("id"))).toEqual([]);
+    expect(ok(await db.rpc("sherpa_acting_user"))).toBe(ownerId());
+  });
+
   it("names a token's owner from its digest, and nobody for anything else", async () => {
     const { token } = await createDeviceToken(owner, {
       name: "Kestirmeler",
@@ -159,6 +171,10 @@ describe("the module context on the server", () => {
       "sinama.kayit_eklendi": async (event, ctx) => {
         heard.push(ctx.module.user_id);
         await ctx.saveSettings({ heard: (event.payload as { n: number }).n });
+      },
+      // The core's day event, told on the server: the listener proposes work.
+      "core.day_started": async (_event, ctx) => {
+        await ctx.propose({ ...proposal, key: "gun:1", title: "Günün işi" });
       },
     },
     modeBehavior: {
@@ -220,7 +236,12 @@ describe("the module context on the server", () => {
     const rows = ok(await adminDb().from("modules").select("id, settings").order("created_at"));
     expect(rows.find((row) => row.id === mine.id)?.settings).toEqual({ heard: 7 });
     expect(rows.find((row) => row.id === theirs.id)?.settings).toEqual({});
-    const events = ok(await adminDb().from("events").select("user_id, type"));
+    const events = ok(
+      await adminDb()
+        .from("events")
+        .select("user_id, type")
+        .in("user_id", [ownerId(), strangerId()]),
+    );
     expect(events).toEqual([{ user_id: ownerId(), type: "sinama.kayit_eklendi" }]);
   });
 
@@ -237,7 +258,44 @@ describe("the module context on the server", () => {
     // When propose resolves, the AI's estimate is already written (not the bounds' middle).
     const item = ok(await adminDb().from("work_items").select("*").eq("id", id).single());
     expect((item.provenance as Record<string, string>).effort_total_minutes).toBe("ai");
-    const calls = ok(await adminDb().from("ai_calls").select("kind, user_id"));
+    const calls = ok(
+      await adminDb()
+        .from("ai_calls")
+        .select("kind, user_id")
+        .in("user_id", [ownerId(), strangerId()]),
+    );
     expect(calls).toEqual([{ kind: "size", user_id: ownerId() }]);
+  });
+
+  it("sizes what a listener proposes too, for a module's event and for the core's", async () => {
+    const mine = await makeModule(owner);
+    const db = await actAs(ownerId());
+    const ai: AiConfig = {
+      provider: fakeProvider(),
+      models: { fast: "fake-fast", plan: "fake-plan" },
+      timeouts: { fast: 2_000, plan: 2_000 },
+    };
+    const deps = { db, registry, now: () => new Date(), ai };
+    // The core's event on the server (the ingest endpoint's path): heard, and its work sized.
+    await tellDayStarted(serverTold(deps), {
+      date: "2026-11-12",
+      wokeAt: "2026-11-12T07:00:00+03:00",
+      estimated: false,
+    });
+    const item = ok(
+      await adminDb().from("work_items").select("*").eq("module_id", mine.id).single(),
+    );
+    expect(item).toMatchObject({ title: "Günün işi", user_id: ownerId() });
+    expect((item.provenance as Record<string, string>).effort_total_minutes).toBe("ai");
+    const events = ok(
+      await adminDb()
+        .from("events")
+        .select("type, user_id")
+        .in("user_id", [ownerId(), strangerId()]),
+    );
+    expect(events).toEqual([{ type: "core.day_started", user_id: ownerId() }]);
+    expect(
+      ok(await adminDb().from("ai_calls").select("kind").in("user_id", [ownerId(), strangerId()])),
+    ).toEqual([{ kind: "size" }]);
   });
 });

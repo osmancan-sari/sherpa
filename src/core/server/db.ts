@@ -33,8 +33,29 @@ function serviceClient(headers: Record<string, string> = {}): Db {
 export class ActAsError extends Error {}
 
 /**
- * A database client in the user's name: their rows only, exactly as their browser sees them.
- * Throws when the database did not take the request as the user.
+ * Only the Data API is switched to the user (PostgREST's pre-request function); Auth, Storage,
+ * Realtime and Edge Functions would still see the secret key's full rights. The client handed
+ * out therefore opens the Data API alone: `from` and `rpc`. Everything else (`auth`, `storage`,
+ * `channel`, `functions`, `schema`…) is not there (Ç3d step 2 audit).
+ */
+const DATA_API = new Set(["from", "rpc"]);
+
+function dataApiOnly(client: Db): Db {
+  return new Proxy(client, {
+    get(target, property) {
+      if (typeof property !== "string" || !DATA_API.has(property)) return undefined;
+      const value = Reflect.get(target, property, target) as (...args: unknown[]) => unknown;
+      return value.bind(target);
+    },
+    set: () => false,
+  });
+}
+
+/**
+ * A database client in the user's name: their rows only, exactly as their browser sees them,
+ * and nothing but the Data API. Throws when the database did not take the request as the user.
+ * The id is taken as given (a token's owner, an account the jobs run for): an id with no
+ * account behind it sees no rows and can write none.
  */
 export async function actAs(userId: string): Promise<Db> {
   if (!USER_ID.test(userId)) throw new ActAsError("not a user id");
@@ -45,7 +66,7 @@ export async function actAs(userId: string): Promise<Db> {
       "the database did not take the request as the user (is public.sherpa_pre_request set?)",
     );
   }
-  return db;
+  return dataApiOnly(db);
 }
 
 export type TokenOwner = { tokenId: string; userId: string; scopes: string[] };
