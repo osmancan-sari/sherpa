@@ -32,6 +32,7 @@ import {
   type NewWorkItem,
   reopenTask,
   type RhythmEdit,
+  type TaskEdit,
   updateRhythm,
   updateTask,
   updateWorkItem,
@@ -54,7 +55,6 @@ import type {
   WorkItem,
 } from "@/core/types";
 import { dayKey } from "@/lib/date";
-import type { TablesUpdate } from "@/lib/supabase/database.types";
 import { SAVE_FAILED, useNotify } from "@/core/ui/Notices";
 import { useRegistry } from "./CoreProvider";
 import { keys, list, useCoreMutation } from "./hooks";
@@ -258,8 +258,7 @@ export function useCloseWorkItem() {
 export function useEditTask() {
   const onError = useFailureNotice();
   return useCoreMutation({
-    mutate: (db, args: { id: string; patch: TablesUpdate<"tasks"> }) =>
-      updateTask(db, args.id, args.patch),
+    mutate: (db, args: { id: string; patch: TaskEdit }) => updateTask(db, args.id, args.patch),
     optimistic: ({ id, patch }) => [
       { key: keys.tasks, update: list.patch<Task>(id, patch as Partial<Task>) },
     ],

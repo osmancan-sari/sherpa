@@ -1,5 +1,6 @@
 import { currentMark, planCorrections, readMark, saveCorrections } from "@/core/ai/marks";
 import { markUserEdited } from "@/core/contract/envelope";
+import { checkTiming, editTiming, type Timing, TimingError } from "@/core/contract/timing";
 import {
   check,
   type Db,
@@ -60,12 +61,21 @@ export async function createTask(db: Db, task: NewTask): Promise<Task> {
   );
 }
 
-export async function updateTask(db: Db, id: string, patch: TablesUpdate<"tasks">): Promise<Task> {
+export async function updateTask(db: Db, id: string, patch: TaskEdit): Promise<Task> {
+  if (patch.timing !== undefined) {
+    // A task (a job or a sitting) has no rest days; the rest is checked like the envelope.
+    const { timing, issues } = checkTiming(patch.timing, { kind: "task" });
+    if (issues.length > 0) throw new TimingError(issues);
+    patch = { ...patch, timing };
+  }
   const corrected = await correctionsOf(db, "tasks", id, patch);
   const task = unwrap(
     await db
       .from("tasks")
-      .update(corrected ? { ...patch, ai: toJson(corrected.mark) } : patch)
+      .update({
+        ...(patch as TablesUpdate<"tasks">),
+        ...(corrected ? { ai: toJson(corrected.mark) } : {}),
+      })
       .eq("id", id)
       .select()
       .single(),
@@ -73,6 +83,9 @@ export async function updateTask(db: Db, id: string, patch: TablesUpdate<"tasks"
   if (corrected) await saveCorrections(db, corrected.rows);
   return task;
 }
+
+/** A task's columns as the user edits them; `timing` is checked against the envelope's schema. */
+export type TaskEdit = Omit<TablesUpdate<"tasks">, "timing"> & { timing?: Timing | null };
 
 /** Columns the AI may set (enrich on tasks, size on work items). */
 const AI_COLUMNS = new Set([
@@ -205,17 +218,31 @@ export type WorkItemEdit = Partial<
     | "context"
     | "status"
   >
->;
+> & { timing?: Timing | null };
 
 /** The user edits a work item: the edited fields become the user's and survive later proposals. */
 export async function updateWorkItem(db: Db, id: string, edit: WorkItemEdit): Promise<WorkItem> {
-  const current = unwrap(await db.from("work_items").select("provenance").eq("id", id).single());
-  const provenance = markUserEdited(current.provenance as Provenance, Object.keys(edit));
-  const corrected = await correctionsOf(db, "work_items", id, edit);
+  const current = unwrap(
+    await db.from("work_items").select("provenance, timing").eq("id", id).single(),
+  );
+  const { timing: timingEdit, ...rest } = edit;
+  let provenance = markUserEdited(current.provenance as Provenance, Object.keys(rest));
+  const values: Record<string, unknown> = { ...rest };
+  if (timingEdit !== undefined) {
+    // Each changed field of the time constraints becomes the user's on its own.
+    const edited = editTiming(current.timing, timingEdit, { kind: "deadline" }, provenance);
+    provenance = edited.provenance;
+    values.timing = edited.timing;
+  }
+  const corrected = await correctionsOf(db, "work_items", id, rest);
   const item = unwrap(
     await db
       .from("work_items")
-      .update({ ...edit, provenance, ...(corrected ? { ai: toJson(corrected.mark) } : {}) })
+      .update({
+        ...(values as TablesUpdate<"work_items">),
+        provenance,
+        ...(corrected ? { ai: toJson(corrected.mark) } : {}),
+      })
       .eq("id", id)
       .select()
       .single(),
@@ -256,15 +283,39 @@ export async function createRhythm(db: Db, rhythm: NewRhythm): Promise<Rhythm> {
 
 export type RhythmEdit = Partial<
   Pick<Rhythm, "title" | "target_count" | "period" | "floor_count" | "est_minutes" | "active">
->;
+> & { timing?: Timing | null };
 
 export async function updateRhythm(db: Db, id: string, edit: RhythmEdit): Promise<Rhythm> {
-  const current = unwrap(await db.from("rhythms").select("provenance").eq("id", id).single());
-  const provenance = markUserEdited(current.provenance as Provenance, Object.keys(edit));
+  const current = unwrap(
+    await db
+      .from("rhythms")
+      .select("provenance, timing, target_count, period")
+      .eq("id", id)
+      .single(),
+  );
+  const { timing: timingEdit, ...rest } = edit;
+  let provenance = markUserEdited(current.provenance as Provenance, Object.keys(rest));
+  const values: Record<string, unknown> = { ...rest };
+  // The rest days must fit the period, whichever of the two changes.
+  if (timingEdit !== undefined || "target_count" in rest || "period" in rest) {
+    const form = {
+      kind: "recurrence" as const,
+      count: rest.target_count ?? current.target_count,
+      period: rest.period ?? current.period,
+    };
+    const edited = editTiming(
+      current.timing,
+      timingEdit === undefined ? current.timing : timingEdit,
+      form,
+      provenance,
+    );
+    provenance = edited.provenance;
+    if (timingEdit !== undefined) values.timing = edited.timing;
+  }
   return unwrap(
     await db
       .from("rhythms")
-      .update({ ...edit, provenance })
+      .update({ ...(values as TablesUpdate<"rhythms">), provenance })
       .eq("id", id)
       .select()
       .single(),

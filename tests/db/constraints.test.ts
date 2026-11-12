@@ -300,3 +300,36 @@ describe("the planner's columns (Ç3)", () => {
     expect(busy).toMatchObject({ life_mode: "busy", shares: { a: 90 } });
   });
 });
+
+describe("time constraints (Ç3b)", () => {
+  it("keep an object or nothing in work items, tasks and rhythms", async () => {
+    const mod = await makeModule(db);
+    const timing = { windows: [{ from: "16:00", to: "18:00" }] };
+    const item = ok(
+      await db
+        .from("work_items")
+        .insert({ module_id: mod.id, title: "Kalem", timing })
+        .select()
+        .single(),
+    );
+    expect(item.timing).toEqual(timing);
+    const task = ok(
+      await db.from("tasks").insert({ module_id: mod.id, title: "İş" }).select().single(),
+    );
+    expect(task.timing).toBeNull();
+    const rhythm = ok(
+      await db
+        .from("rhythms")
+        .insert({ module_id: mod.id, title: "Spor", target_count: 3, period: "week", timing })
+        .select()
+        .single(),
+    );
+    expect(rhythm.timing).toEqual(timing);
+    for (const table of ["work_items", "tasks", "rhythms"] as const) {
+      for (const bad of [[], "07:00", 5]) {
+        const result = await db.from(table).update({ timing: bad }).eq("module_id", mod.id);
+        expect(result.error?.code).toBe(CHECK);
+      }
+    }
+  });
+});

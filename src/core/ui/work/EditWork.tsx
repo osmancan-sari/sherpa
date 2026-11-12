@@ -11,7 +11,7 @@ import {
   useEditWorkItem,
 } from "@/core/app/actions";
 import { useRhythms } from "@/core/app/hooks";
-import type { RhythmEdit, WorkItemEdit } from "@/core/data/work";
+import type { RhythmEdit, TaskEdit, WorkItemEdit } from "@/core/data/work";
 import { dueAtEndOfDay } from "@/core/intake/parse";
 import type { Candidate } from "@/core/today/select";
 import {
@@ -23,7 +23,6 @@ import {
   type WorkItem,
 } from "@/core/types";
 import { dayKey } from "@/lib/date";
-import type { TablesUpdate } from "@/lib/supabase/database.types";
 import { aiHints } from "../ai/AiMarks";
 import { SplitButton } from "../ai/Splits";
 import { EditDialog, type EditField, type EditValues } from "../EditDialog";
@@ -163,7 +162,7 @@ function TaskEditor({ task, onClose }: { task: Task; onClose: () => void }) {
       hints={aiHints(task, { due_at: "due", est_minutes: "est_minutes", importance: "importance" })}
       onClose={onClose}
       onSave={(changed) => {
-        const patch: TablesUpdate<"tasks"> = {};
+        const patch: TaskEdit = {};
         if ("title" in changed) patch.title = changed.title.trim();
         if ("due" in changed) patch.due_at = changed.due ? dueAtEndOfDay(changed.due) : null;
         if ("est_minutes" in changed) patch.est_minutes = Number(changed.est_minutes);

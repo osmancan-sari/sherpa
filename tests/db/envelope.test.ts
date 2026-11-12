@@ -9,7 +9,8 @@ import { propose, withdraw } from "@/core/data/propose";
 import { cancelBlock, restoreBlock } from "@/core/data/blocks";
 import { emitEvent } from "@/core/events/bus";
 import { endSession, getOpenSession, startSession } from "@/core/data/sessions";
-import { logRhythm, updateRhythm, updateWorkItem } from "@/core/data/work";
+import { TimingError } from "@/core/contract/timing";
+import { logRhythm, updateRhythm, updateTask, updateWorkItem } from "@/core/data/work";
 import type { AppEvent } from "@/core/types";
 import { adminDb, makeModule, ok, ownerDb, strangerDb, wipe } from "./helpers";
 
@@ -819,5 +820,120 @@ describe("what the core tells a module", () => {
     expect(
       ok(await db.from("modules").select("settings").eq("id", mod.id).single()).settings,
     ).toEqual({ hedef: 3 });
+  });
+});
+
+describe("time constraints (Ç3b)", () => {
+  const windows = [{ from: "07:00", to: "23:00" }];
+  const avoid = [{ days: [1, 2, 3, 4, 5], from: "18:00", to: "20:30" }];
+  const travel = { before: 20, after: 20 };
+
+  it("lands in all three forms; a fixed time's travel goes to the block's travel columns", async () => {
+    const mod = await makeModule(db);
+    const item = await propose(db, mod, prep({ timing: { windows, avoid, travel } }));
+    const rhythm = await propose(
+      db,
+      mod,
+      prep({ key: "spor", when: RECURRENCE, timing: { windows, travel, rest_days: 1 } }),
+    );
+    const block = await propose(db, mod, prep({ key: "mac", when: FIXED, timing: { travel } }));
+
+    const [row] = await items();
+    expect(row.timing).toEqual({ windows, avoid, travel });
+    expect(row.provenance).toMatchObject({
+      "timing.windows": "module",
+      "timing.avoid": "module",
+      "timing.travel": "module",
+    });
+    expect(item.changed).toEqual(expect.arrayContaining(["timing.windows", "timing.travel"]));
+    const storedRhythm = ok(await db.from("rhythms").select("*").eq("id", rhythm.id).single());
+    expect(storedRhythm.timing).toEqual({ windows, travel, rest_days: 1 });
+    const storedBlock = ok(await db.from("blocks").select("*").eq("id", block.id).single());
+    expect(storedBlock).toMatchObject({ travel_before_min: 20, travel_after_min: 20 });
+  });
+
+  it("refuses an invalid timing, naming the field, and writes nothing", async () => {
+    const mod = await makeModule(db);
+    const refused = await propose(
+      db,
+      mod,
+      prep({ timing: { windows: [{ from: "18:00", to: "16:00" }] } }),
+    ).catch((error: unknown) => error);
+    expect(refused).toBeInstanceOf(ProposalError);
+    expect((refused as ProposalError).issues).toEqual([
+      "timing.windows.0.to: from must be before to (a range past midnight is written as two)",
+    ]);
+    const fixed = await propose(
+      db,
+      mod,
+      prep({ key: "b", when: FIXED, timing: { windows } }),
+    ).catch((error: unknown) => error);
+    expect((fixed as ProposalError).issues).toEqual(["timing.windows: not used by a fixed time"]);
+    const tight = await propose(
+      db,
+      mod,
+      prep({
+        key: "r",
+        when: { recurrence: { count: 4, period: "week" } },
+        timing: { rest_days: 2 },
+      }),
+    ).catch((error: unknown) => error);
+    expect((tight as ProposalError).issues).toHaveLength(1);
+    expect(await items()).toHaveLength(0);
+  });
+
+  it("a field the user changed survives the module's next proposal; the others follow it", async () => {
+    const mod = await makeModule(db);
+    const { id } = await propose(db, mod, prep({ timing: { windows, avoid } }));
+    // The user moves the avoided hours on this one item.
+    const mine = [{ from: "17:00", to: "19:00" }];
+    await updateWorkItem(db, id, { timing: { windows, avoid: mine } });
+    let [row] = await items();
+    expect(row.provenance).toMatchObject({ "timing.avoid": "user", "timing.windows": "module" });
+
+    // The module changes its windows and avoided hours, and adds travel.
+    const later = [{ from: "08:00", to: "22:00" }];
+    const again = await propose(db, mod, prep({ timing: { windows: later, avoid, travel } }));
+    expect(again.kept).toEqual(["timing.avoid"]);
+    expect(again.changed.sort()).toEqual(["timing.travel", "timing.windows"]);
+    [row] = await items();
+    expect(row.timing).toEqual({ windows: later, avoid: mine, travel });
+
+    // The module stops sending windows: they go; the user's avoided hours stay.
+    await propose(db, mod, prep({ timing: { avoid } }));
+    [row] = await items();
+    expect(row.timing).toEqual({ avoid: mine });
+  });
+
+  it("the user's form goes through the same schema", async () => {
+    const mod = await makeModule(db);
+    const { id } = await propose(db, mod, prep());
+    await expect(
+      updateWorkItem(db, id, { timing: { windows: [{ from: "18:00", to: "16:00" }] } }),
+    ).rejects.toBeInstanceOf(TimingError);
+    await expect(updateWorkItem(db, id, { timing: { rest_days: 1 } })).rejects.toBeInstanceOf(
+      TimingError,
+    );
+    const rhythm = await propose(db, mod, prep({ key: "r", when: RECURRENCE }));
+    // Twice a week with three days between: 1 + 4 = 5 days, fits.
+    await updateRhythm(db, rhythm.id, { timing: { rest_days: 3 } });
+    // Raising the target to four makes three rest days impossible: refused.
+    await expect(updateRhythm(db, rhythm.id, { target_count: 4 })).rejects.toBeInstanceOf(
+      TimingError,
+    );
+    const task = ok(
+      await db.from("tasks").insert({ module_id: mod.id, title: "Banka" }).select().single(),
+    );
+    const saved = await updateTask(db, task.id, {
+      timing: { windows: [{ days: [1, 2, 3, 4, 5], from: "09:00", to: "17:00" }] },
+    });
+    expect(saved.timing).toEqual({
+      windows: [{ days: [1, 2, 3, 4, 5], from: "09:00", to: "17:00" }],
+    });
+    await expect(updateTask(db, task.id, { timing: { rest_days: 1 } })).rejects.toBeInstanceOf(
+      TimingError,
+    );
+    const cleared = await updateTask(db, task.id, { timing: {} });
+    expect(cleared.timing).toBeNull();
   });
 });

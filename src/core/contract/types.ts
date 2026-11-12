@@ -1,5 +1,6 @@
 import type { ComponentType, ReactNode } from "react";
 import type { Extractor } from "@/core/ai/calls/extract";
+import type { Timing } from "./timing";
 import type {
   AppEvent,
   Context,
@@ -55,7 +56,11 @@ export type WorkProposal = {
   artifact?: string | null;
   /** Module-specific; the core carries it and hands it to the AI as context, nothing more. */
   meta?: Record<string, unknown>;
+  /** When the work can be done (Ç3b): windows, preferred and avoided hours, travel, rest days. */
+  timing?: Timing | null;
 };
+
+export type { Timing, TimeWindow } from "./timing";
 
 export type ProposalTarget = "work_item" | "rhythm" | "block";
 

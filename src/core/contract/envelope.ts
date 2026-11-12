@@ -6,6 +6,14 @@ import {
   TASK_MAX_MINUTES,
   TASK_MIN_MINUTES,
 } from "@/core/types";
+import {
+  checkTiming,
+  formIssues,
+  mergeTiming,
+  readTiming,
+  type Timing,
+  timingSchema,
+} from "./timing";
 import type { ProposalTarget, WorkProposal } from "./types";
 
 // The work envelope, as pure functions: validate a proposal, turn it into column values, and
@@ -68,6 +76,7 @@ const proposalSchema = z
       .optional(),
     artifact: z.string().nullish(),
     meta: z.record(z.string(), z.unknown()).optional(),
+    timing: timingSchema.nullish(),
   })
   .superRefine((proposal, ctx) => {
     const when = proposal.when ?? {};
@@ -132,6 +141,17 @@ const proposalSchema = z
         ["meta", proposal.meta],
       ]);
     }
+    // Time constraints: which fields the form may use, and rest days that fit the period.
+    if (proposal.timing) {
+      const form = when.recurrence
+        ? ({ kind: "recurrence", ...when.recurrence } as const)
+        : when.fixed
+          ? ({ kind: "fixed" } as const)
+          : ({ kind: "deadline" } as const);
+      for (const issue of formIssues(proposal.timing as Timing, form)) {
+        ctx.addIssue({ code: "custom", path: ["timing", ...issue.path], message: issue.message });
+      }
+    }
     const bounds = proposal.effort?.bounds;
     if (bounds && bounds.min > bounds.max) {
       ctx.addIssue({ code: "custom", path: ["effort", "bounds"], message: "min is above max" });
@@ -185,6 +205,11 @@ type Incoming = { value: unknown; source: FieldSource };
 export type IncomingFields = {
   facts: Record<string, unknown>;
   judgments: Record<string, Incoming>;
+  /**
+   * Time constraints of a work item or rhythm, merged field by field (each its own source,
+   * `timing.windows`…). Absent for a block: its travel is in the facts.
+   */
+  timing?: Timing | null;
 };
 
 function judgments(entries: [string, unknown][]): Record<string, Incoming> {
@@ -219,6 +244,7 @@ export function incomingFields(proposal: WorkProposal): IncomingFields {
         ["energy", proposal.fit?.energy],
         ["context", proposal.fit?.context],
       ]),
+      timing: checkTiming(proposal.timing, { kind: "recurrence", ...when.recurrence }).timing,
     };
   }
 
@@ -229,6 +255,9 @@ export function incomingFields(proposal: WorkProposal): IncomingFields {
         starts_at: new Date(when.fixed.starts_at).toISOString(),
         ends_at: new Date(when.fixed.ends_at).toISOString(),
         location: when.fixed.location ?? null,
+        // A block keeps its travel in its own columns; no travel given is no travel.
+        travel_before_min: proposal.timing?.travel?.before ?? 0,
+        travel_after_min: proposal.timing?.travel?.after ?? 0,
       },
       judgments: {},
     };
@@ -266,6 +295,7 @@ export function incomingFields(proposal: WorkProposal): IncomingFields {
       effort_max_minutes: proposal.effort?.bounds?.max ?? null,
     },
     judgments: estimates,
+    timing: checkTiming(proposal.timing, { kind: "deadline" }).timing,
   };
 }
 
@@ -332,6 +362,17 @@ export function mergeProposal(stored: Stored, incoming: IncomingFields): MergeRe
   for (const [field, value] of Object.entries(incoming.facts)) write(field, value, "module");
   for (const [field, { value, source }] of Object.entries(incoming.judgments)) {
     write(field, value, source);
+  }
+
+  // Time constraints, field by field. A new record without any keeps the column's empty default.
+  if (incoming.timing !== undefined && (stored || incoming.timing !== null)) {
+    const current = stored ? readTiming(stored.values.timing) : null;
+    const timing = mergeTiming(current, incoming.timing, provenance);
+    if (timing.changed.length > 0) {
+      patch.timing = timing.value;
+      changed.push(...timing.changed);
+    }
+    kept.push(...timing.kept);
   }
 
   if (changed.length > 0 || !stored || !same(stored.provenance, provenance)) {
