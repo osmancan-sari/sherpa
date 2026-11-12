@@ -428,6 +428,46 @@ export type Database = {
         };
         Relationships: [];
       };
+      device_tokens: {
+        Row: {
+          created_at: string;
+          hint: string;
+          id: string;
+          last_used_at: string | null;
+          name: string;
+          revoked_at: string | null;
+          scopes: string[];
+          token_hash: string;
+          updated_at: string;
+          user_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          created_at?: string;
+          hint: string;
+          id?: string;
+          last_used_at?: string | null;
+          name: string;
+          revoked_at?: string | null;
+          scopes: string[];
+          token_hash: string;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Update: {
+          created_at?: string;
+          hint?: string;
+          id?: string;
+          last_used_at?: string | null;
+          name?: string;
+          revoked_at?: string | null;
+          scopes?: string[];
+          token_hash?: string;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
       events: {
         Row: {
           created_at: string;
@@ -1372,6 +1412,15 @@ export type Database = {
           isSetofReturn: false;
         };
       };
+      device_token_owner: {
+        Args: { p_hash: string };
+        Returns: {
+          scopes: string[];
+          token_id: string;
+          user_id: string;
+        }[];
+      };
+      device_token_scopes_valid: { Args: { p_scopes: string[] }; Returns: boolean };
       end_session: {
         Args: { p_outcome?: string; p_session_id: string };
         Returns: {

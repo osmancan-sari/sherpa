@@ -1,3 +1,4 @@
+import { randomBytes } from "node:crypto";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import {
   adminDb,
@@ -65,6 +66,13 @@ const SAMPLES: Record<string, (ids: Record<string, string>) => Row> = {
     user_value: { est_minutes: 30 },
   }),
   deneme_items: () => ({ title: "Deneme kaydı" }),
+  // Ç3d. Each account its own digest: the column is unique across accounts.
+  device_tokens: () => ({
+    name: "Kestirmeler",
+    token_hash: randomBytes(32).toString("hex"),
+    hint: "shp_AbCd",
+    scopes: ["core/wake"],
+  }),
 };
 
 /** Insert order: parents first. Tables not named here go last, in any order. */
@@ -82,7 +90,8 @@ const ORDER = [
 
 /** Tables whose rows are never changed or removed by design; the grants say so too. */
 const NO_UPDATE = new Set(["events", "ai_calls", "ai_feedback"]);
-const NO_DELETE = new Set(["events", "inbox_entries", "ai_calls", "ai_feedback"]);
+// Device tokens are revoked, not removed (Ç3d).
+const NO_DELETE = new Set(["events", "inbox_entries", "ai_calls", "ai_feedback", "device_tokens"]);
 
 async function exposedTables(): Promise<string[]> {
   const key = process.env.SUPABASE_SECRET_KEY!;

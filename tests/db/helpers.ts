@@ -54,6 +54,7 @@ export function strangerId(): string {
 
 /** Every core table, children before parents, so rows can be removed in this order. */
 export const CORE_TABLES = [
+  "device_tokens",
   "ai_calls",
   "ai_feedback",
   "rhythm_logs",

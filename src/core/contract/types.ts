@@ -1,4 +1,5 @@
 import type { ComponentType, ReactNode } from "react";
+import type { ZodType } from "zod";
 import type { Extractor } from "@/core/ai/calls/extract";
 import type { Timing } from "./timing";
 import type {
@@ -277,6 +278,34 @@ export type StructuredBlockHandler = {
   handle: (payload: unknown, ctx: ModuleContext) => Promise<void>;
 };
 
+/**
+ * Ç3d: data from outside (the phone's automation, a collector on the computer), posted to
+ * /api/ingest/<slug>/<kind> with a device token whose scopes hold "<slug>/<kind>". It runs on the
+ * server with the server context: the token owner's rows only (docs/06-modul-sozlesmesi.md,
+ * "Sunucu zemini").
+ */
+export type IngestType = {
+  /** Lower-case letters, digits and dashes; unique in the module. */
+  kind: string;
+  /** The name shown when a token's scopes are chosen. */
+  label?: string;
+  /** The body; one that does not pass is refused with 400 and the field's name. */
+  schema: ZodType;
+  /** Gets the body as the schema parsed it. Should be idempotent: the same body may come twice. */
+  handle: (payload: unknown, ctx: ModuleContext) => Promise<void>;
+};
+
+/** Ç3d: work the module does on its own, also while the app is closed. */
+export type ModuleJob = {
+  /** Lower-case letters, digits and dashes; unique in the module. */
+  key: string;
+  every: "hour" | "day" | "week";
+  /** "HH:mm", Istanbul; for "day" and "week" only ("week": Monday). Default 00:00. */
+  at?: string;
+  /** Runs once per period; may be retried, so it must be idempotent. */
+  run: (ctx: ModuleContext) => Promise<void>;
+};
+
 export type ModeBehavior = {
   /** Multiplier on the module's weight in the planner. */
   weightMultiplier: number;
@@ -383,6 +412,12 @@ export type ModuleDefinition = {
 
   /** The module's own tables; "export everything" includes them. */
   tables?: string[];
+
+  // While the app is closed (Ç3d)
+  /** Data from outside: POST /api/ingest/<slug>/<kind>. */
+  ingest?: IngestType[];
+  /** Scheduled work, run by the core's scheduler. */
+  jobs?: ModuleJob[];
 
   // Interface
   ui: ModuleUi;

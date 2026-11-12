@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { z } from "zod";
 import { createRegistry, definitionProblems, matchRoute, resolveModulePath } from "./registry";
 import type { ModuleDefinition } from "./types";
 
@@ -124,6 +125,62 @@ describe("createRegistry", () => {
       expect(() => createRegistry([definition(overrides)])).toThrow(/Module contract problems/);
     }
     expect(definitionProblems(definition())).toEqual([]);
+  });
+});
+
+describe("data from outside and scheduled work (Ç3d)", () => {
+  const schema = z.object({ title: z.string() });
+  const handle = async () => {};
+  const run = async () => {};
+
+  it("accepts valid ingest kinds and jobs", () => {
+    expect(
+      definitionProblems(
+        definition({
+          ingest: [{ kind: "tarti", schema, handle }],
+          jobs: [
+            { key: "saatlik", every: "hour", run },
+            { key: "gece", every: "day", at: "03:30", run },
+            { key: "haftalik", every: "week", run },
+          ],
+        }),
+      ),
+    ).toEqual([]);
+  });
+
+  it("names every broken ingest kind and job", () => {
+    const cases: [Partial<ModuleDefinition>, RegExp][] = [
+      [{ ingest: [{ kind: "Tarti", schema, handle }] }, /ingest kind "Tarti" is not valid/],
+      [{ ingest: [{ kind: "a/b", schema, handle }] }, /ingest kind "a\/b" is not valid/],
+      [
+        {
+          ingest: [
+            { kind: "a", schema, handle },
+            { kind: "a", schema, handle },
+          ],
+        },
+        /ingest kind "a" is used twice/,
+      ],
+      [{ ingest: [{ kind: "a", schema: {} as never, handle }] }, /has no schema/],
+      [{ ingest: [{ kind: "a", schema, handle: undefined as never }] }, /has no handler/],
+      [{ jobs: [{ key: "Gece", every: "day", run }] }, /job key "Gece" is not valid/],
+      [
+        {
+          jobs: [
+            { key: "a", every: "day", run },
+            { key: "a", every: "week", run },
+          ],
+        },
+        /job key "a" is used twice/,
+      ],
+      [{ jobs: [{ key: "a", every: "month" as never, run }] }, /no valid period/],
+      [{ jobs: [{ key: "a", every: "hour", at: "10:00", run }] }, /"at" is for days and weeks/],
+      [{ jobs: [{ key: "a", every: "day", at: "25:00", run }] }, /"at" is HH:mm/],
+      [{ jobs: [{ key: "a", every: "day", run: undefined as never }] }, /nothing to run/],
+    ];
+    for (const [overrides, problem] of cases) {
+      expect(definitionProblems(definition(overrides)).join("\n")).toMatch(problem);
+    }
   });
 });
 

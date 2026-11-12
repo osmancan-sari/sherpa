@@ -17,6 +17,7 @@ import { getSettings, listDuePrompts, listInbox } from "@/core/data/inbox";
 import { listModules } from "@/core/data/module-rows";
 import { getOpenSession, listSessions } from "@/core/data/sessions";
 import { listDays, listLifeModes, listStats, listWeekPlans } from "@/core/data/planning";
+import { listDeviceTokens } from "@/core/data/tokens";
 import { listRhythmLogs, listRhythms, listTasks, listWorkItems } from "@/core/data/work";
 import {
   buildPlan,
@@ -79,7 +80,14 @@ export const keys = {
   stats: [CORE, "planner_stats"] as const,
   weeklyReviews: [CORE, "weekly_reviews"] as const,
   horizonReviews: [CORE, "horizon_reviews"] as const,
+  deviceTokens: [CORE, "device_tokens"] as const,
 };
+
+/** Ç3d: the device tokens (Settings → Bağlantılar); their last use comes in live. */
+export function useDeviceTokens() {
+  const db = useDb();
+  return useQuery({ queryKey: keys.deviceTokens, queryFn: () => listDeviceTokens(db) });
+}
 
 export function useModuleRows() {
   const db = useDb();

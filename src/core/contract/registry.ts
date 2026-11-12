@@ -1,3 +1,4 @@
+import { PART } from "./ingest";
 import type { ModuleDefinition, ModuleRegistry } from "./types";
 
 /** Path segments under /m/<slug>/ the core keeps for itself. */
@@ -60,6 +61,29 @@ export function definitionProblems(def: ModuleDefinition): string[] {
     } else if (behavior.floorMultiplier < 0 || behavior.floorMultiplier > 1) {
       say(`floorMultiplier for "${mode}" must be between 0 and 1`);
     }
+  }
+  // Ç3d: data from outside and scheduled work.
+  const kinds = new Set<string>();
+  for (const type of def.ingest ?? []) {
+    if (!PART.test(type.kind)) say(`ingest kind "${type.kind}" is not valid`);
+    if (kinds.has(type.kind)) say(`ingest kind "${type.kind}" is used twice`);
+    if (typeof type.handle !== "function") say(`ingest kind "${type.kind}" has no handler`);
+    if (typeof type.schema?.safeParse !== "function") {
+      say(`ingest kind "${type.kind}" has no schema`);
+    }
+    kinds.add(type.kind);
+  }
+  const jobs = new Set<string>();
+  for (const job of def.jobs ?? []) {
+    if (!PART.test(job.key)) say(`job key "${job.key}" is not valid`);
+    if (jobs.has(job.key)) say(`job key "${job.key}" is used twice`);
+    if (!["hour", "day", "week"].includes(job.every)) say(`job "${job.key}" has no valid period`);
+    if (job.at !== undefined) {
+      if (job.every === "hour") say(`job "${job.key}" runs every hour; "at" is for days and weeks`);
+      else if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(job.at)) say(`job "${job.key}": "at" is HH:mm`);
+    }
+    if (typeof job.run !== "function") say(`job "${job.key}" has nothing to run`);
+    jobs.add(job.key);
   }
   for (const table of def.tables ?? []) {
     if (!table.startsWith(`${def.slug.replaceAll("-", "_")}_`)) {

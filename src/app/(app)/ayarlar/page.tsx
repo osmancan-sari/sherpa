@@ -4,6 +4,7 @@ import { Suspense, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { PageShell } from "@/core/ui/PageShell";
 import { AiSettings } from "@/core/ui/settings/AiSettings";
+import { ConnectionsSettings } from "@/core/ui/settings/ConnectionsSettings";
 import { DayFrameSettings } from "@/core/ui/settings/DayFrameSettings";
 import { VoiceSettings } from "@/core/ui/settings/VoiceSettings";
 import { getCurrentUser } from "@/lib/auth/session";
@@ -39,6 +40,10 @@ export default function SettingsPage() {
 
       <Section title="Yapay zeka">
         <AiSettings />
+      </Section>
+
+      <Section title="Bağlantılar">
+        <ConnectionsSettings />
       </Section>
 
       <Section title="Dışa aktarım">
