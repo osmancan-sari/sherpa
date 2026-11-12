@@ -655,7 +655,8 @@ function warningsOf(
   }
 
   for (const candidate of candidates) {
-    if (candidate.mandatory === "floor" && !placed.has(candidate.id)) {
+    // A floor whose week has no time left for it is already spoken for.
+    if (candidate.mandatory === "floor" && !placed.has(candidate.id) && !spoken(candidate.id)) {
       warnings.push({
         kind: "floor",
         subjectId: candidate.id,

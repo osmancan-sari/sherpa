@@ -542,6 +542,26 @@ describe("time constraints in the week (Ç3b)", () => {
     expect(weekNoTime({ ...week({ ...tuesday, rhythms: [monthly] }), committed: [] })).toEqual([]);
   });
 
+  it("whole sittings each bring their travel; a passed deadline is not this week's", () => {
+    // 60 minutes in sittings of 45: two sittings (45 + 15), two trips.
+    const item = workItem({
+      effort_total_minutes: 60,
+      session_minutes: 45,
+      due_at: due(shiftDay(MONDAY, 6)),
+      timing: travel,
+    });
+    expect(loadByWeek(load({ items: [item] }), { from: MONDAY, weeks: 1 })[0].demandMinutes).toBe(
+      140,
+    );
+    const late = workItem({
+      title: "Eski",
+      effort_total_minutes: 60,
+      due_at: due(shiftDay(MONDAY, -4)),
+      timing: { windows: [{ from: "06:00", to: "07:30" }] },
+    });
+    expect(weekNoTime({ ...week({ items: [late] }), committed: [] })).toEqual([]);
+  });
+
   it("a rhythm with a floor counts too", () => {
     const yoga = rhythm({
       title: "Yoga",

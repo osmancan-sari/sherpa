@@ -492,6 +492,20 @@ describe("conflicts", () => {
       input({ now: at("14:00"), workItems: [early], tasks: [sitting], committed: [early.id] }),
     );
     expect(once.warnings.map((row) => row.kind)).toEqual(["no_time_today"]);
+    // A floor in danger whose week has no time for it: one warning, not two.
+    const yoga = rhythm({
+      title: "Yoga",
+      floor_count: 1,
+      target_count: 1,
+      timing: { windows: [{ days: [4], from: "09:00", to: "11:00" }] },
+    });
+    const blocked = buildPlan(
+      input({
+        rhythms: [yoga],
+        blocks: [block({ starts_at: iso("08:30"), ends_at: iso("11:30") })],
+      }),
+    );
+    expect(blocked.warnings.map((row) => row.kind)).toEqual(["no_time_week"]);
     // Not committed and not due this week: no warning.
     const loose = buildPlan(input({ workItems: [early], committed: [] }));
     expect(loose.warnings).toEqual([]);

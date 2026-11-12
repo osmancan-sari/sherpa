@@ -203,7 +203,9 @@ export function loadByWeek(input: LoadInput, range: WeekRange): WeekLoad[] {
       Math.max(SITTING_MIN, item.session_minutes ?? SITTING_DEFAULT),
     );
     for (const [week, minutes] of spreadItem(item, weeks, capacityOf, input.now)) {
-      add(week, item.module_id, minutes + (travel > 0 ? (minutes / sitting) * travel : 0));
+      // Whole sittings, the last one shorter, each with its travel.
+      const trips = travel > 0 ? cutSittings(Math.round(minutes), sitting).length : 0;
+      add(week, item.module_id, minutes + trips * travel);
     }
   }
   for (const mod of input.modules) {
@@ -328,7 +330,11 @@ export function weekNoTime(
   for (const item of plannableItems(input.items, active)) {
     const timing = readTiming(item.timing);
     if (!timing?.windows || remainingEffort(item) <= 0) continue;
-    const due = item.due_at !== null && Date.parse(item.due_at) < weekEnd;
+    // Due this week, from now on: a deadline that has passed is ordinary pool work.
+    const due =
+      item.due_at !== null &&
+      Date.parse(item.due_at) >= input.now.getTime() &&
+      Date.parse(item.due_at) < weekEnd;
     if (!committed.has(item.id) && !due) continue;
     if (!due && shareWorked(input, item)) continue;
     if (!holds(timing, nextSessionMinutes(item))) {
