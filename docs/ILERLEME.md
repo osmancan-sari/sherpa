@@ -5,8 +5,8 @@ Bu dosyayı Claude Code günceller. Yeni bir oturum yalnızca bu dosyayı ve `pr
 ## Durum
 
 - Faz: **Ç3c (Sahne ve günün çerçevesi) sürüyor** (12 Kas 2026). Ç0–Ç3b bitti (`c3b-tamam`); D1–D4 tamamlandı
-- Adım: 8 (kapanış)
-- Son commit: C3c step 7: the day's frame on the screens
+- Adım: 8 (kapanış: faz denetimi), 9 (yayın: `dev` bitti)
+- Son commit: C3c phase report; migrations on sherpa-dev
 
 ### Ç3c planı
 
@@ -22,8 +22,8 @@ Bu dosyayı Claude Code günceller. Yeni bir oturum yalnızca bu dosyayı ve `pr
 | 5 | Sahne: `ui.scene`, şerit, çıkış ve dönüş, hata sınırı, `StepRunner`; `deneme`'de iki sahne | bitti: sözleşmede `ModuleScene`, `SceneSubject`, `SceneProps`, `TodayBrief`, `Say`; `src/core/ui/today/Scene.tsx` (`sceneFor`, `SceneFrame`: şerit, hata sınırı, solma, ton, saniyelik saat; "Çık" cihazda oturum başına hatırlanır), Bugün'de devralma ve kartta "Sahneye dön", sahneden "Takıldım"; `StepRunner` (`src/core/ui/kit/`); `deneme`: `scene.ts` (`when` sunucuda da çalışsın diye istemci dosyasının dışında), `components/Scenes.tsx` (hedef: serbest odak sahnesi, "[hata]" adlı kayıt atar; antrenman: `StepRunner`, adım `deneme_items.scene_step`'te, `20261112134336_deneme_scene_step.sql`); `deneme` ritim teklifleri `meta.kind` taşır. Testler: `tests/e2e/scene.both.spec.ts` 1 (pano ve telefon), `scene.spec.ts` 6, `registry.test.ts` +1 |
 | 6 | Sesli anlatım: `src/core/voice/`, cihaz başına ayar, `say`, `today` | bitti: `types.ts` (sağlayıcı arayüzü), `device.ts` (Web Speech, `tr-TR`, reddi sessiz), `sentences.ts`, `speaker.ts` (sıra, kesme, cihaz kuralı), `settings.ts` (`localStorage`), `VoiceProvider.tsx` (ilk dokunuşta kilidi açma, `useSay`); `ModuleUiContext.say`; Ayarlar → Sesli anlatım (bu cihaz). Testler: `src/core/voice/voice.test.ts` 5 (sahte sağlayıcı), uçtan uca konuşma sentezi yerine kaydedici (`scene-helpers.ts`). Gerçek cihaz denemesi "Senden bekleyenler"de |
 | 7 | Ekranlar: Günaydın, akşam, üst şerit, zaman çizelgesi, Hafta satırı | bitti: `src/core/ui/today/FrameCards.tsx` (Günaydın: "Uyandım", "Biraz önce" 15/30/60, kısa özet, ayar açıksa rutin başlar; Akşam: sıradaki akşam ya da yatış işi ve Başla, uyku satırı, kısa gece notu, "Yatıyorum", "Günü kapat", "geç yatacağım" ve "erken kalkacağım" 30/60/90), `frame-text.ts` (cümleler, Hafta satırı), gece kartında "Yarın uyanış", üst şeritte uyanış ve yatış aralığı, şeritte bölümler ve bitiş çizgisi, akşam sakin (liste, uyarı yok), kapanışta "Onayla ve yat", Hafta'da tek satır. Testler: `frame-text.test.ts` 4, `tests/e2e/day-screens.spec.ts` 5 |
-| 8 | Kapanış: uçtan uca testler, ekran görüntüleri, `check:full`, faz denetimi, rapor, `c3c-tamam` | |
-| 9 | Yayın: migration `dev`, sonra `prod`; kod sonra | |
+| 8 | Kapanış: uçtan uca testler, ekran görüntüleri, `check:full`, faz denetimi, rapor, `c3c-tamam` | uçtan uca testler, görüntüler (`docs/ekran-goruntuleri/c3c/`), `check:full` yeşil (413 / 206 / 166), faz raporu yazıldı; yerel veritabanı migration dosyalarından sıfırdan kuruldu ve testler yeşil. Faz denetimi sürüyor |
+| 9 | Yayın: migration `dev`, sonra `prod`; kod sonra | `sherpa-dev`: bitti (iki migration, `migration list` ile doğrulandı). `prod` ve `git push` kullanıcının onayında ("Senden bekleyenler") |
 
 ### Ç3b planı
 
@@ -323,6 +323,62 @@ Faz denetimi:
 - **Uçtan uca testler** gece de çalışabilsin diye hesabın günü 00:00–23:59 (`tests/e2e/data.ts`); bitiş çizgisi ya da gece sınayan test kendi saatini yazar. Bir önceki testin sunucudaki yapay zeka isteği sonraki testin hesabına düşebiliyor; giriş çağrılarını sayan testler yalnızca kendi türlerine bakıyor.
 - **Kapı süresi:** `check:full` yaklaşık 7 dakika (ekran görüntüleriyle 9).
 
+### Ç3c: Sahne ve günün çerçevesi (12 Kas 2026)
+
+Modülün işi çalışırken Bugün ekranını devralan sahne, modüllere oturum ve gün olayları, sesli anlatım servisi, günün çerçevesi (uyanış, yatış, uyku planı, çapalı işler, akşam). Tasarım `docs/12` bölüm A–D; bağlayıcı hali `docs/03`, `04`, `05`, `06`, `07`. Ç3b'den kalan oturum işi yarışı da kapandı.
+
+**Kabul ölçütleri**
+
+| Ölçüt | Durum | Nasıl doğrulandı |
+| --- | --- | --- |
+| `deneme` bir sahne tanımlıyor; başlatınca sahne, bitince standart ekran; panoda ve telefonda | Sağlandı | `tests/e2e/scene.both.spec.ts` (pano ve telefon), görüntüler `bugun-sahne` |
+| Şerit duruyor; "Çık" standart ekrana, oturum sürüyor, "Sahneye dön" çalışıyor | Sağlandı | `scene.spec.ts` (yeniden yüklemede de hatırlanır) |
+| Sahne hata verince standart kart, oturum etkilenmiyor | Sağlandı | `scene.spec.ts` ("[hata]" adlı kayıt) |
+| Sahnesi olmayan modülde ve `when` yanlış dönen işte ekran Ç3'teki gibi | Sağlandı | `scene.spec.ts` (alışkanlık; kodu olmayan modül); Ç1–Ç3b uçtan uca testleri |
+| `StepRunner` ile adımlı sahne: geri sayım, sonraki, atla | Sağlandı | `scene.spec.ts` (sahte saatle 5 dk; adım modülün satırında, yeniden yüklemede sürer) |
+| Oturum olayları yalnızca kendi işine; gün olayları etkin bütün modüllere | Sağlandı | `tests/db/events.test.ts` 7, `tests/e2e/day-frame.spec.ts` (Ertele, Takıldım, Durdur, Bitti) |
+| `say`: Türkçe, sıra ve kesme, kapalıyken sessiz ve hatasız, cihaz başına ayar | Sahte sağlayıcıyla sağlandı | `src/core/voice/voice.test.ts` 5, `scene.spec.ts` (konuşma sentezi yerine kaydedici; Ayarlar'da "Dene", kapalıyken sessiz, ayar cihazda kalır) |
+| Sesli anlatım gerçek telefonda ve gerçek panoda denendi | **Elle doğrulanacak** | Adımlar "Senden bekleyenler" → Ç3c, "Ses" |
+| "Uyandım" ve "Yatıyorum" kaydediliyor; denmeden dokunulunca uyanış tahmini | Sağlandı | `tests/e2e/day-screens.spec.ts`, `day-frame.spec.ts`, `tests/db/frame.test.ts` |
+| Pencere uyanışa göre başlıyor; geç uyanışta kısalıyor; uyanış yokken beklenen | Sağlandı | `src/core/planner/frame.test.ts` ("the day's start") |
+| Uyku planı: en geç uyanış; yükle birlikte erkene çekme; uykunun feda edilmemesi; sabit yükümlülükte ekranın söylemesi | Sağlandı | `frame.test.ts` ("the sleep plan" 8), `frame-text.test.ts` (cümleler) |
+| Gerçek yatış yarının uyanışını ve planını değiştiriyor; 30 dk'dan çok kayıp yeniden taahhüt | Sağlandı | `frame.test.ts` ("the week's capacity"), `day-screens.spec.ts` (akşamda değişen satır) |
+| Akşam ekranı yatışı, yarının uyanışını ve uyku süresini gösteriyor | Sağlandı | `day-screens.spec.ts`, görüntü `bugun-aksam` |
+| `anchor: wake` uyanıştan hemen sonra, `bed` yatıştan önce; yuvalara dağıtılmıyor | Sağlandı | `frame.test.ts` ("anchored work"), `day-screens.spec.ts` (Günaydın'dan sonra rutin) |
+| `after_finish` taşımayan iş bitiş çizgisinden sonraya konmuyor; taşıyan akşama konabiliyor | Sağlandı | `frame.test.ts` ("the evening"), `day-screens.spec.ts` |
+| `morning` ve `evening` doğru koşullarda; "geç yatacağım" ve "erken kalkacağım" yalnızca o günü etkiliyor | Sağlandı | `frame.test.ts` ("the states of the day"), `day-screens.spec.ts` |
+| Ayarlar'da aralıklar ve uyku hedefi; gün tipine özel aralık | Sağlandı | `day-frame.spec.ts` (Ayarlar formu), `tests/db/frame.test.ts` |
+| Çerçeve kullanılmayan veride pencere içindeki plan Ç3b'dekiyle aynı; değişen testler kayıtlı | Sağlandı | `frame.test.ts` ("inside the window…", "with the frame off…"); Ç3 ve Ç3b testleri değişmedi. Değişen üç test, hepsi "Verdiğim kararlar"da: `tests/e2e/data.ts` (`day_frame: null`), `yapay-zeka.ai.spec.ts` (bulucu yapay zeka formuna daraltıldı), `work-sessions.spec.ts` (kesmeden önce günün planını bekler) |
+| Kalemden Başla ile bekçinin oturum işi yazması aynı anda olunca tek açık oturum işi | Sağlandı | `tests/db/planning.test.ts` (eski kodla 20 turun 5'inde kırmızıydı; şimdi 3 × 20 turda yeşil), bekçinin başlatılmış işi düşürmemesi testi |
+| Migration önce `dev`, sonra `prod`; kod sonra | **Açık (9. adım)** | Aşağıda "Senden bekleyenler" → Ç3c yayını |
+
+Testler: 413 birim, 206 veritabanı, 166 uçtan uca (`npm run check:full` yeşil). Ekran görüntüleri `docs/ekran-goruntuleri/c3c/` (112 dosya; yeni: `bugun-gunaydin`, `bugun-aksam`, `bugun-gece-cerceve`, `bugun-sahne`, `bugun-sahne-adimlar`, `hafta-uyku`, `ayarlar-cerceve`). Baktıklarım: Günaydın, akşam ve iki sahne (pano), odak sahnesi (telefon). Görüntüden çıkan düzeltme: akşamda boş "Sıradakiler" sütunu gizlendi.
+
+**Sahne sözleşmesinde eksik ya da zor bulduklarım (ilk gerçek modül sınayacak)**
+
+- `scene` nesnesi `"use client"` dosyasında tanımlanamaz: sunucuda başvuru olur, `when` fonksiyon değildir ve kayıt denetimi uygulamayı açtırmaz. Bunu `docs/06`'ya yazdım; modül şablonuna (`_sablon`) bir örnek eklenmeli.
+- `when` eşzamanlıdır ve yalnızca çekirdeğin satırlarını görür. Modül kendi tablosundaki bilgiye göre karar veremez; ayrım `meta` ile yapılır (`deneme` ritim tekliflerine `meta.kind` ekledi). Oturum işleri kalemin `meta`'sını kopyalamaz; sahne `subject.workItem.meta`'ya bakmalıdır.
+- Sahnenin kalıcı durumu (adım) modülün tablosundadır, ama sahneye "oturum başladı" anı yoktur. Adımın sıfırlanması modülün işidir. `deneme` bunu "bitir"de yapıyor; `core.session_started` dinleyicisi daha doğru yer.
+- `controls.stuck` yalnızca işte (görevde) anlamlı; ritimde sahneden çıkar.
+- İki cihaz aynı sahneyi gösterir. Adım değişince öbür cihaz Realtime ile güncellenir, ama `StepRunner`'ın geri sayımı her cihazda o adımı ilk gördüğü andan başlar. Ortak bir adım başlangıç zamanı için modül, adımın başladığı anı da saklamalı. Bunun iki cihazlı testi yok.
+- Sahnedeyken Bugün'ün kısayolları (Space ile Bitti) çalışmaya devam eder; sahne kendi tuşlarını tanımlayamaz.
+
+**Günün çerçevesinin planlayıcıda dokunduğu yerler ve onları tutan testler** (`src/core/planner/frame.test.ts`)
+
+- `planInput` (`input.ts`): çerçeve `dayFrameOf` ile kurulur; günün başı uyanış ve ayak izi, `settings.dayStarts`. Testler: "the day's start".
+- `sleepPlan` (`frame.ts`): yedi kural. Testler: "the sleep plan".
+- `candidatesOf` (`candidates.ts`): çapalı adaylar ayrılır; `after_finish` için "bugün kapalı" denetimi yatışa kadar. Testler: "anchored work", "the evening".
+- `buildPlan` → `frameParts` (`plan.ts`): uyanış ve yatış dizileri (sabah dizisine 60 dk tolerans), akşam yuvaları. Testler: "anchored work", "the evening".
+- `nowOf`: `night`, `evening`, `morning` ve sıraları. Testler: "the states of the day".
+- `dayCapacity` (`slots.ts`): `dayStarts`; yarın yük çekmesi olmadan. `weekNoTime` (`week.ts`): günün başı ve akşam. Testler: "the week's capacity…", "an evening-only weekly floor…".
+- Geriye uyum: "inside the window…", "with the frame off…" ve Ç3/Ç3b'nin değişmemiş testleri.
+
+**Denetim**
+
+- Adım denetimi 1–2: GEÇTİ (5 önemli: başlatılmış işin bekçice düşürülmesi, akşamı bilmeyen hafta uyarısı, sabah rutininin "Biraz önce"de kaybolması, yük çekmesinin yeniden taahhüt tetiklemesi, ekranın yeni durumları çizmemesi); hepsi düzeltildi.
+- Adım denetimi 3–4: 1. tur GEÇMEDİ (engelleyici: Ayarlar'daki ikinci "Kaydet" Ç2'nin testini kırdı), 2. tur GEÇTİ (4 önemli); hepsi düzeltildi. Ayrıntı "Verdiğim kararlar"da.
+- Faz denetimi: aşağıda.
+
 ### Ç3b: Zaman kısıtları (12 Kas 2026)
 
 İş zarfına `timing` bölümü geldi (kesin pencere, tercih edilen ve kaçınılan saatler, yol, dinlenme günü) ve planlayıcı bunlara uyar. Etiket `c3b-tamam`.
@@ -399,6 +455,28 @@ Faz denetimi:
 Sonra Ç4 (Pano ve telefon cilası): yeni oturumda `docs/05-arayuz.md` ve `docs/11-yayin-ve-cihazlar.md` okunarak başlanır. Önce Ç3'ün ve Ç3b'nin "Görüşün gerek" satırları. Ç2'nin "Sunum slaytları cuma" ölçütü açık: Okul modülü kurulunca yeniden denenecek (D3, karar 5).
 
 ## Senden bekleyenler
+
+### Ç3c yayını ve elle denemeler
+
+**Yayın** (9. adım; migration'lar `sherpa-dev`'de, 12 Kas 2026; `prod` ve `git push` senin onayınla). İki migration var:
+
+- `20261112123800_day_frame.sql`: `days` yeni sütunlar, `settings.day_frame`, `start_session` yeniden ve `save_week_sittings`.
+- `20261112134336_deneme_scene_step.sql`: `deneme_items.scene_step`, tür denetimi.
+
+İkisi de yalnızca ekleme ya da fonksiyon değişikliği yapar. Ama yeni kod `save_week_sittings` fonksiyonunu çağırdığı için **migration koddan önce `prod`'da olmalı**.
+
+1. `npx supabase db push --remote=jqqvfdjrkpxbklocsqvq --dry-run`: yalnızca bu iki migration görünmeli. Sonra aynısı `--yes` ile (ya da bana izin ver).
+2. `git push origin main`, sonra `git push origin c3c-tamam`.
+3. Üretimde çerçeve varsayılan olarak açık: Ayarlar → Günün çerçevesi'nde aralıkları kontrol et.
+
+**Ses (elle doğrulanacak).**
+
+1. iPhone, ana ekrandaki Sherpa: Ayarlar → Sesli anlatım (bu cihaz) → "Dene". Türkçe konuşmalı. Konuşmazsa "Ses" listesinde Türkçe ses var mı bak.
+2. Telefonda bir `deneme` kaydı yok (üretimde `deneme` kapalı). Bu yüzden sahne anlatımı yerelde ya da önizlemede denenir: önizleme adresinde `deneme`'yi aç, "odak" türünde bir kayıt ekle, Başla, sahnede "Anlat". Telefonun konuşması gerekir.
+3. Pano (Chrome, uygulama olarak kurulu pencere): Ayarlar'da "Bu cihaz dokunuş olmadan da konuşsun"u aç. Sayfayı yenile ve hiçbir yere dokunmadan telefondan bir "odak" kaydını başlat. Panoda sahne açılır; panonun kendiliğinden konuşup konuşmadığını not et. Beklenen: Chrome sayfada hiç dokunuş yokken reddeder; bir kez dokunduktan sonra konuşur.
+4. Sonuçları bu başlığın altına yaz (cihaz, tarayıcı, konuştu mu).
+
+**Görüşün gerek** satırları: sahnenin yalnızca çalışan işte gelmesi, şeridin içeriği ve tonlar; Günaydın ve akşam metinleri; "Biraz önce" ve "geç yatacağım" seçenekleri; sabahın 10:00'da bitmesi; akşam yuvalarının molaları; sesin varsayılanları. Hepsi "Verdiğim kararlar"da.
 
 ### Ç3b yayını: tamamlandı (12 Kas 2026)
 
