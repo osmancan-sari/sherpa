@@ -102,3 +102,4 @@ Kapsam dışı ama unutulmasın diye. Bir faza alınmadan kodlanmaz.
 - Alışveriş listesinin paylaşılması
 - Güvenlik başlıkları: `Content-Security-Policy`, `frame-ancestors`, `Referrer-Policy`, `X-Content-Type-Options` (Ç0 faz denetiminin notu; dokümanlarda istenmiyor)
 - Giriş ekranının açık temada görüntüsü ve geçiş anahtarıyla (passkey) giriş
+- Bağlamın konumdan kendiliğinden seçilmesi: iPhone Kestirmeler'in "Varınca" ve "Ayrılınca" otomasyonları (Ev, Kampüs, Ofis) Sherpa'ya cihaz anahtarıyla olay gönderir; koordinat gitmez, elle seçim öncelikli kalır. Yan getirisi: ofis ve kampüs saatleri İş ve Okul modüllerine veri olabilir. Ayrı bir sohbette değerlendirilecek (12 Kas 2026)

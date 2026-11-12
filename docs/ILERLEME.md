@@ -4,7 +4,7 @@ Bu dosyayı Claude Code günceller. Yeni bir oturum yalnızca bu dosyayı ve `pr
 
 ## Durum
 
-- Faz: **Ç3 (Planlayıcı) bitti** (12 Kas 2026, `c3-tamam`; faz denetimi iki tur). Ç0–Ç3 bitti; D1, D2 ve D4 tamamlandı (Ç3 üretimde); D3 (`ANTHROPIC_API_KEY`) bekliyor: yapay zekalı her şey sahte sağlayıcıyla sınandı
+- Faz: **Ç3 (Planlayıcı) bitti** (12 Kas 2026, `c3-tamam`; faz denetimi iki tur). Ç0–Ç3 bitti; D1–D4 tamamlandı (Ç3 üretimde, yapay zeka üretimde açık; gerçek modelle ölçüm "Senden bekleyenler" → D3)
 - Sıradaki: Ç4 (Pano ve telefon cilası), yeni oturumda
 - Son commit: D4 kaydı
 
@@ -180,8 +180,8 @@ Anahtar (D3) verilmedi. Bütün yollar sahte sağlayıcıyla (`SHERPA_AI_FAKE=1`
 
 | Ölçüt | Durum | Kanıt |
 | --- | --- | --- |
-| "Sunum slaytları cuma" yazınca iş birkaç saniye içinde doğru modül, süre, önem ve son tarihle oluşuyor; yapay zekanın koyduğu değerler işaretli | Sağlandı (sahte sağlayıcıyla). "Cuma" kullanıcının yazdığı gün olduğu için son tarih işaretsiz (kural 4; **Görüşün gerek**, "Verdiğim kararlar"). **Gerçek modelle süre ve isabet D3'te ölçülecek** | `yapay-zeka.ai.spec.ts` ("a free line becomes work…": 10 sn içinde iş, `module_id`, `est_minutes`, `importance` işaretli, `due_at` dolu, gerekçe satırda ve formda), `tests/db/ai-flows.test.ts` |
-| Eforu boş gelen iş zarfı yapay zekanın tahminiyle doluyor, gerekçesi görünüyor | Sağlandı (sahte) | `yapay-zeka.ai.spec.ts` ("an envelope with an empty effort…": 155 dk, modülün sınırı içinde, gerekçe satırda ve formda), `ai-flows.test.ts` (sınıra kırpma, `default` kaynağı, kapsam değişince yeniden sorma) |
+| "Sunum slaytları cuma" yazınca iş birkaç saniye içinde doğru modül, süre, önem ve son tarihle oluşuyor; yapay zekanın koyduğu değerler işaretli | Sağlandı (sahte sağlayıcıyla). "Cuma" kullanıcının yazdığı gün olduğu için son tarih işaretsiz (kural 4; **Görüşün gerek**, "Verdiğim kararlar"). **Gerçek modelle (D3, 12 Kas 2026): kısmen.** 2,6–4,3 sn, son tarih (cuma 13 Kas) ve önem doğru; ama modül güveni sınırda: `ai:eval`'in modül tanımlı kataloğunda Okul 0,6 (eşiğin tam üstü, iş yazılırdı), örnek verinin tanımsız modülleriyle (İş'te aynı adlı bir iş de var) modülsüz → onay kartı. Hedef iki çalıştırmada da iş kalemi (beklenen iş), süre bir kez boş ("benzer iş verisi yok"), bir kez 240 dk (**Görüşün gerek**, D3) | `yapay-zeka.ai.spec.ts` ("a free line becomes work…": 10 sn içinde iş, `module_id`, `est_minutes`, `importance` işaretli, `due_at` dolu, gerekçe satırda ve formda), `tests/db/ai-flows.test.ts` |
+| Eforu boş gelen iş zarfı yapay zekanın tahminiyle doluyor, gerekçesi görünüyor | Sağlandı (sahte; gerçek modelle de: ara sınav hazırlığı 300 dk ve 50 dk'lık oturum, sınır 120–600 içinde, Türkçe gerekçe, 3,5 sn) | `yapay-zeka.ai.spec.ts` ("an envelope with an empty effort…": 155 dk, modülün sınırı içinde, gerekçe satırda ve formda), `ai-flows.test.ts` (sınıra kırpma, `default` kaynağı, kapsam değişince yeniden sorma) |
 | Kullanıcının düzelttiği alan sonraki teklif ve çağrılarda ezilmiyor; düzeltme `ai_feedback`'e düşüyor | Sağlandı | `yapay-zeka.ai.spec.ts` (`enrich` düzeltmesi; `size` düzeltmesi ve sonraki teklif), `ai-flows.test.ts`; `size` `user` ve `module` kaynaklı alanı sormaz (`src/core/ai/flows/size.ts`) |
 | Anahtar yokken serbest giriş gelen kutusuna düşüyor, zarflar sınırın ortasıyla doluyor, uygulama hatasız çalışıyor | Sağlandı | `yapay-zeka.ai.spec.ts` ("without any provider…", 3100 sunucusu: 135 dk, `default`, giriş `new`, `ai_calls` boş, sayfada yakalanmamış hata yok), `ai-flows.test.ts` |
 | Bütçe sınırı 0 yapılınca çağrı yapılmıyor; her çağrı `ai_calls`'ta maliyetiyle görünüyor | Sağlandı (sahte; maliyet gerçek modelin fiyatıyla hesaplanır) | `yapay-zeka.ai.spec.ts` ("with the budget at 0…", "settings show this month's calls…"), `ai-flows.test.ts`, `tests/db/ai-gateway.test.ts` |
@@ -232,7 +232,7 @@ Adım denetimleri:
 
 ### Ç3: Planlayıcı (12 Kas 2026)
 
-Kullanıcı bu gece için "bir oturumda tek faz" kuralını esnetti; Ç3, Ç2 ile aynı oturumda, gözetimsiz yapıldı. Yapay zekalı yollar sahte sağlayıcıyla (3101 sunucusu) ve sağlayıcısız (3100) sınandı; gerçek modelle ölçüm D3'ü bekliyor.
+Kullanıcı bu gece için "bir oturumda tek faz" kuralını esnetti; Ç3, Ç2 ile aynı oturumda, gözetimsiz yapıldı. Yapay zekalı yollar sahte sağlayıcıyla (3101 sunucusu) ve sağlayıcısız (3100) sınandı; gerçek modelle ölçüm "Senden bekleyenler" → D3.
 
 #### Kabul ölçütleri
 
@@ -245,7 +245,7 @@ Kullanıcı bu gece için "bir oturumda tek faz" kuralını esnetti; Ç3, Ç2 il
 | Yoğun modda örnek verideki ömürlük modülün tabanı korunuyor (testle) | Sağlandı | `tests/db/seed.test.ts` "keeps the lifelong module's weekly floor in busy mode", `plan.test.ts` (modül ve ritim tabanı) |
 | 3 gün kullanılmadıktan sonra geri dönüş ekranı açılıyor ve gecikmiş iş yığını göstermiyor | Sağlandı | `planner.spec.ts` "back after three days…", `plan.test.ts`, `tests/db/planning.test.ts` (geçmiş planlı günler temizlenir) |
 | Uzak bir kalem haftası gelene kadar oturumlara bölünmüyor; haftası gelince yalnızca o haftanın eforu bölünüyor | Sağlandı | `week.test.ts` "does not split an item whose week has not come…", "cuts only this week's share…", `planning.test.ts` |
-| Sabah planı yapay zekanın önerisini ve gerekçelerini taşıyor; yapay zeka kapatılınca plan yine geliyor | Sahte sağlayıcıyla sağlandı. **Gerçek modelle D3'te doğrulanacak** | `tests/e2e/planlama.ai.spec.ts` (sabah planı ve "neden?" gerekçesi; yapay zeka kapalıyken motorun planı, hiç çağrı yok), `tests/db/ai-planning.test.ts` |
+| Sabah planı yapay zekanın önerisini ve gerekçelerini taşıyor; yapay zeka kapatılınca plan yine geliyor | Sahte sağlayıcıyla sağlandı. Gerçek modelle (D3): sağlandı, bir yorumla. Öneri şemadan geçti (5–6 sn), gerekçeler Türkçe ve kısa, günün kaydında (`plan_source = ai`, `plan_reasons`); yapay zekanın seçtiği üç iş güne yerleşti. Ama zorunlu iş üç ya da daha fazlaysa "günün 3 işi" yalnızca zorunlulardan oluşur ve yapay zekanın üçü orada görünmez (**Görüşün gerek**, D3) | `tests/e2e/planlama.ai.spec.ts` (sabah planı ve "neden?" gerekçesi; yapay zeka kapalıyken motorun planı, hiç çağrı yok), `tests/db/ai-planning.test.ts` |
 | Yapay zekanın zorunlu bir işi erteleme önerisi motor tarafından reddediliyor (testle) | Sağlandı | `plan.test.ts` (son tarih ve haftalık taban), `ai-planning.test.ts` "cannot put off mandatory work" |
 | Hafta içinde tetikleyici yokken haftalık taahhüt değişmiyor | Sağlandı | `week.test.ts` "plan stability", `planning.test.ts` "without a trigger it stays". Yorum: taahhütten sonra gelen yeni kalem haftada yer varsa taahhüde eklenir, var olanların payı değişmez (**Görüşün gerek**, `docs/04` "Yeni kalem") |
 
@@ -294,7 +294,7 @@ Faz denetimi:
 
 ## Sıradaki adım
 
-Ç4 (Pano ve telefon cilası): yeni oturumda `docs/05-arayuz.md` ve `docs/11-yayin-ve-cihazlar.md` okunarak başlanır. Önce "Senden bekleyenler" (D3) ve Ç3'ün "Görüşün gerek" satırları.
+Ç4 (Pano ve telefon cilası): yeni oturumda `docs/05-arayuz.md` ve `docs/11-yayin-ve-cihazlar.md` okunarak başlanır. Önce Ç3'ün ve D3 ölçümünün "Görüşün gerek" satırları.
 
 ## Senden bekleyenler
 
@@ -351,9 +351,39 @@ Sırayla (PowerShell, depo kökünde):
 2. `git push origin main`, sonra `git push origin c3-tamam`. Vercel üretimi kendisi yayınlar.
 3. Üretimde Bugün ve Hafta ekranını aç; bir dakika içinde Hafta'da haftanın kalemleri görünmeli (giriş gerektirdiği için kullanıcı doğrular).
 
-### D3. Yapay zeka anahtarı: bekliyor
+### D3. Yapay zeka anahtarı: tamamlandı (12 Kas 2026)
 
-Ç2 ve Ç3 sahte sağlayıcıyla geliştirilip sınandı; gerçek çağrılar için:
+Anahtar ve modeller (`AI_MODEL_FAST=claude-haiku-5-5`, `AI_MODEL_PLAN=claude-sonnet-5-5`) `.env.local`'de ve Vercel Production ortamında (anahtar gizli türde); üretim yeniden yayınlandı. Üretimde yapay zekanın çalıştığını giriş gerektiği için ben göremedim: Ayarlar → Yapay zeka'da durum açık olmalı, hızlı girişe bir satır yazınca iş birkaç saniyede dolmalı.
+
+**Ölçüm (yerel hesap, gerçek model).** 42 çağrı, hepsi şemadan geçti, hiçbiri zaman aşımına düşmedi; toplam 0,094 $.
+
+| Çağrı | Model | Süre | Maliyet (çağrı başı) | Sonuç |
+| --- | --- | --- | --- | --- |
+| `ai:eval` (30 `enrich`) | Haiku | sınır 30 sn | 0,0175 $ toplam | Yönlendirme %93, iş / kalem %90, son tarih %100, süre sapması (ortanca) %13 |
+| `enrich` | Haiku | 2,6–4,3 sn (sınır 8 sn) | 0,0006 $ | "Sunum slaytları cuma" kısmen (Ç2 ölçüt tablosu); "perde ölçüsünü al" Ev'e yazıldı |
+| `size` | Haiku | 3,5 sn | 0,0003 $ | Ara sınav 300 dk, oturum 50 dk; gerekçe "benzer iş verisi yok; 1-6. hafta kapsamı ve %30 ağırlık için" |
+| `decompose` | Sonnet | 8,9 sn (sınır 30 sn) | 0,008 $ | Ara sınav 6 adım (30–90 dk), adlar somut ("Hafta 1-3 konularının özet notları: 3 sayfa") |
+| `week` | Sonnet | 4,4 sn | 0,007 $ | 4 kalem taahhüt, modül bütçeleri, gerekçe her kalemde ("Vize 18 Kasım, 300 dakika işin 238 dakikası bu hafta") |
+| `plan` (bugün, yarın, önizleme) | Sonnet | 5,0–6,2 sn | 0,012 $ | Öneri ve gerekçeler kayıtta; motor kurala uyarak kırptı (aşağıda) |
+| `replan` (not: "Bugün yorgunum, kısa işler") | Sonnet | 5,4 sn | 0,012 $ | Notu izledi: derin işleri erteledi, kısa ve hafif işleri öne aldı |
+| `month` | Sonnet | 3,2 sn | 0,006 $ | Kapasitesi aşılan bir hafta (geçici 40 saatlik kalemle) için 3 öneri: iki "öne çek", bir "Yoğun mod" |
+| `review` | Sonnet | 3,2 sn | 0,005 $ | Cumartesi saatiyle: özet, 3 öneri, mod önerisi; suçlayıcı dil yok |
+
+Kestirim: günde bir `plan`, ara sıra `replan`, günde 10 giriş, haftada bir `week` ve `review`, ayda bir `month` ile ayda yaklaşık 0,6 $; 5 $'lık sınırın çok altında.
+
+**Bulgular** (hiçbirinde kod ya da istem değiştirmedim; değişiklik senin kararın):
+
+1. **"Sunum slaytları cuma" modülü sınırda** (**Görüşün gerek**). Modül tanımlı katalogda güven tam 0,6 (eşik); tanımsız modüllerle ve aynı adlı başka bir iş varken modelin cevabı "okul mu iş mi yazmıyor", satır onay kartına düştü. Bu davranış istemin istediği şey (emin değilse sor); gerçek modüller açıklamalarıyla kurulunca düzelmesi beklenir. Asıl ölçüt Okul modülü kurulduğunda yeniden denenmeli.
+2. **`enrich` iş kalemi seçince süreyi çoğu zaman boş bırakıyor**; `ai:eval`'in 5 kaçağının 3'ünde süre boş. Kalem o zaman sınırın ortasıyla ya da boş eforla açılır. İstem "kalem için de toplam süre tahmin et" diyebilir (bir sonraki istem sürümünde, `ai:eval` ile).
+3. **`ai:eval` kaçakları tartışmalı**: "Sunum slaytları cuma" ve "Arabanın muayenesini yaptır cuma" için iş ile kalem ayrımı, "Kütüphaneden kitabı iade et" ve "Fotoğrafları yedekle" için modül. Beklenen değerler elle yazıldı (Ç2); kullanıcının gerçek girişleriyle değiştirilince yeniden bakılmalı.
+4. **Günün 3 işi ile yapay zekanın üçü** (**Görüşün gerek**). `docs/04` (madde 8): zorunlular önce gelir. İstem de yapay zekaya "zorunluyu üçe koyma, motor zaten yerleştirir" diyor. Yarının örnek gününde iki "bugün teslim" ve bir taban ritmi ("Sabah rutini") üçü doldurdu; yapay zekanın seçtiği üç iş (ara sınav, HW2, sunum) güne yerleşti, gerekçeleriyle listede, ama kartın üstündeki üçlüde yok. Seçenek: üçlüde zorunluların en fazla ikisi, ya da taban ritimleri üçlüye girmesin.
+5. **`plan` kapasiteyi izlemiyor**: bugün yalnızca 36 dakika varken yapay zeka 45 dakikalık işi üçe koydu (motor kırptı, kural tuttu). İstem "yalnızca kalan yuvalara sığanı seç" diyebilir.
+6. **Uyarı cümleleri suçluluk tonunda olabiliyor**: "Dün planlanan 2 işten hiçbiri bitmedi", "Dünkü iki iş yapılmadı". Bu uyarılar şu an hiçbir ekranda gösterilmiyor (rota döndürür, arayüz kullanmaz); gösterilecekse istem ürün kuralı 2'yi açıkça söylemeli.
+7. **`month` önerisinin metni bir kez çelişkili**: "DL ara raporunu 23 Kasım haftasına çek, bu hafta yük fazla" (yükü fazla olan kalemin kendi haftası değildi).
+
+Deneme betikleri geçiciydi (akışları gerçek yapılandırmayla doğrudan çağırdılar) ve silindi; yerel hesap sonra örnek veriyle yeniden kuruldu.
+
+Önceki adımlar, kayıt için:
 
 1. Anthropic Console'da bir API anahtarı aç (ücretli; aylık sınır `docs/10-yapay-zeka.md` içinde 5 $ olarak tasarlandı, Console'da ayrıca harcama sınırı koyabilirsin).
 2. Anahtarı sohbete yazma; depo kökündeki `.env.local` dosyasına `ANTHROPIC_API_KEY=...` satırı olarak ekle (`.env*` depoya girmez). Aynı dosyaya modelleri de yaz: `AI_MODEL_FAST=claude-haiku-5-5` ve `AI_MODEL_PLAN=claude-sonnet-5-5` (`.env.example` içinde hazır).
