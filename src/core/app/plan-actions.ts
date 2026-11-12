@@ -11,7 +11,11 @@ import {
   waitOnTask,
 } from "@/core/data/planning";
 import { postAi } from "@/core/ai/client";
-import { confirmSession, endSession } from "@/core/data/sessions";
+import { confirmSession } from "@/core/data/sessions";
+import { endSessionTold } from "@/core/data/session-events";
+import type { ModuleRegistry } from "@/core/contract/types";
+import type { Db } from "@/core/types";
+import { useRegistry } from "./CoreProvider";
 import { createTask } from "@/core/data/work";
 import { buildPlan, type Candidate, isFinished, type PlanInput } from "@/core/planner";
 import type { LifeMode, LifeModePeriod, Session, Task } from "@/core/types";
@@ -30,15 +34,19 @@ function useFailureNotice() {
 /** What "Ertele" does with a candidate: tomorrow for a task, off today's list for the rest. */
 export type DeferTarget = { candidate: Candidate; date: string; session?: Session | null };
 
-async function stopFirst(db: Parameters<typeof endSession>[0], session?: Session | null) {
-  if (session && session.id !== "pending") await endSession(db, session.id, "stopped");
+/** "Ertele" while it runs: the session is stopped first, its module told it was put off. */
+async function stopFirst(db: Db, registry: ModuleRegistry, session?: Session | null) {
+  if (session && session.id !== "pending") {
+    await endSessionTold({ db, registry }, session.id, "stopped", "deferred");
+  }
 }
 
 export function useDefer() {
   const onError = useFailureNotice();
+  const registry = useRegistry();
   return useCoreMutation({
     mutate: async (db, { candidate, date, session }: DeferTarget) => {
-      await stopFirst(db, session);
+      await stopFirst(db, registry, session);
       if (candidate.type === "follow_up" && candidate.task) {
         return answerFollowUp(db, candidate.task, false, date);
       }
@@ -82,8 +90,10 @@ export function useConfirmSession() {
 /** "Takıldım" closes the session; the three ways on are below. */
 export function useStopForStuck() {
   const onError = useFailureNotice();
+  const registry = useRegistry();
   return useCoreMutation({
-    mutate: (db, session: Session) => endSession(db, session.id, "stopped"),
+    mutate: (db, session: Session) =>
+      endSessionTold({ db, registry }, session.id, "stopped", "stuck"),
     optimistic: () => [{ key: keys.openSession, update: () => null }],
     onError,
   });

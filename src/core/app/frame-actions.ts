@@ -2,6 +2,8 @@
 
 import type { FrameSettings } from "@/core/contract/frame";
 import { recordBed, recordWake, saveDayFrame, setExpected } from "@/core/data/frame";
+import { tellDayClosed, tellDayStarted } from "@/core/data/session-events";
+import { useRegistry } from "./CoreProvider";
 import type { DayRow } from "@/core/types";
 import { SAVE_FAILED, useNotify } from "@/core/ui/Notices";
 import { keys, useCoreMutation } from "./hooks";
@@ -56,8 +58,16 @@ function patchDay(date: string, patch: Partial<DayRow>) {
 /** "Uyandım", or "Biraz önce": the day's waking. */
 export function useRecordWake() {
   const onError = useFailureNotice();
+  const registry = useRegistry();
   return useCoreMutation({
-    mutate: (db, args: { date: string; at: Date }) => recordWake(db, args.date, args.at),
+    mutate: async (db, args: { date: string; at: Date }) => {
+      const row = await recordWake(db, args.date, args.at);
+      await tellDayStarted(
+        { db, registry },
+        { date: args.date, wokeAt: row.woke_at ?? args.at.toISOString(), estimated: false },
+      );
+      return row;
+    },
     optimistic: ({ date, at }) => [
       {
         key: keys.days,
@@ -72,8 +82,16 @@ export function useRecordWake() {
 /** "Yatıyorum": tonight's bedtime; the screen goes to night. */
 export function useRecordBed() {
   const onError = useFailureNotice();
+  const registry = useRegistry();
   return useCoreMutation({
-    mutate: (db, args: { date: string; at: Date }) => recordBed(db, args.date, args.at),
+    mutate: async (db, args: { date: string; at: Date }) => {
+      const row = await recordBed(db, args.date, args.at);
+      await tellDayClosed(
+        { db, registry },
+        { date: args.date, bedAt: row.bed_at ?? args.at.toISOString() },
+      );
+      return row;
+    },
     optimistic: ({ date, at }) => [
       { key: keys.days, update: patchDay(date, { bed_at: at.toISOString() }) },
     ],

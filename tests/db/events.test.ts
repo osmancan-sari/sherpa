@@ -1,0 +1,178 @@
+import { afterAll, beforeEach, describe, expect, it } from "vitest";
+import { createRegistry } from "@/core/contract/registry";
+import type { ModuleDefinition } from "@/core/contract/types";
+import { setModuleStatus } from "@/core/data/module-rows";
+import {
+  closeUnansweredTold,
+  completeTaskTold,
+  endSessionTold,
+  startSessionTold,
+  tellDayClosed,
+  tellDayStarted,
+} from "@/core/data/session-events";
+import { createRhythm, createTask } from "@/core/data/work";
+import type { AppEvent } from "@/core/types";
+import { makeModule, ok, ownerDb, wipe } from "./helpers";
+
+// The core's session and day events (docs/06-modul-sozlesmesi.md, "Olaylar"; Ç3c): a session's
+// events reach its own module only, the day's reach every active module.
+
+const db = ownerDb();
+beforeEach(wipe);
+afterAll(wipe);
+
+const CORE = ["core.session_started", "core.session_ended", "core.day_started", "core.day_closed"];
+
+function listener(slug: string) {
+  const heard: AppEvent[] = [];
+  const view = () => null;
+  const definition: ModuleDefinition = {
+    slug,
+    name: slug,
+    kind: "lifelong",
+    color: "#2563eb",
+    chip: async () => ({ text: "", health: "ok" }),
+    intake: [],
+    emits: [],
+    on: Object.fromEntries(
+      CORE.map((type) => [type, async (event: AppEvent) => void heard.push(event)]),
+    ),
+    modeBehavior: {
+      normal: { weightMultiplier: 1, floorMultiplier: 1 },
+      busy: { weightMultiplier: 1, floorMultiplier: 1 },
+      minimum: { weightMultiplier: 1, floorMultiplier: 1 },
+      holiday: { weightMultiplier: 1, floorMultiplier: 1 },
+    },
+    weeklyReport: async () => ({ metrics: [], suggestions: [] }),
+    ui: { tabs: [{ key: "genel", label: "Genel", component: view }] },
+  };
+  return { definition, heard };
+}
+
+async function setup() {
+  const a = listener("birinci");
+  const b = listener("ikinci");
+  const registry = createRegistry([a.definition, b.definition]);
+  const modA = await makeModule(db, "birinci", "Birinci");
+  const modB = await makeModule(db, "ikinci", "İkinci");
+  return { a, b, registry, modA, modB, told: { db, registry } };
+}
+
+const kinds = (events: AppEvent[]) =>
+  events.map((event) => {
+    const payload = event.payload as { result?: string };
+    return payload.result ? `${event.type}:${payload.result}` : event.type;
+  });
+
+describe("session events", () => {
+  it("reach the work's own module only, with its source, the result and the minutes", async () => {
+    const { a, b, told, modA } = await setup();
+    // A module's task carries its source (as an item's sitting does).
+    const task = ok(
+      await db
+        .from("tasks")
+        .insert({
+          module_id: modA.id,
+          title: "Rutin",
+          source_type: "birinci.kayit",
+          source_id: "8f2c1d7e-3b4a-4c5d-9e6f-0a1b2c3d4e5f",
+        })
+        .select()
+        .single(),
+    );
+    const session = await startSessionTold(told, { taskId: task.id });
+    await endSessionTold(told, session.id, "done");
+    expect(kinds(a.heard)).toEqual(["core.session_started", "core.session_ended:done"]);
+    expect(b.heard).toEqual([]);
+    expect(a.heard[1].payload).toMatchObject({
+      module: "birinci",
+      session_id: session.id,
+      task_id: task.id,
+      rhythm_id: null,
+      source: { type: "birinci.kayit", id: "8f2c1d7e-3b4a-4c5d-9e6f-0a1b2c3d4e5f" },
+      minutes: 0,
+      measured: true,
+    });
+    // Written to the events table too, as the core's own.
+    const rows = ok(await db.from("events").select("type, module_slug").order("occurred_at"));
+    expect(rows.map((row) => row.type)).toEqual(["core.session_started", "core.session_ended"]);
+    expect(rows.every((row) => row.module_slug === null)).toBe(true);
+  });
+
+  it("a session stopped by another start is told 'stopped'; deferred, stuck and unanswered say so", async () => {
+    const { a, b, told, modA, modB } = await setup();
+    const first = await createTask(db, { module_id: modA.id, title: "Bir" });
+    const other = await createTask(db, { module_id: modB.id, title: "İki" });
+    await startSessionTold(told, { taskId: first.id });
+    const second = await startSessionTold(told, { taskId: other.id });
+    expect(kinds(a.heard)).toEqual(["core.session_started", "core.session_ended:stopped"]);
+    expect(kinds(b.heard)).toEqual(["core.session_started"]);
+    await endSessionTold(told, second.id, "stopped", "deferred");
+    const third = await startSessionTold(told, { taskId: other.id });
+    await endSessionTold(told, third.id, "stopped", "stuck");
+    const fourth = await startSessionTold(told, { taskId: other.id });
+    await closeUnansweredTold(told, fourth.id);
+    expect(kinds(b.heard).filter((kind) => kind.startsWith("core.session_ended"))).toEqual([
+      "core.session_ended:deferred",
+      "core.session_ended:stuck",
+      "core.session_ended:unanswered",
+    ]);
+    expect((b.heard.at(-1)!.payload as { measured: boolean }).measured).toBe(false);
+  });
+
+  it("one tap 'Bitti' on a running task ends its session as done; ending twice tells once", async () => {
+    const { a, told, modA } = await setup();
+    const task = await createTask(db, { module_id: modA.id, title: "Bir" });
+    const session = await startSessionTold(told, { taskId: task.id });
+    await completeTaskTold(told, task.id);
+    await endSessionTold(told, session.id, "done");
+    expect(kinds(a.heard)).toEqual(["core.session_started", "core.session_ended:done"]);
+  });
+
+  it("a rhythm's session reaches its module; unplanned work without a module reaches nobody", async () => {
+    const { a, b, told, modA } = await setup();
+    const rhythm = await createRhythm(db, {
+      module_id: modA.id,
+      title: "Esneme",
+      target_count: 3,
+      period: "week",
+      est_minutes: 10,
+      energy: "light",
+      context: "any",
+    });
+    const session = await startSessionTold(told, { rhythmId: rhythm.id });
+    expect(a.heard[0].payload).toMatchObject({ rhythm_id: rhythm.id });
+    await startSessionTold(told, { title: "Plansız" });
+    expect(kinds(a.heard)).toEqual(["core.session_started", "core.session_ended:stopped"]);
+    expect(b.heard).toEqual([]);
+    expect(session.module_id).toBe(modA.id);
+  });
+
+  it("a paused module hears nothing", async () => {
+    const { a, told, modA } = await setup();
+    const task = await createTask(db, { module_id: modA.id, title: "Bir" });
+    await setModuleStatus(db, modA.id, "paused");
+    await startSessionTold(told, { taskId: task.id });
+    expect(a.heard).toEqual([]);
+  });
+});
+
+describe("day events", () => {
+  it("reach every active module", async () => {
+    const { a, b, told, modB } = await setup();
+    await tellDayStarted(told, {
+      date: "2026-11-18",
+      wokeAt: "2026-11-18T04:10:00Z",
+      estimated: true,
+    });
+    await setModuleStatus(db, modB.id, "paused");
+    await tellDayClosed(told, { date: "2026-11-18", bedAt: "2026-11-18T20:30:00Z" });
+    expect(kinds(a.heard)).toEqual(["core.day_started", "core.day_closed"]);
+    expect(kinds(b.heard)).toEqual(["core.day_started"]);
+    expect(a.heard[0].payload).toEqual({
+      date: "2026-11-18",
+      woke_at: "2026-11-18T04:10:00Z",
+      estimated: true,
+    });
+  });
+});

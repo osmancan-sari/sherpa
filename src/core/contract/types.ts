@@ -102,6 +102,18 @@ export type PromptRequest = {
 
 export type RhythmProgress = { rhythm: Rhythm; done: number; target: number; debt: number };
 
+/** A day's waking and bedtime as a module reads them (Ç3c, `ctx.days`). */
+export type DayFrameRecord = {
+  date: string;
+  wokeAt: string | null;
+  /** "Uyandım" was not said: the first touch of the day stands for it. */
+  wokeEstimated: boolean;
+  bedAt: string | null;
+  /** What the sleep plan chose ("HH:mm"). */
+  plannedWake: string | null;
+  plannedBed: string | null;
+};
+
 export type ModuleContext = {
   /** The module's row: id, status, its saved settings. */
   module: ModuleRow;
@@ -125,6 +137,8 @@ export type ModuleContext = {
   };
   /** Saves the module's settings (modules.settings). */
   saveSettings: (settings: Record<string, unknown>) => Promise<void>;
+  /** Ç3c: the days' waking and bedtime from this day on (read only). */
+  days: (sinceDay: string) => Promise<DayFrameRecord[]>;
 };
 
 /** What one of the module's extractors made of a text (docs/10-yapay-zeka.md, `extract`). */

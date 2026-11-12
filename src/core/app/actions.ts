@@ -19,9 +19,9 @@ import {
   snoozePrompt,
 } from "@/core/data/inbox";
 import { answerModulePrompt, closeWorkItem } from "@/core/data/outcome";
-import { endSession, type SessionTarget, startSession } from "@/core/data/sessions";
+import { getOpenSession, type SessionTarget } from "@/core/data/sessions";
+import { completeTaskTold, endSessionTold, startSessionTold } from "@/core/data/session-events";
 import {
-  completeTask,
   createRhythm,
   createTask,
   createWorkItem,
@@ -116,8 +116,9 @@ export function useAddWorkItem() {
 
 export function useCompleteTask() {
   const onError = useFailureNotice();
+  const registry = useRegistry();
   return useCoreMutation({
-    mutate: (db, taskId: string) => completeTask(db, taskId),
+    mutate: (db, taskId: string) => completeTaskTold({ db, registry }, taskId),
     optimistic: (taskId, queryClient) => {
       const open = queryClient.getQueryData<Session | null>(keys.openSession);
       return [
@@ -142,8 +143,9 @@ export function useReopenTask() {
 
 export function useStartSession() {
   const onError = useFailureNotice();
+  const registry = useRegistry();
   return useCoreMutation({
-    mutate: (db, target: SessionTarget) => startSession(db, target),
+    mutate: (db, target: SessionTarget) => startSessionTold({ db, registry }, target),
     optimistic: (target, queryClient) => {
       const previous = queryClient.getQueryData<Session | null>(keys.openSession);
       const now = stamp();
@@ -200,9 +202,10 @@ export function useStartSession() {
 
 export function useEndSession() {
   const onError = useFailureNotice();
+  const registry = useRegistry();
   return useCoreMutation({
     mutate: (db, args: { session: Session; outcome: "done" | "stopped" }) =>
-      endSession(db, args.session.id, args.outcome),
+      endSessionTold({ db, registry }, args.session.id, args.outcome),
     optimistic: ({ session, outcome }) => [
       { key: keys.openSession, update: () => null },
       ...(session.task_id
@@ -269,8 +272,14 @@ export function useEditTask() {
 /** "Bırak": the task leaves the pool; nothing is deleted. */
 export function useDropTask() {
   const onError = useFailureNotice();
+  const registry = useRegistry();
   return useCoreMutation({
-    mutate: (db, taskId: string) => dropTask(db, taskId),
+    mutate: async (db, taskId: string) => {
+      // A session running on it is stopped first, and its module told.
+      const open = await getOpenSession(db);
+      if (open?.task_id === taskId) await endSessionTold({ db, registry }, open.id, "stopped");
+      return dropTask(db, taskId);
+    },
     optimistic: (taskId, queryClient) => {
       const open = queryClient.getQueryData<Session | null>(keys.openSession);
       return [

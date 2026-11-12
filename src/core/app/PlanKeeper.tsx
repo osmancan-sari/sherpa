@@ -6,11 +6,11 @@ import { postAi } from "@/core/ai/client";
 import { keepWeek, storedWeek, weekInput } from "@/core/data/keep";
 import { estimateWake, savePlannedSleep } from "@/core/data/frame";
 import { clearPastPlannedDays, planDay, touchDay } from "@/core/data/planning";
-import { closeUnanswered } from "@/core/data/sessions";
+import { closeUnansweredTold, tellDayStarted } from "@/core/data/session-events";
 import { buildPlan, isReturning, overrun, storedPlan } from "@/core/planner";
 import { weekAction } from "@/core/planner/week";
 import { formatTime, shiftDay, weekStart, weekdayOf } from "@/lib/date";
-import { CORE, MODULE, useDb } from "./CoreProvider";
+import { CORE, MODULE, useDb, useRegistry } from "./CoreProvider";
 import { useAiStatus, useHorizonReviews, useTodayPlan, useWeeklyReviews } from "./hooks";
 
 // The plan keeper: nothing depends on the user doing anything (rule 3). Whenever the app is
@@ -28,6 +28,7 @@ const REVIEW_FROM = 6;
 
 export function PlanKeeper() {
   const db = useDb();
+  const registry = useRegistry();
   const queryClient = useQueryClient();
   const { input, rows, now } = useTodayPlan();
   const aiStatus = useAiStatus();
@@ -109,7 +110,7 @@ export function PlanKeeper() {
       try {
         if (unanswered && open) {
           wrote = ["sessions", "tasks", "work_items"];
-          await closeUnanswered(db, open.id);
+          await closeUnansweredTold({ db, registry }, open.id);
           changed = true;
         } else if (action) {
           // The week first; the day is planned once the sittings it made have been read back.
@@ -163,6 +164,7 @@ export function PlanKeeper() {
     rows,
     now,
     db,
+    registry,
     queryClient,
     aiOn,
     aiKnown,
@@ -189,6 +191,11 @@ export function PlanKeeper() {
       const now = new Date();
       touchDay(db, date, now)
         .then(() => (framed && !onWake ? estimateWake(db, date, now) : null))
+        .then((estimated) =>
+          estimated?.woke_at
+            ? tellDayStarted({ db, registry }, { date, wokeAt: estimated.woke_at, estimated: true })
+            : null,
+        )
         .then(() => queryClient.invalidateQueries({ queryKey: [CORE, "days"] }))
         .catch(() => {
           touched.current = null;
@@ -200,7 +207,7 @@ export function PlanKeeper() {
       window.removeEventListener("pointerdown", onTouch);
       window.removeEventListener("keydown", onTouch);
     };
-  }, [date, framed, rows, db, queryClient]);
+  }, [date, framed, rows, db, registry, queryClient]);
 
   return null;
 }

@@ -109,3 +109,24 @@ describe("the frame's settings", () => {
     expect((await getSettings(db))?.day_frame).toBeNull();
   });
 });
+
+describe("ctx.days", () => {
+  it("lets a module read the days' waking and bedtime", async () => {
+    const { createModuleContext } = await import("@/core/data/context");
+    const { createRegistry } = await import("@/core/contract/registry");
+    const mod = ok(
+      await db.from("modules").insert({ slug: "rutin", name: "Rutin" }).select().single(),
+    );
+    await recordWake(db, DATE, at("07:10"));
+    await recordBed(db, DATE, at("23:20"));
+    const ctx = createModuleContext({ db, registry: createRegistry([]), module: mod });
+    expect(await ctx.days(DATE)).toEqual([
+      expect.objectContaining({
+        date: DATE,
+        wokeAt: expect.any(String),
+        wokeEstimated: false,
+        bedAt: expect.any(String),
+      }),
+    ]);
+  });
+});

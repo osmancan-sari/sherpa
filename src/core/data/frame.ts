@@ -1,4 +1,5 @@
 import { type FrameSettings, toStoredFrame } from "@/core/contract/frame";
+import type { DayFrameRecord } from "@/core/contract/types";
 import { check, type Db, type DayRow, toJson, unwrap } from "@/core/types";
 
 // The day's frame in the data (docs/03-veri-modeli.md, `days`, `settings.day_frame`): waking
@@ -78,15 +79,7 @@ export async function saveDayFrame(db: Db, frame: FrameSettings | null): Promise
   );
 }
 
-/** The days' waking and bedtime as a module reads them (`ctx.days`). */
-export type DayFrameRecord = {
-  date: string;
-  wokeAt: string | null;
-  wokeEstimated: boolean;
-  bedAt: string | null;
-  plannedWake: string | null;
-  plannedBed: string | null;
-};
+export type { DayFrameRecord };
 
 export async function listDayFrames(db: Db, sinceDay: string): Promise<DayFrameRecord[]> {
   const rows = unwrap(

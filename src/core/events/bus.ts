@@ -11,6 +11,14 @@ import { type AppEvent, type Db, unwrap, toJson } from "@/core/types";
 export const CORE_EVENTS = {
   /** A module's question was answered: { module, kind, subject_type, subject_id, value }. */
   promptAnswered: "core.prompt_answered",
+  /** Ç3c: a session started; to the work's module only. */
+  sessionStarted: "core.session_started",
+  /** Ç3c: a session ended (done, stopped, deferred, stuck, unanswered); to the work's module only. */
+  sessionEnded: "core.session_ended",
+  /** Ç3c: the day's waking was recorded; to every active module. */
+  dayStarted: "core.day_started",
+  /** Ç3c: tonight's bedtime was recorded; to every active module. */
+  dayClosed: "core.day_closed",
 } as const;
 
 export type EmitResult = { event: AppEvent; failures: { module: string; error: unknown }[] };
@@ -23,8 +31,14 @@ export async function emitEvent(input: {
   /** The publishing module; null for the core's own events. */
   moduleSlug: string | null;
   now?: () => Date;
+  /**
+   * Only this module hears it (its slug); null: written, heard by nobody. Left out: every
+   * listening module. A module's events always go to everyone listening; the core's session
+   * events go to the work's own module only (docs/06-modul-sozlesmesi.md, "Olaylar").
+   */
+  to?: string | null;
 }): Promise<EmitResult> {
-  const { db, registry, type, moduleSlug, now } = input;
+  const { db, registry, type, moduleSlug, now, to } = input;
   const event = unwrap(
     await db
       .from("events")
@@ -33,7 +47,9 @@ export async function emitEvent(input: {
       .single(),
   );
 
-  const listeners = registry.list.filter((def) => def.on?.[type]);
+  const listeners = registry.list.filter(
+    (def) => def.on?.[type] && (to === undefined || def.slug === to),
+  );
   const failures: EmitResult["failures"] = [];
   if (listeners.length === 0) return { event, failures };
 

@@ -4,7 +4,7 @@ import { check, type Db, type Prompt, type Provenance, unwrap, type WorkItem } f
 import { markUserEdited } from "@/core/contract/envelope";
 import { createModuleContext } from "./context";
 import { answerPrompt } from "./inbox";
-import { stopSessionsOnItem } from "./sessions";
+import { stopSessionsOnItemTold } from "./session-events";
 
 // The moments the core reports back to a module: a proposed work item was closed (`onOutcome`),
 // a question was answered (`core.prompt_answered`).
@@ -61,7 +61,7 @@ export async function closeWorkItem(
   const current = unwrap(await db.from("work_items").select("*").eq("id", itemId).single());
   if (current.status === "done" || current.status === "dropped") return current;
 
-  await stopSessionsOnItem(db, itemId);
+  await stopSessionsOnItemTold({ db, registry }, itemId);
   check(
     await db
       .from("tasks")

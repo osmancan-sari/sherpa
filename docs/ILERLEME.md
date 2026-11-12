@@ -6,7 +6,7 @@ Bu dosyayı Claude Code günceller. Yeni bir oturum yalnızca bu dosyayı ve `pr
 
 - Faz: **Ç3c (Sahne ve günün çerçevesi) sürüyor** (12 Kas 2026). Ç0–Ç3b bitti (`c3b-tamam`); D1–D4 tamamlandı
 - Adım: 4 (oturum ve gün olayları)
-- Son commit: C3c step 3: recording waking and bedtime, settings
+- Son commit: C3c step 4: session and day events, ctx.days
 
 ### Ç3c planı
 
@@ -18,7 +18,7 @@ Bu dosyayı Claude Code günceller. Yeni bir oturum yalnızca bu dosyayı ve `pr
 | 1 | Veri ve zarf: migration (`days` uyanış ve yatış sütunları, `settings.day_frame`), `day_frame` doğrulaması, `timing.anchor`, `order`, `after_finish`; Ç3b'nin yarışı: kalemin oturum işini kalem satırını kilitleyerek açan `start_session` ve `save_week_sittings`, yarış testi | bitti (`20261112123800_day_frame.sql`). Yarış testi önce eski kodla koşuldu: 20 turun 5'inde kalemin iki açık oturum işi oldu; düzeltmeden sonra 3 × 20 turda hiç. `src/core/contract/frame.ts` (+ `frame.test.ts` 4), `timing.test.ts` +6, `tests/db/planning.test.ts` +5. Adım denetimi 2. adımla birlikte |
 | 2 | Planlayıcı: uyku planı, günün başı, çapalı işler, akşam, `morning`/`evening`/`night`, haftanın günlük kapasitesi; önce testler | bitti: `src/core/planner/frame.ts` (`sleepPlan`, `dayFrameOf`, `dayStartClock`), `plan.ts` (`frameParts`, durumlar), `candidates.ts` (çapalı adaylar ayrı), `input.ts` (`planInput` çerçeveyi kurar, `weekSettings`), `slots.ts` (`dayStarts`). Plan çağrısı çerçeve açıkken `day` (pencere ve beklenen yatış) taşır: `plan-4`, `replan-4`. Testler: `frame.test.ts` 23 (önce yazıldı; iki beklentim yanlıştı, aşağıda), `flows/planning.test.ts` +1. Ç3 ve Ç3b testleri değişmedi. Adım denetimi (1–2): GEÇTİ, 5 önemli; düzeltmeleri aşağıda ("Verdiğim kararlar", 12 Kas, "Ç3c adım 1–2 denetimi") |
 | 3 | Uyanış ve yatış: kayıt, tahmini uyanış, kaydırma, planlanan değerlerin günün kaydına yazılması, ayarlar | bitti: `src/core/data/frame.ts` (`recordWake`, `estimateWake`, `recordBed`, `setExpected`, `savePlannedSleep`, `saveDayFrame`, `listDayFrames`), `src/core/app/frame-actions.ts` (iyimser kancalar), bekçi: ilk dokunuş çerçeve açıkken tahmini uyanışı da yazar ("Uyandım"ın kendisi hariç, `data-wake-action`), bu gecenin planlanan yatışını ve yarının planlanan uyanışını kayda yazar; Ayarlar → Günün çerçevesi (`DayFrameSettings`). Düğmeler 7. adımda. Testler: `tests/db/frame.test.ts` 8 |
-| 4 | Oturum ve gün olayları; yalnızca sahibine teslim | |
+| 4 | Oturum ve gün olayları; yalnızca sahibine teslim | bitti: `emitEvent`'e `to` (yalnızca o modül; `null`: kimse), `src/core/data/session-events.ts` (başlatma, bitirme, Ertele `deferred`, Takıldım `stuck`, cevapsız kapanış `unanswered`, başka işin başlatılması `stopped`, tek dokunuşla Bitti, kalemin kapanması, Bırak); uyanış ("Uyandım" ve tahmini) `core.day_started`, yatış `core.day_closed`. `ctx.days` (`DayFrameRecord`). Testler: `tests/db/events.test.ts` 6, `frame.test.ts` +1 |
 | 5 | Sahne: `ui.scene`, şerit, çıkış ve dönüş, hata sınırı, `StepRunner`; `deneme`'de iki sahne | |
 | 6 | Sesli anlatım: `src/core/voice/`, cihaz başına ayar, `say`, `today` | |
 | 7 | Ekranlar: Günaydın, akşam, üst şerit, zaman çizelgesi, Hafta satırı | |

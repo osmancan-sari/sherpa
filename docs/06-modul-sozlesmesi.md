@@ -355,7 +355,7 @@ Akış:
 | `core.day_started` (Ç3c) | Uyanış kaydedildi | `{ date, woke_at, estimated }` | Etkin bütün modüllere |
 | `core.day_closed` (Ç3c) | Yatış kaydedildi | `{ date, bed_at }` | Etkin bütün modüllere |
 
-Oturum olayları yalnızca işin sahibi modüle verilir (oturumun `module_id`'si); modül başka modülün işini bu yoldan izleyemez. Plansız ve modülsüz oturumun olayı kaydedilir ama kimseye verilmez. `source` oturum işinin ya da ritmin kaynağıdır (`source_type`, `source_id`); modül kendi kaydını böyle tanır. Bir oturum başka bir iş başlatılınca kapanırsa `stopped` olarak bildirilir.
+Oturum olayları yalnızca işin sahibi modüle verilir (oturumun `module_id`'si); modül başka modülün işini bu yoldan izleyemez. Plansız ve modülsüz oturumun olayı kaydedilir ama kimseye verilmez. `source` oturum işinin ya da ritmin kaynağıdır (`source_type`, `source_id`); modül kendi kaydını böyle tanır. Bir oturum başka bir iş başlatılınca kapanırsa `stopped` olarak bildirilir. Modülün kendi geri çekmesiyle (`withdraw`) duran oturum bildirilmez: geri çekmeyi modül kendisi yapmıştır. Olaylar tarayıcıda, eylemin yapıldığı ekranda yayınlanır (Ç3d'ye kadar sunucuda olay yayını yoktur); olay yazılamazsa eylem yine geçerlidir.
 
 `ModuleDefinition`'a iki alan eklenir:
 
