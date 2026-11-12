@@ -28,6 +28,7 @@ type Settings = {
   /** Ç3c: days the module heard begin, and the last of its sessions that ended. */
   days_started?: number;
   last_session?: { result: string; minutes: number };
+  last_bed_day?: string | null;
 };
 
 export function settingsOf(ctx: ModuleContext): Settings {
@@ -181,6 +182,11 @@ export const listeners: Record<string, (event: AppEvent, ctx: ModuleContext) => 
   "core.day_started": async (_event, ctx) => {
     const settings = settingsOf(ctx);
     await ctx.saveSettings({ ...settings, days_started: (settings.days_started ?? 0) + 1 });
+  },
+  // Ç3c: the night's bedtime; the module keeps the last one it heard.
+  "core.day_closed": async (event, ctx) => {
+    const payload = event.payload as { date?: string };
+    await ctx.saveSettings({ ...settingsOf(ctx), last_bed_day: payload.date ?? null });
   },
   // The answer to the question asked in onOutcome.
   "core.prompt_answered": async (event, ctx) => {

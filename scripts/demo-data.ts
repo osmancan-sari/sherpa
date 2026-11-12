@@ -221,6 +221,8 @@ export async function seedDemo(db: Db, now: Date): Promise<DemoSummary> {
         when: { recurrence: { count: 1, period: "day", floor: 1 } },
         effort: { session_minutes: 20 },
         fit: { energy: "physical", context: "home" },
+        // Right after waking (Ç3c); without the day's frame the anchor means nothing.
+        timing: { anchor: "wake" },
       },
     ],
     [

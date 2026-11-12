@@ -64,7 +64,12 @@ describe("the deneme module", () => {
     expect(deneme.ui.scene?.when).toBeTypeOf("function");
     expect(deneme.ui.scene?.component).toBeTruthy();
     expect(Object.keys(deneme.on ?? {})).toEqual(
-      expect.arrayContaining(["core.session_started", "core.session_ended", "core.day_started"]),
+      expect.arrayContaining([
+        "core.session_started",
+        "core.session_ended",
+        "core.day_started",
+        "core.day_closed",
+      ]),
     );
   });
 

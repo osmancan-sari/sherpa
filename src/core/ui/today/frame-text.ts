@@ -72,7 +72,7 @@ const average = (values: number[]) => values.reduce((sum, value) => sum + value,
  * counts as late in the night, not early in the day.
  */
 export function sleepSummary(days: SleepDay[], today: string): string | null {
-  const since = shiftDay(today, -7);
+  const since = shiftDay(today, -6);
   const recent = days.filter((day) => day.date >= since && day.date <= today);
   const wakes = recent.flatMap((day) => (day.woke_at ? [minutesOfDay(new Date(day.woke_at))] : []));
   const beds = recent.flatMap((day) => {

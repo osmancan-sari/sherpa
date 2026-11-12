@@ -136,8 +136,8 @@ Geniş ekranda tek sayfa, kaydırma yok:
 
 - **Günaydın** (`morning`): kartta "Günaydın", büyük "Uyandım" düğmesi, yanında "Biraz önce" (15, 30, 60 dk önce; iki dokunuş), altında günün kısa özeti: günün 3 işi, ilk sabit blok, bitiş çizgisi. Ekranın geri kalanı (Sıradakiler, şerit) olağan haliyle durur. "Uyandım"dan sonra kart uyanışa bağlı ilk işi önerir.
 - **Akşam** (`evening`): sakin kart. Üstte "Akşam"; varsa sıradaki akşam ya da yatışa bağlı iş ve Başla; "Bu gece yatış 23:30 · yarın uyanış 07:30 · uyku 8 sa" satırı (uyku hedefin altındaysa nedeniyle: "Yarın 08:30'da Ders; bu gece en çok 7 sa uyku."); "Yatıyorum", "Günü kapat" (kapanış yapılmadıysa); iki küçük düğme: "Bu gece geç yatacağım" ve "Yarın erken kalkacağım" (her biri 30, 60, 90 dk seçer; yalnızca o geceyi ve o sabahı değiştirir). Sıradakiler, uyarılar ve "vakit kalırsa" gösterilmez.
-- **Gece:** büyük saat ve "Yarın uyanış 07:30 · ilk iş: …".
-- **Üst şerit:** "uyanış 07:40" (tahminiyse "~07:40"; kayıt yoksa beklenen, "beklenen 08:00") ve "yatış 22:00–01:00".
+- **Gece:** büyük saat, altında "Yarın uyanış 07:30" ve "Yarın ilk iş: …" (iki satır).
+- **Üst şerit:** "uyanış 07:40" (tahminiyse "~07:40"; kayıt yoksa "beklenen uyanış 08:00") ve "yatış 22:00–01:00".
 - **Zaman çizelgesi** uyanıştan beklenen yatışa uzanır; uyanışa bağlı, çalışma, akşam ve yatışa bağlı bölümler zemin tonuyla ayrılır, bitiş çizgisi ince bir çizgidir.
 - **Akşam kapanışının sonunda** "Onayla"nın yanında "Onayla ve yat" (kapanışı yazar ve yatışı kaydeder).
 - **Hafta:** en üstte tek satır: son 7 günün ortalama uyanışı, yatışı ve uykusu (kayıt olan günlerden; yoksa satır yok). Seri, puan, rozet yok.

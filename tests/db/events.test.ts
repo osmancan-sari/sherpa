@@ -250,8 +250,14 @@ describe("the deneme module hears the core (Ç3c)", () => {
       wokeAt: "2026-11-18T04:00:00Z",
       estimated: false,
     });
+    await tellDayClosed(told, { date: "2026-11-18", bedAt: "2026-11-18T20:00:00Z" });
     const settings = ok(await db.from("modules").select("settings").eq("id", mod.id).single())
-      .settings as { days_started?: number; last_session?: { result: string } };
+      .settings as {
+      days_started?: number;
+      last_session?: { result: string };
+      last_bed_day?: string;
+    };
+    expect(settings.last_bed_day).toBe("2026-11-18");
     expect(settings.days_started).toBe(1);
     expect(settings.last_session?.result).toBe("stuck");
   });

@@ -35,7 +35,7 @@ export const deviceVoice: VoiceProvider = {
       if (voice) utterance.voice = voice;
       // Ended, cut off or refused ("not-allowed" without a tap): the queue goes on either way.
       // Some engines never say they are done: the queue goes on after a generous while anyway.
-      const guard = setTimeout(resolve, 5_000 + text.length * 150);
+      const guard = setTimeout(resolve, (5_000 + text.length * 150) / Math.max(0.5, options.rate));
       const done = () => {
         clearTimeout(guard);
         resolve();
