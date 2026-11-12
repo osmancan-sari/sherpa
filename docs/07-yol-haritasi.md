@@ -18,6 +18,7 @@ Her faz tek başına kullanılabilir bir şey bırakır. Bir fazın kabul ölç�
 | Ç3b. Zaman kısıtları | İşlerin saat penceresi, kaçınılan saatleri, yol süresi ve dinlenme günü; planlayıcı bunlara uyar | Ç3 |
 | Ç3c. Sahne ve günün çerçevesi | Modülün işi çalışırken Bugün ekranını devralan sahne, oturum ve gün olayları, sesli anlatım; uyanış, yatış, uyku planı, çapalı işler, akşam | Ç3b |
 | Ç3d. Sunucu zemini | Uygulama kapalıyken çalışan taraf: cihaz anahtarları, giriş ucu, zamanlanmış işler, sunucuda modül bağlamı | Ç3c |
+| Ç3e. Modülün bölümleri | Bir modülün içinde ayrı renk ve sahne taşıyan bölümler (rutinde Sabah ve Akşam, Okul'da dersler); renklerin Ayarlar'dan değişmesi | Ç3c |
 | Ç4. Pano ve telefon cilası | Gün boyu açık duracak kalitede pano; uygulama gibi çalışan telefon | Ç3 |
 | Ç5. Claude köprüsü | Claude sohbetleri Sherpa'yı okuyup yazar | Ç1 |
 
@@ -204,6 +205,19 @@ Tasarım: `docs/12-sahne-ve-otomasyon.md`, bölüm E. İstem `prompts/c3d-sunucu
 - [ ] Modülün sunucu kodu tarayıcıya özgü bir şey içe aktarınca lint hata veriyor
 - [ ] iPhone Kestirmeler ile `core/wake` gerçek telefonda denendi (elle doğrulanacak; adımları `docs/ILERLEME.md` içinde)
 
+### Ç3e: Modülün bölümleri
+
+Tasarım: `docs/12-sahne-ve-otomasyon.md`, bölüm F. İstem `prompts/c3e-modul-bolumleri.md`. Kullanıcının isteğiyle eklendi (12 Kas 2026).
+
+**Kapsam**
+- Modül tanımında `facets` (sabit ya da veriden), `ui.scenes`; zarfta ve dört tabloda `facet`
+- Renk çözümleyici tek yardımcıda; çekirdeğin iş gösteren her yerinde kullanılması
+- Bölüme göre sahne ve ton
+- Ayarlar'da modül ve bölüm renkleri (`modules.color`, `modules.facet_colors`), düzenleme formunda bölüm seçimi
+- Oturum olaylarında `facet`; dışa aktarım
+
+**Kabul ölçütleri:** `docs/12-sahne-ve-otomasyon.md`, "Kabul ölçütleri" → Ç3e.
+
 ### Ç4: Pano ve telefon cilası
 
 Tasarım: `docs/05-arayuz.md`, `docs/11-yayin-ve-cihazlar.md`.
@@ -242,8 +256,8 @@ Her modül en fazla üç adımdan geçer; her adımdan sonra modül kullanılır
 | Adım | İçerik | Çekirdek bağımlılığı |
 | --- | --- | --- |
 | 1. Temel | Tabloları, iş teklifleri, sayfası, elle girişleri | Ç1; tahminler için Ç2 |
-| 2. Veri bağlantıları | Dış kaynaklardan otomatik akış | Ç2 (`extract`) |
-| 3. Otomasyon | Modülün kendi başına iş yapması | Ç5 |
+| 2. Veri bağlantıları | Dış kaynaklardan otomatik akış | Ç3d (giriş ucu, cihaz anahtarları); metinden okuma için Ç2 (`extract`) |
+| 3. Otomasyon | Modülün kendi başına iş yapması | Ç3d (zamanlanmış işler, sunucuda modül bağlamı); Claude sohbetlerinden yazma için Ç5 |
 
 Bir modülün süreci: tasarım oturumu (bkz. `prompts/modul-tasarim-oturumu.md`) → `docs/moduller/<slug>.md` onaylanır → `_sablon`'dan kopyalanır → adım 1 kurulur → 2 hafta kullanılır → gerekiyorsa adım 2 ve 3.
 
@@ -259,4 +273,4 @@ Bir modülün süreci: tasarım oturumu (bkz. `prompts/modul-tasarim-oturumu.md`
 
 Okul modülünün adımları için taslak kapsam ve kabul ölçütleri `docs/moduller/okul.md` ve `docs/moduller/okul-ninova.md` içindedir; tasarım oturumunda kesinleşir.
 
-Önerilen sıra: Ç0 → Ç1 → Ç2 → Ç3 → Ç3b → Ç3c → Ç3d → Ç4 (Ç3c ve Ç3d kullanıcının kararıyla Ç4'ten önce, 12 Kas 2026); Okul adım 1 tasarımı onaylanınca, Ç5 ve Okul adım 2 ihtiyaca göre araya girer. (Ç3, Okul adım 1'den önce bitti; Ç3b modüller tasarlanmadan önce yapılır, çünkü iş zarfını değiştirir.)
+Önerilen sıra: Ç0 → Ç1 → Ç2 → Ç3 → Ç3b → Ç3c → Ç3d → Ç3e → Ç4 (Ç3c, Ç3d ve Ç3e kullanıcının kararıyla Ç4'ten önce, 12 Kas 2026); ilk modül (rutin) Ç3e'den sonra, tasarımı onaylanınca kurulabilir, Ç4'ü beklemez; Okul adım 1 tasarımı onaylanınca, Ç5 ve Okul adım 2 ihtiyaca göre araya girer. (Ç3, Okul adım 1'den önce bitti; Ç3b modüller tasarlanmadan önce yapılır, çünkü iş zarfını değiştirir.)

@@ -276,7 +276,7 @@ plan_reasons jsonb null       -- yapay zekanın gerekçeleri ("neden?")
 closed_at timestamptz null    -- akşam kapanışı yapıldıysa
 closing_note text null
 -- Günün çerçevesi (Ç3c, docs/04-planlayici.md "Günün çerçevesi"):
-woke_at timestamptz null      -- uyanış ("Uyandım"; dışarıdan da yazılabilir, Ç3d)
+woke_at timestamptz null      -- uyanış ("Uyandım"; dışarıdan da yazılır: giriş ucu `core/wake`, Ç3d)
 woke_estimated boolean default false   -- "Uyandım" denmedi; günün ilk dokunuşundan alındı
 bed_at timestamptz null       -- bu gecenin yatışı ("Yatıyorum"); denmezse boş kalır, uydurulmaz
 planned_wake time null        -- uyku planının bu gün için seçtiği uyanış (kayıt için)
@@ -396,6 +396,43 @@ day_frame jsonb null          -- Ç3c: günün çerçevesi; boşsa çerçeve kap
 
 ### ai_calls, ai_feedback
 Yapay zeka çağrılarının kaydı ve kullanıcı düzeltmeleri. Tanımları `docs/10-yapay-zeka.md` içinde. İkisi de yalnızca eklenir.
+
+### device_tokens (Ç3d)
+Dış kaynakların (telefonun otomasyonu, bilgisayardaki toplayıcı) giriş ucuna yazdığı anahtarlar (`docs/02-mimari.md`, "Cihaz anahtarları ve giriş ucu").
+```
+name text                     -- "iPhone Kestirmeler", "Ninova toplayıcısı" (1–60 karakter)
+token_hash text unique        -- anahtarın SHA-256 özeti (64 onaltılık hane); anahtarın kendisi saklanmaz
+hint text                     -- anahtarın ilk 8 karakteri ("shp_AbCd"), listede tanımak için
+scopes text[]                 -- izinli uçlar, adresle aynı biçimde: 'core/wake', 'deneme/kayit'; en az bir
+last_used_at timestamptz null
+revoked_at timestamptz null   -- iptal; geri alınamaz
+```
+Kullanıcı kendi anahtarlarını okur, ekler ve yalnızca `name` ile `revoked_at` sütunlarını değiştirir; özet, ipucu ve kapsam eklendikten sonra değişmez, iptal geri alınmaz (tetikleyici). Silinmez (iptal edilir). Anahtarın sahibini özetinden bulan fonksiyon (`device_token_owner`) yalnızca gizli anahtara açıktır ve `last_used_at`'i o yazar.
+
+### ingest_requests (Ç3d)
+Giriş ucuna gelen, anahtarı doğrulanmış isteklerin kaydı. Hız sınırı ve yinelenen istek koruması bu tablodan.
+```
+token_id -> device_tokens
+source text, kind text        -- 'core', 'wake'
+idempotency_key text null     -- isteğin `Idempotency-Key` başlığı (1–200 karakter); (token_id, idempotency_key) tekil
+status enum(processing, done, rejected, failed)
+http_status int
+error text null               -- hatanın adı ('invalid_body: at', 'forbidden'); gövde ve anahtar yazılmaz
+finished_at timestamptz null
+```
+Kayıt sunucuda, kullanıcı adına yazılır. Hata veren (`failed`) isteğin `idempotency_key`'i boşaltılır: aynı anahtarla yeniden denenebilir.
+
+### job_runs (Ç3d)
+Zamanlanmış işlerin her çalışması (`docs/02-mimari.md`, "Zamanlanmış işler").
+```
+job text                      -- '<kaynak>/<anahtar>': 'core/week', 'deneme/ozet'
+slot text                     -- dönem: '2026-11-12T10' (saat), '2026-11-12' (gün), '2026-11-09' (haftanın Pazartesi'si)
+status enum(running, done, failed)
+attempts int default 1        -- bu dönem için kaçıncı deneme (en çok 3)
+started_at timestamptz, finished_at timestamptz null
+error text null
+```
+`(user_id, job, slot)` tekil: bir dönem için tek kayıt; aynı anda gelen iki tetikleme bir kez çalıştırır.
 
 ## Türetilen değerler (tablo değil)
 

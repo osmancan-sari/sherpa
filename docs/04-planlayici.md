@@ -215,7 +215,7 @@ Kurallar:
 | `night` | Çerçeve kapalıyken: bitiş çizgisi geçti ya da gün kapatıldı. Çerçeve açıkken (Ç3c): yatış kaydedildi ya da bu gecenin yatış aralığının sonu geçti | Gece ekranı: yarının ilk işi (çerçeve açıkken yarının uyanışı) |
 | `morning` (Ç3c) | Çerçeve açık, gün başladı, uyanış kaydı yok, sabah durumunun sonu gelmedi | "Günaydın", "Uyandım", bugünün kısa özeti |
 | `evening` (Ç3c) | Çerçeve açık, bitiş çizgisi geçti ya da gün kapatıldı, gece değil | Akşam: sıradaki akşam ya da yatışa bağlı iş, "Günü kapat", "Yatıyorum", bu gecenin yatışı, yarının uyanışı, uyku süresi |
-| `return` | Son etkileşimden beri `return_after_days` gün geçti | Geri dönüş ekranı |
+| `return` | Son etkileşimden beri `return_after_days` gün geçti (etkileşim: oturum, ritim kaydı, giriş, biten iş, günün ilk dokunuşu ve kapanışı; Ç3d'den beri kaydedilen uyanış ve yatış da, dışarıdan yazılsa bile) | Geri dönüş ekranı |
 
 Sıra: çalışan, blok, gece, akşam, sabah, geri dönüş, soru, tamam, öneri. Uyanışa bağlı ilk iş "Uyandım"dan sonra kendiliğinden önerilir (yuvası uyanış anındadır); `day_frame.start_on_wake` açıksa "Uyandım" onu başlatır.
 

@@ -27,6 +27,13 @@ Modüllerin uygulama kapalıyken de çalışabilmesi için zemini kur: cihaz ana
 
 Bölüm E'yi numaralı dokümanlara işle (`docs/02`, `03`, `06`, `11`; `docs/07` içindeki modül hattı tablosunda "Veri bağlantıları" ve "Otomasyon" adımlarının çekirdek bağımlılığı artık Ç3d) ve tek commit'te kaydet.
 
+## Ç3c'den devralınanlar
+
+Ç3c'nin faz raporundaki iki açık not bu adımın kapsamına girer:
+
+- Dışarıdan yazılan uyanış ve yatış (`core/wake`, `core/bed`) günün "son kullanım" kaydını da güncellemeli; yoksa yalnızca telefon otomasyonuyla uyanılan günde uygulama "Kaldığın yerden devam" ekranıyla açılabilir. Giriş ucunu kurarken ele al ve testle tut.
+- Gerçek yatıştan sonra haftanın yeniden kurulmasının yalnızca saf fonksiyon testi var. `core/bed` ucu aynı yolu kullanacağı için veritabanı düzeyinde bir test ekle: yatış kaydı → yarının beklenen uyanışı → kapasite 30 dakikadan çok düşerse haftanın yeniden kurulması.
+
 ## Önerilen sıra
 
 1. **Cihaz anahtarları.** Tablo, RLS, üretme ve iptal, Ayarlar → Bağlantılar. Anahtarın kendisi saklanmaz. Denetçi (adım kipi).

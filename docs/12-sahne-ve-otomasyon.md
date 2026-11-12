@@ -1,6 +1,6 @@
 # Modül sahnesi, günün çerçevesi ve otomasyon zemini
 
-**Durum: A–D bölümleri numaralı dokümanlara işlendi ve Ç3c'de kuruluyor; E bölümü Ç3d'de.** Bölüm A–D'nin bağlayıcı hali artık `docs/03-veri-modeli.md`, `docs/04-planlayici.md` ("Günün çerçevesi"), `docs/05-arayuz.md` ("Sahne", "Günün çerçevesi"), `docs/06-modul-sozlesmesi.md` ("Sahne", "Sesli anlatım", "Olaylar") ve `docs/07-yol-haritasi.md` içindedir; çelişkide onlar geçerlidir. Bu dosya özet ve gerekçe olarak kalır. Kurulurken netleşenler: aynı çapadaki işlerin sırası `timing.order`; çerçeve `settings.day_frame` boşken kapalıdır; sahnenin bağlamında `session.id` de vardır; modül günün kaydını `ctx.days` ile okur.
+**Durum: A–D numaralı dokümanlara işlendi ve Ç3c'de kuruldu (`c3c-tamam`); E numaralı dokümanlara işlendi (`docs/02`, `03`, `06`, `11`) ve Ç3d'de kuruluyor; F Ç3e'de kurulacak.** A–E'nin bağlayıcı hali numaralı dokümanlardadır; F kendi adımında oraya işlenir. Kurulurken netleşenler (E): kapsam adresle aynı yazılır (`core/wake`); sunucu kullanıcı adına veritabanına kullanıcı olarak gider; zamanlayıcı Supabase'in `pg_cron`'u. Bu dosya özet ve gerekçe olarak kalır.
 
 ## Neden
 
@@ -18,6 +18,7 @@ Ayrıca günün kendisi bugün yalnızca bir çalışma penceresidir ("ilk dokun
 
 - **Ç3c. Sahne ve günün çerçevesi:** ana ekran tarafı (bölüm A–D).
 - **Ç3d. Sunucu zemini:** uygulama kapalıyken çalışan taraf (bölüm E).
+- **Ç3e. Modülün bölümleri:** bir modülün içinde ayrı renk ve sahne taşıyan parçalar; renklerin kullanıcıya açılması (bölüm F). Kullanıcının isteğiyle eklendi (12 Kas 2026).
 
 Hiçbiri bir modüle özel değildir. Örneklerde sabah rutini geçer, çünkü bütün parçaları birden kullanan odur; kurulan şey genel bağlantı noktalarıdır ve `deneme` modülünde her birinin örneği bulunur.
 
@@ -252,6 +253,51 @@ type ModuleDefinition = {
 
 ---
 
+## F. Modülün bölümleri (Ç3e)
+
+Bir modülün içinde, aynı veriyi ve sayfayı paylaşan ama ana ekranda ayrı yüzü olan parçalar vardır: rutin modülünde Sabah ve Akşam, Okul'da her ders, Beslenme'de prep ve alışveriş. Ç3c'de sahne, ton ve renk modül başına tektir: sabah rutini de akşam rutini de aynı renkle ve aynı çerçeveyle görünür. Ayrıca renk kodda sabittir; kullanıcı değiştiremez.
+
+Çözüm: modül kendini **bölümlere** (`facets`) ayırabilir. Bölüm yalnızca görünüşü ve sahneyi belirler; veri, sayfa, ayarlar, planlama ve olay dinleme modülde ortak kalır.
+
+```ts
+type ModuleDefinition = {
+  // …
+  facets?: (ctx: ModuleContext) => Promise<ModuleFacet[]>   // sabit ya da modülün verisinden (dersler)
+}
+
+type ModuleFacet = {
+  key: string                  // modül içinde tekil; küçük harf, rakam, tire ('sabah', 'yzv406e')
+  name: string                 // 'Sabah', 'YZV406E Derin Öğrenme'
+  color: string                // #rrggbb; varsayılan renk, kullanıcı değiştirebilir
+  scene?: string               // ui.scenes içindeki sahnenin anahtarı
+  tone?: 'calm' | 'focus' | 'energy'   // sahne çerçevesinin tonu; yoksa sahnenin kendi tonu
+}
+
+type ModuleUi = {
+  // …
+  scene?: ModuleScene                    // varsayılan sahne (Ç3c)
+  scenes?: Record<string, ModuleScene>   // ad verilmiş sahneler; bölümler bunlara başvurur
+}
+```
+
+Kurallar:
+
+1. **İş bölümünü taşır.** İş zarfına isteğe bağlı `facet` alanı eklenir (bölümün anahtarı). Saklama: `work_items.facet`, `tasks.facet`, `rhythms.facet`, `blocks.facet` (`text`, boş geçilebilir). Oturum işinin kendi bölümü yoksa kaleminin bölümü geçerlidir. `facet` olgu alanıdır: modül her teklifte yazar; kullanıcı formdan değiştirdiyse ezilmez.
+2. **Doğrulama.** Teklif anında `facet` modülün o anki bölüm listesinde olmalıdır; yoksa teklif alanın adıyla reddedilir. Bölüm sonradan listeden çıkarsa (dönem bitti, ders kalktı) iş anahtarı korur ve modülün rengiyle görünür; hata vermez.
+3. **Bölüm listesi.** `facets` modülün bağlamıyla hesaplanır ve modülün verisi değişince tazelenir (çip gibi). Bölümü olmayan modülde bu alan yoktur ve her şey Ç3c'deki gibidir.
+4. **Renk.** Çekirdeğin bir iş için kullandığı renk tek yardımcıdan gelir: `kullanıcının bölüm rengi → bölümün varsayılan rengi → kullanıcının modül rengi → modülün varsayılan rengi`. Bu yardımcı her yerde kullanılır: zaman çizelgesi (şerit ve yol), Şimdi kartı, Sıradakiler, "Vakit kalırsa", sahnenin çerçevesi, Hafta ekranındaki kalemler, akşam kapanışı, modül sayfasındaki listeler. Modül düzeyindeki yerler (çip, modül payları, modül listesi) modülün rengini kullanır.
+5. **Sahne.** Çalışan işin bölümü `scene` taşıyorsa o sahne kullanılır (`ui.scenes[anahtar]`); yoksa modülün varsayılan sahnesi. Sahnenin `when` işlevi yine geçerlidir. Sahne bileşeni `SceneProps.facet` ile bölümü (anahtar, ad, renk) alır; aynı bileşen birden çok bölümde kullanılabilir (her ders aynı "ders" sahnesini kendi rengiyle).
+6. **Ton.** Sahne çerçevesinin tonu: bölümün `tone`'u → sahnenin `look.tone`'u.
+7. **Kullanıcının renkleri.** Ayarlar → Modüller → <modül>: modülün rengi ve her bölümün rengi seçilir; "varsayılana dön". Saklama: `modules.color` (modülün; kurulumda tanımdan kopyalanır, artık kullanıcı değiştirir) ve `modules.facet_colors jsonb default '{}'` (`{ "sabah": "#E8A33D" }`). Seçici açık ve koyu temada okunur kalan hazır bir paletten seçtirir; özel renk de girilebilir (`#rrggbb`). Değişiklik öbür cihaza canlı gider.
+8. **Form.** Bölümü olan modülün işlerinde düzenleme formunda "Bölüm" seçimi vardır.
+9. **Planlamaya etkisi yok.** Bölüm planlayıcının girdisi değildir: skor, süzgeçler, taban ve kapasite değişmez. (Bölüm başına ağırlık ya da taban gerekirse ayrı karar.)
+10. **Olaylar ve dışa aktarım.** `core.session_started` ve `core.session_ended` yükü `facet`'i taşır. Dışa aktarım yeni sütunları ve renkleri içerir.
+11. **Yapay zeka.** Bu adımda bölüm seçmez. Serbest girişten modüle yönlenen iş bölümsüz açılır; bölümü kullanıcı formdan ya da modül kendi giriş türünden verir. Planlama çağrılarına gitmez.
+
+Örnek, rutin modülü: `facets` → Sabah (sıcak sarı, sahne `gunes`, ton `energy`), Akşam (lacivert, sahne `gece`, ton `calm`). Sabah rutini ritmi `facet: 'sabah'`, akşam rutini `facet: 'aksam'` taşır. Zaman çizelgesinde ikisi kendi renginde görünür; çalışınca biri güneşli, öbürü gece sahnesine geçer. Okul örneği: `facets` her etkin ders için bir bölüm döner, hepsi aynı `ders` sahnesini kullanır; şeritte her ders kendi rengindedir.
+
+**Görüşün gerek:** renk paleti; Ayarlar'daki renk seçicinin yerleşimi; modül düzeyinde kalan yerler (çip, payların modül renginde kalması).
+
 ## Kabul ölçütleri
 
 **Ç3c**
@@ -286,6 +332,17 @@ type ModuleDefinition = {
 - [ ] Modülün sunucu kodu tarayıcıya özgü bir şey içe aktarınca lint hata veriyor
 - [ ] iPhone Kestirmeler ile `core/wake` gerçek telefonda denendi (elle doğrulanacak; adımları `docs/ILERLEME.md` içinde)
 
+**Ç3e**
+
+- [ ] Bölümü olmayan modülde her şey Ç3c'deki gibi; önceki fazların testleri değiştirilmeden geçiyor
+- [ ] `deneme` modülü iki sabit bölüm tanımlıyor; bölümlü işler zaman çizelgesinde, kartta, Sıradakiler'de, Hafta ekranında ve sahnenin çerçevesinde bölümün renginde
+- [ ] Çalışan işin bölümüne göre sahne ve ton seçiliyor; bölümün sahnesi yoksa modülün sahnesi geliyor
+- [ ] `deneme` modülünün verisinden üretilen dinamik bir bölüm listesi: kayıt eklenince bölüm listesi ve renkler canlı tazeleniyor
+- [ ] Zarf: bilinmeyen `facet` alanın adıyla reddediliyor; oturum işi kalemin bölümünü devralıyor; kullanıcının formdan değiştirdiği bölüm modülün sonraki teklifinde ezilmiyor; listeden çıkan bölümün işi modülün rengiyle görünüyor
+- [ ] Ayarlar'da modülün ve bölümlerin rengi değişiyor, "varsayılana dön" çalışıyor; değişiklik öbür cihazda canlı görünüyor
+- [ ] Oturum olayları `facet`'i taşıyor; dışa aktarım yeni sütunları ve renkleri içeriyor
+- [ ] Planlayıcının çıktısı bölümden bağımsız (aynı girdi, bölüm eklenince aynı plan)
+
 ## Kapsam dışı
 
 - Gerçek modüller (sabah ve akşam rutini dahil); her biri kendi tasarım oturumunda
@@ -293,3 +350,4 @@ type ModuleDefinition = {
 - Sherpa'nın dış sistemlere komut göndermesi (ışık, akıllı ev)
 - Konumdan bağlam seçiminin arayüzü (uç hazır olur, akış sonra)
 - Görsel cila: sahne geçişlerinin ve akşam ekranının son hali Ç4'te
+- Bölüm başına planlama ağırlığı ya da taban; yapay zekanın bölüm seçmesi (Ç3e)

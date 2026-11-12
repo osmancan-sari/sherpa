@@ -6,8 +6,9 @@ Sherpa buluta kurulu, yalnızca kullanıcıya açık tek bir uygulamadır. Aynı
 
 | Parça | Nerede | Bilgisayar kapalıyken |
 | --- | --- | --- |
-| Uygulama (arayüz, API rotaları, zamanlanmış işler) | Vercel | Çalışır |
-| Veritabanı, kimlik, canlı eşitleme | Supabase | Çalışır |
+| Uygulama (arayüz, API rotaları, giriş ucu, zamanlanmış işler) | Vercel | Çalışır |
+| Veritabanı, kimlik, canlı eşitleme, zamanlayıcı (`pg_cron`) | Supabase | Çalışır |
+| Telefonun otomasyonu (uyanış, yatış, konum) | Telefon (Kestirmeler) | Telefonda çalışır; giriş ucuna yazar |
 | Yapay zeka çağrıları | Vercel → Anthropic API | Çalışır |
 | Claude köprüsü (MCP) | Vercel (`/api/mcp`) | Çalışır; telefondaki Claude sohbetinden de |
 | Ninova toplayıcısı | Kullanıcının bilgisayarı | Bekler; bilgisayar açılınca kaçırdığını okur |
@@ -15,7 +16,7 @@ Sherpa buluta kurulu, yalnızca kullanıcıya açık tek bir uygulamadır. Aynı
 
 Kural: kullanıcının üniversite şifresi ve ders klasörleri yereldir; onlara dokunan her şey yerelde çalışır ve sonucu buluta yazar. Geri kalan her şey buluttadır, bu yüzden telefon ve ikinci ekran bilgisayardan bağımsız çalışır.
 
-Yerel parçaların veritabanına yazma yolu: Supabase servis anahtarı bilgisayara konmaz. Toplayıcı, uygulamanın `/api/ingest/*` rotasına kendi cihaz belirteciyle yazar; belirteç ayarlardan üretilir ve iptal edilebilir.
+Yerel parçaların veritabanına yazma yolu: Supabase gizli anahtarı bilgisayara ve telefona konmaz. Toplayıcı da telefonun otomasyonu da uygulamanın giriş ucuna kendi cihaz anahtarıyla yazar (Ç3d): `POST /api/ingest/<kaynak>/<tür>`, `Authorization: Bearer <anahtar>`, JSON gövde, yinelenebilecek istekte `Idempotency-Key`. Anahtar Ayarlar → Bağlantılar'da üretilir, yalnızca bir kez gösterilir, yalnızca seçilen uçlara yazar, hiçbir şey okuyamaz ve iptal edilebilir. Ayrıntı `docs/02-mimari.md`, "Cihaz anahtarları ve giriş ucu".
 
 ## Yalnızca kullanıcıya özel
 
@@ -23,8 +24,8 @@ Uygulama internetten erişilebilir bir adrestedir; gizliliği adres değil kimli
 
 1. **Tek hesap.** Supabase'de yeni kayıt kapalıdır; yalnızca `ALLOWED_EMAIL` giriş yapabilir.
 2. **RLS.** Her tablo `user_id = auth.uid()` ile korunur. İstemcideki genel anahtar tek başına hiçbir veri okuyamaz.
-3. **Sunucu sırları.** Servis anahtarı, Anthropic anahtarı ve cihaz belirteçleri yalnızca Vercel ortam değişkenlerinde ya da veritabanında özetlenmiş olarak durur.
-4. **Köprü ve içe alma rotaları** kimlik doğrulaması olmadan cevap vermez.
+3. **Sunucu sırları.** Gizli anahtar, Anthropic anahtarı ve zamanlayıcının sırrı yalnızca Vercel ortam değişkenlerinde (zamanlayıcının sırrı ayrıca Supabase Vault'ta); cihaz anahtarları veritabanında yalnızca özet olarak durur.
+4. **Köprü, giriş ve zamanlayıcı uçları** kimlik doğrulaması olmadan cevap vermez; giriş ucu hiçbir veri döndürmez.
 5. **Görünmezlik.** `noindex`; önizleme dağıtımları erişim korumasına alınır.
 6. **Hesap güvenliği.** GitHub deposu özeldir; GitHub, Vercel, Supabase ve Anthropic hesaplarında iki adımlı doğrulama açıktır.
 
@@ -94,6 +95,7 @@ Tek kaynak Supabase'dir; cihazlarda kalıcı ayrı veri yoktur.
 - Supabase: `sherpa-dev` ve `sherpa-prod` (Frankfurt, ücretsiz katman). Vercel: `sherpa-private`, GitHub deposuna bağlı (`main` → üretim, öbür dallar → önizleme); üretim `https://sherpa-private.vercel.app` (`sherpa-prod`), önizlemeler `sherpa-dev`'e bağlıdır ve Vercel girişiyle korunur.
 - Beklenen aylık maliyet: barındırma ve veritabanı için ücretsiz katmanlar yeterli olmalı; yapay zeka yaklaşık 2 $; alan adı isteğe bağlı.
 - Kurulum sırasında güncel plan koşullarına bakılır: ücretsiz katmanda zamanlanmış iş sıklığı, kullanılmayan projenin duraklatılması, canlı bağlantı sınırları. Sherpa'nın ihtiyacı küçüktür (tek kullanıcı, günde birkaç zamanlanmış iş), ama `dev` projesi uzun süre kullanılmazsa duraklayabilir.
+- Zamanlayıcı (Ç3d, Kasım 2026'daki koşullar): Vercel'in ücretsiz katmanı zamanlayıcıyı günde bir çalışmaya ve ±59 dakikalık hassasiyete sınırlar; bu yüzden asıl tetikleyici Supabase'in zamanlayıcısıdır (`pg_cron` ve `pg_net`, ücretsiz projelerde de var): 15 dakikada bir uygulamanın `/api/jobs/tick` ucunu çağırır. Vercel'in günlük zamanlayıcısı yedektir. Bir projede zamanlayıcının çalışması için Vault'a iki değer girilir (`sherpa_tick_url`, `sherpa_cron_secret`) ve aynı sır Vercel'de `CRON_SECRET` olur; adımlar `docs/ILERLEME.md`'de. Uygulama ayrıca `SUPABASE_SECRET_KEY` ister (sunucuda kullanıcı adına erişim).
 - Yedek: veritabanının günlük yedeği ve ayarlardaki "Tümünü dışa aktar".
 
 ## Kabul ölçütleri (ilgili fazlara dağıtılmıştır)

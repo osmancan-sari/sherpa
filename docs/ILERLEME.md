@@ -4,9 +4,22 @@ Bu dosyayı Claude Code günceller. Yeni bir oturum yalnızca bu dosyayı ve `pr
 
 ## Durum
 
-- Faz: **Ç3c (Sahne ve günün çerçevesi) bitti** (12 Kas 2026, `c3c-tamam`; faz denetimi üç tur). Migration'lar `sherpa-dev`'de ve `sherpa-prod`'da; `main` ve `c3c-tamam` GitHub'da (kullanıcının onayıyla), Vercel üretimi yayınlar. Ç0–Ç3c bitti; D1–D4 tamamlandı
-- Adım: 9 (yayın) bitti
-- Son commit: C3c release: main and c3c-tamam on GitHub
+- Faz: **Ç3d (Sunucu zemini) sürüyor** (12 Kas 2026). Ç0–Ç3c bitti ve yayında; D1–D4 tamamlandı
+- Adım: 0 (dokümanlar) bitti
+- Son commit: C3d: section E in the numbered docs
+
+### Ç3d planı
+
+İstem `prompts/c3d-sunucu-zemini.md`, tasarım `docs/12` bölüm E; bağlayıcı hali `docs/02` ("Cihaz anahtarları ve giriş ucu", "Sunucuda kullanıcı adına erişim", "Zamanlanmış işler"), `docs/03` (`device_tokens`, `ingest_requests`, `job_runs`), `docs/06` ("Sunucu zemini"), `docs/11`. Her adımın sonunda `npm run check` ve `test:db`, commit; 1., 2. ve 3. adımdan sonra denetçi (adım kipi). Güvenlik adımın özüdür: her red durumu testle sınanır.
+
+| # | Adım | Durum |
+| --- | --- | --- |
+| 0 | Bölüm E numaralı dokümanlara işlendi (`docs/02`, `03`, `04`, `06`, `07`, `09`, `11`, `12`) | bitti |
+| 1 | Cihaz anahtarları: migration (`device_tokens`, RLS, sütun izinleri, iptalin geri alınmaması), üretme (tarayıcıda, özet), iptal; Ayarlar → Bağlantılar | |
+| 2 | Sunucuda modül bağlamı: istek öncesi fonksiyon ve `src/core/server/db.ts` (tek yardımcı, dönüşümün doğrulanması), sunucuda olay teslimi, sunucuda `size`; modülün sunucu kodu için lint kuralı; sınırın testleri | |
+| 3 | Giriş ucu: `ingest_requests`, `/api/ingest/<kaynak>/<tür>` (anahtar, kapsam, şema, `Idempotency-Key`, hız sınırı), `core/wake`, `core/bed`, `core/context`; uyanış ve yatış "son kullanım" sayılır; yatıştan sonra haftanın yeniden kurulmasının veritabanı testi; `deneme/kayit` | |
+| 4 | Zamanlanmış işler: `job_runs`, dönemin saf kuralları, `/api/jobs/tick`, çekirdeğin işleri (`core/week`, `core/blocks`, `core/sessions`), `deneme/ozet`, `pg_cron` + Vault, Vercel yedeği | |
+| 5 | Kapanış: uçtan uca testler, ekran görüntüleri (`docs/ekran-goruntuleri/c3d/`), `check:full`, faz denetimi, rapor, `c3d-tamam`, yayın (`dev`, `prod`, kod) | |
 
 ### Ç3c planı
 
@@ -455,11 +468,12 @@ Testler: 413 birim, 207 veritabanı, 166 uçtan uca (`npm run check:full` yeşil
 
 Ç3c bitti ve yayında; kalan elle denemeler "Senden bekleyenler" → Ç3c'de. Sıradaki faz **Ç3d (Sunucu zemini)**, yeni oturumda: istem `prompts/c3d-sunucu-zemini.md`, etiket `c3d-tamam`.
 
-**Sıra (kullanıcının kararı, 12 Kas 2026): Ç3c → Ç3d → Ç4.** Modüller tasarlanmadan önce altyapı üç katmana hazır olmalı (`docs/12-sahne-ve-otomasyon.md`, "Neden").
+**Sıra (kullanıcının kararı, 12 Kas 2026): Ç3c → Ç3d → Ç3e → Ç4.** Modüller tasarlanmadan önce altyapı üç katmana hazır olmalı (`docs/12-sahne-ve-otomasyon.md`, "Neden").
 
 1. **Ç3c (Sahne ve günün çerçevesi):** istem `prompts/c3c-sahne-ve-gun.md`, etiket `c3c-tamam`.
 2. **Ç3d (Sunucu zemini):** istem `prompts/c3d-sunucu-zemini.md`, etiket `c3d-tamam`.
-3. `c3d-tamam` yokken Ç4'e başlanmaz.
+3. **Ç3e (Modülün bölümleri):** istem `prompts/c3e-modul-bolumleri.md`, etiket `c3e-tamam`. Tasarım `docs/12-sahne-ve-otomasyon.md`, bölüm F.
+4. `c3e-tamam` yokken Ç4'e başlanmaz. İlk gerçek modül (rutin) tasarımı onaylanınca Ç3e'den sonra kurulabilir.
 
 Ç3b üretimde; kullanıcı üretimde "Zaman" bölümünü dener ("Senden bekleyenler" → Ç3b yayını).
 

@@ -9,6 +9,8 @@ src/modules/<slug>/
   module.ts        ModuleDefinition (aşağıda)
   queries.ts       modülün kendi sorguları ve mutasyonları
   rules.ts         olay dinleyicileri: iş, ritim, blok ve soru üretimi
+  ingest.ts        dışarıdan gelen veriyi işleyenler (Ç3d; isteğe bağlı)
+  jobs.ts          zamanlanmış işler (Ç3d; isteğe bağlı)
   components/      modülün ekranları: sekmeler, alt sayfalar, tam ekran görünümler, ayar formu
   README.md        modülün kısa özeti; tasarımın kendisi docs/moduller/<slug>.md
 supabase/migrations/NNNN_<slug>_*.sql
@@ -80,6 +82,10 @@ export type ModuleDefinition = {
 
   // Modülün kendi tabloları; '<slug>_' ile başlar. "Tümünü dışa aktar" bunları da alır
   tables?: string[]
+
+  // Uygulama kapalıyken (Ç3d; aşağıda "Sunucu zemini")
+  ingest?: IngestType[]                                     // dışarıdan gelen veri: POST /api/ingest/<slug>/<kind>
+  jobs?: ModuleJob[]                                        // zamanlanmış işler
 
   // Arayüz (aşağıda)
   ui: ModuleUi
@@ -357,7 +363,15 @@ Akış:
 | `core.day_started` (Ç3c) | Uyanış kaydedildi | `{ date, woke_at, estimated }` | Etkin bütün modüllere |
 | `core.day_closed` (Ç3c) | Yatış kaydedildi | `{ date, bed_at }` | Etkin bütün modüllere |
 
-Oturum olayları yalnızca işin sahibi modüle verilir (oturumun `module_id`'si); modül başka modülün işini bu yoldan izleyemez. Plansız ve modülsüz oturumun olayı kaydedilir ama kimseye verilmez. `source` oturum işinin ya da ritmin kaynağıdır (`source_type`, `source_id`); modül kendi kaydını böyle tanır. Bir oturum başka bir iş başlatılınca kapanırsa `stopped` olarak bildirilir. `core.day_started` ve `core.day_closed` her kayıtta gelir: tahmini uyanıştan sonra "Uyandım" denmesi, "Biraz önce" düzeltmesi, ikinci cihazdan basılması yeniden bildirir; yük son değeri taşır, modül günü `date` ile tanır. İki cihaz aynı oturumu aynı anda kapatırsa olay iki kez gelebilir; modülün işleyicisi aynı `session_id` için bunu kaldırmalıdır. Kalem "bitti" diye kapatılınca üzerinde çalışan oturum `done` olarak bildirilir. Modülün kendi geri çekmesiyle (`withdraw`) duran oturum bildirilmez: geri çekmeyi modül kendisi yapmıştır. Olaylar tarayıcıda, eylemin yapıldığı ekranda yayınlanır (Ç3d'ye kadar sunucuda olay yayını yoktur); olay yazılamazsa eylem yine geçerlidir.
+Olaylar yayınlandıkları yerde teslim edilir: tarayıcıdaki eylemin olayı tarayıcıda, giriş ucunun ve zamanlanmış işlerin olayı sunucuda (Ç3d). Dinleyici iki yerde de aynı bağlamı alır; sunucuda dinleyicinin `ctx`'i sunucu bağlamıdır (aşağıda).
+
+Oturum olayları yalnızca işin sahibi modüle verilir (oturumun `module_id`'si); modül başka modülün işini bu yoldan izleyemez. Plansız ve modülsüz oturumun olayı kaydedilir ama kimseye verilmez. `source` oturum işinin ya da ritmin kaynağıdır (`source_type`, `source_id`); modül kendi kaydını böyle tanır. Bir oturum başka bir iş başlatılınca kapanırsa `stopped` olarak bildirilir. `core.day_started` ve `core.day_closed` her kayıtta gelir: tahmini uyanıştan sonra "Uyandım" denmesi, "Biraz önce" düzeltmesi, ikinci cihazdan basılması yeniden bildirir; yük son değeri taşır, modül günü `date` ile tanır. İki cihaz aynı oturumu aynı anda kapatırsa olay iki kez gelebilir; modülün işleyicisi aynı `session_id` için bunu kaldırmalıdır. Kalem "bitti" diye kapatılınca üzerinde çalışan oturum `done` olarak bildirilir. Modülün kendi geri çekmesiyle (`withdraw`) duran oturum bildirilmez: geri çekmeyi modül kendisi yapmıştır. Olay yazılamazsa eylem yine geçerlidir.
+
+Çekirdeğin Ç3d'de eklenen olayı:
+
+| Olay | Ne zaman | Yük | Kime |
+| --- | --- | --- | --- |
+| `core.context_reported` (Ç3d) | Giriş ucu `core/context` bir bağlam bildirdi (konum otomasyonu) | `{ context, at }` | Etkin bütün modüllere. Ekranlar bunu henüz kullanmaz (konumdan bağlam seçimi sonra) |
 
 `ModuleDefinition`'a iki alan eklenir:
 
@@ -382,6 +396,33 @@ type Extractor<T> = {
 
 Modül ekranından `ctx.extract(extractor, text, { publishedAt, context })` çağrılır (arkada `POST /api/ai/extract`); çekirdek çağrıyı yapar, şemaya uyan önerileri döndürür ve hiçbir şey yazmaz. `context`, modülün metni okumaya yarayan bilgisidir (örneğin dersin açık değerlendirmeleri). Önerilerin ne olacağına (genelde kullanıcının onayladığı bir kart) modül karar verir. Yapay zeka yoksa yanıt `skipped` olur; modül elle girişe döner.
 
+## Sunucu zemini (Ç3d)
+
+Modül, uygulama kapalıyken de çalışan iki şey bildirebilir: dışarıdan gelen veriyi işleyenler (`ingest`) ve zamanlanmış işler (`jobs`). Gerekçe `docs/12-sahne-ve-otomasyon.md` bölüm E; uçlar, anahtarlar ve zamanlayıcı `docs/02-mimari.md`.
+
+```ts
+type IngestType = {
+  kind: string                         // küçük harf, rakam, tire: 'ninova', 'tarti'; modül içinde tekil
+  label?: string                       // Ayarlar → Bağlantılar'da kapsam seçerken görünen ad
+  schema: ZodType                      // gövdenin şeması; geçmeyen gövde 400 ile ve alanın adıyla reddedilir
+  handle: (payload: unknown, ctx: ModuleContext) => Promise<void>   // payload şemadan geçmiş haliyle gelir
+}
+
+type ModuleJob = {
+  key: string                          // küçük harf, rakam, tire; modül içinde tekil
+  every: 'hour' | 'day' | 'week'
+  at?: string                          // 'HH:mm', İstanbul; yalnızca 'day' ve 'week' için ('week' Pazartesi)
+  run: (ctx: ModuleContext) => Promise<void>   // idempotent olmalı
+}
+```
+
+- **Adres ve kapsam.** Modülün türü `POST /api/ingest/<slug>/<kind>` adresinde dinlenir; anahtarın kapsamı `<slug>/<kind>`'dir. Çekirdeğin türleri `core/wake`, `core/bed`, `core/context`'tir; `core` bir modül adı olamaz.
+- **Ne zaman çalışır.** İşleyici yalnızca modül etkinken çalışır (duraklatılmış ya da arşivlenmiş modülün türü 409 verir, işi atlanır). Giriş işleyicisi istekle aynı anda, iş sırası gelince (`docs/02-mimari.md`, "Zamanlanmış işler") çalışır.
+- **Sunucu bağlamı.** İkisi de bağlamın sunucu sürümünü alır: aynı `ModuleContext`, ama veritabanı istemcisi isteğin sahibi kullanıcı adına çalışır (RLS geçerli; başka hesabın satırı yoktur). `propose`, `withdraw`, `emit`, `ask`, `work`, `saveSettings`, `days` tarayıcıdakiyle aynıdır; `emit` sunucuda da dinleyicilere teslim eder. Sunucuda `size` çağrısı (yapay zekanın efor tahmini) teklifin hemen ardından yapılır, yapay zeka açıksa; tarayıcıdaki gibi modülün bir şey yapması gerekmez.
+- **Tarayıcıya özgü içe aktarma yok.** Modülün sunucuda çalışan dosyaları (`rules.ts`, `queries.ts`, `ingest.ts`, `jobs.ts`, `server/` altı) React'i, `next/navigation` ve `next/link`'i, `@tanstack/*`'ı, `@/core/app`, `@/core/ui`, `@/core/voice`'u, tarayıcının Supabase istemcisini, `components/` altını içe aktarmaz; `window`, `document`, `localStorage` gibi tarayıcı nesnelerini kullanmaz; `"use client"` taşımaz. Lint kuralı bunu denetler (`eslint.config.mjs`, `tests/unit/module-server-lint.test.ts`).
+- **İdempotent yazın.** Aynı gövde ikinci kez gelebilir (göndereni `Idempotency-Key` vermediyse) ve aynı iş aynı dönem için yeniden denenebilir. İşleyici kendi tablosuna dış kaynağın kimliğiyle yazar (`upsert`), işi aynı `key` ile teklif eder; iş, dönemin anahtarıyla (gün, hafta) yazar.
+- **Hata.** İşleyicinin fırlattığı hata isteği 500 ile, işi `failed` ile bitirir; ileti yalnızca kayda yazılır (anahtar ve gövde yazılmaz). Gövdenin şemadan geçmemesi işleyiciye hiç gelmez.
+
 ## Kurallar
 
 - **Kendi verisinin tek sahibi modüldür.** Başka modül o tabloları okumaz, yazmaz.
@@ -399,7 +440,7 @@ Yeni bir modül önce `docs/moduller/<slug>.md` olarak tasarlanır ve onaylanır
 1. Kimlik: ad, tür, tek cümlelik amaç, başarı ölçütü
 2. Yaşam döngüsü: başlangıç, bitiş koşulu, durumlar, dönem geçişi
 3. Veri modeli: modüle özel tablolar ve çekirdeğe bağlantıları
-4. Veri kaynakları ve otomasyon: her veri için kaynak ve seviye (otomatik, yarı otomatik, elle)
+4. Veri kaynakları ve otomasyon: her veri için kaynak ve seviye (otomatik, yarı otomatik, elle); dışarıdan gelenler için `ingest` türleri ve gövdeleri, zamanlanmış işler (`jobs`) ve dönemleri
 5. Kurallar: modül içi otomasyonlar, yayınladığı ve dinlediği olaylar
 6. Teklif ettiği işler: her zarf türü için `key`, hangi alanları modülün doldurduğu, hangilerini yapay zekaya bıraktığı, `sizingHints`
 7. Veri girişi: `intake` türleri
