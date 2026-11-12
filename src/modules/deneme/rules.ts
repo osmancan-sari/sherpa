@@ -21,7 +21,14 @@ export const EVENTS = {
 
 export const FEEDBACK_PROMPT = "zorluk";
 
-type Settings = { default_minutes?: number; added_count?: number; archived_on?: string };
+type Settings = {
+  default_minutes?: number;
+  added_count?: number;
+  archived_on?: string;
+  /** Ç3c: days the module heard begin, and the last of its sessions that ended. */
+  days_started?: number;
+  last_session?: { result: string; minutes: number };
+};
 
 export function settingsOf(ctx: ModuleContext): Settings {
   return (ctx.module.settings ?? {}) as Settings;
@@ -153,6 +160,27 @@ export const listeners: Record<string, (event: AppEvent, ctx: ModuleContext) => 
   [EVENTS.itemAdded]: async (_event, ctx) => {
     const settings = settingsOf(ctx);
     await ctx.saveSettings({ ...settings, added_count: (settings.added_count ?? 0) + 1 });
+  },
+  // Ç3c: a session of the module's own work started. A workout begins at its first step (the
+  // step scene keeps its place in the record).
+  "core.session_started": async (event, ctx) => {
+    const source = (event.payload as { source?: { type?: string | null; id?: string | null } })
+      .source;
+    if (source?.type !== SOURCE_TYPE || !source.id) return;
+    await updateItem(ctx, source.id, { scene_step: null });
+  },
+  // Ç3c: how the module's last session ended (done, stopped, deferred, stuck, unanswered).
+  "core.session_ended": async (event, ctx) => {
+    const payload = event.payload as { result?: string; minutes?: number };
+    await ctx.saveSettings({
+      ...settingsOf(ctx),
+      last_session: { result: payload.result ?? "", minutes: payload.minutes ?? 0 },
+    });
+  },
+  // Ç3c: every module hears the day begin; this one counts them.
+  "core.day_started": async (_event, ctx) => {
+    const settings = settingsOf(ctx);
+    await ctx.saveSettings({ ...settings, days_started: (settings.days_started ?? 0) + 1 });
   },
   // The answer to the question asked in onOutcome.
   "core.prompt_answered": async (event, ctx) => {

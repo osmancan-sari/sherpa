@@ -8,7 +8,7 @@ import type { ModuleViewProps } from "@/core/contract/types";
 import { BarChart, EmptyState, NumberStepper, Timer } from "@/core/ui/kit";
 import { useModule } from "@/core/ui/module/ModuleProvider";
 import { SAVE_FAILED, useNotify } from "@/core/ui/Notices";
-import { formatMinutes } from "@/lib/date";
+import { dayKey, formatMinutes, shiftDay } from "@/lib/date";
 import { type DenemeKind, getItem, KIND_LABEL, listItems } from "../queries";
 import { settingsOf } from "../rules";
 
@@ -62,19 +62,38 @@ export function ItemPage({ params }: ModuleViewProps) {
 export function HistoryView() {
   const { row } = useModule();
   const items = useModuleQuery(row, ["items"], listItems);
+  // Ç3c: the days' waking and bedtime, read through the context (`ctx.days`).
+  const days = useModuleQuery(row, ["days"], (ctx) => ctx.days(shiftDay(dayKey(ctx.now()), -7)));
   const finished = (items.data ?? []).filter((item) => item.done && item.spent_minutes !== null);
   if (items.isLoading) return null;
-  if (finished.length === 0) return <EmptyState>Biten kayıt yok.</EmptyState>;
+  const woke = (days.data ?? []).filter((day) => day.wokeAt !== null);
+  const dayLine =
+    woke.length > 0 ? (
+      <p data-testid="deneme-days" className="text-muted-foreground text-sm">
+        Son 7 günde uyanış kaydı: {woke.length} gün
+      </p>
+    ) : null;
+  if (finished.length === 0) {
+    return (
+      <>
+        {dayLine}
+        <EmptyState>Biten kayıt yok.</EmptyState>
+      </>
+    );
+  }
   return (
-    <BarChart
-      title="Biten kayıtlara harcanan süre"
-      data={finished.slice(-8).map((item) => ({
-        label: item.title.slice(0, 10),
-        value: item.spent_minutes!,
-      }))}
-      unit="dk"
-      color={row.color}
-    />
+    <>
+      {dayLine}
+      <BarChart
+        title="Biten kayıtlara harcanan süre"
+        data={finished.slice(-8).map((item) => ({
+          label: item.title.slice(0, 10),
+          value: item.spent_minutes!,
+        }))}
+        unit="dk"
+        color={row.color}
+      />
+    </>
   );
 }
 

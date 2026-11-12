@@ -60,6 +60,12 @@ describe("the deneme module", () => {
     expect(deneme.ui.fullscreen?.length).toBeGreaterThan(0);
     expect(deneme.ui.actions?.length).toBeGreaterThan(0);
     expect(deneme.ui.settings).toBeTypeOf("function");
+    // Ç3c: a scene, and the core's session and day events.
+    expect(deneme.ui.scene?.when).toBeTypeOf("function");
+    expect(deneme.ui.scene?.component).toBeTruthy();
+    expect(Object.keys(deneme.on ?? {})).toEqual(
+      expect.arrayContaining(["core.session_started", "core.session_ended", "core.day_started"]),
+    );
   });
 
   afterEach(() => {

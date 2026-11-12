@@ -34,8 +34,14 @@ export const deviceVoice: VoiceProvider = {
         .find((row) => row.voiceURI === options.voice && TURKISH.test(row.lang));
       if (voice) utterance.voice = voice;
       // Ended, cut off or refused ("not-allowed" without a tap): the queue goes on either way.
-      utterance.onend = () => resolve();
-      utterance.onerror = () => resolve();
+      // Some engines never say they are done: the queue goes on after a generous while anyway.
+      const guard = setTimeout(resolve, 5_000 + text.length * 150);
+      const done = () => {
+        clearTimeout(guard);
+        resolve();
+      };
+      utterance.onend = done;
+      utterance.onerror = done;
       speech.speak(utterance);
     });
   },

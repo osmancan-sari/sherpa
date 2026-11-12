@@ -6,7 +6,7 @@ Bu dosyayı Claude Code günceller. Yeni bir oturum yalnızca bu dosyayı ve `pr
 
 - Faz: **Ç3c (Sahne ve günün çerçevesi) sürüyor** (12 Kas 2026). Ç0–Ç3b bitti (`c3b-tamam`); D1–D4 tamamlandı
 - Adım: 8 (kapanış: faz denetimi), 9 (yayın: `dev` bitti)
-- Son commit: C3c phase report; migrations on sherpa-dev
+- Son commit: C3c phase audit round 1 fixes
 
 ### Ç3c planı
 
@@ -377,7 +377,7 @@ Testler: 413 birim, 206 veritabanı, 166 uçtan uca (`npm run check:full` yeşil
 
 - Adım denetimi 1–2: GEÇTİ (5 önemli: başlatılmış işin bekçice düşürülmesi, akşamı bilmeyen hafta uyarısı, sabah rutininin "Biraz önce"de kaybolması, yük çekmesinin yeniden taahhüt tetiklemesi, ekranın yeni durumları çizmemesi); hepsi düzeltildi.
 - Adım denetimi 3–4: 1. tur GEÇMEDİ (engelleyici: Ayarlar'daki ikinci "Kaydet" Ç2'nin testini kırdı), 2. tur GEÇTİ (4 önemli); hepsi düzeltildi. Ayrıntı "Verdiğim kararlar"da.
-- Faz denetimi: aşağıda.
+- Faz denetimi, 1. tur (`c90a437`) GEÇMEDİ: kodda ve testlerde engelleyici yok. İki engelleyici kullanıcının elindeki ölçütler: `prod` migration'ı ve sesin gerçek cihazda denenmesi. Önemli: `deneme` yeni çekirdek olaylarını ve `ctx.days`'i örneklemiyordu. Düzeltme: `core.session_started` antrenmanın adımını sıfırlar, `core.session_ended` son oturumu ayara yazar, `core.day_started` günleri sayar, geçmiş bölgesi `ctx.days`'ten son 7 günün uyanış kaydını yazar (`tests/db/events.test.ts` +1). Notlar: sözleşme testi sahneyi ve olay dinleyicilerini bekler; `deneme`'nin döngüsel içe aktarımı kaldırıldı (`subject.ts`); yorum düzeltildi; çerçeve açıkken gecede de "Sıradakiler" gizli; akşamda alt satırdaki ikinci "Günü kapat" gizli (**görüşün gerek**); cihaz sesine süre bekçisi (`onend` gelmezse kuyruk takılmaz). `check:full` yeşil (413 / 207 / 166), görüntüler yeniden çekildi.
 
 ### Ç3b: Zaman kısıtları (12 Kas 2026)
 

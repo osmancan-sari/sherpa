@@ -207,3 +207,52 @@ describe("day events", () => {
     });
   });
 });
+
+describe("the deneme module hears the core (Ç3c)", () => {
+  it("resets a workout's step when its session starts, keeps its last session, counts the days", async () => {
+    const { listeners } = await import("@/modules/deneme/rules");
+    const deneme = listener("deneme");
+    const definition = { ...deneme.definition, on: listeners };
+    const registry = createRegistry([definition]);
+    const told = { db, registry };
+    const mod = await makeModule(db, "deneme", "Deneme");
+    const item = ok(
+      await db
+        .from("deneme_items")
+        .insert({ title: "Salon", kind: "antrenman", scene_step: 3 })
+        .select()
+        .single(),
+    );
+    const rhythm = ok(
+      await db
+        .from("rhythms")
+        .insert({
+          module_id: mod.id,
+          title: "Salon",
+          target_count: 3,
+          period: "week",
+          est_minutes: 45,
+          energy: "physical",
+          context: "any",
+          source_type: "deneme.item",
+          source_id: item.id,
+        })
+        .select()
+        .single(),
+    );
+    const session = await startSessionTold(told, { rhythmId: rhythm.id });
+    expect(
+      ok(await db.from("deneme_items").select("scene_step").eq("id", item.id).single()).scene_step,
+    ).toBeNull();
+    await endSessionTold(told, session.id, "stopped", "stuck");
+    await tellDayStarted(told, {
+      date: "2026-11-18",
+      wokeAt: "2026-11-18T04:00:00Z",
+      estimated: false,
+    });
+    const settings = ok(await db.from("modules").select("settings").eq("id", mod.id).single())
+      .settings as { days_started?: number; last_session?: { result: string } };
+    expect(settings.days_started).toBe(1);
+    expect(settings.last_session?.result).toBe("stuck");
+  });
+});

@@ -202,7 +202,7 @@ export const deneme: ModuleDefinition = {
     ],
     settings: SettingsForm,
     history: HistoryView,
-    // While a goal's sitting or a workout runs, the Today screen is the module's (Ç3c).
+    // While a focused sitting ("odak") or a workout runs, the Today screen is the module's (Ç3c).
     scene: denemeScene,
   },
 };

@@ -229,7 +229,7 @@ function TodayBody() {
         {/* The evening's card holds what the evening has (Ç3c): no list beside it. */}
         <section
           aria-label="Sıradakiler"
-          hidden={state.kind === "evening"}
+          hidden={state.kind === "evening" || (state.kind === "night" && input.frame !== undefined)}
           className="flex min-w-0 flex-col gap-3 lg:col-span-2"
         >
           <h2 className="text-muted-foreground text-xs font-medium tracking-widest uppercase">
@@ -292,12 +292,15 @@ function TodayBody() {
           <Button variant="outline" className="h-11 md:h-9" onClick={doReplan}>
             Yeniden planla
           </Button>
-          <Link
-            href="/kapanis"
-            className="border-border hover:bg-muted flex h-11 items-center rounded-lg border px-3 text-sm md:h-9"
-          >
-            Günü kapat
-          </Link>
+          {/* The evening's card has its own "Günü kapat" (Ç3c). */}
+          {state.kind === "evening" ? null : (
+            <Link
+              href="/kapanis"
+              className="border-border hover:bg-muted flex h-11 items-center rounded-lg border px-3 text-sm md:h-9"
+            >
+              Günü kapat
+            </Link>
+          )}
           <QuickAddButton />
         </div>
       </footer>

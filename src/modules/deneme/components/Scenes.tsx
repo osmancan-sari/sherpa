@@ -15,7 +15,7 @@ import { getItem, updateItem } from "../queries";
 // the module's own row so both screens follow it. A record named with "[hata]" throws: the core's
 // fallback is tried against it.
 
-import { kindOf, sourceOf } from "../scene";
+import { kindOf, sourceOf } from "../subject";
 
 export const WORKOUT_STEPS: Step[] = [
   { key: "isinma", title: "Isınma", seconds: 300, note: "Hafif tempoda yürü ya da pedal çevir." },
