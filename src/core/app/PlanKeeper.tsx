@@ -178,6 +178,8 @@ export function PlanKeeper() {
   // on "Uyandım" itself writes the real one.
   const date = input?.date;
   const framed = input?.frame !== undefined;
+  // After the morning is over a first touch is no waking: the day runs on its expected one.
+  const morningUntil = input?.frame?.morningUntil.getTime() ?? 0;
   const touched = useRef<string | null>(null);
   useEffect(() => {
     if (!date) return;
@@ -190,7 +192,9 @@ export function PlanKeeper() {
         event.target instanceof Element && event.target.closest("[data-wake-action]") !== null;
       const now = new Date();
       touchDay(db, date, now)
-        .then(() => (framed && !onWake ? estimateWake(db, date, now) : null))
+        .then(() =>
+          framed && !onWake && now.getTime() < morningUntil ? estimateWake(db, date, now) : null,
+        )
         .then((estimated) =>
           estimated?.woke_at
             ? tellDayStarted({ db, registry }, { date, wokeAt: estimated.woke_at, estimated: true })
@@ -207,7 +211,7 @@ export function PlanKeeper() {
       window.removeEventListener("pointerdown", onTouch);
       window.removeEventListener("keydown", onTouch);
     };
-  }, [date, framed, rows, db, registry, queryClient]);
+  }, [date, framed, morningUntil, rows, db, registry, queryClient]);
 
   return null;
 }
@@ -223,7 +227,8 @@ function sleepChanges(
 ): { date: string; planned_wake?: string; planned_bed?: string }[] {
   const tomorrow = shiftDay(date, 1);
   const bed = clock(frame.tonight.bed);
-  const wake = clock(frame.tonight.expectedWake);
+  // The plan's own choice, as the bedtime is: neither moved by a recorded bed.
+  const wake = clock(frame.tonight.wake);
   const out: { date: string; planned_wake?: string; planned_bed?: string }[] = [];
   if (stored(days.find((row) => row.date === date)?.planned_bed) !== bed) {
     out.push({ date, planned_bed: bed });

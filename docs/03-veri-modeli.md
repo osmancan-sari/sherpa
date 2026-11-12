@@ -284,7 +284,7 @@ planned_bed time null         -- uyku planının bu gece için seçtiği yatış
 expected_wake time null       -- kullanıcının yalnızca bu gün için verdiği uyanış ("yarın erken kalkacağım")
 expected_bed time null        -- kullanıcının yalnızca bu gece için verdiği yatış ("bu gece geç yatacağım")
 ```
-Yatış saatleri (`planned_bed`, `expected_bed`) günün gecesine aittir: 12:00'den önceki bir saat ertesi günün takvim gününe düşer (`01:00` → gece yarısından sonra). Uyku süresi = sonraki günün `woke_at`'i − `bed_at`; ikisi de kayıtlıysa hesaplanır, uyanış tahminiyse süre de tahmini sayılır. `planned_*` değerleri planlayıcının her an yeniden hesaplayabildiği değerlerin kaydıdır (geçmiş ve haftalık özet için); plan bunları okumaz.
+Yatış saatleri (`planned_bed`, `expected_bed`) günün gecesine aittir: 12:00'den önceki bir saat ertesi günün takvim gününe düşer (`01:00` → gece yarısından sonra). Uyku süresi = sonraki günün `woke_at`'i − `bed_at`; ikisi de kayıtlıysa hesaplanır, uyanış tahminiyse süre de tahmini sayılır. `planned_*` değerleri planlayıcının her an yeniden hesaplayabildiği değerlerin kaydıdır (geçmiş ve haftalık özet için); plan bunları okumaz. İkisi de uyku planının kendi seçimidir: kayıtlı yatış ya da kullanıcının değeri onları kaydırmaz (gerçekleşeni `woke_at` ve `bed_at` söyler). Bekçi bu gecenin `planned_bed`'ini ve yarının `planned_wake`'ini, değiştikçe yazar.
 
 ### week_plans
 Haftalık taahhüt. `(user_id, week_start)` tekil.

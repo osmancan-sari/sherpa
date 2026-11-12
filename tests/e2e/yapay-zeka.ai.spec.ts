@@ -185,7 +185,11 @@ test("with the budget at 0 no call is made, the screens say so, and the line sta
   const section = page.getByRole("main");
   await expect(section.getByTestId("ai-state")).toHaveText(/Açık\./);
   await section.getByLabel("Aylık sınır ($; 0 kapatır)").fill("0");
-  await section.getByRole("button", { name: "Kaydet" }).click();
+  // The AI's own form: the page has another "Kaydet" since Ç3c (Günün çerçevesi).
+  await section
+    .getByRole("form", { name: "Aylık sınır" })
+    .getByRole("button", { name: "Kaydet" })
+    .click();
   await expect(section.getByTestId("ai-state")).toHaveText(/bütçesi doldu/);
 
   await page.goto("/");

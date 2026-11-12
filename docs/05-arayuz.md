@@ -21,7 +21,7 @@
 | `/a/[slug]` | Alan sayfası |
 | `/gelen` | Gelen kutusu |
 | `/kapanis` | Akşam kapanışı |
-| `/ayarlar` | Ayarlar: tema, dışa aktarım, hesap |
+| `/ayarlar` | Ayarlar: tema, günün çerçevesi, sesli anlatım (bu cihaz), yapay zeka, dışa aktarım, hesap |
 | `/ayarlar/moduller` | Modülleri etkinleştir, duraklat, arşivle; `/ayarlar/moduller/[slug]` modülün kendi ayarları |
 | `/ayarlar/bloklar` | Haftalık seriler, tek seferlik bloklar, önümüzdeki 4 haftanın blokları |
 
@@ -141,7 +141,7 @@ Geniş ekranda tek sayfa, kaydırma yok:
 - **Zaman çizelgesi** uyanıştan beklenen yatışa uzanır; uyanışa bağlı, çalışma, akşam ve yatışa bağlı bölümler zemin tonuyla ayrılır, bitiş çizgisi ince bir çizgidir.
 - **Akşam kapanışının sonunda** "Onayla"nın yanında "Onayla ve yat" (kapanışı yazar ve yatışı kaydeder).
 - **Hafta:** en üstte tek satır: son 7 günün ortalama uyanışı, yatışı ve uykusu (kayıt olan günlerden; yoksa satır yok). Seri, puan, rozet yok.
-- **Ayarlar → Günün çerçevesi:** uyanış ve yatış aralığı, uyku hedefi (saat), gün tipine özel aralıklar (isteğe bağlı), "Uyandım'dan sonra ilk rutin kendiliğinden başlasın".
+- **Ayarlar → Günün çerçevesi:** "Günün çerçevesi açık" (kapalıyken planlayıcı Ç3b'deki gibi), uyanış ve yatış aralığı, uyku hedefi (saat), gün tipine özel aralıklar (isteğe bağlı), "Uyandım'dan sonra ilk rutin kendiliğinden başlasın".
 - **Ayarlar → Sesli anlatım (bu cihaz):** açık ya da kapalı, ses (cihazın Türkçe sesleri), hız, "Bu cihaz dokunuş olmadan da konuşsun", "Dene".
 - **Görüşün gerek:** Günaydın ve akşam ekranlarının içeriği ve metinleri; "Biraz önce" ve "geç yatacağım" seçenekleri; üst şeritteki gösterim; zaman çizelgesindeki bölümlerin görünüşü; Hafta'daki satır.
 

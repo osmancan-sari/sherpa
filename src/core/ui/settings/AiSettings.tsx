@@ -85,6 +85,7 @@ function AiSettingsBody() {
       </label>
 
       <form
+        aria-label="Aylık sınır"
         noValidate
         className="flex flex-wrap items-end gap-3"
         onSubmit={(event) => {

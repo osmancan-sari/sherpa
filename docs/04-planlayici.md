@@ -192,7 +192,7 @@ Kurallar:
 - Girdi: `PlanInput.frame` (uyanış, kayıtlı mı, tahmini mi, beklenen yatış, kayıtlı yatış, yatış aralığının sonu, sabah durumunun bittiği an, bu gecenin uyku planı). Satırlardan `planInput` kurar; çerçeve kapalıyken alan yoktur. Çıktı: `Plan.frame` (uyanış, günün başı, bitiş çizgisi, akşamın sonu, beklenen yatış) ve çapalı ya da akşamdaki yuvanın `part` alanı (`wake`, `evening`, `bed`).
 - Gece, çerçeve açıkken `05:00`'te ya da uyanış aralığının başında (hangisi erkense) biter (`planningDay`).
 - `morning` durumu uyanış aralığının sonundan bir saat sonra biter (**görüşün gerek**): o saate kadar "Uyandım" denmemiş ve hiçbir yere dokunulmamışsa gün beklenen uyanışla kurulur ve ekran olağan durumuna geçer (kural 3: sistem ritüele bağımlı değildir).
-- "Uyandım" denmeden günün ilk dokunuşu yapılırsa uyanış o an yazılır ve tahmini işaretlenir (`woke_estimated`); ilk dokunuş (`started_at`) da yazılmaya devam eder.
+- "Uyandım" denmeden günün ilk dokunuşu sabah durumu sürerken yapılırsa uyanış o an yazılır ve tahmini işaretlenir (`woke_estimated`); sabahtan sonraki ilk dokunuş uyanış sayılmaz (gün beklenen uyanışla sürer). İlk dokunuş (`started_at`) her durumda yazılır.
 - Akşam kapanışı yapıldıysa (`closed`) çerçeve açıkken ekran gece değil akşam durumundadır (yalnızca "Yatıyorum" kalır); gece yatışla ya da yatış aralığının sonuyla gelir.
 - Uyku planının günün yükü için o günün adayları, günün başı en geç uyanışla kurulmuş bir girdiyle hesaplanır (döngüsüzlük için).
 - Uyanışa bağlı işlerin dizisi, bittiği andan 60 dakika sonrasına kadar önerilir ("Biraz önce: 30 dk" denince rutin kaybolmasın); sonra o gün düşer. Yatışa bağlı iş zamanı geçince düşer. **Görüşün gerek.**

@@ -93,25 +93,17 @@ export async function planDay(db: Db, input: { plan: Plan; day: PlannedDay }): P
  * something on a screen that day. Written once.
  */
 export async function touchDay(db: Db, date: string, now: Date): Promise<void> {
-  const current = await getDay(db, date);
-  if (current?.started_at) return;
-  if (current) {
-    check(
-      await db
-        .from("days")
-        .update({ started_at: now.toISOString() })
-        .eq("id", current.id)
-        .is("started_at", null),
-    );
-    return;
-  }
+  // The row first (the day's plan may be writing it this very moment), then the touch on it:
+  // an insert that lost the race to the plan's row would drop the touch silently.
+  check(
+    await db.from("days").upsert({ date }, { onConflict: "user_id,date", ignoreDuplicates: true }),
+  );
   check(
     await db
       .from("days")
-      .upsert(
-        { date, started_at: now.toISOString() },
-        { onConflict: "user_id,date", ignoreDuplicates: true },
-      ),
+      .update({ started_at: now.toISOString() })
+      .eq("date", date)
+      .is("started_at", null),
   );
 }
 

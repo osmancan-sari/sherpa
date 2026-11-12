@@ -105,12 +105,15 @@ async function sessionRow(db: Db, id: string): Promise<Session | null> {
 
 /** Başla. A session still running elsewhere is stopped by it: told as "stopped". */
 export async function startSessionTold(told: Told, target: SessionTarget): Promise<Session> {
-  const before = await getOpenSession(told.db);
+  // The start goes out first (no round trip before it). The session it stopped, if any, ended
+  // in the same transaction: its end is the new one's start, to the microsecond.
   const session = await startSession(told.db, target);
-  if (before && before.id !== session.id) {
-    const ended = await sessionRow(told.db, before.id);
-    if (ended) await tellEnded(told, ended, "stopped");
-  }
+  const { data: stopped } = await told.db
+    .from("sessions")
+    .select("*")
+    .eq("ended_at", session.started_at)
+    .neq("id", session.id);
+  for (const ended of stopped ?? []) await tellEnded(told, ended, "stopped");
   await tellStarted(told, session);
   return session;
 }
@@ -151,8 +154,15 @@ export async function completeTaskTold(told: Told, taskId: string) {
   return task;
 }
 
-/** A session running on one of an item's sittings is stopped (the item is being closed). */
-export async function stopSessionsOnItemTold(told: Told, workItemId: string): Promise<void> {
+/**
+ * A session running on one of an item's sittings is stopped: the item is being closed. Told as
+ * "done" when the item is finished (its sitting is done with it), else "stopped".
+ */
+export async function stopSessionsOnItemTold(
+  told: Told,
+  workItemId: string,
+  result: "done" | "stopped" = "stopped",
+): Promise<void> {
   const open = await getOpenSession(told.db);
   if (!open?.task_id) return;
   const { data: task } = await told.db
@@ -160,7 +170,7 @@ export async function stopSessionsOnItemTold(told: Told, workItemId: string): Pr
     .select("work_item_id")
     .eq("id", open.task_id)
     .single();
-  if (task?.work_item_id === workItemId) await endSessionTold(told, open.id, "stopped");
+  if (task?.work_item_id === workItemId) await endSessionTold(told, open.id, "stopped", result);
 }
 
 /** The day began: its waking was recorded (said, or estimated from the first touch). */

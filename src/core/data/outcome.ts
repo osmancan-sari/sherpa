@@ -61,7 +61,7 @@ export async function closeWorkItem(
   const current = unwrap(await db.from("work_items").select("*").eq("id", itemId).single());
   if (current.status === "done" || current.status === "dropped") return current;
 
-  await stopSessionsOnItemTold({ db, registry }, itemId);
+  await stopSessionsOnItemTold({ db, registry }, itemId, result === "done" ? "done" : "stopped");
   check(
     await db
       .from("tasks")
