@@ -44,6 +44,11 @@ type Props = {
   tomorrowFirst?: Candidate | null;
   /** Opens the "vakit kalırsa" list (done state). */
   onShowRest?: () => void;
+  /** The running work has a scene this device left ("Çık"): "Sahneye dön" (Ç3c). */
+  onReturnToScene?: () => void;
+  /** "Takıldım" held by the screen (a scene opens it too); the card keeps its own without. */
+  stuck?: Task | null;
+  onStuckChange?: (task: Task | null) => void;
 };
 
 function Frame({ children }: { children: ReactNode }) {
@@ -65,7 +70,9 @@ const SECOND = "h-12 px-5 text-base";
 export function NowCard(props: Props) {
   // "Takıldım" closes the session, so the plan's state moves on; the three ways on stay on the
   // card until one is chosen.
-  const [stuck, setStuck] = useState<Task | null>(null);
+  const [own, setOwn] = useState<Task | null>(null);
+  const stuck = props.onStuckChange ? (props.stuck ?? null) : own;
+  const setStuck = props.onStuckChange ?? setOwn;
   if (stuck) return <Stuck task={stuck} date={props.date} onDone={() => setStuck(null)} />;
   return <CardFor {...props} onStuck={setStuck} />;
 }
@@ -78,6 +85,7 @@ function CardFor({
   tomorrowFirst,
   onShowRest,
   onStuck,
+  onReturnToScene,
 }: Props & { onStuck: (task: Task) => void }) {
   if (state.kind === "running") {
     return (
@@ -89,6 +97,7 @@ function CardFor({
         date={date}
         modules={modules}
         onStuck={onStuck}
+        onReturnToScene={onReturnToScene}
       />
     );
   }
@@ -345,7 +354,9 @@ function Running({
   date,
   modules,
   onStuck,
+  onReturnToScene,
 }: {
+  onReturnToScene?: () => void;
   session: Session;
   task: Task | null;
   rhythm: { id: string; title: string; est_minutes: number } | null;
@@ -450,6 +461,11 @@ function Running({
         >
           Durdur
         </Button>
+        {onReturnToScene ? (
+          <Button variant="outline" className={SECOND} onClick={onReturnToScene}>
+            Sahneye dön
+          </Button>
+        ) : null}
         {(extra?.links ?? []).map((link) => (
           <Link
             key={link.href}

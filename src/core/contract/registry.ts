@@ -17,6 +17,9 @@ export function definitionProblems(def: ModuleDefinition): string[] {
   if (!/^#[0-9a-f]{6}$/i.test(def.color)) say("color must be a #rrggbb value");
 
   if (def.ui.tabs.length === 0) say("at least one tab is needed");
+  if (def.ui.scene && (typeof def.ui.scene.when !== "function" || !def.ui.scene.component)) {
+    say("a scene needs `when` and a component");
+  }
   const segments = new Set<string>();
   for (const tab of def.ui.tabs) {
     if (!KEY.test(tab.key)) say(`tab key "${tab.key}" is not a valid path segment`);

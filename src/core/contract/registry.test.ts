@@ -127,6 +127,24 @@ describe("createRegistry", () => {
   });
 });
 
+describe("the scene (Ç3c)", () => {
+  it("needs `when` and a component", () => {
+    const view = () => null;
+    expect(() =>
+      createRegistry([
+        definition({ ui: { ...definition().ui, scene: { when: () => true, component: view } } }),
+      ]),
+    ).not.toThrow();
+    expect(() =>
+      createRegistry([
+        definition({
+          ui: { ...definition().ui, scene: { when: undefined as never, component: view } },
+        }),
+      ]),
+    ).toThrow(/scene needs/);
+  });
+});
+
 describe("module paths", () => {
   const def = definition();
 

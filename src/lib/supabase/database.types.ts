@@ -391,6 +391,7 @@ export type Database = {
           id: string;
           kind: string;
           minutes: number | null;
+          scene_step: number | null;
           spent_minutes: number | null;
           title: string;
           updated_at: string;
@@ -405,6 +406,7 @@ export type Database = {
           id?: string;
           kind?: string;
           minutes?: number | null;
+          scene_step?: number | null;
           spent_minutes?: number | null;
           title: string;
           updated_at?: string;
@@ -418,6 +420,7 @@ export type Database = {
           id?: string;
           kind?: string;
           minutes?: number | null;
+          scene_step?: number | null;
           spent_minutes?: number | null;
           title?: string;
           updated_at?: string;

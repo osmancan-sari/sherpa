@@ -57,7 +57,10 @@ export async function updateItem(
   ctx: ModuleContext,
   id: string,
   patch: Partial<
-    Pick<DenemeItem, "title" | "due_on" | "minutes" | "done" | "spent_minutes" | "feedback">
+    Pick<
+      DenemeItem,
+      "title" | "due_on" | "minutes" | "done" | "spent_minutes" | "feedback" | "scene_step"
+    >
   >,
 ): Promise<DenemeItem> {
   return unwrap(await ctx.db.from("deneme_items").update(patch).eq("id", id).select().single());

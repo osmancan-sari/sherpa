@@ -3,6 +3,7 @@ import { dayKey, shiftDay } from "@/lib/date";
 import { ExtractPage } from "./components/ExtractPage";
 import { ItemsTab } from "./components/ItemsTab";
 import { KitTab } from "./components/KitTab";
+import { denemeScene } from "./scene";
 import { FocusView, HistoryView, ItemPage, SettingsForm } from "./components/Views";
 import { kayitReader } from "./extract";
 import { type DenemeKind, listItems, SOURCE_TYPE } from "./queries";
@@ -200,5 +201,7 @@ export const deneme: ModuleDefinition = {
     ],
     settings: SettingsForm,
     history: HistoryView,
+    // While a goal's sitting or a workout runs, the Today screen is the module's (Ç3c).
+    scene: denemeScene,
   },
 };

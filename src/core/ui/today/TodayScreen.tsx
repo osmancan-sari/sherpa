@@ -19,7 +19,7 @@ import {
   useModules,
   useTodayPlan,
 } from "@/core/app/hooks";
-import { useAnswerFollowUp, useDefer, useReplan } from "@/core/app/plan-actions";
+import { useAnswerFollowUp, useDefer, useReplan, useStopForStuck } from "@/core/app/plan-actions";
 import type { ChipData, Health } from "@/core/contract/types";
 import { buildPlan, type Candidate, tomorrowInput } from "@/core/planner";
 import { blocksOfDay } from "@/core/today/select";
@@ -32,6 +32,7 @@ import { useNotify } from "../Notices";
 import { QuickAddButton } from "../QuickAdd";
 import { AlertBar, DayStrip, isTyping, MinutesDialog, TopBar } from "./DayParts";
 import { NowCard, sessionTargetOf, travelText } from "./NowCard";
+import { briefOf, SceneFrame, sceneFor, useSceneExit } from "./Scene";
 
 // The Today screen (docs/05-arayuz.md): drawn from the planner's plan, re-made on every change
 // and every minute. The "now" card, the next things, the day as a strip, at most two warnings,
@@ -61,6 +62,11 @@ function TodayBody() {
   const [minutesOpen, setMinutesOpen] = useState(false);
   const [restOpen, setRestOpen] = useState(false);
   const moduleMap = useMemo(() => new Map(modules.map((mod) => [mod.row.id, mod])), [modules]);
+  // The scene (Ç3c): left on this device ("Çık"), or failed, per session.
+  const [exitedScene, setExitedScene] = useSceneExit();
+  const [failedScene, setFailedScene] = useState<string | null>(null);
+  const [stuck, setStuck] = useState<Task | null>(null);
+  const stopForStuck = useStopForStuck();
 
   // The night screen shows the first work of tomorrow.
   const tomorrowFirst = useMemo(() => {
@@ -123,6 +129,44 @@ function TodayBody() {
     );
   }
 
+  // While the module's work runs, its scene has the screen (docs/06-modul-sozlesmesi.md, "Sahne").
+  const running = state.kind === "running" ? state : null;
+  const sceneMod = running?.session.module_id
+    ? moduleMap.get(running.session.module_id)
+    : undefined;
+  const scene = running ? sceneFor(sceneMod, running, input.workItems) : null;
+  const sessionId = running?.session.id ?? null;
+  if (
+    running &&
+    scene &&
+    sceneMod &&
+    sessionId !== "pending" &&
+    exitedScene !== sessionId &&
+    failedScene !== sessionId
+  ) {
+    return (
+      <>
+        {/* The page keeps its heading under the scene (for screen readers). */}
+        <h1 className="sr-only">Bugün</h1>
+        <SceneFrame
+          mod={sceneMod}
+          state={running}
+          scene={scene.scene}
+          subject={scene.subject}
+          brief={briefOf(input, plan, moduleMap)}
+          onExit={() => setExitedScene(running.session.id)}
+          onStuck={() => {
+            setExitedScene(running.session.id);
+            if (!running.task) return;
+            stopForStuck.mutate(running.session);
+            setStuck(running.task);
+          }}
+          onFailed={() => setFailedScene(running.session.id)}
+        />
+      </>
+    );
+  }
+
   const currentId =
     state.kind === "running"
       ? (state.task?.id ?? state.rhythm?.id ?? null)
@@ -155,8 +199,20 @@ function TodayBody() {
           the column past the screen. */}
       <div className="grid grid-cols-[minmax(0,1fr)] gap-5 lg:grid-cols-5">
         <div className="min-w-0 lg:col-span-3">
+          {running && failedScene === running.session.id ? (
+            <p role="status" className="text-muted-foreground mb-2 text-sm">
+              Sahne açılamadı; iş sürüyor.
+            </p>
+          ) : null}
           <NowCard
             state={state}
+            stuck={stuck}
+            onStuckChange={setStuck}
+            onReturnToScene={
+              scene && running && exitedScene === running.session.id
+                ? () => setExitedScene(null)
+                : undefined
+            }
             now={now}
             date={input.date}
             modules={moduleMap}

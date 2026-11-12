@@ -165,6 +165,56 @@ export type ModuleUiContext = ModuleContext & {
   ) => Promise<ExtractResult<T>>;
   /** Goes to a path under /m/<slug>/. */
   navigate: (path: string) => void;
+  /** Ç3c: speaks on this device (silent when the voice is off); everything said is also shown. */
+  say: Say;
+};
+
+// ---------------------------------------------------------------------------------------------
+// Scene (Ç3c): the module's face on the Today screen while its work runs
+// ---------------------------------------------------------------------------------------------
+
+/** Ç3c: the voice (docs/06-modul-sozlesmesi.md, "Sesli anlatım"). Never throws. */
+export type Say = (text: string, options?: { interrupt?: boolean }) => void;
+
+/** The day in short, for a scene or a narration (read only). */
+export type TodayBrief = {
+  /** The day's three. */
+  top: { title: string; module: string; reason: string | null }[];
+  /** Today's fixed blocks. */
+  blocks: { title: string; startsAt: Date; endsAt: Date }[];
+  finishLine: Date;
+  wokeAt: Date | null;
+};
+
+/** The running work a scene is for. */
+export type SceneSubject =
+  { kind: "task"; task: Task; workItem: WorkItem | null } | { kind: "rhythm"; rhythm: Rhythm };
+
+export type SceneProps = {
+  subject: SceneSubject;
+  /** From the session's stored start: the same on every device. */
+  session: { id: string; startedAt: Date; elapsedSeconds: number };
+  device: "pano" | "telefon";
+  /** The core's session, the only way a scene acts on it. */
+  controls: {
+    finish: () => Promise<void>;
+    stop: () => Promise<void>;
+    /** Opens "Takıldım" on the standard card (leaves the scene). */
+    stuck: () => void;
+    /** Leaves the scene; the session goes on. */
+    exit: () => void;
+  };
+  say: Say;
+  today: TodayBrief;
+  ctx: ModuleUiContext;
+};
+
+export type ModuleScene = {
+  /** Whether this work has a scene (by its kind, source or meta). An error means no scene. */
+  when: (subject: SceneSubject) => boolean;
+  component: ComponentType<SceneProps>;
+  /** The tone of the core's transition and background. */
+  look?: { tone: "calm" | "focus" | "energy" };
 };
 
 // ---------------------------------------------------------------------------------------------
@@ -284,6 +334,8 @@ export type ModuleUi = {
   settings?: ComponentType;
   /** Region 4 of the page, "history and trend". Without it the core shows time spent per week. */
   history?: ComponentType;
+  /** Ç3c: takes over the Today screen while the module's work runs. */
+  scene?: ModuleScene;
 };
 
 export type ModuleDefinition = {

@@ -8,6 +8,7 @@ import { postAi } from "@/core/ai/client";
 import type { ExtractResult, ModuleDefinition, ModuleUiContext } from "@/core/contract/types";
 import { createModuleContext } from "@/core/data/context";
 import type { ModuleRow } from "@/core/types";
+import { useSay } from "@/core/voice";
 import { useQuickAdd } from "../QuickAdd";
 
 // What a module's own screens stand in: its row, its definition and its context.
@@ -34,6 +35,7 @@ export function useModuleScope(mod: KnownModule): ModuleScope {
   const registry = useRegistry();
   const router = useRouter();
   const quickAdd = useQuickAdd();
+  const say = useSay();
   const { row, definition } = mod;
 
   return useMemo(
@@ -44,6 +46,7 @@ export function useModuleScope(mod: KnownModule): ModuleScope {
         ...createModuleContext({ db, registry, module: row }),
         openIntake: (key: string) => quickAdd.open({ moduleSlug: row.slug, intakeKey: key }),
         navigate: (path: string) => router.push(`/m/${row.slug}/${path.replace(/^\/+/, "")}`),
+        say,
         extract: async <T,>(
           extractor: string,
           text: string,
@@ -59,7 +62,7 @@ export function useModuleScope(mod: KnownModule): ModuleScope {
         },
       },
     }),
-    [db, registry, router, quickAdd, row, definition],
+    [db, registry, router, quickAdd, say, row, definition],
   );
 }
 

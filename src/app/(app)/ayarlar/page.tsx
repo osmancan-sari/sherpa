@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { PageShell } from "@/core/ui/PageShell";
 import { AiSettings } from "@/core/ui/settings/AiSettings";
 import { DayFrameSettings } from "@/core/ui/settings/DayFrameSettings";
+import { VoiceSettings } from "@/core/ui/settings/VoiceSettings";
 import { getCurrentUser } from "@/lib/auth/session";
 import { signOut } from "./actions";
 import { ThemeSwitch } from "./theme-switch";
@@ -20,6 +21,10 @@ export default function SettingsPage() {
 
       <Section title="Günün çerçevesi">
         <DayFrameSettings />
+      </Section>
+
+      <Section title="Sesli anlatım (bu cihaz)">
+        <VoiceSettings />
       </Section>
 
       <Section title="Modüller">

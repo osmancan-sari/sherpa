@@ -1,0 +1,5 @@
+-- Ç3c: the "deneme" module's step scene (src/modules/deneme/components/Scenes.tsx) keeps which
+-- step the running workout is on in its own row: both screens follow it over the live
+-- connection (docs/06-modul-sozlesmesi.md, "Sahne", rule 4). Null: not started.
+alter table public.deneme_items
+  add column scene_step int check (scene_step is null or scene_step >= 0);

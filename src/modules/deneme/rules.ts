@@ -59,6 +59,7 @@ export function proposalFor(item: DenemeItem, settings: Settings, now: Date): Wo
         session_minutes: Math.max(5, Math.min(item.minutes ?? settings.default_minutes ?? 15, 90)),
       },
       fit: { energy: "light" },
+      meta: { kind },
     };
   }
 
@@ -72,6 +73,8 @@ export function proposalFor(item: DenemeItem, settings: Settings, now: Date): Wo
       effort: { session_minutes: Math.max(5, Math.min(item.minutes ?? 60, 90)) },
       fit: { energy: "physical", context: "out" },
       timing: WORKOUT_TIMING,
+      // The step scene knows a workout by it (src/modules/deneme/components/Scenes.tsx).
+      meta: { kind },
     };
   }
 

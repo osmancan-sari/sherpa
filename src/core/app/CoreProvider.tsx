@@ -1,5 +1,6 @@
 "use client";
 
+import { VoiceProvider } from "@/core/voice";
 import { QueryClient, QueryClientProvider, useQueryClient } from "@tanstack/react-query";
 import { createContext, type ReactNode, useContext, useEffect, useMemo, useState } from "react";
 import { sizeAfterProposal } from "@/core/ai/client";
@@ -76,7 +77,7 @@ export function CoreProvider({
     <QueryClientProvider client={queryClient}>
       <CoreContext.Provider value={value}>
         <LiveSync />
-        {children}
+        <VoiceProvider>{children}</VoiceProvider>
       </CoreContext.Provider>
     </QueryClientProvider>
   );
