@@ -4,9 +4,9 @@ Bu dosyayı Claude Code günceller. Yeni bir oturum yalnızca bu dosyayı ve `pr
 
 ## Durum
 
-- Faz: **Ç3c (Sahne ve günün çerçevesi) bitti** (12 Kas 2026, `c3c-tamam`; faz denetimi üç tur). Migration'lar `sherpa-dev`'de ve `sherpa-prod`'da; kod `git push` ile gider (kullanıcının onayıyla). Ç0–Ç3c bitti; D1–D4 tamamlandı
-- Adım: 9 (yayın: migration'lar `dev` ve `prod`'da; `git push` bekliyor)
-- Son commit: C3c phase audit round 3 (passed)
+- Faz: **Ç3c (Sahne ve günün çerçevesi) bitti** (12 Kas 2026, `c3c-tamam`; faz denetimi üç tur). Migration'lar `sherpa-dev`'de ve `sherpa-prod`'da; `main` ve `c3c-tamam` GitHub'da (kullanıcının onayıyla), Vercel üretimi yayınlar. Ç0–Ç3c bitti; D1–D4 tamamlandı
+- Adım: 9 (yayın) bitti
+- Son commit: C3c release: main and c3c-tamam on GitHub
 
 ### Ç3c planı
 
@@ -453,7 +453,7 @@ Testler: 413 birim, 207 veritabanı, 166 uçtan uca (`npm run check:full` yeşil
 
 ## Sıradaki adım
 
-Ç3c bitti; kod `git push` bekliyor ("Senden bekleyenler" → Ç3c). Sıradaki faz **Ç3d (Sunucu zemini)**, yeni oturumda: istem `prompts/c3d-sunucu-zemini.md`, etiket `c3d-tamam`.
+Ç3c bitti ve yayında; kalan elle denemeler "Senden bekleyenler" → Ç3c'de. Sıradaki faz **Ç3d (Sunucu zemini)**, yeni oturumda: istem `prompts/c3d-sunucu-zemini.md`, etiket `c3d-tamam`.
 
 **Sıra (kullanıcının kararı, 12 Kas 2026): Ç3c → Ç3d → Ç4.** Modüller tasarlanmadan önce altyapı üç katmana hazır olmalı (`docs/12-sahne-ve-otomasyon.md`, "Neden").
 
@@ -469,7 +469,7 @@ Sonra Ç4 (Pano ve telefon cilası): yeni oturumda `docs/05-arayuz.md` ve `docs/
 
 ### Ç3c yayını ve elle denemeler
 
-**Yayın** (9. adım): migration'lar `sherpa-dev`'de ve `sherpa-prod`'da (12 Kas 2026, senin onayınla; adım 1 yapıldı). Kalan: `git push` (etiketten sonra). İki migration var:
+**Yayın** (9. adım): migration'lar `sherpa-dev`'de ve `sherpa-prod`'da (12 Kas 2026, senin onayınla; adım 1 yapıldı). `main` ve `c3c-tamam` GitHub'a gönderildi (12 Kas 2026, senin onayınla). Kalan: üretimde Ayarlar → Günün çerçevesi'ne bakmak. İki migration var:
 
 - `20261112123800_day_frame.sql`: `days` yeni sütunlar, `settings.day_frame`, `start_session` yeniden ve `save_week_sittings`.
 - `20261112134336_deneme_scene_step.sql`: `deneme_items.scene_step`, tür denetimi.
