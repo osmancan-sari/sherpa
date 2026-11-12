@@ -627,6 +627,49 @@ export type Database = {
           },
         ];
       };
+      job_runs: {
+        Row: {
+          attempts: number;
+          created_at: string;
+          error: string | null;
+          finished_at: string | null;
+          id: string;
+          job: string;
+          slot: string;
+          started_at: string;
+          status: Database["public"]["Enums"]["job_status"];
+          updated_at: string;
+          user_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          attempts?: number;
+          created_at?: string;
+          error?: string | null;
+          finished_at?: string | null;
+          id?: string;
+          job: string;
+          slot: string;
+          started_at?: string;
+          status?: Database["public"]["Enums"]["job_status"];
+          updated_at?: string;
+          user_id?: string;
+        };
+        Update: {
+          attempts?: number;
+          created_at?: string;
+          error?: string | null;
+          finished_at?: string | null;
+          id?: string;
+          job?: string;
+          slot?: string;
+          started_at?: string;
+          status?: Database["public"]["Enums"]["job_status"];
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
       life_mode_periods: {
         Row: {
           created_at: string;
@@ -1499,9 +1542,11 @@ export type Database = {
         };
       };
       istanbul_today: { Args: Record<PropertyKey, never>; Returns: string };
+      job_users: { Args: Record<PropertyKey, never>; Returns: string[] };
       save_week_sittings: { Args: { p_committed: Json; p_only?: string[] }; Returns: undefined };
       sherpa_acting_user: { Args: Record<PropertyKey, never>; Returns: string };
       sherpa_pre_request: { Args: Record<PropertyKey, never>; Returns: undefined };
+      sherpa_tick: { Args: Record<PropertyKey, never>; Returns: number };
       start_session: {
         Args: {
           p_module_id?: string;
@@ -1541,6 +1586,7 @@ export type Database = {
       horizon_scope: "month" | "term";
       inbox_status: "new" | "needs_confirm" | "routed" | "dismissed";
       ingest_status: "processing" | "done" | "rejected" | "failed";
+      job_status: "running" | "done" | "failed";
       life_mode: "normal" | "busy" | "minimum" | "holiday";
       module_kind: "lifelong" | "term" | "until_goal";
       module_status: "active" | "paused" | "archived";
@@ -1672,6 +1718,7 @@ export const Constants = {
       horizon_scope: ["month", "term"],
       inbox_status: ["new", "needs_confirm", "routed", "dismissed"],
       ingest_status: ["processing", "done", "rejected", "failed"],
+      job_status: ["running", "done", "failed"],
       life_mode: ["normal", "busy", "minimum", "holiday"],
       module_kind: ["lifelong", "term", "until_goal"],
       module_status: ["active", "paused", "archived"],

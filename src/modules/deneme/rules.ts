@@ -29,6 +29,8 @@ type Settings = {
   days_started?: number;
   last_session?: { result: string; minutes: number };
   last_bed_day?: string | null;
+  /** Ç3d: written every morning by the scheduled job (jobs.ts). */
+  daily_digest?: { date: string; open: number };
 };
 
 export function settingsOf(ctx: ModuleContext): Settings {

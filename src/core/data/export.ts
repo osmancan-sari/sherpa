@@ -28,6 +28,7 @@ export const CORE_EXPORT_TABLES = [
   "ai_feedback",
   "device_tokens",
   "ingest_requests",
+  "job_runs",
 ] as const;
 
 export const EXPORT_FORMAT = 1;

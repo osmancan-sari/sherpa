@@ -80,6 +80,7 @@ const SAMPLES: Record<string, (ids: Record<string, string>) => Row> = {
     status: "done",
     http_status: 200,
   }),
+  job_runs: () => ({ job: "core/week", slot: "2026-11-12", status: "done" }),
 };
 
 /** Insert order: parents first. Tables not named here go last, in any order. */
@@ -107,6 +108,7 @@ const NO_DELETE = new Set([
   "ai_feedback",
   "device_tokens",
   "ingest_requests",
+  "job_runs",
 ]);
 
 async function exposedTables(): Promise<string[]> {

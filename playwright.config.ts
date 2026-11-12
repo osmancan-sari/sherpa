@@ -34,6 +34,8 @@ if (istanbul >= "22:30" && !process.env.SHERPA_E2E_LATE) {
 }
 
 const PORT = 3100;
+/** The scheduler's secret on the test servers (tests/e2e/jobs.spec.ts). */
+export const E2E_CRON_SECRET = "e2e-cron-secret";
 const baseURL = `http://127.0.0.1:${PORT}`;
 // The same build once more, with the recorded fake AI provider (SHERPA_AI_FAKE=1). The server
 // on PORT has no provider at all: both ways the app must work are tried in every run.
@@ -133,13 +135,13 @@ export default defineConfig({
       timeout: 60_000,
       // The server without any AI provider, whatever key .env.local holds (Next reads the file
       // itself but never overrides a variable that is set, even to nothing).
-      env: { ANTHROPIC_API_KEY: "" },
+      env: { ANTHROPIC_API_KEY: "", CRON_SECRET: E2E_CRON_SECRET },
     },
     {
       command: `npx next start --port ${AI_PORT}`,
       url: `${AI_BASE_URL}/giris`,
       // Only ever with the local Supabase above; the app refuses the fake anywhere else.
-      env: { SHERPA_AI_FAKE: "1" },
+      env: { SHERPA_AI_FAKE: "1", CRON_SECRET: E2E_CRON_SECRET },
       reuseExistingServer: false,
       timeout: 60_000,
     },

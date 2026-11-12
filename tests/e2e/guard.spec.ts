@@ -144,3 +144,11 @@ test("the endpoints with their own key answer 401 without it, and their look-ali
     expect(await gated.json(), path).toEqual({ error: "unauthorized" });
   }
 });
+
+test("the scheduler's tick answers 401 without its secret (Ç3d)", async ({ request }) => {
+  for (const method of ["get", "post"] as const) {
+    const response = await request[method]("/api/jobs/tick", { maxRedirects: 0 });
+    expect(response.status(), method).toBe(401);
+    expect(await response.json()).toEqual({ error: "unauthorized" });
+  }
+});

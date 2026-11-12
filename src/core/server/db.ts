@@ -10,8 +10,8 @@ import type { Database } from "@/lib/supabase/database.types";
 //   with the header `x-sherpa-user`; the database's pre-request function turns the request
 //   into the user's own (role `authenticated`, auth.uid() = user), so row level security and
 //   every auth.uid() function hold. The switch is checked before the client is handed out.
-// - `deviceTokenOwner(hash)`: the one question asked with the key alone (whose token this
-//   is); it reads nobody's data. (Step 4 adds the second: which accounts the jobs run for.)
+// - `deviceTokenOwner(hash)` and `jobUsers()`: the two questions asked with the key alone,
+//   and neither reads anyone's data: whose token this is, and which accounts the jobs run for.
 //
 // No other file reads SUPABASE_SECRET_KEY (tests/unit/server-boundary.test.ts).
 
@@ -78,4 +78,11 @@ export async function deviceTokenOwner(hash: string): Promise<TokenOwner | null>
   if (error) throw new Error(`device token lookup failed: ${error.message}`);
   const row = data?.[0];
   return row ? { tokenId: row.token_id, userId: row.user_id, scopes: row.scopes } : null;
+}
+
+/** The accounts the scheduled jobs run for. */
+export async function jobUsers(): Promise<string[]> {
+  const { data, error } = await serviceClient().rpc("job_users");
+  if (error) throw new Error(`job accounts lookup failed: ${error.message}`);
+  return (data ?? []) as string[];
 }
