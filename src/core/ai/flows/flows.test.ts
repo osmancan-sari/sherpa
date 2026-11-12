@@ -1,8 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
 import { MODULE_ID, workItem } from "@/core/testing/factories";
+import { toJson } from "@/core/types";
 import type { EnrichOutput } from "../calls/enrich";
 import type { SizeOutput } from "../calls/size";
-import { sizeAfterProposal, sizeRequestFor } from "../client";
+import { sizeAfterProposal, sizeRequestAfterEnrich, sizeRequestFor } from "../client";
 import { corrections, mergeMark, readMark } from "../marks";
 import { enrichedRecord, isSure } from "./enrich-apply";
 import { clampEffort, sizeColumns, sizeNeeds } from "./size";
@@ -130,6 +131,45 @@ describe("enrich: what an answer becomes", () => {
   it("keeps the user's words as the title; the model's only for an empty line", () => {
     expect(record(answer(), parsedLine({ title: "" })).row.title).toBe("Sunum slaytları");
     expect(record(answer({ title: "Başka" })).row.title).toBe("Sunum slaytları");
+  });
+
+  it("writes a default when nobody could tell the duration, and asks size for it", () => {
+    const empty = { value: null, confidence: 0.2, reason: "benzer iş verisi yok" };
+    const task = record(answer({ est_minutes: empty }));
+    expect(task).toMatchObject({ target: "task", sizeNeeded: true, row: { est_minutes: 30 } });
+    expect(readMark(task.row.ai)!).toMatchObject({ defaults: ["est_minutes"] });
+    expect(readMark(task.row.ai)!.fields.est_minutes).toBeUndefined();
+
+    const item = record(
+      answer({ est_minutes: empty, target: { value: "work_item", confidence: 0.8, reason: "" } }),
+    );
+    expect(item).toMatchObject({
+      target: "work_item",
+      sizeNeeded: true,
+      row: { provenance: { effort_total_minutes: "default" } },
+    });
+    expect(readMark(item.row.ai)!.defaults).toEqual(["effort_total_minutes"]);
+
+    // A duration on the line, or one from the AI: nothing to ask.
+    const typed = record(answer({ est_minutes: empty }), parsedLine({ minutes: 20 }));
+    expect(typed.sizeNeeded).toBe(false);
+    expect(readMark(typed.row.ai)!.defaults).toBeUndefined();
+    expect(record(answer()).sizeNeeded).toBe(false);
+  });
+
+  it("asks size from the browser only after a confirmed card left a default", () => {
+    expect(
+      sizeRequestAfterEnrich({ status: "applied", target: "task", id: "t", sizeNeeded: true }),
+    ).toEqual({ id: "t", type: "task" });
+    expect(
+      sizeRequestAfterEnrich({
+        status: "applied",
+        target: "work_item",
+        id: "w",
+        sizeNeeded: false,
+      }),
+    ).toBeNull();
+    expect(sizeRequestAfterEnrich({ status: "gone" })).toBeNull();
   });
 });
 
@@ -261,6 +301,33 @@ describe("marks", () => {
     expect(corrections(merged, { effort_total_minutes: 200, importance: 2 })).toEqual([
       { column: "effort_total_minutes", kind: "size", ai: 300, user: 200 },
     ]);
+  });
+
+  it("drops a default once size has estimated it", () => {
+    const first = {
+      ...mergeMark(null, {
+        kind: "enrich",
+        model: "m",
+        at: "t1",
+        call_id: "c1",
+        fields: {},
+        input: "satır",
+        defaults: ["est_minutes", "other"],
+      }),
+    };
+    expect(first.defaults).toEqual(["est_minutes", "other"]);
+    const sized = mergeMark(first, {
+      kind: "size",
+      model: "m",
+      at: "t2",
+      call_id: "c2",
+      fields: { est_minutes: { value: 40, confidence: 0.6, reason: "b" } },
+      input: "",
+    });
+    expect(sized.defaults).toEqual(["other"]);
+    const all = mergeMark(sized, { ...sized, fields: { other: sized.fields.est_minutes } });
+    expect(all.defaults).toBeUndefined();
+    expect(readMark(toJson(all))!.defaults).toBeUndefined();
   });
 });
 

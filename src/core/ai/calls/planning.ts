@@ -8,10 +8,25 @@ import { SHARED_RULES } from "./common";
 
 const reasoned = z.object({ id: z.string(), reason: z.string().max(300) });
 
+/**
+ * The app's rule 2 (CLAUDE.md, "Ürün kuralları"): nothing makes the user feel behind. Every
+ * planning call carries it; `npm run ai:eval` checks the answers against it ("Ton").
+ */
+export const PLANNING_TONE = `
+- Nothing you write may make the user feel behind or guilty; this rule of the app has no
+  exception. Never count or mention work that was not done, not finished, missed, skipped, late,
+  put off or left over ("dün planlanan 2 işten hiçbiri bitmedi", "yine ertelendi"), never
+  compare what was done with what was planned, never blame or judge the user's habits, and no
+  "yesterday" in what you write. Past numbers in the input are only for sizing what comes.
+- Speak of today and what comes, as plain facts about the work ("cuma teslim, bugün 45 dk
+  yeter"). A tight day is said as what fits, not as what will not.`.trim();
+
 // --- plan, replan ------------------------------------------------------------------------------
 
 export type PlanCandidate = {
   id: string;
+  /** "task", "item" (a work item's sitting), "rhythm" (a habit) or "follow_up". */
+  type: string;
   title: string;
   module: string;
   minutes: number;
@@ -33,7 +48,7 @@ export type PlanCallInput = {
   /** At most 80 candidates, the engine's best first. */
   candidates: PlanCandidate[];
   blocks: { title: string; start: string; end: string }[];
-  /** Yesterday: how much of what was planned got done. */
+  /** Yesterday: how much of what was planned got done (for sizing; never mentioned). */
   yesterday: { planned: number; done: number } | null;
   /** The user's note at the closing, or for "Yeniden planla". */
   note: string | null;
@@ -61,8 +76,11 @@ export type PlanOutput = z.infer<typeof planOutput>;
 
 const PLAN_RULES = `
 - "top3": the day's three, best for the user's balance across modules and their deadlines; ids
-  from "candidates" only. Work marked "mandatory" is placed by the engine anyway: do not spend
-  the three on it unless it is the most important thing of the day.
+  from "candidates" only. Work due today ("mandatory": "due_today") heads the three anyway: your
+  choices fill the places it leaves. Other mandatory work is placed by the engine anyway: do not
+  spend the three on it unless it is the most important thing of the day. Rhythms ("type":
+  "rhythm", habits) do not go in the three unless their weekly floor is at risk ("mandatory":
+  "floor"). Choose only work that fits the time left in the day ("capacity_minutes").
 - "prefer": work to bring forward; "defer": work that can wait (never mandatory work: the
   engine refuses it). Each with one short reason the user reads behind "neden?".
 - "estimates": only where the given minutes are clearly wrong for the work, 5 to 90.
@@ -71,25 +89,27 @@ const PLAN_RULES = `
 
 export const planSpec: AiCallSpec<PlanOutput> = {
   kind: "plan",
-  version: "plan-1",
+  version: "plan-2",
   maxTokens: 6000,
   schema: planOutput,
   system: `You plan one day of a planning app's user. The engine already made a valid plan
 ("base"); you improve it.
 ${PLAN_RULES}
 
+${PLANNING_TONE}
 ${SHARED_RULES}`,
 };
 
 export const replanSpec: AiCallSpec<PlanOutput> = {
   kind: "replan",
-  version: "replan-1",
+  version: "replan-2",
   maxTokens: 6000,
   schema: planOutput,
   system: `The user's day fell apart and they asked to plan the rest of it again. "done_today"
 is what is finished; plan what is left of the day from now, with the user's "note" in mind.
 ${PLAN_RULES}
 
+${PLANNING_TONE}
 ${SHARED_RULES}`,
 };
 
@@ -132,7 +152,7 @@ export type WeekOutput = z.infer<typeof weekOutput>;
 
 export const weekSpec: AiCallSpec<WeekOutput> = {
   kind: "week",
-  version: "week-1",
+  version: "week-2",
   maxTokens: 6000,
   schema: weekOutput,
   system: `You choose what a planning app's user works on this week. "items" are the
@@ -144,6 +164,7 @@ candidates with this week's share of their effort; "base" is what the engine wou
 - "module_budgets": minutes per module for the week; never below "fixed_minutes" of a module.
 - Stay within "capacity_minutes"; the engine cuts what does not fit.
 
+${PLANNING_TONE}
 ${SHARED_RULES}`,
 };
 
@@ -180,7 +201,7 @@ export type MonthOutput = z.infer<typeof monthOutput>;
 
 export const monthSpec: AiCallSpec<MonthOutput> = {
   kind: "month",
-  version: "month-1",
+  version: "month-2",
   maxTokens: 4000,
   schema: monthOutput,
   system: `You look at a planning app's coming weeks. Where a week's demand is over its
@@ -188,6 +209,7 @@ capacity, propose at most five things: "advance" (start an item earlier; item_id
 "drop" (leave an item; item_id), or "mode" (a life mode for a week; week_start, mode). Each
 proposal has one short sentence for the user. No proposals when nothing is tight.
 
+${PLANNING_TONE}
 ${SHARED_RULES}`,
 };
 
@@ -216,12 +238,14 @@ export type ReviewOutput = z.infer<typeof reviewOutput>;
 
 export const reviewSpec: AiCallSpec<ReviewOutput> = {
   kind: "review",
-  version: "review-1",
+  version: "review-2",
   maxTokens: 4000,
   schema: reviewOutput,
   system: `You write a planning app's weekly look back for its user: a short summary of the
 week across the modules (no blame, no praise), at most three suggestions for the coming week,
-and a life mode only when the coming weeks call for a change.
+and a life mode only when the coming weeks call for a change. Minutes worked are told as plain
+amounts, never against a plan, a floor or another week.
 
+${PLANNING_TONE}
 ${SHARED_RULES}`,
 };

@@ -35,7 +35,8 @@ const LARGE = ["proje", "tez", "sınav", "sinav", "rapor", "[ai:item]"];
 /**
  * Reads a line roughly the way a model would: the module named in it (or the only one there
  * is), the day and duration typed at its end, a larger size for project-like words.
- * `[ai:unsure]` makes it unsure, so the answer becomes a card to confirm.
+ * `[ai:unsure]` makes it unsure, so the answer becomes a card to confirm; `[ai:nominutes]` gives
+ * no duration (unless one is typed), so `size` is asked for it.
  */
 function enrich(input: unknown): EnrichOutput {
   const given = input as Partial<EnrichInput> & { text: string };
@@ -55,6 +56,7 @@ function enrich(input: unknown): EnrichOutput {
   const unsure = lower.includes("[ai:unsure]");
   const large = LARGE.some((word) => lower.includes(word));
   const minutes = parsed.minutes ?? (large ? 240 : 45);
+  const noMinutes = lower.includes("[ai:nominutes]") && parsed.minutes === null;
   const soon = parsed.dueDay !== null && parsed.dueDay <= shiftDay(today, 3);
 
   return {
@@ -71,7 +73,9 @@ function enrich(input: unknown): EnrichOutput {
       confidence: unsure ? 0.3 : 0.8,
       reason: large ? "birden çok oturum ister" : "tek oturumluk görünüyor",
     },
-    est_minutes: { value: minutes, confidence: 0.6, reason: "benzer işlere göre" },
+    est_minutes: noMinutes
+      ? { value: null, confidence: 0.2, reason: "benzer iş verisi yok" }
+      : { value: minutes, confidence: 0.6, reason: "benzer işlere göre" },
     energy: { value: large ? "deep" : "light", confidence: 0.6, reason: "işin türüne göre" },
     context: { value: "any", confidence: 0.5, reason: "yer belirtilmemiş" },
     importance: soon

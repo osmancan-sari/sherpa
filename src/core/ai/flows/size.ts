@@ -1,13 +1,22 @@
 import type { ModuleRegistry } from "@/core/contract/types";
-import { type Db, type Provenance, toJson, unwrap, type WorkItem } from "@/core/types";
+import {
+  type Db,
+  type Provenance,
+  TASK_MAX_MINUTES,
+  TASK_MIN_MINUTES,
+  toJson,
+  unwrap,
+  type WorkItem,
+} from "@/core/types";
 import { dayKey } from "@/lib/date";
 import { type SizeField, type SizeInput, type SizeOutput, sizeSpec } from "../calls/size";
 import { type AiDeps, runAiCall } from "../gateway";
 import { type AiField, mergeMark, readMark } from "../marks";
-import { finishedItemsOfModule } from "./context";
+import { finishedItemsOfModule, similarFinishedTasks } from "./context";
+import type { EnrichOutcome } from "./enrich-apply";
 
 // `size`: a module proposed a work item and left judgement fields empty (or the core filled
-// them with a default). The AI estimates them once; the module's own values, the user's
+// them with a default; `enrich` without a duration does the same for a task or a work item). The AI estimates them once; the module's own values, the user's
 // values and the AI's earlier estimates stay. Only a change of scope (title, `meta`, bounds)
 // asks again for what the AI set before (docs/04-planlayici.md, "Efor istikrarı").
 
@@ -185,4 +194,88 @@ export async function sizeWorkItem(
   );
   if (written.length === 0) return { status: "gone" };
   return { status: "applied", fields: Object.keys(fields) };
+}
+
+/**
+ * `enrich` could not tell a task's duration and the core wrote a default: estimate it once,
+ * inside a task's bounds. Nothing else of the task is asked; a task the user has changed in the
+ * meantime keeps its value.
+ */
+export async function sizeTask(
+  deps: AiDeps,
+  registry: ModuleRegistry,
+  request: { id: string },
+  now: Date,
+): Promise<SizeOutcome> {
+  const { db } = deps;
+  const task = (await db.from("tasks").select("*").eq("id", request.id).maybeSingle()).data;
+  if (!task) return { status: "gone" };
+  const mark = readMark(task.ai);
+  if (
+    task.status !== "todo" ||
+    !mark?.defaults?.includes("est_minutes") ||
+    mark.user_edited.includes("est_minutes")
+  ) {
+    return { status: "not_needed" };
+  }
+  const mod = task.module_id
+    ? (await db.from("modules").select("*").eq("id", task.module_id).maybeSingle()).data
+    : null;
+  if (!mod) return { status: "gone" };
+
+  const bounds = { min: TASK_MIN_MINUTES, max: TASK_MAX_MINUTES };
+  const similar = await similarFinishedTasks(db, task.title, new Map([[mod.id, mod.slug]]));
+  const input: SizeInput = {
+    title: task.title,
+    module: { slug: mod.slug, name: mod.name },
+    sizing_hints: registry.get(mod.slug)?.sizingHints ?? null,
+    today: dayKey(now),
+    due: task.due_at ? dayKey(new Date(task.due_at)) : null,
+    hard_deadline: false,
+    known: { importance: task.importance, energy: task.energy, session_minutes: null },
+    bounds,
+    meta: {},
+    need: ["effort_total_minutes"],
+    similar: similar.map((row) => ({ title: row.title, estimated: null, spent: row.minutes })),
+  };
+  const result = await runAiCall(deps, sizeSpec, input, { subject: { type: "task", id: task.id } });
+  if (result.status !== "ok") return { status: result.status, reason: result.reason };
+
+  const answer = result.output.effort_total_minutes;
+  if (answer.value === null) return { status: "applied", fields: [] };
+  const value = clampEffort(answer.value, {
+    effort_min_minutes: bounds.min,
+    effort_max_minutes: bounds.max,
+  });
+  const next = mergeMark(mark, {
+    kind: "size",
+    model: result.model,
+    at: now.toISOString(),
+    call_id: result.callId,
+    fields: { est_minutes: { value, confidence: answer.confidence, reason: answer.reason } },
+    input: mark.input,
+  });
+  const written = unwrap(
+    await db
+      .from("tasks")
+      .update({ est_minutes: value, ai: toJson(next) })
+      .eq("id", task.id)
+      .eq("updated_at", task.updated_at)
+      .select("id"),
+  );
+  if (written.length === 0) return { status: "gone" };
+  return { status: "applied", fields: ["est_minutes"] };
+}
+
+/** After `enrich` wrote work with a default duration: `size` estimates it (task or work item). */
+export async function sizeAfterEnrich(
+  deps: AiDeps,
+  registry: ModuleRegistry,
+  outcome: EnrichOutcome,
+  now: Date,
+): Promise<SizeOutcome | null> {
+  if (outcome.status !== "applied" || !outcome.sizeNeeded) return null;
+  return outcome.target === "task"
+    ? sizeTask(deps, registry, { id: outcome.id }, now)
+    : sizeWorkItem(deps, registry, { id: outcome.id }, now);
 }

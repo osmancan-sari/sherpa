@@ -1,10 +1,25 @@
-import { unwrap } from "@/core/types";
+import { TASK_MAX_MINUTES, TASK_MIN_MINUTES, unwrap } from "@/core/types";
 import { type EnrichInput, type EnrichOutput, enrichSpec } from "./calls/enrich";
-import { type AiDeps, runAiCall } from "./gateway";
+import {
+  type MonthOutput,
+  monthSpec,
+  type PlanOutput,
+  planSpec,
+  replanSpec,
+  type ReviewOutput,
+  reviewSpec,
+  type WeekOutput,
+  weekSpec,
+} from "./calls/planning";
+import { type SizeInput, sizeSpec } from "./calls/size";
+import { type AiCallSpec, type AiDeps, runAiCall } from "./gateway";
 
-// The quality check of `enrich` (docs/10-yapay-zeka.md, "Kalite denetimi"): sample lines with
-// what they should become, asked through the gateway as the local account, and scored. Run by
-// hand (`npm run ai:eval`) when a prompt or a model changes.
+// The quality check (docs/10-yapay-zeka.md, "Kalite denetimi"), run by hand (`npm run ai:eval`)
+// when a prompt or a model changes, through the gateway as the local account:
+// - `enrich`: sample lines with what they should become, scored; a line the AI gives no
+//   duration goes on to `size`, as in the app;
+// - tone: the planning calls on days that invite blame; what the user would read is checked
+//   against the app's rule 2 (no guilt, no counting of the past).
 
 export type EvalCase = {
   text: string;
@@ -37,6 +52,8 @@ export type EvalRow = {
   due: boolean;
   /** |estimate − expected| / expected; null without an estimate. */
   minutesError: number | null;
+  /** The estimate came from `size`: `enrich` gave none. */
+  sized: boolean;
 };
 
 export type EvalReport = {
@@ -48,6 +65,8 @@ export type EvalReport = {
   due: number;
   /** Median relative error of the duration estimates. */
   minutesMedianError: number | null;
+  /** Lines whose duration `enrich` left empty and `size` estimated. */
+  sized: number;
   /** What the calls of this run cost (reused answers cost nothing). */
   costUsd: number;
   /** Answers taken from earlier runs: the same prompt, model and line. */
@@ -67,6 +86,7 @@ export function scoreCase(
   item: EvalCase,
   output: EnrichOutput | null,
   error: string | null = null,
+  sizedMinutes: number | null = null,
 ): EvalRow {
   if (!output) {
     return {
@@ -77,9 +97,11 @@ export function scoreCase(
       target: false,
       due: false,
       minutesError: null,
+      sized: false,
     };
   }
-  const estimate = output.est_minutes.value;
+  const sized = output.est_minutes.value === null && sizedMinutes !== null;
+  const estimate = output.est_minutes.value ?? sizedMinutes;
   return {
     text: item.text,
     output,
@@ -89,6 +111,7 @@ export function scoreCase(
     due: output.due.value === item.expect.due,
     minutesError:
       estimate === null ? null : Math.abs(estimate - item.expect.minutes) / item.expect.minutes,
+    sized,
   };
 }
 
@@ -104,6 +127,7 @@ export function summarize(model: string, rows: EvalRow[], costUsd: number): Eval
     target: share((row) => row.target),
     due: share((row) => row.due),
     minutesMedianError: median(rows.flatMap((row) => row.minutesError ?? [])),
+    sized: rows.filter((row) => row.sized).length,
     costUsd,
     reused: 0,
     rows,
@@ -133,7 +157,17 @@ export async function evaluateEnrich(deps: AiDeps, suite: EvalSuite): Promise<Ev
       model = result.model;
       if (result.reused) reused++;
       else callIds.push(result.callId);
-      rows.push(scoreCase(item, result.output));
+      let sizedMinutes: number | null = null;
+      if (result.output.est_minutes.value === null) {
+        // As in the app: no duration from the line or the AI, so `size` estimates it.
+        const sized = await runAiCall(deps, sizeSpec, sizeInputFor(suite, result.output));
+        if (sized.status === "ok") {
+          if (sized.reused) reused++;
+          else callIds.push(sized.callId);
+          sizedMinutes = sized.output.effort_total_minutes.value;
+        } else if (sized.status === "failed" && sized.callId) callIds.push(sized.callId);
+      }
+      rows.push(scoreCase(item, result.output, null, sizedMinutes));
     } else {
       if (result.status === "failed" && result.callId) callIds.push(result.callId);
       rows.push(scoreCase(item, null, `${result.status}: ${result.reason}`));
@@ -145,4 +179,164 @@ export async function evaluateEnrich(deps: AiDeps, suite: EvalSuite): Promise<Ev
       : unwrap(await deps.db.from("ai_calls").select("cost_usd").in("id", callIds));
   const costUsd = costs.reduce((sum, row) => sum + Number(row.cost_usd), 0);
   return { ...summarize(model, rows, costUsd), reused };
+}
+
+/** What the app sends `size` after `enrich` left a duration empty (src/core/ai/flows/size.ts). */
+function sizeInputFor(suite: EvalSuite, output: EnrichOutput): SizeInput {
+  const mod = suite.modules.find((row) => row.slug === output.module.value);
+  const task = output.target.value !== "work_item";
+  return {
+    title: output.title,
+    module: { slug: mod?.slug ?? "-", name: mod?.name ?? "-" },
+    sizing_hints: null,
+    today: suite.today,
+    due: output.due.value,
+    hard_deadline: false,
+    known: {
+      importance: output.importance.value,
+      energy: output.energy.value,
+      session_minutes: null,
+    },
+    bounds: task ? { min: TASK_MIN_MINUTES, max: TASK_MAX_MINUTES } : null,
+    meta: {},
+    need: task ? ["effort_total_minutes"] : ["effort_total_minutes", "session_minutes"],
+    similar: [],
+  };
+}
+
+// --- Tone (rule 2) -----------------------------------------------------------------------------
+
+export type ToneKind = "plan" | "replan" | "week" | "month" | "review";
+
+/** A planning call on a day that invites blame (nothing done yesterday, a gloomy note…). */
+export type ToneCase = { name: string; kind: ToneKind; input: unknown };
+export type ToneSuite = { cases: ToneCase[] };
+
+/**
+ * What counts the past or blames, in Turkish (CLAUDE.md, rule 2): matched on the lower-cased
+ * text, at the start of a word.
+ */
+export const TONE_BANNED: readonly { word: string; pattern: RegExp }[] = [
+  ["dün", "dün(kü|den|ü)?(?!\\p{L})"],
+  ["yapılmadı", "yapılma(dı|mış)"],
+  ["yapamadın", "yapama(dı|mış)"],
+  ["bitmedi", "bitme(di|miş)"],
+  ["bitiremedin", "bitireme"],
+  ["tamamlanmadı", "tamamlanma(dı|mış)"],
+  ["tamamlayamadın", "tamamlayama"],
+  ["kaçırdın", "kaçır"],
+  ["gecikti", "gecik"],
+  ["ertelendi", "ertelen(di|miş)|erteledin|ertelemiş"],
+  ["hiçbiri", "hiçbiri"],
+  ["yine", "yine(?! de)"],
+  ["hâlâ", "hâlâ|halen"],
+  ["geride kaldı", "geride kal|gerisinde"],
+  ["aksattın", "aksat"],
+  ["ihmal", "ihmal"],
+].map(([word, source]) => ({ word, pattern: new RegExp(`(^|[^\\p{L}])(${source})`, "u") }));
+
+/** The banned words found in what the user would read. Pure. */
+export function toneMisses(texts: string[]): { text: string; word: string }[] {
+  return texts.flatMap((text) => {
+    const lower = text.toLocaleLowerCase("tr");
+    return TONE_BANNED.filter(({ pattern }) => pattern.test(lower)).map(({ word }) => ({
+      text,
+      word,
+    }));
+  });
+}
+
+/** Every sentence of an answer the user can read. Pure. */
+export function userTexts(kind: ToneKind, output: unknown): string[] {
+  switch (kind) {
+    case "plan":
+    case "replan": {
+      const plan = output as PlanOutput;
+      return [
+        ...[...plan.top3, ...plan.prefer, ...plan.defer, ...plan.estimates].map(
+          (row) => row.reason,
+        ),
+        ...plan.warnings,
+      ];
+    }
+    case "week": {
+      const week = output as WeekOutput;
+      return [...week.committed, ...week.drop].map((row) => row.reason);
+    }
+    case "month":
+      return (output as MonthOutput).proposals.map((row) => row.text);
+    case "review": {
+      const review = output as ReviewOutput;
+      return [review.summary, ...review.suggestions, ...(review.mode ? [review.mode.reason] : [])];
+    }
+  }
+}
+
+const TONE_SPECS: Record<ToneKind, AiCallSpec<unknown>> = {
+  plan: planSpec as AiCallSpec<unknown>,
+  replan: replanSpec as AiCallSpec<unknown>,
+  week: weekSpec as AiCallSpec<unknown>,
+  month: monthSpec as AiCallSpec<unknown>,
+  review: reviewSpec as AiCallSpec<unknown>,
+};
+
+export type ToneRow = {
+  name: string;
+  kind: ToneKind;
+  error: string | null;
+  texts: string[];
+  misses: { text: string; word: string }[];
+};
+
+export type ToneReport = {
+  total: number;
+  answered: number;
+  /** Answered and without a banned word. */
+  clean: number;
+  costUsd: number;
+  reused: number;
+  rows: ToneRow[];
+};
+
+/** Asks every tone case through the gateway and checks what the user would read. */
+export async function evaluateTone(deps: AiDeps, suite: ToneSuite): Promise<ToneReport> {
+  const rows: ToneRow[] = [];
+  const callIds: string[] = [];
+  let reused = 0;
+  for (const item of suite.cases) {
+    const result = await runAiCall(deps, TONE_SPECS[item.kind], item.input);
+    if (result.status === "ok") {
+      if (result.reused) reused++;
+      else callIds.push(result.callId);
+      const texts = userTexts(item.kind, result.output);
+      rows.push({
+        name: item.name,
+        kind: item.kind,
+        error: null,
+        texts,
+        misses: toneMisses(texts),
+      });
+    } else {
+      if (result.status === "failed" && result.callId) callIds.push(result.callId);
+      rows.push({
+        name: item.name,
+        kind: item.kind,
+        error: `${result.status}: ${result.reason}`,
+        texts: [],
+        misses: [],
+      });
+    }
+  }
+  const costs =
+    callIds.length === 0
+      ? []
+      : unwrap(await deps.db.from("ai_calls").select("cost_usd").in("id", callIds));
+  return {
+    total: rows.length,
+    answered: rows.filter((row) => row.error === null).length,
+    clean: rows.filter((row) => row.error === null && row.misses.length === 0).length,
+    costUsd: costs.reduce((sum, row) => sum + Number(row.cost_usd), 0),
+    reused,
+    rows,
+  };
 }

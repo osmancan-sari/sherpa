@@ -1,15 +1,23 @@
 import { readFileSync } from "node:fs";
 import { aiConfigFromEnv } from "@/core/ai/config";
-import { type EvalReport, type EvalSuite, evaluateEnrich } from "@/core/ai/eval";
+import {
+  type EvalReport,
+  type EvalSuite,
+  evaluateEnrich,
+  evaluateTone,
+  type ToneReport,
+  type ToneSuite,
+} from "@/core/ai/eval";
 import { fakeProvider } from "@/core/ai/fake";
 import { localSetup, signInAs } from "../local-user";
 
-// Quality check of `enrich` (docs/10-yapay-zeka.md). Asks through the app's own gateway as the
-// local account (ALLOWED_EMAIL, local Supabase), so every call is in `ai_calls` with its cost
-// and counts against the month's budget.
+// Quality check of `enrich` (with `size` where it gives no duration) and of the planning calls'
+// tone (docs/10-yapay-zeka.md). Asks through the app's own gateway as the local account
+// (ALLOWED_EMAIL, local Supabase), so every call is in `ai_calls` with its cost and counts
+// against the month's budget.
 //
-//   npm run ai:eval              the real model: ANTHROPIC_API_KEY and AI_MODEL_FAST in
-//                                .env.local; costs a few cents
+//   npm run ai:eval              the real model: ANTHROPIC_API_KEY, AI_MODEL_FAST and
+//                                AI_MODEL_PLAN in .env.local; costs a few cents
 //   npm run ai:eval -- --fake    the recorded fake provider, to try the script itself
 //
 // Run it when a prompt or the model changes. An unchanged prompt and model reuse the answers of
@@ -25,24 +33,42 @@ function print(report: EvalReport) {
   console.log(`Task or work item: ${percent(report.target)}`);
   console.log(`Deadline: ${percent(report.due)}`);
   const error = report.minutesMedianError;
-  console.log(`Duration, median error: ${error === null ? "-" : percent(error)}`);
+  console.log(
+    `Duration, median error: ${error === null ? "-" : percent(error)} (${report.sized} estimated by size)`,
+  );
   console.log(`Cost: ${report.costUsd.toFixed(4)} $ (${report.reused} answers reused)`);
   const misses = report.rows.filter((row) => !row.module || !row.target || !row.due);
   if (misses.length === 0) return;
   console.log("\nMisses:");
   for (const row of misses) {
     const got = row.output
-      ? `module=${row.output.module.value} target=${row.output.target.value} due=${row.output.due.value} min=${row.output.est_minutes.value}`
+      ? `module=${row.output.module.value} target=${row.output.target.value} due=${row.output.due.value} min=${row.output.est_minutes.value}${row.sized ? " (size)" : ""}`
       : `no answer (${row.error})`;
     console.log(`- ${row.text}\n    ${got}`);
   }
 }
 
+function printTone(report: ToneReport) {
+  console.log(`\nTone (rule 2): ${report.clean}/${report.total} clean`);
+  console.log(`Cost: ${report.costUsd.toFixed(4)} $ (${report.reused} answers reused)`);
+  for (const row of report.rows) {
+    const verdict = row.error
+      ? `no answer (${row.error})`
+      : row.misses.length === 0
+        ? "clean"
+        : "BANNED";
+    console.log(`- ${row.name}: ${verdict}`);
+    for (const miss of row.misses) console.log(`    "${miss.word}" in: ${miss.text}`);
+  }
+}
+
+const readJson = <T>(name: string) =>
+  JSON.parse(readFileSync(new URL(name, import.meta.url), "utf8")) as T;
+
 async function main() {
   const { url, email } = localSetup("The AI quality check");
-  const suite = JSON.parse(
-    readFileSync(new URL("./cases.json", import.meta.url), "utf8"),
-  ) as EvalSuite;
+  const suite = readJson<EvalSuite>("./cases.json");
+  const tone = readJson<ToneSuite>("./tone-cases.json");
   const fake = process.argv.includes("--fake");
   const db = await signInAs(url, email);
   const config = fake
@@ -56,6 +82,7 @@ async function main() {
     throw new Error("ANTHROPIC_API_KEY is not set in .env.local (or use --fake).");
   }
   print(await evaluateEnrich({ db, config }, suite));
+  printTone(await evaluateTone({ db, config }, tone));
 }
 
 main().catch((error: unknown) => {

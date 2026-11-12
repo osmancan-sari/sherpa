@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { enrichOutput } from "./calls/enrich";
-import { type EvalSuite, scoreCase, summarize } from "./eval";
+import { type EvalSuite, scoreCase, summarize, toneMisses, userTexts } from "./eval";
 import { fakeProvider } from "./fake";
 
 // The quality check's scoring (scripts/ai-eval/): what counts as right, and the summary.
@@ -62,5 +62,71 @@ describe("ai-eval", () => {
       routing: 0,
       minutesMedianError: null,
     });
+  });
+
+  it("scores the duration size gave when enrich gave none", async () => {
+    const input = {
+      ...suite,
+      text: "Okul sunum slaytları cuma [ai:nominutes]",
+      similar: [],
+      corrections: [],
+    };
+    const response = await fakeProvider().complete({
+      kind: "enrich",
+      model: "fake-fast",
+      tier: "fast",
+      system: "",
+      user: JSON.stringify(input),
+      schema: enrichOutput,
+      maxTokens: 100,
+      signal: new AbortController().signal,
+    });
+    const output = enrichOutput.parse(JSON.parse(response.text));
+    expect(output.est_minutes.value).toBeNull();
+    const row = scoreCase(suite.cases[0], output, null, 45);
+    expect(row).toMatchObject({ sized: true, minutesError: 0.25 });
+    expect(summarize("m", [row], 0).sized).toBe(1);
+    expect(scoreCase(suite.cases[0], output).minutesError).toBeNull();
+  });
+});
+
+describe("ai-eval: tone (rule 2)", () => {
+  it("finds what counts the past or blames, and lets plain facts through", () => {
+    expect(
+      toneMisses([
+        "Dün planlanan 2 işten hiçbiri bitmedi.",
+        "Yine ertelendi, bugün yapılmalı.",
+        "Teslimi kaçırdın.",
+      ]).map((miss) => miss.word),
+    ).toEqual(["dün", "bitmedi", "hiçbiri", "ertelendi", "yine", "kaçırdın"]);
+    expect(
+      toneMisses([
+        "Cuma teslim, bugün 45 dk yeter.",
+        "Teslimi pazartesi, bekleyebilir.",
+        "Kısa bir iş, yine de bugün sığar.",
+        "Dünya tarihi okuması 30 dk.",
+      ]),
+    ).toEqual([]);
+  });
+
+  it("reads every sentence the user would see", () => {
+    expect(
+      userTexts("plan", {
+        top3: [{ id: "a", reason: "r1" }],
+        prefer: [{ id: "b", reason: "r2" }],
+        defer: [],
+        estimates: [{ id: "c", minutes: 30, reason: "r3" }],
+        warnings: ["w"],
+      }),
+    ).toEqual(["r1", "r2", "r3", "w"]);
+    expect(
+      userTexts("review", {
+        summary: "s",
+        suggestions: ["x"],
+        mode: { mode: "busy", reason: "m" },
+      }),
+    ).toEqual(["s", "x", "m"]);
+    expect(userTexts("month", { proposals: [{ text: "t" }] })).toEqual(["t"]);
+    expect(userTexts("week", { committed: [{ id: "a", reason: "c" }], drop: [] })).toEqual(["c"]);
   });
 });

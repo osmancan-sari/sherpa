@@ -24,7 +24,7 @@ Sherpa'nın arkasında, bütün işleri gören ve zamanı planlayan bir yapay ze
 | Çağrı | Ne zaman | Model | Girdi | Çıktı |
 | --- | --- | --- | --- | --- |
 | `enrich` | Her hızlı girişte | hızlı | Metin, modüllerin `intake` kataloğu, benzer 5 geçmiş işin gerçek süresi, bugünün tarihi | Modül, tür, başlık, süre, enerji, bağlam, önem, son tarih; gerekiyorsa adımlar; her alan için güven |
-| `size` | Bir modül, yargı alanları boş bir iş zarfı teklif ettiğinde; kalemin kapsamı değişince | hızlı | Zarf (`meta` dahil), modülün `sizingHints` metni, aynı modülün benzer bitmiş kalemlerinin gerçek süreleri | Toplam efor, oturum uzunluğu, gerekiyorsa önem ve enerji; güven ve gerekçe |
+| `size` | Bir modül, yargı alanları boş bir iş zarfı teklif ettiğinde; kalemin kapsamı değişince; `enrich` süreyi boş bıraktığında | hızlı | Zarf (`meta` dahil), modülün `sizingHints` metni, aynı modülün benzer bitmiş kalemlerinin gerçek süreleri | Toplam efor, oturum uzunluğu, gerekiyorsa önem ve enerji; güven ve gerekçe |
 | `decompose` | Kullanıcı bir kalemde "adımlara böl" dediğinde (hedefler Ç4'te) | planlama | Hedef, son tarih, modül bağlamı | Alt kalemler, sıra ve bağımlılıklar, her birinin kaba eforu |
 | `extract` | Ninova duyurusu ya da yapıştırılan metin geldiğinde | hızlı | Metin, yayın tarihi, dersin açık değerlendirmeleri | Değerlendirme önerisi: hangi kalem, tarih, saat, yer, kapsam |
 | `plan` | Günde bir kez (günün ilk açılışında, kapanış yapılmadıysa); akşam kapanışı açılırsa o an | planlama | Motorun taban planı, aday işler (özet), sabit bloklar, kapasite, dünün sonucu, kapanış notu | Günün 3 işi, sıra tercihleri, ertelenecekler, süre düzeltmeleri, uyarılar; her biri gerekçeli |
@@ -112,7 +112,8 @@ Aylık toplam veritabanında hesaplanır (`ai_spend_since`, `ai_usage_since`; ç
   "fields": { "est_minutes": { "value": 45, "confidence": 0.7, "reason": "benzer 3 hazırlık işi ortalama 50 dk sürdü" },
               "importance": { "value": 3, "confidence": 0.8, "reason": "ağırlığı %20, 4 gün kaldı", "kind": "size" } },
   "user_edited": ["est_minutes"],
-  "scope": "…" }                 -- yalnızca `size`: tahminin yapıldığı kapsam (başlık, meta, sınırlar)
+  "scope": "…",                 -- yalnızca `size`: tahminin yapıldığı kapsam (başlık, meta, sınırlar)
+  "defaults": ["est_minutes"] }   -- çekirdeğin varsayılanla doldurduğu sütunlar (`enrich` süre vermediyse); `size` tahmin edince düşer
 ```
 
 Alandaki `kind`, alanı işaretin ilk çağrısından başka bir çağrı koyduysa yazılır. İş kaleminde `provenance` `ai` olmayan alan (modül ya da kullanıcı sonradan yazdıysa) işarette dursa da yapay zekanın sayılmaz.
@@ -134,8 +135,8 @@ Her çağrının bir akışı vardır (`src/core/ai/flows/`): girdiyi kurar, ge�
 
 | Akış | Tetikleyen | Ne yazar |
 | --- | --- | --- |
-| `enrich` | Hızlı girişte serbest satır (önce gelen kutusuna yazılır) | Emin (`module` ve `target` güveni ≥ 0,6, modül etkin): satır bir işe ya da iş kalemine çevrilir, giriş `routed` olur. Emin değil: giriş `needs_confirm` olur, öneri `suggestion` içinde saklanır; kart onaylanınca aynı yazma tarayıcıda yapılır, kullanıcı modülü değiştirdiyse bu da düzeltme olarak `ai_feedback`'e düşer. Yanıt yok: giriş `new` kalır |
-| `size` | Modülün teklifi: yeni iş kalemi ya da kapsamı (başlık, `meta`, sınırlar) değişmiş olabilecek kalem | Kaynağı boş ya da `default` olan yargı alanları (toplam efor, oturum süresi, önem, enerji); efor modülün sınırına kırpılır. Yapay zekanın daha önce koyduğu değer yalnızca kapsam değişince yeniden sorulur: sunucu işaretteki `scope` ile kalemin bugünkü kapsamını karşılaştırır. Modülün ve kullanıcının değerine dokunulmaz; arada kalem düzenlendiyse tahmin yazılmaz. Girdideki benzer kalemler: aynı modülün başlığı en çok benzeyen bitmiş kalemleri |
+| `enrich` | Hızlı girişte serbest satır (önce gelen kutusuna yazılır) | Emin (`module` ve `target` güveni ≥ 0,6, modül etkin): satır bir işe ya da iş kalemine çevrilir, giriş `routed` olur. Süre ne satırda ne yanıtta varsa varsayılan yazılır (iş 30 dk; kalemde kaynağı `default`) ve hemen `size` sorulur. Emin değil: giriş `needs_confirm` olur, öneri `suggestion` içinde saklanır; kart onaylanınca aynı yazma tarayıcıda yapılır, kullanıcı modülü değiştirdiyse bu da düzeltme olarak `ai_feedback`'e düşer. Yanıt yok: giriş `new` kalır |
+| `size` | Modülün teklifi: yeni iş kalemi ya da kapsamı (başlık, `meta`, sınırlar) değişmiş olabilecek kalem. `enrich` süresiz bir iş ya da kalem yazınca: sunucuda hemen, onaylanan kartta tarayıcıdan (`/api/ai/size`, `type: task` ya da `work_item`) | Kaynağı boş ya da `default` olan yargı alanları (toplam efor, oturum süresi, önem, enerji); efor modülün sınırına kırpılır. Yapay zekanın daha önce koyduğu değer yalnızca kapsam değişince yeniden sorulur: sunucu işaretteki `scope` ile kalemin bugünkü kapsamını karşılaştırır. Modülün ve kullanıcının değerine dokunulmaz; arada kalem düzenlendiyse tahmin yazılmaz. Girdideki benzer kalemler: aynı modülün başlığı en çok benzeyen bitmiş kalemleri. İşte yalnızca süre sorulur (işaretteki `defaults` içinde `est_minutes` varsa), 5–90 dk arasına kırpılır |
 | `decompose` | Kullanıcı "adımlara böl" der | Kalemin altına `proposed` alt kalemler (bağımlılıklarıyla). Kullanıcı kabul edince `active`, reddedince `dropped` olur. Bekleyen öneri varken yeniden sorulmaz |
 | `extract` | Modül yapıştırılan metni okutur | Hiçbir şey; öneriler modüle döner, ne olacaklarına modül karar verir |
 
@@ -158,6 +159,8 @@ Planlama çağrıları `src/core/ai/calls/planning.ts` (istem ve şema) ve `src/
 | `review` | Cumartesiden itibaren, o hafta için `weekly_reviews` yoksa | Modüllerin haftalık raporlarından özet, en çok 3 öneri, gerekirse mod önerisi (`weekly_reviews.summary`); Hafta ekranında |
 
 - Öneri hiçbir koruma kuralını aşamaz: zorunlu işi ertelemek reddedilir ve uyarı olur (`advice_rejected`); kapasiteyi aşan üç iş kırpılır.
+- Günün 3 işinde önce bugün teslim işler gelir; yapay zekanın üçü kalan yeri doldurur. Ritimler üçlüye yalnızca tabanı tehlikedeyse girer (`docs/04-planlayici.md`, madde 8). İstem bunu ve adayların türünü (`type`) bilir.
+- **Ton (ürün kuralı 2).** Beş planlama isteminin hepsi aynı kuralı taşır (`PLANNING_TONE`): yapılmayan, bitmeyen, kaçan, geciken ya da ertelenen işi saymak ve anmak, plana göre kıyaslamak, suçlamak yasak; "dün" yazılmaz, dünün sayıları yalnızca bugünü boyutlamak içindir. `review` çalışılan dakikaları düz miktar olarak söyler. `ai:eval` bunu ayrı örneklerle denetler ("Kalite denetimi").
 - `plan`'ın `splits` (bölünecek işler) çıktısı kurulmadı: büyük işin bölünmesi `decompose`'un ("Adımlara böl") işi.
 - Kullanıcının notu: `replan`'a not alanı yok ("Yeniden planla" tek dokunuştur); `plan` önceki akşamın kapanış notunu (`days.closing_note`) alır. Kapanışta not alanı yok; not yalnızca veride varsa gider. **Görüşün gerek.**
 - Yapay zeka açıkken "Haftayı yeniden kur" sunucuya gider (`week`, `force`); yanıt yoksa motor kurar. "Yeniden planla" önce motorun planını yazar (sabahın önerisi bırakılır), `replan` üstüne gelir. `review` sunucuda da Cumartesiden önce yapılmaz.
@@ -174,7 +177,7 @@ Planlama çağrıları `src/core/ai/calls/planning.ts` (istem ve şema) ve `src/
 
 ## Kalite denetimi
 
-`scripts/ai-eval/` (`npm run ai:eval`): 30 örnek satır ve beklenen sonuçları. İstem ya da model değişince çalıştırılır; yönlendirme doğruluğu, iş / iş kalemi ayrımı, son tarih doğruluğu ve süre tahmini sapması raporlanır. Maliyeti birkaç senttir. Çağrılar uygulamanın geçidinden, yerel hesapla yapılır ve `ai_calls`'a yazılır. İlk örnekler elle yazıldı (Ç2); kullanıcının gerçek girişleri biriktikçe onlarla değiştirilir.
+`scripts/ai-eval/` (`npm run ai:eval`): 30 örnek satır ve beklenen sonuçları. İstem ya da model değişince çalıştırılır; yönlendirme doğruluğu, iş / iş kalemi ayrımı, son tarih doğruluğu ve süre tahmini sapması raporlanır. `enrich` süre vermediyse uygulamadaki gibi `size` sorulur ve sapma onun tahminiyle hesaplanır. Ton: `tone-cases.json` içindeki planlama çağrıları (suçlamaya davet eden günler: dün hiçbir iş bitmemiş, kullanıcının notu kendini suçluyor, modülün önerisi suçlayıcı) gerçek modele sorulur; kullanıcının okuyacağı her cümle yasaklı kalıplara karşı taranır (`TONE_BANNED`: "dün", "yapılmadı", "bitmedi", "kaçırdın", "ertelendi", "hiçbiri", "yine"…). Maliyeti birkaç senttir. Çağrılar uygulamanın geçidinden, yerel hesapla yapılır ve `ai_calls`'a yazılır. İlk örnekler elle yazıldı (Ç2); kullanıcının gerçek girişleri biriktikçe onlarla değiştirilir.
 
 ## Uygulama notu
 

@@ -217,19 +217,29 @@ export function buildPlan(input: PlanInput): Plan {
   };
 }
 
-/** Mandatory work first, then the AI's or the user's choice, then the best of the rest. */
+/**
+ * The day's three (docs/04-planlayici.md, "Günün 3 işi"): work due today first, then the AI's
+ * or the user's choice, then the engine's (other mandatory work, then the best score). A rhythm
+ * stays on the strip and in the list; it joins the three only when its floor is at risk.
+ */
 function pickTop3(assignments: Assignment[], chosen: string[]): string[] {
   const ordered = [
-    ...assignments.filter((row) => row.candidate.mandatory !== null),
+    ...assignments.filter((row) => row.candidate.mandatory === "due_today"),
     ...chosen.flatMap((id) => assignments.filter((row) => matches(id, row.candidate))),
+    ...assignments.filter((row) => row.candidate.mandatory !== null),
     ...[...assignments].sort((a, b) => b.candidate.score - a.candidate.score),
   ];
   const ids: string[] = [];
   for (const { candidate } of ordered) {
-    if (!ids.includes(candidate.id) && candidate.type !== "follow_up") ids.push(candidate.id);
+    if (!ids.includes(candidate.id) && inTop3(candidate)) ids.push(candidate.id);
     if (ids.length === 3) break;
   }
   return ids;
+}
+
+function inTop3(candidate: Candidate): boolean {
+  if (candidate.type === "follow_up") return false;
+  return candidate.type !== "rhythm" || candidate.mandatory === "floor";
 }
 
 function nowOf(

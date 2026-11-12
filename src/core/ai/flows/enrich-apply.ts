@@ -102,6 +102,10 @@ export function enrichedRecord(args: {
   else if (aiMinutes !== null) fields[minutesColumn] = judged(minutesValue, output.est_minutes);
 
   for (const column of Object.keys(fields)) provenance[column] = "ai";
+  // Nobody could tell the duration: a default now, and `size` is asked to estimate it, the way
+  // it estimates an empty effort a module left (docs/10-yapay-zeka.md, "size").
+  const defaulted = parsed.minutes === null && aiMinutes === null;
+  if (defaulted) provenance[minutesColumn] = "default";
 
   const mark: AiMark = {
     kind: "enrich",
@@ -111,6 +115,7 @@ export function enrichedRecord(args: {
     fields,
     user_edited: [],
     input: args.rawText.slice(0, 300),
+    ...(defaulted ? { defaults: [minutesColumn] } : {}),
   };
 
   // The user's own words; the model's cleaned title only when the line had nothing else.
@@ -123,15 +128,17 @@ export function enrichedRecord(args: {
     ai: toJson(mark),
   };
   return target === "task"
-    ? { target, row: { ...common, est_minutes: minutesValue } }
+    ? { target, sizeNeeded: defaulted, row: { ...common, est_minutes: minutesValue } }
     : {
         target,
+        sizeNeeded: defaulted,
         row: { ...common, effort_total_minutes: minutesValue, provenance: toJson(provenance) },
       };
 }
 
 export type EnrichOutcome =
-  | { status: "applied"; target: Target; id: string }
+  /** `sizeNeeded`: the duration is a default; ask `size` for it (`sizeAfterEnrich`). */
+  | { status: "applied"; target: Target; id: string; sizeNeeded: boolean }
   | { status: "needs_confirm"; entryId: string }
   /** No AI answer (no provider, switched off, budget, failure): the entry waits in the inbox. */
   | { status: "skipped" | "failed"; reason: string }
@@ -159,7 +166,7 @@ export async function applyEnrichment(
   },
 ): Promise<EnrichOutcome> {
   const userPickedModule = args.aiModuleSlug !== undefined && args.aiModuleSlug !== args.moduleSlug;
-  const { target, row } = enrichedRecord({
+  const { target, row, sizeNeeded } = enrichedRecord({
     output: args.output,
     parsed: args.parsed,
     moduleId: args.moduleId,
@@ -247,7 +254,7 @@ export async function applyEnrichment(
 
   const routed: RoutedTo = [{ type: target, id, module: args.moduleSlug }];
   await markRouted(db, args.entry.id, routed);
-  return { status: "applied", target, id };
+  return { status: "applied", target, id, sizeNeeded };
 }
 
 /** Reads a card's stored suggestion back; null when it is not one (or of an older shape). */

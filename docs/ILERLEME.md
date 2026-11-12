@@ -6,7 +6,7 @@ Bu dosyayı Claude Code günceller. Yeni bir oturum yalnızca bu dosyayı ve `pr
 
 - Faz: **Ç3 (Planlayıcı) bitti** (12 Kas 2026, `c3-tamam`; faz denetimi iki tur). Ç0–Ç3 bitti; D1–D4 tamamlandı (Ç3 üretimde, yapay zeka üretimde açık; gerçek modelle ölçüm "Senden bekleyenler" → D3)
 - Sıradaki: Ç4 (Pano ve telefon cilası), yeni oturumda
-- Son commit: D4 kaydı
+- Son commit: D3 kararları (günün 3 işi, `enrich` → `size`, planlama istemlerinde ton kuralı ve `ai:eval` ton örnekleri). Açık kalan ölçüt: Ç2'nin "Sunum slaytları cuma"sı, Okul modülü kurulunca yeniden denenecek
 
 ### Ç3 planı
 
@@ -180,7 +180,7 @@ Anahtar (D3) verilmedi. Bütün yollar sahte sağlayıcıyla (`SHERPA_AI_FAKE=1`
 
 | Ölçüt | Durum | Kanıt |
 | --- | --- | --- |
-| "Sunum slaytları cuma" yazınca iş birkaç saniye içinde doğru modül, süre, önem ve son tarihle oluşuyor; yapay zekanın koyduğu değerler işaretli | Sağlandı (sahte sağlayıcıyla). "Cuma" kullanıcının yazdığı gün olduğu için son tarih işaretsiz (kural 4; **Görüşün gerek**, "Verdiğim kararlar"). **Gerçek modelle (D3, 12 Kas 2026): kısmen.** 2,6–4,3 sn, son tarih (cuma 13 Kas) ve önem doğru; ama modül güveni sınırda: `ai:eval`'in modül tanımlı kataloğunda Okul 0,6 (eşiğin tam üstü, iş yazılırdı), örnek verinin tanımsız modülleriyle (İş'te aynı adlı bir iş de var) modülsüz → onay kartı. Hedef iki çalıştırmada da iş kalemi (beklenen iş), süre bir kez boş ("benzer iş verisi yok"), bir kez 240 dk (**Görüşün gerek**, D3) | `yapay-zeka.ai.spec.ts` ("a free line becomes work…": 10 sn içinde iş, `module_id`, `est_minutes`, `importance` işaretli, `due_at` dolu, gerekçe satırda ve formda), `tests/db/ai-flows.test.ts` |
+| "Sunum slaytları cuma" yazınca iş birkaç saniye içinde doğru modül, süre, önem ve son tarihle oluşuyor; yapay zekanın koyduğu değerler işaretli | Sağlandı (sahte sağlayıcıyla). "Cuma" kullanıcının yazdığı gün olduğu için son tarih işaretsiz (kural 4; **Görüşün gerek**, "Verdiğim kararlar"). **Gerçek modelle (D3, 12 Kas 2026): kısmen.** 2,6–4,3 sn, son tarih (cuma 13 Kas) ve önem doğru; ama modül güveni sınırda: `ai:eval`'in modül tanımlı kataloğunda Okul 0,6 (eşiğin tam üstü, iş yazılırdı), örnek verinin tanımsız modülleriyle (İş'te aynı adlı bir iş de var) modülsüz → onay kartı. Hedef iki çalıştırmada da iş kalemi (beklenen iş), süre bir kez boş ("benzer iş verisi yok"), bir kez 240 dk. **Açık** (kullanıcının kararı, 12 Kas): Okul modülü açıklamasıyla kurulunca gerçek modelle yeniden denenecek. Süre boş kalırsa artık `size` tahmin ediyor (D3, karar 3) | `yapay-zeka.ai.spec.ts` ("a free line becomes work…": 10 sn içinde iş, `module_id`, `est_minutes`, `importance` işaretli, `due_at` dolu, gerekçe satırda ve formda), `tests/db/ai-flows.test.ts` |
 | Eforu boş gelen iş zarfı yapay zekanın tahminiyle doluyor, gerekçesi görünüyor | Sağlandı (sahte; gerçek modelle de: ara sınav hazırlığı 300 dk ve 50 dk'lık oturum, sınır 120–600 içinde, Türkçe gerekçe, 3,5 sn) | `yapay-zeka.ai.spec.ts` ("an envelope with an empty effort…": 155 dk, modülün sınırı içinde, gerekçe satırda ve formda), `ai-flows.test.ts` (sınıra kırpma, `default` kaynağı, kapsam değişince yeniden sorma) |
 | Kullanıcının düzelttiği alan sonraki teklif ve çağrılarda ezilmiyor; düzeltme `ai_feedback`'e düşüyor | Sağlandı | `yapay-zeka.ai.spec.ts` (`enrich` düzeltmesi; `size` düzeltmesi ve sonraki teklif), `ai-flows.test.ts`; `size` `user` ve `module` kaynaklı alanı sormaz (`src/core/ai/flows/size.ts`) |
 | Anahtar yokken serbest giriş gelen kutusuna düşüyor, zarflar sınırın ortasıyla doluyor, uygulama hatasız çalışıyor | Sağlandı | `yapay-zeka.ai.spec.ts` ("without any provider…", 3100 sunucusu: 135 dk, `default`, giriş `new`, `ai_calls` boş, sayfada yakalanmamış hata yok), `ai-flows.test.ts` |
@@ -245,7 +245,7 @@ Kullanıcı bu gece için "bir oturumda tek faz" kuralını esnetti; Ç3, Ç2 il
 | Yoğun modda örnek verideki ömürlük modülün tabanı korunuyor (testle) | Sağlandı | `tests/db/seed.test.ts` "keeps the lifelong module's weekly floor in busy mode", `plan.test.ts` (modül ve ritim tabanı) |
 | 3 gün kullanılmadıktan sonra geri dönüş ekranı açılıyor ve gecikmiş iş yığını göstermiyor | Sağlandı | `planner.spec.ts` "back after three days…", `plan.test.ts`, `tests/db/planning.test.ts` (geçmiş planlı günler temizlenir) |
 | Uzak bir kalem haftası gelene kadar oturumlara bölünmüyor; haftası gelince yalnızca o haftanın eforu bölünüyor | Sağlandı | `week.test.ts` "does not split an item whose week has not come…", "cuts only this week's share…", `planning.test.ts` |
-| Sabah planı yapay zekanın önerisini ve gerekçelerini taşıyor; yapay zeka kapatılınca plan yine geliyor | Sahte sağlayıcıyla sağlandı. Gerçek modelle (D3): sağlandı, bir yorumla. Öneri şemadan geçti (5–6 sn), gerekçeler Türkçe ve kısa, günün kaydında (`plan_source = ai`, `plan_reasons`); yapay zekanın seçtiği üç iş güne yerleşti. Ama zorunlu iş üç ya da daha fazlaysa "günün 3 işi" yalnızca zorunlulardan oluşur ve yapay zekanın üçü orada görünmez (**Görüşün gerek**, D3) | `tests/e2e/planlama.ai.spec.ts` (sabah planı ve "neden?" gerekçesi; yapay zeka kapalıyken motorun planı, hiç çağrı yok), `tests/db/ai-planning.test.ts` |
+| Sabah planı yapay zekanın önerisini ve gerekçelerini taşıyor; yapay zeka kapatılınca plan yine geliyor | Sahte sağlayıcıyla sağlandı. Gerçek modelle (D3): sağlandı, bir yorumla. Öneri şemadan geçti (5–6 sn), gerekçeler Türkçe ve kısa, günün kaydında (`plan_source = ai`, `plan_reasons`); yapay zekanın seçtiği üç iş güne yerleşti. Ama zorunlu iş üç ya da daha fazlaysa "günün 3 işi" yalnızca zorunlulardan oluşur ve yapay zekanın üçü orada görünmez. Kullanıcının kararıyla (12 Kas) üçlü önce bugün teslim işlerle, sonra yapay zekanın ve planlayıcının seçtikleriyle dolar; ritim yalnızca tabanı tehlikedeyse girer (D3, karar 1) | `tests/e2e/planlama.ai.spec.ts` (sabah planı ve "neden?" gerekçesi; yapay zeka kapalıyken motorun planı, hiç çağrı yok), `tests/db/ai-planning.test.ts` |
 | Yapay zekanın zorunlu bir işi erteleme önerisi motor tarafından reddediliyor (testle) | Sağlandı | `plan.test.ts` (son tarih ve haftalık taban), `ai-planning.test.ts` "cannot put off mandatory work" |
 | Hafta içinde tetikleyici yokken haftalık taahhüt değişmiyor | Sağlandı | `week.test.ts` "plan stability", `planning.test.ts` "without a trigger it stays". Yorum: taahhütten sonra gelen yeni kalem haftada yer varsa taahhüde eklenir, var olanların payı değişmez (**Görüşün gerek**, `docs/04` "Yeni kalem") |
 
@@ -294,7 +294,7 @@ Faz denetimi:
 
 ## Sıradaki adım
 
-Ç4 (Pano ve telefon cilası): yeni oturumda `docs/05-arayuz.md` ve `docs/11-yayin-ve-cihazlar.md` okunarak başlanır. Önce Ç3'ün ve D3 ölçümünün "Görüşün gerek" satırları.
+Ç4 (Pano ve telefon cilası): yeni oturumda `docs/05-arayuz.md` ve `docs/11-yayin-ve-cihazlar.md` okunarak başlanır. Önce Ç3'ün "Görüşün gerek" satırları. Ç2'nin "Sunum slaytları cuma" ölçütü açık: Okul modülü kurulunca yeniden denenecek (D3, karar 5).
 
 ## Senden bekleyenler
 
@@ -371,7 +371,7 @@ Anahtar ve modeller (`AI_MODEL_FAST=claude-haiku-5-5`, `AI_MODEL_PLAN=claude-son
 
 Kestirim: günde bir `plan`, ara sıra `replan`, günde 10 giriş, haftada bir `week` ve `review`, ayda bir `month` ile ayda yaklaşık 0,6 $; 5 $'lık sınırın çok altında.
 
-**Bulgular** (hiçbirinde kod ya da istem değiştirmedim; değişiklik senin kararın):
+**Bulgular** (ilk ölçüm; kararlar ve sonrası aşağıda, "Kararlar ve ikinci ölçüm"):
 
 1. **"Sunum slaytları cuma" modülü sınırda** (**Görüşün gerek**). Modül tanımlı katalogda güven tam 0,6 (eşik); tanımsız modüllerle ve aynı adlı başka bir iş varken modelin cevabı "okul mu iş mi yazmıyor", satır onay kartına düştü. Bu davranış istemin istediği şey (emin değilse sor); gerçek modüller açıklamalarıyla kurulunca düzelmesi beklenir. Asıl ölçüt Okul modülü kurulduğunda yeniden denenmeli.
 2. **`enrich` iş kalemi seçince süreyi çoğu zaman boş bırakıyor**; `ai:eval`'in 5 kaçağının 3'ünde süre boş. Kalem o zaman sınırın ortasıyla ya da boş eforla açılır. İstem "kalem için de toplam süre tahmin et" diyebilir (bir sonraki istem sürümünde, `ai:eval` ile).
@@ -382,6 +382,29 @@ Kestirim: günde bir `plan`, ara sıra `replan`, günde 10 giriş, haftada bir `
 7. **`month` önerisinin metni bir kez çelişkili**: "DL ara raporunu 23 Kasım haftasına çek, bu hafta yük fazla" (yükü fazla olan kalemin kendi haftası değildi).
 
 Deneme betikleri geçiciydi (akışları gerçek yapılandırmayla doğrudan çağırdılar) ve silindi; yerel hesap sonra örnek veriyle yeniden kuruldu.
+
+**Kararlar ve ikinci ölçüm (12 Kas 2026).** Kullanıcının bulgular için kararları ve yapılanlar:
+
+1. **Günün 3 işi** (bulgu 4): ritimler normalde üçlüye girmez, zaman çizelgesinde ve Sıradakiler'de kalır; yalnızca tabanı tehlikedeyse girer. Üçlü önce bugün teslim zorunlu işlerle, kalan yer yapay zekanın (ya da kullanıcının) seçtikleriyle, sonra motorun (öteki zorunlular, en yüksek skor) dolar. `pickTop3` (`src/core/planner/plan.ts`), `plan.test.ts` +2, `docs/04` madde 8 ve test listesi, `docs/09`. Plan istemi bunu bilir; adaylar türlerini (`type`) taşır ve istem yalnızca günün kalan süresine sığanı seçmesini söyler (bulgu 5).
+2. **Açık soru** `docs/09`'a eklendi: günün 3 işi yapısı kullanıcının doğrudan isteği değildi; gerçek modüllerle iki haftalık kullanımdan sonra yeniden değerlendirilecek.
+3. **`enrich` süre vermezse `size`** (bulgu 2): varsayılan yazılır (iş 30 dk; kalemde kaynağı `default`), işarete `defaults` düşer ve `size` hemen sorulur: sunucuda `enrich` akışının sonunda, onaylanan kartta tarayıcıdan (`/api/ai/size`, `type`). İşte yalnızca süre sorulur, 5–90 dk'ya kırpılır (`sizeTask`); kalemde boş yargı alanları (`sizeWorkItem`). `size` istemi `size-2`. Testler: `flows.test.ts` +3, `ai-flows.test.ts` +2 (sahte sağlayıcıda `[ai:nominutes]`), `eval.test.ts` +1. `docs/10`.
+4. **Ton** (bulgu 6): beş planlama istemi ortak bir kural taşır (`PLANNING_TONE`, sürümler `plan-2`, `replan-2`, `week-2`, `month-2`, `review-2`): yapılmayanı saymak, anmak, plana kıyaslamak, suçlamak, "dün" yazmak yasak. `ai:eval`'e ton bölümü eklendi: `scripts/ai-eval/tone-cases.json` (4 örnek: dün hiçbir şey bitmemiş ve kendini suçlayan not, boşa geçen sabah, ağır hafta, suçlayıcı modül önerisi) ve yasaklı kalıplar (`TONE_BANNED`); `eval.test.ts` +2.
+5. **"Sunum slaytları cuma"** (bulgu 1) açık kalır: Okul modülü kurulunca yeniden denenecek.
+
+İkinci `ai:eval` (gerçek model, 12 Kas):
+
+| Ölçü | İlk | İkinci |
+| --- | --- | --- |
+| Yönlendirme | %93 | %90 |
+| İş / kalem | %90 | %90 |
+| Son tarih | %100 | %100 |
+| Süre sapması (ortanca) | %13 | %33 (4 boş sürenin 3'ünü `size` doldurdu) |
+| Ton | yok | 4/4 temiz |
+| Maliyet | 0,0175 $ | 0,0185 $ + ton 0,0238 $ |
+
+Süre sapmasındaki artış çoğunlukla `enrich`'in kendi tahminlerinin çalıştırmadan çalıştırmaya oynamasından (istem değişmedi; ilk ölçümün yanıtları örnek veri sıfırlanınca silindiği için hepsi yeniden soruldu): 30 satırın 11'inde sapma %33 (ör. 15 yerine 20 dk). `size`'ın tahminleri: "BBF301E midterm çalış" 480 dk (beklenen 480), "Pasaport yenileme başvurusu" 90 dk (60), "Sunum slaytları cuma" 180 dk (beklenen 60; model satırı kalem saydı). "YZV406E ödev 2 teslim pazartesi" için `size` da süre veremedi ("benzer iş kaydı ve boyut ipucu yok"); iş varsayılan 30 dk'yla kalır. Gerçek girişler biriktikçe `similar` dolacak; o zaman yeniden ölçülmeli.
+
+**Bir aksaklık:** kararlardan sonraki ilk `check:full` koşusunda uçtan uca testlerin "sağlayıcısız" sunucusu (3100) `.env.local`'deki yeni anahtarı okudu; o koşuda bazı testler gerçek modeli çağırdı (yerel test hesabı üzerinden; maliyeti birkaç sentin altında) ve 4 test kaldı. Düzeltme: `playwright.config.ts` 3100 sunucusunda `ANTHROPIC_API_KEY` boş verilir (Next dosyayı okusa da dolu değişkeni ezmez); yeniden koşuda 139/139.
 
 Önceki adımlar, kayıt için:
 
@@ -557,6 +580,7 @@ Deneme betikleri geçiciydi (akışları gerçek yapılandırmayla doğrudan ça
 | 12 Kas 2026 | Ç3 adım 7 denetimi, 2. tur (GEÇTİ, 4 önemli): (1) "Haftayı yeniden kur" yapay zeka açıkken `week`'e gitmiyordu; artık gider, yanıt yoksa motor kurar; (2) bekçi her adımdan sonra koşulsuz yeniden çalışıyordu (başarısız adım art arda denenebilirdi); artık yalnızca bir şey değiştiren adımdan sonra; (3) eksik testler: `weekCallInput`, modül paylarının adla eşlenmesi ve bırakılanların gerekçesi, Hafta'da gerekçe ve notlar; (4) kapanış notu `plan`'a gidiyor, not alanlarının yokluğu `docs/10`'da. Notlardan: "Yeniden planla" sabahın önerisini bırakır ve ekranın bağlamını gönderir, sabah planı da; kapanış denetimi süre yazmasından önce; `review` sunucuda Cumartesiden önce yapılmaz, okumaların hatası denetlenir; `docs/10` akışın 4. maddesi düzeltildi. Açık notlar: `aiAsked` yazarken kayıt yeniden okunmuyor (aynı milisaniyelerde yapılan Ertele kaybolabilir); "AI switched off" testi `ai_calls`'ın boş olduğunu bekliyor (testler arası sızıntı olasılığı) | Denetim | `src/core/ai/`, `src/core/app/`, `docs/10-yapay-zeka.md` |
 | 12 Kas 2026 | Ç3: haftası kurulmuş ama oturum işleri yazılamamış kalem kendini onarır (`missingSittings`): hafta kaydı ve oturum işleri iki ayrı yazma; ekran görüntüsü testinde sayfa değişince ikincisi yarıda kaldı ve "Örnek hedef: sıradaki adım tanımsız" uyarısı kaldı | Tek işlemli yazma için bir veritabanı fonksiyonu gerekirdi; onarım hem bunu hem bütün oturumları bırakılmış kalemi kapsıyor. Bedeli: kullanıcının bıraktığı son oturum işi, payı bitmediyse yeniden açılır (**Görüşün gerek**) | `src/core/planner/week.ts`, `src/core/data/keep.ts` |
 | 12 Kas 2026 | Ç3: gece ve geri dönüş durumlarında Bugün ekranı yalnızca kartı (ve geri dönüşte günün üç işini) gösterir; şerit, sabit bloklar, uyarılar ve "vakit kalırsa" gizlenir | Ekran görüntüsünde gece ekranı uyarı ve boş şeritle doluydu; doküman geri dönüşte "yalnızca bugünün 3 işi" diyor | `src/core/ui/today/TodayScreen.tsx`, `docs/05-arayuz.md` |
+| 12 Kas 2026 | D3: **Test değişikliği:** uçtan uca testlerin sağlayıcısız sunucusu (3100) `ANTHROPIC_API_KEY` boş verilerek başlar | `.env.local`'e gerçek anahtar girince o sunucu gerçek modeli çağırıyordu; "sağlayıcısız" testleri anlamsızlaşıyor ve para harcıyordu | `playwright.config.ts` |
 | 12 Kas 2026 | Ç3: **Test değişikliği:** `seed.test.ts` örnek veride 26 oturum bekler (25 idi): dün akşamki okuma eklendi | Örnek hesabın son kullanımı üç günden eski kalıyor ve ekran "Kaldığın yerden devam"la açılıyordu | `tests/db/seed.test.ts`, `scripts/demo-data.ts` |
 | 11 Kas 2026 | D1: bulut projelerinin kimlikleri ve `prod`'un site adresi `supabase/config.toml` içinde `[remotes.dev]`, `[remotes.prod]` bloklarında; `config push` `prod`'a kendi adresini gönderir. Kimlik ayarları `--remote=<ref>` ile gönderilir; bağlı proje `dev` | Ayarlar depoda dursun, iki proje aynı kaynaktan kurulsun | `supabase/config.toml` |
 | 11 Kas 2026 | D1: `storage.vector` kapatıldı (yerelde de) | Uygulama kullanmıyor; `config push` bulutta açacaktı ve ücret koşulu belirsizdi | `supabase/config.toml` |

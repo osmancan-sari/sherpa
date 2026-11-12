@@ -38,6 +38,7 @@ import {
   type WorkItemEdit,
 } from "@/core/data/work";
 import { saveAiSettings } from "@/core/ai/budget";
+import { postAi, sizeRequestAfterEnrich } from "@/core/ai/client";
 import { applyEnrichment, readSuggestion } from "@/core/ai/flows/enrich-apply";
 import { acceptSplit, declineSplit } from "@/core/ai/flows/split";
 import type {
@@ -405,6 +406,9 @@ export function useConfirmSuggestion() {
         aiModuleSlug: suggestion.output.module.value,
         now: new Date(),
       });
+      // No duration on the line or from the AI: the server estimates it (`size`).
+      const sizeRequest = sizeRequestAfterEnrich(outcome);
+      if (sizeRequest) void postAi("size", sizeRequest);
       return outcome;
     },
     optimistic: (args) => [{ key: keys.inbox, update: list.remove<InboxEntry>(args.entry.id) }],

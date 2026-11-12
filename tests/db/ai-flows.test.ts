@@ -111,6 +111,44 @@ describe("enrich", () => {
     ]);
   });
 
+  it("asks size for a duration nobody could tell: a task, then a work item", async () => {
+    await makeModule(db);
+    const entry = await addInboxEntry(db, "Sınama okuma notları [ai:nominutes]");
+    const outcome = await enrichEntry(deps(), registry, entry.id, NOW);
+    expect(outcome).toMatchObject({ status: "applied", target: "task", sizeNeeded: true });
+    if (outcome.status !== "applied") return;
+    const task = ok(await db.from("tasks").select("*").eq("id", outcome.id).single());
+    // The fake's estimate inside a task's bounds (5–90), not the default of 30.
+    expect(task.est_minutes).toBe(55);
+    const mark = readMark(task.ai)!;
+    expect(mark.kind).toBe("enrich");
+    expect(mark.fields.est_minutes).toMatchObject({ value: 55, kind: "size" });
+    expect(mark.defaults).toBeUndefined();
+    const sizeCall = (await calls()).find((call) => call.kind === "size")!;
+    expect(sizeCall).toMatchObject({ ok: true, subject_type: "task", subject_id: task.id });
+
+    const big = await addInboxEntry(db, "Sınama dönem projesi [ai:nominutes]");
+    const made = await enrichEntry(deps(), registry, big.id, NOW);
+    expect(made).toMatchObject({ status: "applied", target: "work_item", sizeNeeded: true });
+    if (made.status !== "applied") return;
+    const item = ok(await db.from("work_items").select("*").eq("id", made.id).single());
+    expect(item).toMatchObject({ effort_total_minutes: 120, session_minutes: 45 });
+    expect(item.provenance).toMatchObject({ effort_total_minutes: "ai", session_minutes: "ai" });
+    expect(readMark(item.ai)!.fields.effort_total_minutes.kind).toBe("size");
+  });
+
+  it("asks size nothing when the line or the AI gave a duration", async () => {
+    await makeModule(db);
+    const typed = await addInboxEntry(db, "Sınama okuma notları 20dk [ai:nominutes]");
+    expect(await enrichEntry(deps(), registry, typed.id, NOW)).toMatchObject({
+      status: "applied",
+      sizeNeeded: false,
+    });
+    const told = await addInboxEntry(db, "Sınama okuma notları");
+    await enrichEntry(deps(), registry, told.id, NOW);
+    expect((await calls()).map((call) => call.kind)).toEqual(["enrich", "enrich"]);
+  });
+
   it("keeps an unsure answer as a card; confirming it with another module records the correction", async () => {
     const mod = await makeModule(db);
     await makeModule(db, "spor", "Spor");

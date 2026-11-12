@@ -112,6 +112,9 @@ export default defineConfig({
       // Never reuse a server that is already running: it could be serving an older build.
       reuseExistingServer: false,
       timeout: 60_000,
+      // The server without any AI provider, whatever key .env.local holds (Next reads the file
+      // itself but never overrides a variable that is set, even to nothing).
+      env: { ANTHROPIC_API_KEY: "" },
     },
     {
       command: `npx next start --port ${AI_PORT}`,

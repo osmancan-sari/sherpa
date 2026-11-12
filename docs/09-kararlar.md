@@ -21,6 +21,9 @@
 | 10 Kas 2026 | Bütün modüller işlerini ortak bir iş zarfıyla teklif eder; yargı alanlarını yapay zeka doldurur | Planlama için her modülden gelen iş aynı yapıda olmalı |
 | 10 Kas 2026 | Plan dönem, ay, hafta, gün ufuklarında yapılır; yapay zeka her ufukta önerir | Uzak işler kaba, yakın işler ayrıntılı planlanır |
 | 10 Kas 2026 | Hazırlık eforu dokümanın kendi çalışma planından gelir; ders projelerinin talimatına ortak bir blok eklenir | Plan gerçek malzemeye dayanır |
+| 12 Kas 2026 | Günün 3 işi: önce bugün teslim zorunlu işler, kalan yer planlayıcının ve yapay zekanın seçtikleriyle dolar. Ritimler normalde üçlüye girmez (zaman çizelgesinde ve Sıradakiler'de kalır); bir ritim yalnızca tabanı tehlikedeyse girer | Gerçek modelle denemede (D3) zorunlu işler ve bir ritim üçlüyü doldurdu, yapay zekanın seçtikleri hiç görünmedi |
+| 12 Kas 2026 | `enrich` süreyi boş bırakırsa `size` çağrısı devreye girer (modül tekliflerindeki gibi) | Gerçek modelde iş kalemi seçilince süre çoğu zaman boş kalıyordu |
+| 12 Kas 2026 | Planlama istemleri suçlayıcı ve geçmişi sayan cümleleri açıkça yasaklar (ürün kuralı 2); `ai:eval` bunu ayrı örneklerle sınar | Gerçek modelin uyarılarında "dünkü iki iş yapılmadı" gibi cümleler çıktı |
 
 ## Tasarım ve teknik kararlar (öneri; itiraz yoksa geçerli)
 
@@ -84,6 +87,7 @@
 - [ ] Kampüse ve ofise yol süresi ne kadar?
 - [ ] Saatli randevular için bildirim nasıl olsun: web push denensin mi, telefonun takvimine ayrıca mı yazılsın?
 - [ ] Akşam kapanışı için hatırlatma istenir mi?
+- [ ] Günün 3 işi yapısı kullanıcının doğrudan isteği değildi; gerçek modüllerle iki hafta kullanımdan sonra kalıp kalmayacağı yeniden değerlendirilecek.
 
 Okul: `docs/moduller/okul.md` 11. bölüm.
 

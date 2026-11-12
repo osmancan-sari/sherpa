@@ -1,0 +1,197 @@
+{
+  "cases": [
+    {
+      "name": "plan: dün planlanan üç işin hiçbiri bitmedi, kullanıcının notu kendini suçluyor",
+      "kind": "plan",
+      "input": {
+        "date": "2026-11-12",
+        "weekday": "perşembe",
+        "life_mode": "normal",
+        "capacity_minutes": 150,
+        "base": { "top3": ["t1", "t2", "t3"], "placed": ["t1", "t2", "t3", "r1"] },
+        "candidates": [
+          {
+            "id": "t1",
+            "type": "item",
+            "title": "YZV406E HW2: lokalizasyon soruları",
+            "module": "Okul",
+            "minutes": 45,
+            "due": "2026-11-14",
+            "importance": 3,
+            "energy": "deep",
+            "mandatory": null
+          },
+          {
+            "id": "t2",
+            "type": "task",
+            "title": "Sunum slaytları",
+            "module": "Okul",
+            "minutes": 60,
+            "due": "2026-11-13",
+            "importance": 3,
+            "energy": "deep",
+            "mandatory": "urgent"
+          },
+          {
+            "id": "t3",
+            "type": "task",
+            "title": "Danışmana e-posta",
+            "module": "Okul",
+            "minutes": 10,
+            "due": null,
+            "importance": 2,
+            "energy": "light",
+            "mandatory": null
+          },
+          {
+            "id": "t4",
+            "type": "task",
+            "title": "Çamaşır",
+            "module": "Ev",
+            "minutes": 30,
+            "due": null,
+            "importance": 1,
+            "energy": "light",
+            "mandatory": null
+          },
+          {
+            "id": "r1",
+            "type": "rhythm",
+            "title": "Koşu",
+            "module": "Sağlık",
+            "minutes": 30,
+            "due": null,
+            "importance": 2,
+            "energy": "physical",
+            "mandatory": null
+          }
+        ],
+        "blocks": [{ "title": "Ders", "start": "09:00", "end": "12:00" }],
+        "yesterday": { "planned": 3, "done": 0 },
+        "note": "Dün hiçbir şey yapamadım, yine erteledim. Bugün toparlanmam lazım."
+      }
+    },
+    {
+      "name": "replan: sabah boşa geçti, gün yarıda",
+      "kind": "replan",
+      "input": {
+        "date": "2026-11-12",
+        "weekday": "perşembe",
+        "life_mode": "normal",
+        "capacity_minutes": 60,
+        "base": { "top3": ["t2", "t3", "t4"], "placed": ["t2", "t3"] },
+        "candidates": [
+          {
+            "id": "t2",
+            "type": "task",
+            "title": "Sunum slaytları",
+            "module": "Okul",
+            "minutes": 60,
+            "due": "2026-11-13",
+            "importance": 3,
+            "energy": "deep",
+            "mandatory": "urgent"
+          },
+          {
+            "id": "t3",
+            "type": "task",
+            "title": "Danışmana e-posta",
+            "module": "Okul",
+            "minutes": 10,
+            "due": null,
+            "importance": 2,
+            "energy": "light",
+            "mandatory": null
+          },
+          {
+            "id": "t4",
+            "type": "task",
+            "title": "Çamaşır",
+            "module": "Ev",
+            "minutes": 30,
+            "due": null,
+            "importance": 1,
+            "energy": "light",
+            "mandatory": null
+          }
+        ],
+        "blocks": [],
+        "yesterday": { "planned": 3, "done": 1 },
+        "note": "Sabah hiç verimli geçmedi, planı kaçırdım",
+        "done_today": []
+      }
+    },
+    {
+      "name": "week: geçen hafta çok kalem taahhüt edildi, bu hafta yük ağır",
+      "kind": "week",
+      "input": {
+        "week_start": "2026-11-16",
+        "life_mode": "busy",
+        "capacity_minutes": 900,
+        "fixed_minutes": [{ "module": "Sağlık", "minutes": 90 }],
+        "items": [
+          {
+            "id": "w1",
+            "title": "BBF301E Midterm hazırlığı",
+            "module": "Okul",
+            "remaining_minutes": 420,
+            "share_minutes": 420,
+            "due": "2026-11-18",
+            "importance": 4,
+            "required": true
+          },
+          {
+            "id": "w2",
+            "title": "DL proposal düzeltmeleri",
+            "module": "Okul",
+            "remaining_minutes": 240,
+            "share_minutes": 120,
+            "due": "2026-11-27",
+            "importance": 2,
+            "required": false
+          },
+          {
+            "id": "w3",
+            "title": "Oda düzeni",
+            "module": "Ev",
+            "remaining_minutes": 180,
+            "share_minutes": 90,
+            "due": null,
+            "importance": 1,
+            "required": false
+          }
+        ],
+        "base": ["w1", "w2"],
+        "last_week": { "committed": 7 }
+      }
+    },
+    {
+      "name": "review: hafta az çalışmayla geçti, modülün kendi önerisi suçlayıcı",
+      "kind": "review",
+      "input": {
+        "week_start": "2026-11-09",
+        "modules": [
+          {
+            "module": "Sağlık",
+            "metrics": [{ "label": "Koşu", "value": "1/3" }],
+            "suggestions": ["Koşu hedefinin gerisinde kaldın"]
+          },
+          {
+            "module": "Okul",
+            "metrics": [{ "label": "Çalışılan", "value": "35 dk" }],
+            "suggestions": []
+          }
+        ],
+        "worked": [
+          { "module": "Okul", "minutes": 35 },
+          { "module": "Sağlık", "minutes": 30 }
+        ],
+        "coming": [
+          { "week_start": "2026-11-16", "capacity": 1400, "demand": 1900 },
+          { "week_start": "2026-11-23", "capacity": 1900, "demand": 800 }
+        ],
+        "life_mode": "normal"
+      }
+    }
+  ]
+}

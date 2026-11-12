@@ -41,7 +41,7 @@ function pickForMinutes(input: PlanInput, minutes: number): Candidate | null   /
 Planlayıcı tek başına geçerli bir plan kurar. Yapay zeka bu planı iyileştirir, yerine geçmez (akış: `docs/10-yapay-zeka.md`, "Plan çağrısının akışı"):
 
 - Süre, önem ve `planned_date` gibi alanları yapay zeka veriye yazar; planlayıcı bunları sıradan girdi olarak okur.
-- `advice` verilmişse: `top3` zorunlulardan sonra günün 3 işi olarak alınır, `prefer` içindeki işlerin skoru 1,5 ile çarpılır, `defer` içindekiler bugünün adaylarından çıkarılır.
+- `advice` verilmişse: `top3` bugün teslim işlerden sonra günün 3 işi olarak alınır (madde 8), `prefer` içindeki işlerin skoru 1,5 ile çarpılır, `defer` içindekiler bugünün adaylarından çıkarılır.
 - Öneri hiçbir koruma kuralını aşamaz. Zorunlu bir iş `defer` edilmişse öneri yok sayılır ve uyarı üretilir; kapasiteyi aşan `top3` kırpılır.
 - `advice` yoksa planlayıcı kendi taban planını üretir; plan yine geçerlidir.
 
@@ -84,7 +84,7 @@ Kurallar:
    - aciliyeti 0,8 ve üzeri olan işler (bugün başlanmazsa yetişmez),
    - tabanı tehlikede ritimler: `kalan gün sayısı ≤ tabana ulaşmak için gereken sayı`.
 7. **Doldurma.** Kalan yuvalar sırayla, o yuvaya uyan en yüksek skorlu adayla doldurulur.
-8. **Günün 3 işi.** Yerleşen işler içinden en yüksek skorlu üçü; zorunlular önce gelir.
+8. **Günün 3 işi.** Yerleşen işler içinden, sırayla: bugün teslim zorunlu işler; yapay zekanın (ya da kullanıcının) seçtikleri; motorun seçtikleri (öteki zorunlular, sonra en yüksek skor). Ritimler üçlüye girmez, zaman çizelgesinde ve Sıradakiler'de kalır; bir ritim yalnızca tabanı tehlikedeyse (`floor`) girer. Takip işi (`follow_up`) girmez.
 
 ## Süzgeçler
 
@@ -214,6 +214,7 @@ Kod `src/core/planner/` içindedir; dokümanın açık bıraktığı yerler şö
 - Bekleyen işin aday olmaması, takip gününde hatırlatma üretmesi
 - Ölçülmemiş oturumun öğrenmeye girmemesi
 - `advice` içindeki önerinin koruma kurallarını aşamaması; `advice` yokken planın geçerli kalması
+- Günün 3 işinin sırası (bugün teslim, sonra öneri, sonra motorun seçtikleri) ve ritmin yalnızca tabanı tehlikedeyken üçlüye girmesi
 - `loadByWeek`: kalemin eforunun haftalara dağılımı; kapasiteyi aşan haftanın işaretlenmesi
 - `commitWeek`: yalnızca o haftanın eforunun oturumlara bölünmesi; bağımlılığı bitmemiş kalemin taahhüt edilmemesi
 - Hafta içinde tetikleyici yokken taahhüdün değişmemesi

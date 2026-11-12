@@ -1,4 +1,5 @@
 import type { ProposalResult } from "@/core/contract/types";
+import type { EnrichOutcome } from "./flows/enrich-apply";
 import { SCOPE_FIELDS } from "./flows/scope";
 
 // The browser's side of the AI routes. Every request is fire-and-forget for the screen: the
@@ -38,4 +39,12 @@ export function sizeRequestFor(result: ProposalResult): { id: string } | null {
 export function sizeAfterProposal(result: ProposalResult): Promise<unknown> | null {
   const request = sizeRequestFor(result);
   return request ? postAi("size", request) : null;
+}
+
+/** After a confirmed inbox card wrote work with a default duration: ask `size` for it. Pure. */
+export function sizeRequestAfterEnrich(
+  outcome: EnrichOutcome,
+): { id: string; type: "task" | "work_item" } | null {
+  if (outcome.status !== "applied" || !outcome.sizeNeeded) return null;
+  return { id: outcome.id, type: outcome.target };
 }

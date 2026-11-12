@@ -8,6 +8,7 @@ import { type EnrichInput, enrichSpec } from "../calls/enrich";
 import { type AiDeps, runAiCall } from "../gateway";
 import { moduleCatalog, recentCorrections, similarFinishedTasks } from "./context";
 import { applyEnrichment, type EnrichOutcome, type EnrichSuggestion, isSure } from "./enrich-apply";
+import { sizeAfterEnrich } from "./size";
 
 // `enrich` on the server: an inbox entry quick add has just saved → the AI's reading of it →
 // applied (sure), kept as a card to confirm (not sure), or left as it is (no answer).
@@ -76,7 +77,7 @@ export async function enrichEntry(
   }
 
   const slug = output.module.value!;
-  return applyEnrichment(db, {
+  const outcome = await applyEnrichment(db, {
     entry,
     output,
     parsed,
@@ -86,4 +87,8 @@ export async function enrichEntry(
     moduleSlug: slug,
     now,
   });
+  // No duration from the line or the AI: `size` estimates it now (the work is already there
+  // with a default, and the screen updates when the estimate lands).
+  await sizeAfterEnrich(deps, registry, outcome, now);
+  return outcome;
 }

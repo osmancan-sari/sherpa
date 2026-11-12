@@ -2,7 +2,8 @@ import { z } from "zod";
 import type { AiCallSpec } from "../gateway";
 import { ENERGY, judged, SHARED_RULES } from "./common";
 
-// `size`: a module proposed work and left its judgement fields empty; estimate them.
+// `size`: a module proposed work and left its judgement fields empty, or quick add could not
+// tell a duration; estimate them.
 
 export type SizeField = "effort_total_minutes" | "session_minutes" | "importance" | "energy";
 
@@ -37,11 +38,11 @@ export type SizeOutput = z.infer<typeof sizeOutput>;
 
 export const sizeSpec: AiCallSpec<SizeOutput> = {
   kind: "size",
-  version: "size-1",
+  version: "size-2",
   maxTokens: 3000,
   schema: sizeOutput,
-  system: `A module of a planning app proposed a piece of work and left some judgement fields
-empty. Estimate only the fields listed in "need"; answer null (confidence 0, empty reason) for
+  system: `A module of a planning app proposed a piece of work, or the user typed it on one line
+in quick add, and some judgement fields are empty. Estimate only the fields listed in "need"; answer null (confidence 0, empty reason) for
 the others.
 
 - effort_total_minutes: the whole effort to finish the work. Base it on "similar" (what such work

@@ -67,6 +67,7 @@ export function planCallInput(
     },
     candidates: base.candidates.slice(0, MAX_CANDIDATES).map((candidate) => ({
       id: candidate.id,
+      type: candidate.type,
       title: candidate.title,
       module: modName(rows, candidate.moduleId),
       minutes: candidate.minutes,

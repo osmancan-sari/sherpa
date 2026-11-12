@@ -30,6 +30,11 @@ export type AiMark = {
   input: string;
   /** `size`: the scope (title, meta, bounds) the estimate was made for; a new scope asks again. */
   scope?: string;
+  /**
+   * Columns the core filled with a default because the AI could not tell (`enrich` without a
+   * duration): `size` is asked to estimate them, once.
+   */
+  defaults?: string[];
 };
 
 export function readMark(value: Json | null | undefined): AiMark | null {
@@ -45,6 +50,9 @@ export function readMark(value: Json | null | undefined): AiMark | null {
     user_edited: Array.isArray(mark.user_edited) ? mark.user_edited : [],
     input: mark.input ?? "",
     ...(typeof mark.scope === "string" ? { scope: mark.scope } : {}),
+    ...(Array.isArray(mark.defaults) && mark.defaults.length > 0
+      ? { defaults: mark.defaults }
+      : {}),
   };
 }
 
@@ -68,7 +76,11 @@ export function mergeMark(existing: AiMark | null, next: Omit<AiMark, "user_edit
   for (const [column, field] of Object.entries(existing?.fields ?? {})) {
     if (!(column in next.fields)) fields[column] = { kind: existing!.kind, ...field };
   }
-  return {
+  // A default the new call estimated is no longer one.
+  const defaults = [...new Set([...(existing?.defaults ?? []), ...(next.defaults ?? [])])].filter(
+    (column) => !(column in next.fields),
+  );
+  const merged: AiMark = {
     ...next,
     kind: existing?.kind ?? next.kind,
     input: existing?.input || next.input,
@@ -78,6 +90,9 @@ export function mergeMark(existing: AiMark | null, next: Omit<AiMark, "user_edit
     fields,
     user_edited: userEdited,
   };
+  delete merged.defaults;
+  if (defaults.length > 0) merged.defaults = defaults;
+  return merged;
 }
 
 function same(a: unknown, b: unknown): boolean {

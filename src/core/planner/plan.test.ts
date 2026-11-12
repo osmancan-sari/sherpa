@@ -796,3 +796,49 @@ describe("a sitting and its item", () => {
     expect(buildCandidates(input({ workItems: [done], tasks: [sitting] }))).toEqual([]);
   });
 });
+
+describe("the day's three", () => {
+  const saturday = "2026-11-14";
+  const onSaturday = (overrides: Partial<PlanInput>) =>
+    input({
+      date: saturday,
+      now: at("08:00", saturday),
+      dayStart: at("08:00", saturday),
+      finishLine: at("19:00", saturday),
+      ...overrides,
+    });
+
+  it("keeps a rhythm out of the three, on the strip, unless its floor is at risk", () => {
+    const habit = rhythm({ target_count: 4, floor_count: 2 });
+    const work = task({ title: "İş" });
+    // Thursday: the floor is safe; the rhythm is placed but the three hold only the task.
+    const plan = buildPlan(input({ tasks: [work], rhythms: [habit] }));
+    expect(placedIds(plan)).toContain(habit.id);
+    expect(plan.top3).toEqual([work.id]);
+    // Even when the AI picks it.
+    const picked = buildPlan(
+      input({ tasks: [work], rhythms: [habit], advice: { top3: [habit.id, work.id] } }),
+    );
+    expect(picked.top3).toEqual([work.id]);
+    // Saturday: two days left, two still needed: the floor is at risk and it joins the three.
+    const risky = buildPlan(onSaturday({ tasks: [work], rhythms: [habit] }));
+    expect(risky.candidates.find((row) => row.id === habit.id)?.mandatory).toBe("floor");
+    expect(risky.top3).toContain(habit.id);
+  });
+
+  it("puts work due today first, then the AI's choice, then the engine's other mandatory work", () => {
+    const habit = rhythm({ target_count: 4, floor_count: 2 });
+    const due = task({ title: "Bugün teslim", importance: 1, due_at: iso("17:00", saturday) });
+    const [a, b] = [task({ title: "A", importance: 1 }), task({ title: "B", importance: 1 })];
+    const plan = buildPlan(
+      onSaturday({ tasks: [due, a, b], rhythms: [habit], advice: { top3: [b.id, a.id] } }),
+    );
+    // The rhythm keeping its floor is still placed, outside the three.
+    expect(placedIds(plan)).toContain(habit.id);
+    expect(plan.top3[0]).toBe(due.id);
+    expect([...plan.top3.slice(1)].sort()).toEqual([a.id, b.id].sort());
+    // Without the AI's choice the engine's own mandatory work comes before the best score.
+    const own = buildPlan(onSaturday({ tasks: [due, a, b], rhythms: [habit] }));
+    expect(own.top3.slice(0, 2)).toEqual([due.id, habit.id]);
+  });
+});
