@@ -336,6 +336,65 @@ Faz denetimi:
 - **Uçtan uca testler** gece de çalışabilsin diye hesabın günü 00:00–23:59 (`tests/e2e/data.ts`); bitiş çizgisi ya da gece sınayan test kendi saatini yazar. Bir önceki testin sunucudaki yapay zeka isteği sonraki testin hesabına düşebiliyor; giriş çağrılarını sayan testler yalnızca kendi türlerine bakıyor.
 - **Kapı süresi:** `check:full` yaklaşık 7 dakika (ekran görüntüleriyle 9).
 
+### Ç3d: Sunucu zemini (12–13 Kas 2026)
+
+Uygulama kapalıyken çalışan taraf: cihaz anahtarları, oturumsuz giriş ucu, zamanlanmış işler ve sunucuda modül bağlamı. Tasarım `docs/12` bölüm E; bağlayıcı hali `docs/02` ("Cihaz anahtarları ve giriş ucu", "Sunucuda kullanıcı adına erişim", "Zamanlanmış işler"), `docs/03`, `docs/06` ("Sunucu zemini"), `docs/11`. Ç3c'nin iki açık notu da kapandı.
+
+**Kabul ölçütleri**
+
+| Ölçüt | Durum | Nasıl doğrulandı |
+| --- | --- | --- |
+| Ayarlar → Bağlantılar'da anahtar üretiliyor (bir kez gösteriliyor), kapsamı seçiliyor, iptal ediliyor; iptal edilen anahtar reddediliyor | Sağlandı | `tests/e2e/connections.spec.ts` (üretme, bir kez gösterim, yeniden yüklemede yok, iki dokunuşla iptal), `tests/db/tokens.test.ts` (yalnızca özet, iptal kalıcı), `tests/db/ingest.test.ts` ve `tests/e2e/ingest.spec.ts` (iptalden sonra 401) |
+| Anahtar yalnızca kapsamındaki uca yazabiliyor; okuma yapamıyor; yanlış ya da eksik anahtar 401, kapsam dışı 403 | Sağlandı | `ingest.test.ts` (eksik, biçimsiz, bilinmeyen, iptal edilmiş 401; kapsam dışı 403 ve hiçbir şey yazılmıyor), `ingest.spec.ts` (Next üzerinden, oturumsuz; GET 405; cevaplarda veri yok) |
+| `core/wake` ve `core/bed` uçları uyanışı ve yatışı kaydediyor; açık ekranlar canlı güncelleniyor | Sağlandı | `ingest.test.ts` (uyanış, 05:00 sınırı, yatış önceki günün gecesine, modüllere olay), `sync.spec.ts` (açık Bugün ekranında "uyanış SS:dd", modül sayfasında kayıt, Ayarlar'da son kullanım; yeniden yükleme yok). Yatışın ekrana canlı yansıması ayrıca sınanmadı (aynı tablo, aynı yol) |
+| `deneme` modülünün bir `ingest` türü: geçerli gövde işleniyor, geçersiz gövde adıyla reddediliyor, yinelenen istek ikinci kez işlenmiyor | Sağlandı | `ingest.spec.ts` ("the test module's kind": `deneme/kayit`), `ingest.test.ts` (test modülüyle bütün yollar) |
+| `deneme` modülünün zamanlanmış işi uygulama kapalıyken çalışıyor; `job_runs` kaydı düşüyor; aynı iş iki kez tetiklenince veri bozulmuyor | Sağlandı | `tests/e2e/jobs.spec.ts` (hesabın hiçbir sayfası açık değilken tetik; 05:00'ten sonra `deneme/ozet`), `tests/db/jobs.test.ts` (aynı anda iki tetik bir kez çalıştırır, özet idempotent, dönem başına bir kez) |
+| Sunucuda çalışan işleyici yalnızca anahtarın sahibinin verisine erişiyor (başka hesabın verisine erişemediği testle) | Sağlandı | `tests/db/server.test.ts` (yalnızca sahibin satırları, başka hesaba yazamama, `auth.uid()` fonksiyonları kullanıcı olarak, yalnızca veri yolları açık), `ingest.test.ts` ("in the token owner's name"), `jobs.test.ts` (hesap başına) |
+| Modülün sunucu kodu tarayıcıya özgü bir şey içe aktarınca lint hata veriyor | Sağlandı | `tests/unit/module-server-lint.test.ts` (beş dosya yeri × 15 yasak; izinli içe aktarmalar temiz; ekran dosyaları serbest) |
+| iPhone Kestirmeler ile `core/wake` gerçek telefonda denendi | **Elle doğrulanacak** | Adımlar "Senden bekleyenler" → Ç3d, 3 |
+
+Ç3c'den devralınanlar: dışarıdan yazılan uyanış ve yatış "son kullanım" sayılır (`lastActivityBefore`; `input.test.ts`, `ingest.test.ts`: dışarıdan uyanış "geri dönüş"ü kapatır); gerçek yatıştan sonra haftanın yeniden kurulmasının veritabanı testi (`ingest.test.ts`: 22:30'da taahhüt, 00:30 yatış `core/bed` ile, yarının kapasitesi 30 dakikadan çok düşer, hafta sunucuda yeniden kurulur).
+
+Testler: TESTLER_BURAYA.
+
+**Giriş ucunun güvenlik sınırları ve onları tutan testler**
+
+- _Anahtarın kendisi hiçbir yerde yok._ Tarayıcıda üretilir, veritabanında yalnızca SHA-256 özeti ve ilk 8 karakteri; `Idempotency-Key` de özetiyle saklanır; işleyicinin hata iletisi kayda girmez. Testler: `tokens.test.ts` ("keeps the digest"), `ingest.test.ts` ("writes the token nowhere": `ingest_requests`, `days`, `events`), `ingest.spec.ts`, `connections.spec.ts`.
+- _Anahtarın sahibi yalnızca gizli anahtarla sorulur._ `device_token_owner` anon ve `authenticated`'a kapalı. Test: `tokens.test.ts`.
+- _Sunucu kullanıcı olarak çalışır._ İstek öncesi fonksiyon gizli anahtar + `x-sherpa-user`'ı `authenticated` role ve o kullanıcının `auth.uid()`'ine çevirir; bozuk başlık 400; genel anahtarla ve kullanıcı oturumuyla başlığın etkisi yok; istemci yalnızca `from`/`rpc` açar (Auth, Storage, Realtime yok); dönüşüm her istemcide doğrulanır. Testler: `server.test.ts`, `server-boundary.test.ts` (gizli anahtar yalnızca `src/core/server/db.ts`'te, `src/core/server` yalnızca sunucuda). Bulutta (`sherpa-dev`) aynı davranış elle doğrulandı (12 Kas: başlıksız `null`, başlıkla kullanıcı, bozuk başlık 400, genel anahtarla 401, RLS altında boş liste).
+- _Red sırası._ 401 (anahtar) → 429 (anahtar başına dakikada 20, reddedilenler dahil; 429 yazılmaz) → 404 (tür) → 403 (kapsam) → 409 (modül etkin değil) → 413 (64 KB, akışla okunur) → 400 (bozuk JSON, şema; alan adıyla, değer geri yazılmaz; `Idempotency-Key` biçimi) → yineleme (200 `duplicate`, çalışırken 409, 5 dakikadan uzun "işleniyor" anahtarı bırakır) → işleyici (hata 500, anahtar yeniden denenebilir). Testler: `ingest.test.ts` (18), `ingest.spec.ts` (2), `guard.spec.ts` (oturumsuz 401 ve geçide benzeyen yollar).
+- _Kayıt değiştirilemez._ `ingest_requests` ve `job_runs`'ta kullanıcı yalnızca sonucu değiştirebilir; zaman, tür, anahtar, iş ve dönem sabit. Testler: `ingest.test.ts`, `jobs.test.ts`, `rls.test.ts`.
+
+**Seçilen zamanlayıcı ve sınırları**
+
+- Asıl tetik Supabase'in `pg_cron` + `pg_net`'i: 15 dakikada bir `public.sherpa_tick()`, Vault'taki adres ve sırla `POST /api/jobs/tick`. Vault boşsa hiçbir şey yapmaz. Yedek Vercel Cron: günde bir (UTC 00:20), `GET`. Gerekçe: Vercel Hobby zamanlayıcıyı günde bire ve ±59 dakika hassasiyete sınırlıyor (Kasım 2026); Supabase'inki ücretsiz projede de var. Ücret yok.
+- Dönem İstanbul saatiyle: saatlik, günlük (`at`'tan sonra), haftalık (Pazartesi `at`'tan sonra). Kaçan dönem bir kez çalışır; geçmiş dönemler tek tek değil. (hesap, iş, dönem) tekil; hata en çok 3 deneme; 30 dakikadan uzun "çalışıyor" kesilmiş sayılır.
+- Hassasiyet 15 dakika: `at: "05:00"` 05:00 ile 05:15 arasında çalışır. Bir tik en çok 60 saniye (Vercel işlevi); uzun işler (bir modülün toplayıcısı) parçalanmalı.
+- Çekirdeğin işleri: `core/week` (00:15), `core/blocks` (00:30), `core/sessions` (her saat). Yarın için `plan` ve Cumartesi `review` hâlâ ekranın açılışıyla (`docs/09` Fikirler).
+- Üretimde çalışması için: Vercel'de `CRON_SECRET`, `sherpa-prod` Vault'unda iki değer ("Senden bekleyenler" → Ç3d).
+
+**Modül tasarım oturumları için notlar: bir modül `ingest` ve `jobs` yazarken**
+
+- İşleyicileri `ingest.ts` ve `jobs.ts`'e yazın; yalnızca `rules.ts`, `queries.ts`, `server/` altından içe aktarın (lint bu dosyalara bakar). React, ekran bileşeni, `window` yok.
+- Şemayı katı tutun (`.strict()`): bilinmeyen alan adıyla reddedilir, yanlış yazılmış alan sessizce kaybolmaz. Zamanı `z.iso.datetime({ offset: true })` ile alın.
+- İdempotent yazın: dış kaynağın kendi kimliğini (Ninova duyurusunun kimliği) kendi tablonuza yazıp `upsert` edin, işi o kimlikten türeyen `key` ile teklif edin. `Idempotency-Key` gönderen tarafın işidir ama tek güvence olmamalı (`deneme` bunu basit tutuyor, gerçek modül tutmamalı).
+- İş dönemin anahtarıyla yazmalı (günün tarihi, haftanın Pazartesi'si): aynı dönem için ikinci çalışma aynı sonucu bırakmalı. İş 60 saniyeyi aşmamalı; uzun toplama yerelde (bilgisayardaki toplayıcı) yapılır, sonucu giriş ucuna yazılır.
+- Sunucuda `propose` hemen `size` ister (yapay zeka açıksa; isteği uzatır). Sunucuda `ctx.now()` gerçek saattir; işin dönemine göre davranmak için `ctx.now()`'dan gün anahtarı türetin (`dayKey`).
+- Modülün işi her çalışmada taze bağlam alır; bir modülün iki işi aynı tikte ayarı sırayla yazar. `ctx.db` yalnızca veri yollarını açar.
+- Hız sınırı anahtar başınadır (dakikada 20). Toplu veri tek istekte, 64 KB'ı aşmayacak şekilde gönderilmeli (bir dizi kayıt), tek tek değil.
+- Kapsam `<slug>/<kind>`: kullanıcı anahtarı yalnızca gereken uçlara açar; yeni tür yeni anahtar (ya da yeni kapsam) ister, eski anahtarın kapsamı değişmez.
+
+**Denetim**
+
+DENETIM_BURAYA
+
+**Sonraki faz (Ç3e) için notlar**
+
+- Uçtan uca testler 22:30–24:00 arasında başlamaz (`playwright.config.ts`); Ç4'te her test kendi saatini tutmalı (`roomInTheDay` başlangıç).
+- `core.context_reported` yayınlanıyor ama ekranlar kullanmıyor (Fikirler).
+- `onOutcome`, `onActivate`, modül sorusunun cevabı sunucudan çağrılmıyor; çağrılırsa bağlamlarına `onProposed` geçirilmeli.
+- Ç3e oturum olaylarına `facet` ekleyecek: sunucuda yayınlanan olaylar da aynı yükü taşımalı (`session-events.ts` tek yer).
+
 ### Ç3c: Sahne ve günün çerçevesi (12 Kas 2026)
 
 Modülün işi çalışırken Bugün ekranını devralan sahne, modüllere oturum ve gün olayları, sesli anlatım servisi, günün çerçevesi (uyanış, yatış, uyku planı, çapalı işler, akşam). Tasarım `docs/12` bölüm A–D; bağlayıcı hali `docs/03`, `04`, `05`, `06`, `07`. Ç3b'den kalan oturum işi yarışı da kapandı.
