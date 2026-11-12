@@ -29,6 +29,7 @@ import { ClientOnly } from "../ClientOnly";
 import { useNotify } from "../Notices";
 import { MODE_LABEL } from "../today/DayParts";
 import { LoadFailed } from "../today/TodayScreen";
+import { sleepSummary } from "../today/frame-text";
 
 // The week (docs/05-arayuz.md, "Hafta"): the seven days with their blocks and usable time, the
 // week's capacity against what the modules want, the week's items and module budgets, the life
@@ -94,10 +95,17 @@ function WeekBody() {
     rhythmLogs: rows.rhythmLogs,
   });
 
+  // The day's frame (Ç3c): one line, no streaks, no scores.
+  const sleep = input.frame ? sleepSummary(rows.days, input.date) : null;
   return (
     <>
       <header className="flex flex-wrap items-baseline justify-between gap-3">
         <h1 className="text-xl font-semibold tracking-tight md:text-2xl">Hafta</h1>
+        {sleep ? (
+          <p data-testid="sleep-summary" className="text-muted-foreground text-sm tabular-nums">
+            {sleep}
+          </p>
+        ) : null}
         <Button
           variant="outline"
           className="h-11 md:h-9"

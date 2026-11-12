@@ -33,6 +33,7 @@ import { QuickAddButton } from "../QuickAdd";
 import { AlertBar, DayStrip, isTyping, MinutesDialog, TopBar } from "./DayParts";
 import { NowCard, sessionTargetOf, travelText } from "./NowCard";
 import { briefOf, SceneFrame, sceneFor, useSceneExit } from "./Scene";
+import { briefLine } from "./frame-text";
 
 // The Today screen (docs/05-arayuz.md): drawn from the planner's plan, re-made on every change
 // and every minute. The "now" card, the next things, the day as a strip, at most two warnings,
@@ -179,7 +180,8 @@ function TodayBody() {
   const finished = state.kind === "done";
   // At night and on the return the screen is quiet: the card alone (with the day's three on
   // the return), no list, no strip, no warnings (docs/04-planlayici.md, "Geri dönüş").
-  const quiet = state.kind === "night" || state.kind === "return";
+  // The evening is calm too (Ç3c): its card has what the evening holds.
+  const quiet = state.kind === "night" || state.kind === "return" || state.kind === "evening";
   const upNext = quiet || finished ? [] : ahead.slice(0, 3);
   const rest = [...ahead.slice(finished ? 0 : 3).map((row) => row.candidate), ...plan.overflow];
   const doneToday = input.tasks.filter(
@@ -208,6 +210,9 @@ function TodayBody() {
             state={state}
             stuck={stuck}
             onStuckChange={setStuck}
+            frame={input.frame}
+            startOnWake={input.settings.frame?.startOnWake ?? false}
+            brief={briefLine(input, plan)}
             onReturnToScene={
               scene && running && exitedScene === running.session.id
                 ? () => setExitedScene(null)

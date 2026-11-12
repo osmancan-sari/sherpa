@@ -12,6 +12,7 @@ import {
 } from "@/core/app/actions";
 import { type KnownModule, useAiStatus, useModules, useTodayPlan } from "@/core/app/hooks";
 import { useCloseDay } from "@/core/app/plan-actions";
+import { useRecordBed } from "@/core/app/frame-actions";
 import { useQuery } from "@tanstack/react-query";
 import { postAi } from "@/core/ai/client";
 import { buildPlan, type Candidate, type PlanAdvice, tomorrowInput } from "@/core/planner";
@@ -49,6 +50,7 @@ function ClosingBody() {
   const logRhythm = useLogRhythm();
   const addEntry = useAddInboxEntry();
   const close = useCloseDay();
+  const recordBed = useRecordBed();
   const [step, setStep] = useState(0);
   const [picked, setPicked] = useState<string[] | null>(null);
   const [removed, setRemoved] = useState<string[]>([]);
@@ -117,7 +119,8 @@ function ClosingBody() {
           : current,
     );
   };
-  const confirm = () => {
+  /** Ç3c: "Onayla ve yat" also records tonight's bedtime (the day's frame on). */
+  const confirm = (andBed = false) => {
     // One confirmation at a time: a second Enter while it is being written does nothing.
     if (close.isPending || close.isSuccess) return;
     const lines = dump
@@ -146,6 +149,7 @@ function ClosingBody() {
       {
         onSuccess: () => {
           for (const line of lines) addEntry.mutate({ id: crypto.randomUUID(), text: line });
+          if (andBed) recordBed.mutate({ date: input.date, at: new Date() });
           router.push("/");
         },
       },
@@ -153,7 +157,7 @@ function ClosingBody() {
   };
   return (
     <div className="flex flex-col gap-6">
-      <StepKeys onNext={step === STEPS.length - 1 ? confirm : next} onBack={back} />
+      <StepKeys onNext={step === STEPS.length - 1 ? () => confirm() : next} onBack={back} />
       <header className="flex flex-col gap-3">
         <h1 className="text-xl font-semibold tracking-tight md:text-2xl">Kapanış</h1>
         <ol
@@ -312,9 +316,21 @@ function ClosingBody() {
             İleri
           </Button>
         ) : (
-          <Button className="h-11 md:h-9" disabled={close.isPending} onClick={confirm}>
-            Onayla
-          </Button>
+          <>
+            <Button className="h-11 md:h-9" disabled={close.isPending} onClick={() => confirm()}>
+              Onayla
+            </Button>
+            {input.frame ? (
+              <Button
+                variant="outline"
+                className="h-11 md:h-9"
+                disabled={close.isPending}
+                onClick={() => confirm(true)}
+              >
+                Onayla ve yat
+              </Button>
+            ) : null}
+          </>
         )}
       </div>
       <p className="text-muted-foreground text-sm">Enter ile ilerle, Escape ile geri dön.</p>

@@ -25,6 +25,8 @@ import { type Assignment, type Candidate, type NowState, overrun } from "@/core/
 import { elapsedMinutes } from "@/core/today/select";
 import type { Session, Task } from "@/core/types";
 import { formatMinutes, formatTime } from "@/lib/date";
+import { EveningCard, MorningCard } from "./FrameCards";
+import type { DayFrame, TodayBriefLine } from "./frame-text";
 
 // The "now" card: the largest thing on the Today screen, drawn from the planner's `plan.now`
 // (docs/05-arayuz.md, "NowCard durumları").
@@ -49,6 +51,10 @@ type Props = {
   /** "Takıldım" held by the screen (a scene opens it too); the card keeps its own without. */
   stuck?: Task | null;
   onStuckChange?: (task: Task | null) => void;
+  /** The day's frame (Ç3c): the morning's and the evening's cards read it. */
+  frame?: DayFrame;
+  startOnWake?: boolean;
+  brief?: TodayBriefLine;
 };
 
 function Frame({ children }: { children: ReactNode }) {
@@ -86,7 +92,34 @@ function CardFor({
   onShowRest,
   onStuck,
   onReturnToScene,
+  frame,
+  startOnWake,
+  brief,
 }: Props & { onStuck: (task: Task) => void }) {
+  if (state.kind === "morning") {
+    return (
+      <MorningCard
+        date={date}
+        now={now}
+        first={state.first}
+        startOnWake={startOnWake ?? false}
+        brief={brief ?? { top: [], firstBlock: null, finishLine: "" }}
+        modules={modules}
+      />
+    );
+  }
+  if (state.kind === "evening" && frame) {
+    return (
+      <EveningCard
+        date={date}
+        now={now}
+        frame={frame}
+        next={state.next}
+        closed={state.closed}
+        modules={modules}
+      />
+    );
+  }
   if (state.kind === "running") {
     return (
       <Running
@@ -145,6 +178,11 @@ function CardFor({
           <h2 className="text-muted-foreground text-5xl font-semibold tabular-nums md:text-7xl">
             {formatTime(now)}
           </h2>
+          {frame ? (
+            <p className="text-muted-foreground tabular-nums md:text-lg">
+              Yarın uyanış {formatTime(frame.tonight.expectedWake)}
+            </p>
+          ) : null}
           <p className="text-muted-foreground md:text-lg">
             {tomorrowFirst
               ? `Yarın ilk iş: ${tomorrowFirst.title}`

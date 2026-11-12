@@ -11,7 +11,9 @@ import { pickForMinutes } from "@/core/planner";
 import { blocksOfDay } from "@/core/today/select";
 import type { Context, LifeMode } from "@/core/types";
 import { formatDayLabel, formatMinutes, formatTime } from "@/lib/date";
+import { rangesFor } from "@/core/contract/frame";
 import { Dialog } from "../Dialog";
+import { wakeText } from "./frame-text";
 import { sessionTargetOf } from "./NowCard";
 
 // The pieces of the Today screen around the "now" card (docs/05-arayuz.md, "Bileşenler").
@@ -49,7 +51,13 @@ export function TopBar({ input, plan, now }: { input: PlanInput; plan: Plan; now
             Bugün {plan.top3Done}/{plan.top3.length}
           </span>
         ) : null}
+        {input.frame ? <span data-testid="wake-line">{wakeText(input.frame)}</span> : null}
         <span>bitiş {formatTime(input.finishLine)}</span>
+        {input.frame && input.settings.frame ? (
+          <span data-testid="bed-range">
+            yatış {rangesFor(input.settings.frame, input.dayType).bed.join("–")}
+          </span>
+        ) : null}
         <Link
           href="/hafta"
           className="border-border hover:bg-muted rounded-full border px-3 py-0.5"
@@ -94,8 +102,10 @@ export function DayStrip({
   now: Date;
   modules: Map<string, KnownModule>;
 }) {
-  const from = Math.min(input.dayStart.getTime(), now.getTime());
-  const to = Math.max(input.finishLine.getTime(), from + 60 * 60_000);
+  // With the day's frame (Ç3c) the strip runs from the waking to the expected bedtime.
+  const marks = plan.frame;
+  const from = Math.min((marks?.wake ?? input.dayStart).getTime(), now.getTime());
+  const to = Math.max((marks?.bed ?? input.finishLine).getTime(), from + 60 * 60_000);
   const span = to - from;
   const left = (time: number) => `${Math.max(0, Math.min(100, ((time - from) / span) * 100))}%`;
   const width = (start: number, end: number) =>
@@ -114,6 +124,34 @@ export function DayStrip({
       </div>
       <div className="overflow-x-auto">
         <div className="bg-muted relative h-8 min-w-[36rem] overflow-hidden rounded-lg">
+          {marks
+            ? [
+                { key: "wake", from: marks.wake, to: marks.workStart, label: "uyanışa bağlı" },
+                { key: "evening", from: marks.finishLine, to: marks.eveningEnd, label: "akşam" },
+                { key: "bed", from: marks.eveningEnd, to: marks.bed, label: "yatışa bağlı" },
+              ]
+                .filter((part) => part.to > part.from)
+                .map((part) => (
+                  <span
+                    key={part.key}
+                    data-testid={`strip-part-${part.key}`}
+                    title={`${part.label} ${formatTime(part.from)}–${formatTime(part.to)}`}
+                    className="bg-foreground/10 absolute inset-y-0"
+                    style={{
+                      left: left(part.from.getTime()),
+                      width: width(part.from.getTime(), part.to.getTime()),
+                    }}
+                  />
+                ))
+            : null}
+          {marks ? (
+            <span
+              aria-hidden
+              data-testid="strip-finish"
+              className="bg-foreground/40 absolute inset-y-0 w-px"
+              style={{ left: left(marks.finishLine.getTime()) }}
+            />
+          ) : null}
           {plan.slots.flatMap((slot) => {
             const assignment = slot.assignment;
             if (!assignment) return [];
