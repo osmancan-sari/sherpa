@@ -142,15 +142,18 @@ days
   woke_at timestamptz null          -- uyanış
   woke_estimated boolean default false   -- "Uyandım" denmedi; ilk etkileşimden alındı
   bed_at timestamptz null           -- yatış ("Yatıyorum")
-  expected_wake time null           -- yalnızca bu gün için beklenen uyanış ("yarın erken kalkacağım")
-  expected_bed time null            -- yalnızca bu gece için beklenen yatış ("bu gece geç yatacağım")
+  planned_wake time null            -- uyku planının bu gün için seçtiği uyanış
+  planned_bed time null             -- uyku planının bu gece için seçtiği yatış
+  expected_wake time null           -- kullanıcının yalnızca bu gün için verdiği uyanış ("yarın erken kalkacağım")
+  expected_bed time null            -- kullanıcının yalnızca bu gece için verdiği yatış ("bu gece geç yatacağım")
 
 settings
-  day_frame jsonb                   -- gün tipi başına hedef aralıklar:
-                                    -- { home: { wake: ["07:30","09:00"], bed: ["23:30","00:30"] }, office: {…}, campus: {…} }
+  day_frame jsonb                   -- aralıklar ve uyku hedefi:
+                                    -- { wake: ["06:00","09:00"], bed: ["22:00","01:00"], sleep_minutes: 480,
+                                    --   by_day_type: { office: { wake: […], bed: […] } } }
 ```
 
-Hedef aralıklar ayardır; başlangıç değerleri kurulumda varsayılanla gelir ve kullanıcı Ayarlar'dan değiştirir. Bitiş çizgisi mevcut ayarıyla kalır.
+Uyanış ve yatış birer saat değil birer aralıktır; uyku hedefi bir süredir. Başlangıç değerleri kullanıcının söyledikleridir (12 Kas 2026): uyanış 06:00–09:00, yatış 22:00–01:00, uyku 8 saat. Ayarlar'dan değişir; gün tipine özel aralık isteğe bağlıdır. Aralıklar planlayıcıyı bağlar, kullanıcıyı değil: gerçek uyanış ve yatış aralığın dışında olabilir. Bitiş çizgisi mevcut ayarıyla kalır.
 
 **Kayıt.**
 
@@ -160,13 +163,27 @@ Hedef aralıklar ayardır; başlangıç değerleri kurulumda varsayılanla gelir
 - Uyku süresi = sonraki günün `woke_at`'i − `bed_at`; ikisi de kayıtlıysa hesaplanır. Tahmini uyanışla hesaplanan süre tahmini diye işaretlenir.
 - Her ikisi de olay yayınlar (bölüm B) ve dışarıdan da kaydedilebilir (bölüm E: telefonun alarm ya da uyku otomasyonu).
 
+**Uyku planı.** Planlayıcı her gece için bir yatış, her sabah için bir uyanış seçer; amaç aralıkların içinde kalarak uyku hedefini tutturmaktır. Saf bir fonksiyondur (`sleepPlan`), motorun parçasıdır; yapay zekaya sorulmaz.
+
+1. **En geç uyanış.** Yarının ilk yükümlülüğüne yetişecek en geç an: `ilk sabit blok − bloğun yol süresi − uyanışa bağlı işlerin ayak izi`. Yükümlülük yoksa uyanış aralığının sonu. Aralığın sonunu geçemez.
+2. **Yüke göre erkene çekme.** Yarının yükü (yarın zorunlu olacak işler ve haftanın kalan payının kalan günlere eşit bölümü) en geç uyanışla kurulan günün kapasitesine sığmıyorsa uyanış 15'er dakika erkene çekilir: sığana ya da uyanış aralığının başına gelene kadar. Yük hafifse uyanış en geç uyanışta kalır.
+3. **Planlanan yatış** `planlanan uyanış − uyku hedefi`dir, yatış aralığına sıkıştırılır.
+4. **Uyku iş yüküne feda edilmez.** Yük uyanışı ancak yatış da aynı kadar erkene alınabiliyorsa erkene çeker. Uykuyu hedefin altına yalnızca sabit bir yükümlülük (erken ders gibi) düşürebilir; o zaman ekran bunu açıkça söyler ("bu gece en çok 7 saat").
+5. **Gerçek yatış planı değiştirir.** Yatış kaydedilince (ya da kullanıcı "bu gece geç yatacağım" deyince) yarının beklenen uyanışı `yatış + uyku hedefi` olur; uyanış aralığının başından erken, en geç uyanıştan geç olamaz. Geç yatılan gecede uyanış geriye kayar ve yarının çalışma süresi kısalır; erken yatılan gecede uyanış öne gelir ve süre uzar. Hedef süre en geç uyanışa sığmıyorsa uyku kısa kalır ve ekran söyler.
+6. **Gerçek uyanış her şeyin önündedir.** Uyanış kaydedilince gün ona göre kurulur.
+7. **Planın geri kalanına etkisi.** Beklenen uyanış değişince yarının planı yeniden kurulur. Haftanın taahhüdü yalnızca mevcut tetikleyiciyle yeniden kurulur: kalan günlerin kapasitesi toplamda 30 dakikadan çok düşerse. Kazanılan süre günün doldurmasına açılır; taahhüt bu yüzden yeniden kurulmaz (plan istikrarı).
+8. **Uyku borcu tutulmaz.** Kısa geçen gece sonraki gecelere eklenmez; her gece kendi hedefiyle planlanır.
+9. **Uygulama uyandırmaz.** Planlanan uyanış bilgidir; alarmı kullanıcı kurar. Akşam ekranı yarının uyanışını ve bu gecenin yatışını birlikte gösterir.
+
+Örnek (aralıklar 06:00–09:00 ve 22:00–01:00, hedef 8 saat): yarın 10:30'da dersin var, yol 45 dakika, sabah rutini 45 dakika → en geç uyanış 09:00. Yük hafif → planlanan uyanış 09:00, yatış 01:00. Yarın iki teslim varsa ve gün sığmıyorsa → uyanış 07:30'a, yatış 23:30'a çekilir. O gece 00:30'da yattıysan → beklenen uyanış 08:30; bir saatlik çalışma süresi gider, plan yeniden kurulur.
+
 **Planlayıcı.**
 
-1. **Günün başı.** Çalışma penceresi `uyanış + uyanışa bağlı işlerin ayak izi`nde başlar. Uyanış henüz yoksa (yarının planı, sabah uyanmadan önce) beklenen uyanış kullanılır: `days.expected_wake`; yoksa o gün tipinin son 14 kaydının ortancası; o da yoksa hedef aralığın ortası.
+1. **Günün başı.** Çalışma penceresi `uyanış + uyanışa bağlı işlerin ayak izi`nde başlar. Uyanış henüz yoksa (yarının planı, sabah uyanmadan önce) sırayla: kullanıcının o güne verdiği değer (`days.expected_wake`); yoksa uyku planının beklenen uyanışı.
 2. **Çapa.** `timing` bir alan daha taşır: `anchor: 'wake' | 'bed'`. Uyanışa bağlı işler uyanıştan başlayarak art arda dizilir; yatışa bağlı işler beklenen yatışta bitecek biçimde geriye doğru dizilir. Çapa kesindir: bu işler yuvalara dağıtılmaz. Birden çok iş aynı çapaya bağlıysa sıra modülün verdiği `order` ile, eşitse skorla belirlenir. Çapa `windows` ile birlikte kullanılmaz.
 3. **Akşam.** Bitiş çizgisi ile yatışa bağlı işler arası akşamdır. Planlayıcı akşama yalnızca `timing.after_finish = true` taşıyan işleri koyar ("bitiş çizgisinden sonra da olur"); `windows` ve öbür kısıtlar yine geçerlidir. Başka hiçbir iş bitiş çizgisinden sonraya konmaz. Akşam süresi kapasite çarpanına girmez. Bu, `docs/09-kararlar.md` içindeki "penceresi bitiş çizgisinden sonraya düşen iş" açık sorusunu kapatır.
 4. **Gün kısalınca.** Geç uyanılan günde çalışma penceresi kısalır; plan yeniden kurulur, sığmayanlar olağan kurallarla "vakit kalırsa"ya ya da sonraki günlere gider. Uyarı metinleri bunu kusur gibi anlatmaz.
-5. **Kaydırma.** "Bu gece geç yatacağım" ve "yarın erken kalkacağım" tek dokunuşla o günün beklenen saatini değiştirir; kalıcı ayar değişmez.
+5. **Kaydırma.** "Bu gece geç yatacağım" ve "yarın erken kalkacağım" tek dokunuşla o günün beklenen saatini değiştirir (`expected_bed`, `expected_wake`); uyku planı bu değerleri veri sayar, kalıcı ayar değişmez.
 
 **Ekran durumları.** `plan.now`'a iki durum eklenir, biri değişir:
 
@@ -180,7 +197,7 @@ Uyanışa bağlı ilk iş "Uyandım"dan sonra kendiliğinden önerilir; ayar aç
 
 **Görünürlük.** Bugün ekranının üst şeridinde uyanış saati ve bu gecenin yatış aralığı; zaman çizelgesi uyanıştan beklenen yatışa uzanır, bölümler (uyanışa bağlı, çalışma, akşam, yatışa bağlı) ayırt edilir. Uyanış, yatış ve uyku süresinin haftalara yayılan görünümü çekirdeğin Hafta ekranında tek satırlık özet olarak, ayrıntısı rutin modülünün sayfasında yer alır (modül bu veriyi `ctx` üzerinden okur). Seri, puan, rozet yok.
 
-**Görüşün gerek:** uyanışın dokunuşla kaydı ve dokunulmazsa ilk etkileşimden tahmin; "Uyandım"dan sonra rutinin kendiliğinden başlaması; hedef aralıkların başlangıç değerleri; akşam ekranının içeriği.
+**Görüşün gerek:** uyanışın dokunuşla kaydı ve dokunulmazsa ilk etkileşimden tahmin; "Uyandım"dan sonra rutinin kendiliğinden başlaması; yük hafifken uyanışın aralığın sonuna yakın seçilmesi; uyku borcunun tutulmaması; akşam ekranının içeriği.
 
 ---
 
@@ -249,10 +266,13 @@ type ModuleDefinition = {
 - [ ] Sesli anlatım gerçek telefonda (dokunuştan sonra) ve gerçek panoda denendi; sonuç `docs/ILERLEME.md` içinde (elle doğrulanacak)
 - [ ] "Uyandım" ve "Yatıyorum" kaydediliyor; "Uyandım" denmeden dokunulunca uyanış tahmini olarak işaretleniyor
 - [ ] Çalışma penceresi uyanışa göre başlıyor: geç uyanılan günde plan kısalıyor; uyanış yokken beklenen uyanış kullanılıyor
+- [ ] Uyku planı: ilk yükümlülüğe göre en geç uyanış; yük sığmayınca uyanışın ve yatışın birlikte erkene çekilmesi; iş yükünün uykuyu hedefin altına düşürmemesi; sabit yükümlülük düşürünce ekranın söylemesi
+- [ ] Gerçek yatış kaydedilince yarının beklenen uyanışı ve planı değişiyor (geç yatış → kısalan gün, erken yatış → uzayan gün); kapasite 30 dakikadan çok düşünce haftanın taahhüdü yeniden kuruluyor
+- [ ] Akşam ekranı bu gecenin yatışını, yarının uyanışını ve uyku süresini birlikte gösteriyor
 - [ ] `anchor: 'wake'` taşıyan iş uyanıştan hemen sonra, `anchor: 'bed'` taşıyan iş yatıştan önce duruyor; yuvalara dağıtılmıyor
 - [ ] `after_finish` taşımayan hiçbir iş bitiş çizgisinden sonraya konmuyor; taşıyan iş akşama konabiliyor
 - [ ] `morning` ve `evening` durumları doğru koşullarda geliyor; "bu gece geç yatacağım" ve "yarın erken kalkacağım" yalnızca o günü etkiliyor
-- [ ] Ayarlar'da hedef aralıklar gün tipine göre değişiyor
+- [ ] Ayarlar'da uyanış ve yatış aralıkları ile uyku hedefi değişiyor; gün tipine özel aralık verilebiliyor
 - [ ] Günün çerçevesi kullanılmayan veride (uyanış kaydı yok, çapa yok, `after_finish` yok) çalışma penceresinin içindeki plan Ç3b'dekiyle aynı; Ç3 ve Ç3b testleri değiştirilmeden geçiyor ya da değişen her test gerekçesiyle kayıtlı
 
 **Ç3d**

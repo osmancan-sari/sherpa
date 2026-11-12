@@ -42,8 +42,8 @@ Mevcut kod bir kavram için başka ad kullanıyorsa koddaki adı koru ve doküma
 ## Önerilen sıra
 
 1. **Veri ve zarf.** Migration (`days`, `settings`), `timing.anchor` ve `timing.after_finish` şeması ve doğrulaması. Denetçi (adım kipi).
-2. **Planlayıcı.** Önce testler: günün başının uyanışa göre kurulması, beklenen uyanış sırası (günün değeri, ortanca, hedefin ortası), çapalı işlerin dizilişi, akşam bölgesi, yeni `now` durumları, günün çerçevesi yokken planın değişmemesi. Sonra kod. Motor saf kalır. Denetçi (adım kipi).
-3. **Uyanış ve yatış.** Kayıt, tahmini uyanış, kaydırma, olaylar, ayarlar.
+2. **Planlayıcı.** Önce testler: günün başının uyanışa göre kurulması, uyku planının her kuralı (`docs/12`, bölüm D, "Uyku planı": en geç uyanış, yüke göre erkene çekme, uykunun iş yüküne feda edilmemesi, gerçek yatışın ertesi günü değiştirmesi), çapalı işlerin dizilişi, akşam bölgesi, yeni `now` durumları, günün çerçevesi yokken planın değişmemesi. Sonra kod. Motor saf kalır. Denetçi (adım kipi).
+3. **Uyanış ve yatış.** Kayıt, tahmini uyanış, kaydırma, uyku planının günün kaydına yazılması, ayarlar (aralıklar, uyku hedefi).
 4. **Oturum ve gün olayları.** `core.session_started`, `core.session_ended`, `core.day_started`, `core.day_closed`; yalnızca sahibine teslim. Denetçi (adım kipi; sözleşme değişiyor).
 5. **Sahne.** `ui.scene`, Bugün ekranında devralma, şerit, çıkış ve dönüş, hata sınırı, `StepRunner`. `deneme` modülünde iki sahne: serbest bir sahne ve `StepRunner` kullanan adımlı bir sahne.
 6. **Sesli anlatım.** `src/core/voice/` (sağlayıcı arayüzü, cihazın sesi, sıra, kesme, cümlelere bölme), cihaz başına ayarlar, `say` ve `today` bağlamda. Testlerde sahte sağlayıcı.
