@@ -1446,6 +1446,8 @@ export type Database = {
       };
       istanbul_today: { Args: Record<PropertyKey, never>; Returns: string };
       save_week_sittings: { Args: { p_committed: Json; p_only?: string[] }; Returns: undefined };
+      sherpa_acting_user: { Args: Record<PropertyKey, never>; Returns: string };
+      sherpa_pre_request: { Args: Record<PropertyKey, never>; Returns: undefined };
       start_session: {
         Args: {
           p_module_id?: string;

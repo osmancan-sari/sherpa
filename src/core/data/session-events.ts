@@ -1,4 +1,4 @@
-import type { ModuleRegistry } from "@/core/contract/types";
+import type { ModuleRegistry, ProposalResult } from "@/core/contract/types";
 import { CORE_EVENTS, emitEvent } from "@/core/events/bus";
 import type { Db, Session } from "@/core/types";
 import {
@@ -18,16 +18,22 @@ import { completeTask, dropTask } from "./work";
 
 export type SessionResult = "done" | "stopped" | "deferred" | "stuck" | "unanswered";
 
-type Told = { db: Db; registry: ModuleRegistry; now?: () => Date };
+export type Told = {
+  db: Db;
+  registry: ModuleRegistry;
+  now?: () => Date;
+  /** The listeners' proposals, on the server (Ç3d; see createModuleContext). */
+  onProposed?: (result: ProposalResult) => Promise<void>;
+};
 
 async function tell(
-  { db, registry, now }: Told,
+  { db, registry, now, onProposed }: Told,
   type: string,
   payload: Record<string, unknown>,
   to?: string | null,
 ): Promise<void> {
   try {
-    await emitEvent({ db, registry, type, payload, moduleSlug: null, now, to });
+    await emitEvent({ db, registry, type, payload, moduleSlug: null, now, to, onProposed });
   } catch {
     // The event table could not be written: the session stands; nothing to undo.
   }

@@ -5,8 +5,8 @@ Bu dosyayı Claude Code günceller. Yeni bir oturum yalnızca bu dosyayı ve `pr
 ## Durum
 
 - Faz: **Ç3d (Sunucu zemini) sürüyor** (12 Kas 2026). Ç0–Ç3c bitti ve yayında; D1–D4 tamamlandı
-- Adım: 1 (cihaz anahtarları) bitti; adım denetimi
-- Son commit: C3d step 1: device tokens and Settings → Bağlantılar
+- Adım: 2 (sunucuda modül bağlamı) bitti; adım denetimi
+- Son commit: C3d step 2: the server in the user's name, the server module context
 
 ### Ç3d planı
 
@@ -16,7 +16,7 @@ Bu dosyayı Claude Code günceller. Yeni bir oturum yalnızca bu dosyayı ve `pr
 | --- | --- | --- |
 | 0 | Bölüm E numaralı dokümanlara işlendi (`docs/02`, `03`, `04`, `06`, `07`, `09`, `11`, `12`) | bitti |
 | 1 | Cihaz anahtarları: migration (`device_tokens`, RLS, sütun izinleri, iptalin geri alınmaması), üretme (tarayıcıda, özet), iptal; Ayarlar → Bağlantılar | bitti (`20261112185119_device_tokens.sql`): `src/core/data/tokens.ts` (`newToken`, `hashToken`, oluşturma, iptal), `src/core/contract/ingest.ts` (kapsam listesi), sözleşmede `IngestType` ve `ModuleJob` ve kayıt denetimi, `src/core/ui/settings/ConnectionsSettings.tsx`. Testler: `tokens.test.ts` 4, `registry.test.ts` +2, `tests/db/tokens.test.ts` 6 (ilk koşuda virgüllü tek kapsamın denetimi atlattığını buldu; denetim öğe öğe yapılıyor), `rls.test.ts` örnek satır, `tests/e2e/connections.spec.ts` 1. Adım denetimi bekliyor |
-| 2 | Sunucuda modül bağlamı: istek öncesi fonksiyon ve `src/core/server/db.ts` (tek yardımcı, dönüşümün doğrulanması), sunucuda olay teslimi, sunucuda `size`; modülün sunucu kodu için lint kuralı; sınırın testleri | |
+| 2 | Sunucuda modül bağlamı: istek öncesi fonksiyon ve `src/core/server/db.ts` (tek yardımcı, dönüşümün doğrulanması), sunucuda olay teslimi, sunucuda `size`; modülün sunucu kodu için lint kuralı; sınırın testleri | bitti (`20261112190922_server_act_as.sql`: `sherpa_pre_request`, `sherpa_acting_user`): `src/core/server/db.ts` (`actAs`, `deviceTokenOwner`), `src/core/server/context.ts` (`serverContext`, `activeModule`, `serverTold`; teklif hemen `size`), `createModuleContext`/`emitEvent`/`tell` için `onProposed` (dinleyicilerin bağlamına da geçer), `eslint.config.mjs` modül sunucu dosyaları kuralı. Testler: `tests/db/server.test.ts` 8 (yalnızca sahibin satırları, varsayılan `user_id`, başka hesaba yazamama, `start_session` kullanıcı olarak, bozuk ve enjekte başlık 400, genel anahtar ve kullanıcı oturumunda başlığın etkisizliği, sunucu bağlamında teklif-olay-dinleyici, `size`), `tests/unit/server-boundary.test.ts` 3, `tests/unit/module-server-lint.test.ts` 3. Adım denetimi bekliyor |
 | 3 | Giriş ucu: `ingest_requests`, `/api/ingest/<kaynak>/<tür>` (anahtar, kapsam, şema, `Idempotency-Key`, hız sınırı), `core/wake`, `core/bed`, `core/context`; uyanış ve yatış "son kullanım" sayılır; yatıştan sonra haftanın yeniden kurulmasının veritabanı testi; `deneme/kayit` | |
 | 4 | Zamanlanmış işler: `job_runs`, dönemin saf kuralları, `/api/jobs/tick`, çekirdeğin işleri (`core/week`, `core/blocks`, `core/sessions`), `deneme/ozet`, `pg_cron` + Vault, Vercel yedeği | |
 | 5 | Kapanış: uçtan uca testler, ekran görüntüleri (`docs/ekran-goruntuleri/c3d/`), `check:full`, faz denetimi, rapor, `c3d-tamam`, yayın (`dev`, `prod`, kod) | |

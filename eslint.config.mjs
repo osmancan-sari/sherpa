@@ -70,6 +70,44 @@ const PLANNER_SYNTAX = [
 ];
 const AI_SDK_SYNTAX = dynamicImports(AI_SDK_ESQUERY, AI_SDK_PATTERN.message);
 
+// Architecture rule (docs/06-modul-sozlesmesi.md, "Sunucu zemini"; Ç3d): the module code that
+// runs on the server (its rules, queries, ingest handlers and jobs) imports nothing made for
+// the browser and touches no browser object. It runs with no screen: in the ingest endpoint and
+// the scheduler.
+const MODULE_SERVER_FILES = [
+  "src/modules/*/rules.ts",
+  "src/modules/*/queries.ts",
+  "src/modules/*/ingest.ts",
+  "src/modules/*/jobs.ts",
+  "src/modules/*/server/**/*.ts",
+];
+const BROWSER_ONLY = {
+  regex:
+    "^(react(-dom)?|next/(navigation|link|image|router|dynamic|script)|next-themes|lucide-react|@tanstack/.*|@base-ui/.*|@/components/.*|@/core/(app|ui|voice)|@/lib/supabase/client|(\\.{1,2}/)+(.*/)?components)(/.*)?$",
+  message:
+    'A module\'s server code (rules, queries, ingest, jobs) imports nothing made for the browser (docs/06-modul-sozlesmesi.md, "Sunucu zemini").',
+};
+const BROWSER_ONLY_ESQUERY = BROWSER_ONLY.regex.replaceAll("/", "\\/");
+const BROWSER_GLOBALS = [
+  "window",
+  "document",
+  "localStorage",
+  "sessionStorage",
+  "navigator",
+  "location",
+  "alert",
+  "indexedDB",
+  "speechSynthesis",
+  "requestAnimationFrame",
+].map((name) => ({ name, message: BROWSER_ONLY.message }));
+const MODULE_SERVER_SYNTAX = [
+  ...dynamicImports(BROWSER_ONLY_ESQUERY, BROWSER_ONLY.message),
+  {
+    selector: "Program > ExpressionStatement[directive='use client']",
+    message: BROWSER_ONLY.message,
+  },
+];
+
 // Architecture rules (CLAUDE.md), static and dynamic imports alike:
 // - The core never knows the modules. Modules attach to the core only through the contract and
 //   src/modules/registry.ts. Inside src/core, no project path (alias or relative) may pass
@@ -89,6 +127,14 @@ const eslintConfig = defineConfig([
     rules: {
       "no-restricted-imports": ["error", { patterns: [AI_SDK_PATTERN] }],
       "no-restricted-syntax": ["error", ...AI_SDK_SYNTAX],
+    },
+  },
+  {
+    files: MODULE_SERVER_FILES,
+    rules: {
+      "no-restricted-imports": ["error", { patterns: [AI_SDK_PATTERN, BROWSER_ONLY] }],
+      "no-restricted-syntax": ["error", ...AI_SDK_SYNTAX, ...MODULE_SERVER_SYNTAX],
+      "no-restricted-globals": ["error", ...BROWSER_GLOBALS],
     },
   },
   {

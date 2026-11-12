@@ -1,4 +1,4 @@
-import type { ModuleRegistry } from "@/core/contract/types";
+import type { ModuleRegistry, ProposalResult } from "@/core/contract/types";
 import { createModuleContext } from "@/core/data/context";
 import { type AppEvent, type Db, unwrap, toJson } from "@/core/types";
 
@@ -37,8 +37,10 @@ export async function emitEvent(input: {
    * events go to the work's own module only (docs/06-modul-sozlesmesi.md, "Olaylar").
    */
   to?: string | null;
+  /** Handed to the listeners' contexts (see createModuleContext). */
+  onProposed?: (result: ProposalResult) => Promise<void>;
 }): Promise<EmitResult> {
-  const { db, registry, type, moduleSlug, now, to } = input;
+  const { db, registry, type, moduleSlug, now, to, onProposed } = input;
   const event = unwrap(
     await db
       .from("events")
@@ -68,7 +70,10 @@ export async function emitEvent(input: {
     // A module that is not switched on does not react to anything.
     if (!row) continue;
     try {
-      await def.on![type](event, createModuleContext({ db, registry, module: row, now }));
+      await def.on![type](
+        event,
+        createModuleContext({ db, registry, module: row, now, onProposed }),
+      );
     } catch (error) {
       failures.push({ module: def.slug, error });
     }

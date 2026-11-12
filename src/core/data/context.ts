@@ -1,4 +1,9 @@
-import type { ModuleContext, ModuleRegistry, PromptRequest } from "@/core/contract/types";
+import type {
+  ModuleContext,
+  ModuleRegistry,
+  ProposalResult,
+  PromptRequest,
+} from "@/core/contract/types";
 import { emitEvent } from "@/core/events/bus";
 import { rhythmProgress } from "@/core/today/select";
 import { check, type Db, type ModuleRow, unwrap, toJson } from "@/core/types";
@@ -15,8 +20,14 @@ export function createModuleContext(input: {
   registry: ModuleRegistry;
   module: ModuleRow;
   now?: () => Date;
+  /**
+   * Runs after each of the module's proposals, before `propose` resolves. The server uses it
+   * to ask `size` at once (Ç3d); the browser asks through `onProposal` instead. It reaches the
+   * contexts of the listeners the module's events wake as well.
+   */
+  onProposed?: (result: ProposalResult) => Promise<void>;
 }): ModuleContext {
-  const { db, registry, module: mod } = input;
+  const { db, registry, module: mod, onProposed } = input;
   const now = input.now ?? (() => new Date());
   const definition = registry.get(mod.slug);
 
@@ -24,14 +35,18 @@ export function createModuleContext(input: {
     module: mod,
     db,
     now,
-    propose: (proposal) => propose(db, mod, proposal),
+    async propose(proposal) {
+      const result = await propose(db, mod, proposal);
+      if (onProposed) await onProposed(result);
+      return result;
+    },
     withdraw: (key) => withdraw(db, mod, key),
 
     async emit(type, payload = {}) {
       if (!definition?.emits.includes(type)) {
         throw new Error(`module "${mod.slug}" does not declare the event "${type}" in emits`);
       }
-      await emitEvent({ db, registry, type, payload, moduleSlug: mod.slug, now });
+      await emitEvent({ db, registry, type, payload, moduleSlug: mod.slug, now, onProposed });
     },
 
     async ask(prompt: PromptRequest) {
