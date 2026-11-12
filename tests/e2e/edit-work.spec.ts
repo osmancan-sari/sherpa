@@ -171,9 +171,18 @@ test("a work item with an open sitting is still edited and closed from its own r
   expect((await rows("tasks"))[0].status).toBe("dropped");
 });
 
+// A fixed hour for the test below: yesterday at 10:00 in Istanbul (in the past, so the session
+// started from it never looks expired). With the real clock it failed after 22:00, when the
+// 240-minute item no longer fitted the day and went to "Vakit kalırsa" (Ç3d step 1 audit).
+const yesterday = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Istanbul" }).format(
+  new Date(Date.now() - 86_400_000),
+);
+const MORNING = new Date(`${yesterday}T10:00:00+03:00`).getTime();
+
 test("a stopped sitting follows its item: the new name and deadline show on Today and decide the order", async ({
   page,
 }) => {
+  await page.clock.setFixedTime(MORNING);
   const mod = await seedModule();
   await insert("work_items", {
     module_id: mod.id,

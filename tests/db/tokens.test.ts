@@ -101,8 +101,21 @@ describe("device tokens", () => {
     expect((await listDeviceTokens(owner))[0].revoked_at).toBe(revoked.revoked_at);
 
     const removal = await owner.from("device_tokens").delete().eq("id", row.id).select();
-    expect(removal.data ?? []).toEqual([]);
+    expect(removal.error?.code).toBe("42501");
     expect(await listDeviceTokens(owner)).toHaveLength(1);
+  });
+
+  it("cannot be revoked or renamed by another account", async () => {
+    const { row } = await createDeviceToken(owner, { name: "Kestirmeler", scopes: ["core/wake"] });
+    // The columns the user may change, so the request reaches the row policy itself.
+    for (const change of [{ revoked_at: new Date().toISOString() }, { name: "Başkasının" }]) {
+      const attempt = ok(
+        await stranger.from("device_tokens").update(change).eq("id", row.id).select(),
+      );
+      expect(attempt, JSON.stringify(change)).toEqual([]);
+    }
+    const [after] = await listDeviceTokens(owner);
+    expect(after).toMatchObject({ name: "Kestirmeler", revoked_at: null });
   });
 
   it("names its owner only to the secret key, and only while it is active", async () => {

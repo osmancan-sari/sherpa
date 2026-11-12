@@ -403,7 +403,7 @@ Dış kaynakların (telefonun otomasyonu, bilgisayardaki toplayıcı) giriş ucu
 name text                     -- "iPhone Kestirmeler", "Ninova toplayıcısı" (1–60 karakter)
 token_hash text unique        -- anahtarın SHA-256 özeti (64 onaltılık hane); anahtarın kendisi saklanmaz
 hint text                     -- anahtarın ilk 8 karakteri ("shp_AbCd"), listede tanımak için
-scopes text[]                 -- izinli uçlar, adresle aynı biçimde: 'core/wake', 'deneme/kayit'; en az bir
+scopes text[]                 -- izinli uçlar, adresle aynı biçimde: 'core/wake', 'deneme/kayit'; 1–50 tane
 last_used_at timestamptz null
 revoked_at timestamptz null   -- iptal; geri alınamaz
 ```

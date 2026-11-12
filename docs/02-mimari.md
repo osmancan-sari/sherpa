@@ -116,7 +116,7 @@ Giriş ucunun ve zamanlanmış işlerin tarayıcı oturumu yoktur. Sunucu işi k
 
 ## Canlı güncelleme
 
-- Realtime abonelikleri: `tasks`, `sessions`, `blocks`, `rhythm_logs`, `days`, `inbox_entries`, `events`; ayrıca ekranda görünen öbür çekirdek tablolar: `modules`, `work_items`, `rhythms`, `block_series`, `prompts`, `settings`.
+- Realtime abonelikleri: `tasks`, `sessions`, `blocks`, `rhythm_logs`, `days`, `inbox_entries`, `events`; ayrıca ekranda görünen öbür çekirdek tablolar: `modules`, `work_items`, `rhythms`, `block_series`, `prompts`, `settings`, `device_tokens` (Ç3d: Ayarlar'daki son kullanım).
 - İkinci ekran sekmesi arka planda kalsa bile güncel kalmalı: görünürlük geri geldiğinde ve dakikada bir "şimdi" yeniden hesaplanır.
 
 ## Telefon

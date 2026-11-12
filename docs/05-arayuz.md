@@ -21,7 +21,7 @@
 | `/a/[slug]` | Alan sayfası |
 | `/gelen` | Gelen kutusu |
 | `/kapanis` | Akşam kapanışı |
-| `/ayarlar` | Ayarlar: tema, günün çerçevesi, sesli anlatım (bu cihaz), yapay zeka, dışa aktarım, hesap |
+| `/ayarlar` | Ayarlar: tema, günün çerçevesi, sesli anlatım (bu cihaz), yapay zeka, bağlantılar (Ç3d), dışa aktarım, hesap |
 | `/ayarlar/moduller` | Modülleri etkinleştir, duraklat, arşivle; `/ayarlar/moduller/[slug]` modülün kendi ayarları |
 | `/ayarlar/bloklar` | Haftalık seriler, tek seferlik bloklar, önümüzdeki 4 haftanın blokları |
 
@@ -143,6 +143,16 @@ Geniş ekranda tek sayfa, kaydırma yok:
 - **Hafta:** en üstte tek satır: son 7 günün ortalama uyanışı, yatışı ve uykusu (kayıt olan günlerden; yoksa satır yok). Seri, puan, rozet yok.
 - **Ayarlar → Günün çerçevesi:** "Günün çerçevesi açık" (kapalıyken planlayıcı Ç3b'deki gibi), uyanış ve yatış aralığı, uyku hedefi (saat), gün tipine özel aralıklar (isteğe bağlı), "Uyandım'dan sonra ilk rutin kendiliğinden başlasın".
 - **Ayarlar → Sesli anlatım (bu cihaz):** açık ya da kapalı, ses (cihazın Türkçe sesleri), hız, "Bu cihaz dokunuş olmadan da konuşsun", "Dene".
+
+### Ayarlar → Bağlantılar (Ç3d)
+
+Cihaz anahtarları (`docs/02-mimari.md`, "Cihaz anahtarları ve giriş ucu"). Bölüm Yapay zeka ile Dışa aktarım arasındadır.
+
+- Tek satırlık açıklama: telefonun otomasyonu ve toplayıcılar Sherpa'ya bir anahtarla yazar; anahtar yalnızca seçilen uçlara yazar, hiçbir şey okuyamaz.
+- **Yeni anahtar:** ad ve "Yazabileceği uçlar" (çekirdeğin üç türü ve etkin modüllerin türleri; her birinin yanında adresteki adı, `core/wake`), "Anahtar üret" (ad ve en az bir uç seçilince).
+- **Bir kez gösterim:** üretilince form yerine anahtar, "Kopyala", isteğin biçimi ve seçilen uçların tam adresleri, "Tamam". "Tamam"dan ya da sayfadan çıkınca anahtar bir daha gösterilmez.
+- **Liste:** en yeni üstte; ad, anahtarın ilk 8 karakteri, uçların adları, "Son kullanım: …" ya da "Henüz kullanılmadı"; iptal edilmiş anahtar soluk ve "İptal edildi: …". "İptal et" iki dokunuştur ("Evet, iptal et" ya da "Vazgeç"). Son kullanım canlı güncellenir.
+- **Görüşün gerek:** bölümün yeri, metinler, iptaldeki onay adımı, adreslerin ekranda gösterilmesi.
 - **Görüşün gerek:** Günaydın ve akşam ekranlarının içeriği ve metinleri; "Biraz önce" ve "geç yatacağım" seçenekleri; üst şeritteki gösterim; zaman çizelgesindeki bölümlerin görünüşü; Hafta'daki satır.
 
 ## Telefon
