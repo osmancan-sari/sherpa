@@ -307,6 +307,75 @@
         "minutes": 30,
         "due": null
       }
+    },
+    {
+      "text": "Spor salonu akşam 8'den sonra",
+      "expect": {
+        "module": "saglik",
+        "target": "task",
+        "minutes": 60,
+        "due": null,
+        "timing": {
+          "windows": [
+            {
+              "from": "20:00",
+              "to": "24:00"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "text": "Market alışverişi, 18-20 arası kalabalık olmasın",
+      "expect": {
+        "module": "beslenme",
+        "target": "task",
+        "minutes": 45,
+        "due": null,
+        "timing": {
+          "avoid": [
+            {
+              "from": "18:00",
+              "to": "20:00"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "text": "Kütüphanede lineer cebir çalış, 15 dk yol",
+      "expect": {
+        "module": "okul",
+        "target": "task",
+        "minutes": 90,
+        "due": null,
+        "timing": {
+          "travel": {
+            "before": 15,
+            "after": 15
+          }
+        }
+      }
+    },
+    {
+      "text": "Lab raporu yarın 17:00'de teslim",
+      "expect": {
+        "module": "okul",
+        "target": "task",
+        "minutes": 90,
+        "due": "2026-11-12",
+        "timing": null
+      }
+    },
+    {
+      "text": "Akşam yemeği için alışveriş listesi yap",
+      "expect": {
+        "module": "beslenme",
+        "target": "task",
+        "minutes": 15,
+        "due": null,
+        "timing": null
+      }
     }
   ]
 }

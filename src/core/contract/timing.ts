@@ -288,3 +288,37 @@ export function editTiming(
   }
   return { timing, provenance: sources };
 }
+
+const DAY_NAMES = ["", "Pzt", "Sal", "Çar", "Per", "Cum", "Cmt", "Paz"];
+
+/** "hafta içi", "hafta sonu", "Pzt, Çar" or nothing for every day. */
+export function daysLabel(days: number[] | undefined): string {
+  if (!days || days.length === 7) return "";
+  const sorted = [...days].sort((a, b) => a - b).join(",");
+  if (sorted === "1,2,3,4,5") return "hafta içi";
+  if (sorted === "6,7") return "hafta sonu";
+  return [...days]
+    .sort((a, b) => a - b)
+    .map((day) => DAY_NAMES[day])
+    .join(", ");
+}
+
+const rangeLabel = (range: TimeWindow) =>
+  [daysLabel(range.days), `${range.from}–${range.to}`].filter(Boolean).join(" ");
+
+/**
+ * One short line of a timing value (docs/05-arayuz.md, "Zaman kısıtları"):
+ * "07:00–23:00 · kaçın: hafta içi 18:00–20:30 · yol 20+20 dk · 1 gün ara". Empty without one.
+ */
+export function timingSummary(timing: Timing | null | undefined): string {
+  if (!timing) return "";
+  const parts: string[] = [];
+  if (timing.windows) parts.push(timing.windows.map(rangeLabel).join(", "));
+  if (timing.prefer) parts.push(`tercih: ${timing.prefer.map(rangeLabel).join(", ")}`);
+  if (timing.avoid) parts.push(`kaçın: ${timing.avoid.map(rangeLabel).join(", ")}`);
+  if (timing.travel) {
+    parts.push(`yol ${timing.travel.before ?? 0}+${timing.travel.after ?? 0} dk`);
+  }
+  if (timing.rest_days) parts.push(`${timing.rest_days} gün ara`);
+  return parts.join(" · ");
+}

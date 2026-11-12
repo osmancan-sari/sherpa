@@ -84,12 +84,45 @@ function enrich(input: unknown): EnrichOutput {
     due: parsed.dueDay
       ? { value: parsed.dueDay, confidence: 0.9, reason: "satırda gün yazıyor" }
       : none,
+    timing: fakeTiming(lower),
     steps: large
       ? [
           { title: "Kapsamı çıkar", minutes: 45 },
           { title: "İlk taslak", minutes: 90 },
         ]
       : [],
+  };
+}
+
+/**
+ * Time constraints written out on the line, read the way the prompt asks (rule 12): "8'den
+ * sonra" (an evening hour when "akşam" is there) is a window to midnight, "18-20 arası …
+ * olmasın" an avoided range, "20 dk yol" travel each way. Nothing else is guessed.
+ */
+function fakeTiming(lower: string): EnrichOutput["timing"] {
+  const pad = (hour: number, minute = 0) =>
+    `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
+  const evening = (hour: number) => (lower.includes("akşam") && hour < 12 ? hour + 12 : hour);
+  const after = /(\d{1,2})(?::(\d{2}))?['’]?(?:den|dan|ten|tan) sonra/u.exec(lower);
+  const between = /(\d{1,2})\s*[-–]\s*(\d{1,2})\s*aras[ıi]/u.exec(lower);
+  const travel = /(\d{1,3})\s*dk\s*yol/u.exec(lower);
+  const avoid = between && /olmas[ıi]n|kalabal[ıi]k|kaçın/u.test(lower);
+  if (!after && !avoid && !travel)
+    return { value: null, confidence: 0.8, reason: "saat kısıtı yazmıyor" };
+  return {
+    value: {
+      windows: after
+        ? [{ days: null, from: pad(evening(Number(after[1])), Number(after[2] ?? 0)), to: "24:00" }]
+        : null,
+      prefer: null,
+      avoid:
+        avoid && between
+          ? [{ days: null, from: pad(Number(between[1])), to: pad(Number(between[2])) }]
+          : null,
+      travel: travel ? { before: Number(travel[1]), after: Number(travel[1]) } : null,
+    },
+    confidence: 0.8,
+    reason: "satırda saat kısıtı yazıyor",
   };
 }
 

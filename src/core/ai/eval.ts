@@ -1,4 +1,6 @@
+import { normalizeTiming, type Timing } from "@/core/contract/timing";
 import { TASK_MAX_MINUTES, TASK_MIN_MINUTES, unwrap } from "@/core/types";
+import { aiTiming } from "./flows/enrich-apply";
 import { type EnrichInput, type EnrichOutput, enrichSpec } from "./calls/enrich";
 import {
   type MonthOutput,
@@ -31,6 +33,11 @@ export type EvalCase = {
     minutes: number;
     /** yyyy-MM-dd, or null when the line names no day. */
     due: string | null;
+    /**
+     * The time constraint the line states (Ç3b), or null for a line that states none. Left out:
+     * the case does not check it.
+     */
+    timing?: Timing | null;
   };
 };
 
@@ -54,6 +61,8 @@ export type EvalRow = {
   minutesError: number | null;
   /** The estimate came from `size`: `enrich` gave none. */
   sized: boolean;
+  /** The time constraint read right; null when the case does not check it. */
+  timing: boolean | null;
 };
 
 export type EvalReport = {
@@ -67,6 +76,8 @@ export type EvalReport = {
   minutesMedianError: number | null;
   /** Lines whose duration `enrich` left empty and `size` estimated. */
   sized: number;
+  /** Time constraints: cases that check one, and how many were read right. */
+  timing: { checked: number; right: number };
   /** What the calls of this run cost (reused answers cost nothing). */
   costUsd: number;
   /** Answers taken from earlier runs: the same prompt, model and line. */
@@ -98,6 +109,7 @@ export function scoreCase(
       due: false,
       minutesError: null,
       sized: false,
+      timing: item.expect.timing === undefined ? null : false,
     };
   }
   const sized = output.est_minutes.value === null && sizedMinutes !== null;
@@ -112,7 +124,17 @@ export function scoreCase(
     minutesError:
       estimate === null ? null : Math.abs(estimate - item.expect.minutes) / item.expect.minutes,
     sized,
+    timing:
+      item.expect.timing === undefined
+        ? null
+        : sameTiming(aiTiming(output.timing?.value ?? null), item.expect.timing),
   };
+}
+
+/** Two timing values mean the same: no constraint on both sides, or the same fields. */
+function sameTiming(got: Timing | null, expected: Timing | null): boolean {
+  const canonical = (value: Timing | null) => JSON.stringify(normalizeTiming(value) ?? null);
+  return canonical(got) === canonical(expected);
 }
 
 /** The share of rows where `pick` holds, and the overall numbers. Pure. */
@@ -128,6 +150,10 @@ export function summarize(model: string, rows: EvalRow[], costUsd: number): Eval
     due: share((row) => row.due),
     minutesMedianError: median(rows.flatMap((row) => row.minutesError ?? [])),
     sized: rows.filter((row) => row.sized).length,
+    timing: {
+      checked: rows.filter((row) => row.timing !== null).length,
+      right: rows.filter((row) => row.timing === true).length,
+    },
     costUsd,
     reused: 0,
     rows,

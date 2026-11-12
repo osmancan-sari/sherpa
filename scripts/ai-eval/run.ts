@@ -36,13 +36,16 @@ function print(report: EvalReport) {
   console.log(
     `Duration, median error: ${error === null ? "-" : percent(error)} (${report.sized} estimated by size)`,
   );
+  console.log(`Time constraint: ${report.timing.right}/${report.timing.checked}`);
   console.log(`Cost: ${report.costUsd.toFixed(4)} $ (${report.reused} answers reused)`);
-  const misses = report.rows.filter((row) => !row.module || !row.target || !row.due);
+  const misses = report.rows.filter(
+    (row) => !row.module || !row.target || !row.due || row.timing === false,
+  );
   if (misses.length === 0) return;
   console.log("\nMisses:");
   for (const row of misses) {
     const got = row.output
-      ? `module=${row.output.module.value} target=${row.output.target.value} due=${row.output.due.value} min=${row.output.est_minutes.value}${row.sized ? " (size)" : ""}`
+      ? `module=${row.output.module.value} target=${row.output.target.value} due=${row.output.due.value} min=${row.output.est_minutes.value}${row.sized ? " (size)" : ""}${row.timing === false ? ` timing=${JSON.stringify(row.output.timing?.value ?? null)}` : ""}`
       : `no answer (${row.error})`;
     console.log(`- ${row.text}\n    ${got}`);
   }

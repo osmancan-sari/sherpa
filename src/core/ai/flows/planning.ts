@@ -1,3 +1,4 @@
+import { readTiming, timingSummary } from "@/core/contract/timing";
 import type { ModuleRegistry } from "@/core/contract/types";
 import { createModuleContext } from "@/core/data/context";
 import { keepWeek, loadPlanRows, weekInput } from "@/core/data/keep";
@@ -75,6 +76,7 @@ export function planCallInput(
       importance: candidate.importance,
       energy: candidate.energy,
       mandatory: candidate.mandatory,
+      ...(candidate.timing ? { time: timingSummary(candidate.timing) } : {}),
     })),
     blocks: input.blocks
       .filter(
@@ -282,6 +284,7 @@ export function weekCallInput(input: WeekInput, base: WeekPlan, rows: PlanRows):
           due: item.due_at ? dayKey(new Date(item.due_at)) : null,
           importance: item.importance,
           required: share?.required ?? false,
+          ...(readTiming(item.timing) ? { time: timingSummary(readTiming(item.timing)) } : {}),
         };
       }),
     base: base.committed.map((row) => row.itemId),

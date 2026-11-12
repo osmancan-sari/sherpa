@@ -104,6 +104,7 @@ const AI_COLUMNS = new Set([
   "importance",
   "effort_total_minutes",
   "session_minutes",
+  "timing",
 ]);
 
 /**
@@ -240,7 +241,12 @@ export async function updateWorkItem(db: Db, id: string, edit: WorkItemEdit): Pr
     provenance = edited.provenance;
     values.timing = edited.timing;
   }
-  const corrected = await correctionsOf(db, "work_items", id, rest);
+  const corrected = await correctionsOf(
+    db,
+    "work_items",
+    id,
+    timingEdit === undefined ? rest : { ...rest, timing: values.timing },
+  );
   const item = unwrap(
     await db
       .from("work_items")

@@ -90,6 +90,48 @@ describe("ai-eval", () => {
   });
 });
 
+describe("ai-eval: time constraints (Ç3b)", () => {
+  const ask = async (text: string) => {
+    const input = { ...suite, text, similar: [], corrections: [] };
+    const response = await fakeProvider().complete({
+      kind: "enrich",
+      model: "fake-fast",
+      tier: "fast",
+      system: "",
+      user: JSON.stringify(input),
+      schema: enrichOutput,
+      maxTokens: 100,
+      signal: new AbortController().signal,
+    });
+    return enrichOutput.parse(JSON.parse(response.text));
+  };
+  const base = { module: "okul", target: "task" as const, minutes: 60, due: null };
+
+  it("a stated constraint must be read as written; a line without one must leave it empty", async () => {
+    const window = {
+      text: "Okul salonu akşam 8'den sonra",
+      expect: { ...base, timing: { windows: [{ from: "20:00", to: "24:00" }] } },
+    };
+    expect(scoreCase(window, await ask(window.text)).timing).toBe(true);
+    const wrong = {
+      ...window,
+      expect: { ...base, timing: { windows: [{ from: "19:00", to: "24:00" }] } },
+    };
+    expect(scoreCase(wrong, await ask(window.text)).timing).toBe(false);
+    const none = { text: "Okul akşam yemeği", expect: { ...base, timing: null } };
+    expect(scoreCase(none, await ask(none.text)).timing).toBe(true);
+    // A case that does not check timing scores nothing for it.
+    const unchecked = { text: "Okul ödev", expect: base };
+    const rows = [
+      scoreCase(window, await ask(window.text)),
+      scoreCase(wrong, await ask(window.text)),
+      scoreCase(unchecked, await ask(unchecked.text)),
+    ];
+    expect(rows[2].timing).toBeNull();
+    expect(summarize("m", rows, 0).timing).toEqual({ checked: 2, right: 1 });
+  });
+});
+
 describe("ai-eval: tone (rule 2)", () => {
   it("finds what counts the past or blames, and lets plain facts through", () => {
     expect(

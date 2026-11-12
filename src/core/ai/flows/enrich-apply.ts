@@ -12,6 +12,7 @@ import {
   unwrap,
   type WorkItem,
 } from "@/core/types";
+import { checkTiming, type Timing, TIMING_FIELDS, timingSource } from "@/core/contract/timing";
 import { type EnrichOutput, enrichOutput } from "../calls/enrich";
 import type { AiField, AiMark } from "../marks";
 import { writeSplit } from "./split";
@@ -89,6 +90,13 @@ export function enrichedRecord(args: {
     fields.due_at = judged(dueAt, output.due);
   }
 
+  // Time constraints the line stated, checked like the user's form; anything off is dropped.
+  const timing = aiTiming(output.timing?.value ?? null);
+  if (timing) {
+    values.timing = timing;
+    fields.timing = judged(timing, output.timing!);
+  }
+
   const aiMinutes = output.est_minutes.value;
   const minutes = parsed.minutes ?? aiMinutes ?? TASK_DEFAULT_MINUTES;
   const target: Target =
@@ -102,6 +110,13 @@ export function enrichedRecord(args: {
   else if (aiMinutes !== null) fields[minutesColumn] = judged(minutesValue, output.est_minutes);
 
   for (const column of Object.keys(fields)) provenance[column] = "ai";
+  // A work item keeps the source of each timing field on its own (docs/03-veri-modeli.md).
+  if (timing) {
+    delete provenance.timing;
+    for (const field of TIMING_FIELDS) {
+      if (timing[field] !== undefined) provenance[timingSource(field)] = "ai";
+    }
+  }
   // Nobody could tell the duration: a default now, and `size` is asked to estimate it, the way
   // it estimates an empty effort a module left (docs/10-yapay-zeka.md, "size").
   const defaulted = parsed.minutes === null && aiMinutes === null;
@@ -134,6 +149,31 @@ export function enrichedRecord(args: {
         sizeNeeded: defaulted,
         row: { ...common, effort_total_minutes: minutesValue, provenance: toJson(provenance) },
       };
+}
+
+/** The AI's timing as the envelope takes it: empty lists and nulls dropped, then checked. */
+export function aiTiming(
+  value: NonNullable<EnrichOutput["timing"]>["value"] | null,
+): Timing | null {
+  if (!value) return null;
+  const strip = (list: typeof value.windows) =>
+    list && list.length > 0
+      ? list.map((range) => ({
+          ...(range.days && range.days.length > 0 && range.days.length < 7
+            ? { days: range.days }
+            : {}),
+          from: range.from,
+          to: range.to,
+        }))
+      : undefined;
+  const timing: Timing = {
+    windows: strip(value.windows),
+    prefer: strip(value.prefer),
+    avoid: strip(value.avoid),
+    travel: value.travel && value.travel.before + value.travel.after > 0 ? value.travel : undefined,
+  };
+  const checked = checkTiming(JSON.parse(JSON.stringify(timing)), { kind: "task" });
+  return checked.issues.length > 0 ? null : checked.timing;
 }
 
 export type EnrichOutcome =

@@ -137,6 +137,27 @@ describe("enrich", () => {
     expect(readMark(item.ai)!.fields.effort_total_minutes.kind).toBe("size");
   });
 
+  it("writes a time constraint the line states, and none when it states none (Ç3b)", async () => {
+    await makeModule(db);
+    const entry = await addInboxEntry(db, "Sınama salonu akşam 8'den sonra, 20 dk yol");
+    const outcome = await enrichEntry(deps(), registry, entry.id, NOW);
+    expect(outcome).toMatchObject({ status: "applied", target: "task" });
+    if (outcome.status !== "applied") return;
+    const task = ok(await db.from("tasks").select("*").eq("id", outcome.id).single());
+    expect(task.timing).toEqual({
+      windows: [{ from: "20:00", to: "24:00" }],
+      travel: { before: 20, after: 20 },
+    });
+    expect(readMark(task.ai)!.fields.timing).toBeDefined();
+
+    const plain = await addInboxEntry(db, "Sınama akşam yemeği listesi");
+    const made = await enrichEntry(deps(), registry, plain.id, NOW);
+    if (made.status !== "applied") throw new Error("not applied");
+    expect(
+      ok(await db.from("tasks").select("timing").eq("id", made.id).single()).timing,
+    ).toBeNull();
+  });
+
   it("asks size nothing when the line or the AI gave a duration", async () => {
     await makeModule(db);
     const typed = await addInboxEntry(db, "Sınama okuma notları 20dk [ai:nominutes]");

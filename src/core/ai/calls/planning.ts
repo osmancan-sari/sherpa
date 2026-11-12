@@ -35,6 +35,8 @@ export type PlanCandidate = {
   energy: string;
   /** Why the engine already counts it as a must for the day; null when it does not. */
   mandatory: string | null;
+  /** Its time constraints, short ("16:00–18:00 · yol 20+20 dk"); only when it has any. */
+  time?: string;
 };
 
 export type PlanCallInput = {
@@ -81,6 +83,9 @@ const PLAN_RULES = `
   spend the three on it unless it is the most important thing of the day. Rhythms ("type":
   "rhythm", habits) do not go in the three unless their weekly floor is at risk ("mandatory":
   "floor"). Choose only work that fits the time left in the day ("capacity_minutes").
+- "time" on a candidate is its time constraint: its windows are hard (the engine never places
+  it outside them and drops advice that would), preferred and avoided hours are soft, travel
+  comes on top of its minutes.
 - "prefer": work to bring forward; "defer": work that can wait (never mandatory work: the
   engine refuses it). Each with one short reason the user reads behind "neden?".
 - "estimates": only where the given minutes are clearly wrong for the work, 5 to 90.
@@ -89,7 +94,7 @@ const PLAN_RULES = `
 
 export const planSpec: AiCallSpec<PlanOutput> = {
   kind: "plan",
-  version: "plan-2",
+  version: "plan-3",
   maxTokens: 6000,
   schema: planOutput,
   system: `You plan one day of a planning app's user. The engine already made a valid plan
@@ -102,7 +107,7 @@ ${SHARED_RULES}`,
 
 export const replanSpec: AiCallSpec<PlanOutput> = {
   kind: "replan",
-  version: "replan-2",
+  version: "replan-3",
   maxTokens: 6000,
   schema: planOutput,
   system: `The user's day fell apart and they asked to plan the rest of it again. "done_today"
@@ -133,6 +138,8 @@ export type WeekCallInput = {
     importance: number;
     /** Due this week: committed whatever is suggested. */
     required: boolean;
+    /** Its time constraints, short; only when it has any. */
+    time?: string;
   }[];
   /** The engine's own commitment. */
   base: string[];
@@ -152,7 +159,7 @@ export type WeekOutput = z.infer<typeof weekOutput>;
 
 export const weekSpec: AiCallSpec<WeekOutput> = {
   kind: "week",
-  version: "week-2",
+  version: "week-3",
   maxTokens: 6000,
   schema: weekOutput,
   system: `You choose what a planning app's user works on this week. "items" are the
@@ -162,6 +169,8 @@ candidates with this week's share of their effort; "base" is what the engine wou
   Required items are committed anyway.
 - "drop": items to leave for a later week, with a reason (never required ones).
 - "module_budgets": minutes per module for the week; never below "fixed_minutes" of a module.
+- "time" on an item is its time constraint (hard windows, travel per sitting): an item whose
+  windows are few needs its week planned around them.
 - Stay within "capacity_minutes"; the engine cuts what does not fit.
 
 ${PLANNING_TONE}

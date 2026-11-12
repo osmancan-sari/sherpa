@@ -68,6 +68,47 @@ describe("the plan call's input", () => {
   });
 });
 
+describe("time constraints in the planning calls (Ç3b)", () => {
+  it("each candidate and week item carries its constraint in short; others carry none", () => {
+    const timing = { windows: [{ from: "16:00", to: "18:00" }], travel: { before: 20, after: 20 } };
+    const gym = task({ title: "Salon", timing, context: "out", energy: "physical" });
+    const plain = task({ title: "Okuma" });
+    const plan = buildPlan(input({ tasks: [gym, plain] }));
+    const call = planCallInput(
+      rows({ tasks: [gym, plain] }),
+      input({ tasks: [gym, plain] }),
+      plan,
+      null,
+      false,
+    );
+    expect(call.candidates.find((row) => row.id === gym.id)?.time).toBe(
+      "16:00–18:00 · yol 20+20 dk",
+    );
+    expect(call.candidates.find((row) => row.id === plain.id)).not.toHaveProperty("time");
+
+    const item = workItem({
+      title: "Proje",
+      effort_total_minutes: 300,
+      timing: { avoid: [{ from: "18:00", to: "20:00" }] },
+    });
+    const monday = "2026-11-16";
+    const week = {
+      now: istanbulInstant(monday, "08:00"),
+      weekStart: monday,
+      items: [item],
+      tasks: [],
+      rhythms: [],
+      modules: [moduleRow()],
+      blocks: [],
+      settings: DEFAULT_SETTINGS,
+      stats: [],
+      lifeMode: "normal" as const,
+    };
+    const weekCall = weekCallInput(week, commitWeek(week), rows({ workItems: [item] }));
+    expect(weekCall.items[0]).toMatchObject({ id: item.id, time: "kaçın: 18:00–20:00" });
+  });
+});
+
 describe("the AI's answer as advice", () => {
   it("keeps only the ids the engine knows, with their reasons", () => {
     const known = task({ title: "Bilinen" });
