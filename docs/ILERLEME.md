@@ -6,7 +6,7 @@ Bu dosyayı Claude Code günceller. Yeni bir oturum yalnızca bu dosyayı ve `pr
 
 - Faz: **Ç3c (Sahne ve günün çerçevesi) sürüyor** (12 Kas 2026). Ç0–Ç3b bitti (`c3b-tamam`); D1–D4 tamamlandı
 - Adım: 8 (kapanış: faz denetimi), 9 (yayın: `dev` bitti)
-- Son commit: C3c phase audit round 1 fixes
+- Son commit: C3c: migrations on sherpa-prod
 
 ### Ç3c planı
 
@@ -23,7 +23,7 @@ Bu dosyayı Claude Code günceller. Yeni bir oturum yalnızca bu dosyayı ve `pr
 | 6 | Sesli anlatım: `src/core/voice/`, cihaz başına ayar, `say`, `today` | bitti: `types.ts` (sağlayıcı arayüzü), `device.ts` (Web Speech, `tr-TR`, reddi sessiz), `sentences.ts`, `speaker.ts` (sıra, kesme, cihaz kuralı), `settings.ts` (`localStorage`), `VoiceProvider.tsx` (ilk dokunuşta kilidi açma, `useSay`); `ModuleUiContext.say`; Ayarlar → Sesli anlatım (bu cihaz). Testler: `src/core/voice/voice.test.ts` 5 (sahte sağlayıcı), uçtan uca konuşma sentezi yerine kaydedici (`scene-helpers.ts`). Gerçek cihaz denemesi "Senden bekleyenler"de |
 | 7 | Ekranlar: Günaydın, akşam, üst şerit, zaman çizelgesi, Hafta satırı | bitti: `src/core/ui/today/FrameCards.tsx` (Günaydın: "Uyandım", "Biraz önce" 15/30/60, kısa özet, ayar açıksa rutin başlar; Akşam: sıradaki akşam ya da yatış işi ve Başla, uyku satırı, kısa gece notu, "Yatıyorum", "Günü kapat", "geç yatacağım" ve "erken kalkacağım" 30/60/90), `frame-text.ts` (cümleler, Hafta satırı), gece kartında "Yarın uyanış", üst şeritte uyanış ve yatış aralığı, şeritte bölümler ve bitiş çizgisi, akşam sakin (liste, uyarı yok), kapanışta "Onayla ve yat", Hafta'da tek satır. Testler: `frame-text.test.ts` 4, `tests/e2e/day-screens.spec.ts` 5 |
 | 8 | Kapanış: uçtan uca testler, ekran görüntüleri, `check:full`, faz denetimi, rapor, `c3c-tamam` | uçtan uca testler, görüntüler (`docs/ekran-goruntuleri/c3c/`), `check:full` yeşil (413 / 206 / 166), faz raporu yazıldı; yerel veritabanı migration dosyalarından sıfırdan kuruldu ve testler yeşil. Faz denetimi sürüyor |
-| 9 | Yayın: migration `dev`, sonra `prod`; kod sonra | `sherpa-dev`: bitti (iki migration, `migration list` ile doğrulandı). `prod` ve `git push` kullanıcının onayında ("Senden bekleyenler") |
+| 9 | Yayın: migration `dev`, sonra `prod`; kod sonra | `sherpa-dev`: bitti. `sherpa-prod`: bitti (kullanıcının onayıyla; deneme çalıştırmasında yalnızca iki migration; `migration list` ile doğrulandı). `git push` etiketten sonra, kullanıcının onayıyla |
 
 ### Ç3b planı
 
@@ -338,7 +338,7 @@ Modülün işi çalışırken Bugün ekranını devralan sahne, modüllere oturu
 | `StepRunner` ile adımlı sahne: geri sayım, sonraki, atla | Sağlandı | `scene.spec.ts` (sahte saatle 5 dk; adım modülün satırında, yeniden yüklemede sürer) |
 | Oturum olayları yalnızca kendi işine; gün olayları etkin bütün modüllere | Sağlandı | `tests/db/events.test.ts` 7, `tests/e2e/day-frame.spec.ts` (Ertele, Takıldım, Durdur, Bitti) |
 | `say`: Türkçe, sıra ve kesme, kapalıyken sessiz ve hatasız, cihaz başına ayar | Sahte sağlayıcıyla sağlandı | `src/core/voice/voice.test.ts` 5, `scene.spec.ts` (konuşma sentezi yerine kaydedici; Ayarlar'da "Dene", kapalıyken sessiz, ayar cihazda kalır) |
-| Sesli anlatım gerçek telefonda ve gerçek panoda denendi | **Elle doğrulanacak** | Adımlar "Senden bekleyenler" → Ç3c, "Ses" |
+| Sesli anlatım gerçek telefonda ve gerçek panoda denendi | **Elle doğrulanacak** (kullanıcının kararıyla etiketi beklemez, 12 Kas 2026) | Adımlar "Senden bekleyenler" → Ç3c, "Ses" |
 | "Uyandım" ve "Yatıyorum" kaydediliyor; denmeden dokunulunca uyanış tahmini | Sağlandı | `tests/e2e/day-screens.spec.ts`, `day-frame.spec.ts`, `tests/db/frame.test.ts` |
 | Pencere uyanışa göre başlıyor; geç uyanışta kısalıyor; uyanış yokken beklenen | Sağlandı | `src/core/planner/frame.test.ts` ("the day's start") |
 | Uyku planı: en geç uyanış; yükle birlikte erkene çekme; uykunun feda edilmemesi; sabit yükümlülükte ekranın söylemesi | Sağlandı | `frame.test.ts` ("the sleep plan" 8), `frame-text.test.ts` (cümleler) |
@@ -350,7 +350,7 @@ Modülün işi çalışırken Bugün ekranını devralan sahne, modüllere oturu
 | Ayarlar'da aralıklar ve uyku hedefi; gün tipine özel aralık | Sağlandı | `day-frame.spec.ts` (Ayarlar formu), `tests/db/frame.test.ts` |
 | Çerçeve kullanılmayan veride pencere içindeki plan Ç3b'dekiyle aynı; değişen testler kayıtlı | Sağlandı | `frame.test.ts` ("inside the window…", "with the frame off…"); Ç3 ve Ç3b testleri değişmedi. Değişen üç test, hepsi "Verdiğim kararlar"da: `tests/e2e/data.ts` (`day_frame: null`), `yapay-zeka.ai.spec.ts` (bulucu yapay zeka formuna daraltıldı), `work-sessions.spec.ts` (kesmeden önce günün planını bekler) |
 | Kalemden Başla ile bekçinin oturum işi yazması aynı anda olunca tek açık oturum işi | Sağlandı | `tests/db/planning.test.ts` (eski kodla 20 turun 5'inde kırmızıydı; şimdi 3 × 20 turda yeşil), bekçinin başlatılmış işi düşürmemesi testi |
-| Migration önce `dev`, sonra `prod`; kod sonra | **Açık (9. adım)** | Aşağıda "Senden bekleyenler" → Ç3c yayını |
+| Migration önce `dev`, sonra `prod`; kod sonra | Sağlandı (kodun üretimde açılması kullanıcıda doğrulanacak) | `sherpa-dev` ve `sherpa-prod` (12 Kas 2026, kullanıcının onayıyla; deneme çalıştırmasında yalnızca bu iki migration; `migration list` ile doğrulandı). Kod etiketten sonra `git push` ile |
 
 Testler: 413 birim, 206 veritabanı, 166 uçtan uca (`npm run check:full` yeşil). Ekran görüntüleri `docs/ekran-goruntuleri/c3c/` (112 dosya; yeni: `bugun-gunaydin`, `bugun-aksam`, `bugun-gece-cerceve`, `bugun-sahne`, `bugun-sahne-adimlar`, `hafta-uyku`, `ayarlar-cerceve`). Baktıklarım: Günaydın, akşam ve iki sahne (pano), odak sahnesi (telefon). Görüntüden çıkan düzeltme: akşamda boş "Sıradakiler" sütunu gizlendi.
 
@@ -458,7 +458,7 @@ Sonra Ç4 (Pano ve telefon cilası): yeni oturumda `docs/05-arayuz.md` ve `docs/
 
 ### Ç3c yayını ve elle denemeler
 
-**Yayın** (9. adım; migration'lar `sherpa-dev`'de, 12 Kas 2026; `prod` ve `git push` senin onayınla). İki migration var:
+**Yayın** (9. adım): migration'lar `sherpa-dev`'de ve `sherpa-prod`'da (12 Kas 2026, senin onayınla; adım 1 yapıldı). Kalan: `git push` (etiketten sonra). İki migration var:
 
 - `20261112123800_day_frame.sql`: `days` yeni sütunlar, `settings.day_frame`, `start_session` yeniden ve `save_week_sittings`.
 - `20261112134336_deneme_scene_step.sql`: `deneme_items.scene_step`, tür denetimi.
@@ -621,6 +621,7 @@ Süre sapmasındaki artış çoğunlukla `enrich`'in kendi tahminlerinin çalı�
 | Tarih | Karar | Gerekçe | Etkilediği dosyalar |
 | --- | --- | --- | --- |
 | 12 Kas 2026 | Ç3c: sesli anlatım varsayılan olarak açık; ses cihazın Türkçe sesi, hız 1; "dokunuş olmadan konuşsun" kapalı. Kendiliğinden konuşma kuralı: bu ayar açık olan cihaz, ya da son 10 dakikada dokunulan cihaz konuşur (dokunuşun yapıldığı cihaz). Kilit: her cihaz ilk dokunuşta boş bir cümle söyler (iOS). Tarayıcı kısıtları güncel kaynaklardan: Chrome M71'den beri sayfada kullanıcı etkinliği olmadan `speak()`'i reddeder (Blink "Intent to Remove: speechSynthesis.speak without user activation"); iOS WebKit ilk cümlenin bir dokunuşun içinde başlamasını ister, sonrakilerin geçtiği bildirilir; ana ekran uygulaması için kaynak bulunamadı (elle denenecek). **Görüşün gerek** (varsayılanlar, 10 dakika) | `docs/12` bölüm C | `src/core/voice/` |
+| 12 Kas 2026 | Ç3c: sesin gerçek cihaz denemesi `c3c-tamam` etiketini beklemez; ölçüt "elle doğrulanacak" olarak açık kalır (Ç0'daki duraklar gibi) | Kullanıcının kararı (12 Kas 2026) | `docs/ILERLEME.md` |
 | 12 Kas 2026 | Ç3c: `deneme`'nin serbest sahnesi kendi kayıt türünde: "odak" (tür denetimi `20261112134336_deneme_scene_step.sql` içinde genişletildi). İlk hali "hedef"e bağlıydı ve Ç1'in `deneme-module.spec.ts` testini (kartta modülün satırı) sahneye düşürüyordu; eski testi değiştirmek yerine hedef sahnesiz bırakıldı. Akşamda "Sıradakiler" sütunu gizlenir (görüntüde boş liste duruyordu) | Ç1–Ç3b testleri değişmeden geçsin; sahnesiz iş örneği `deneme`'de de kalsın | `src/modules/deneme/`, `src/core/ui/today/TodayScreen.tsx` |
 | 12 Kas 2026 | Ç3c: Günaydın ve akşam kartlarının metinleri ve düzeni; "Biraz önce" 15/30/60; "geç yatacağım" ve "erken kalkacağım" 30/60/90 dk ve yalnızca o geceyi ve o sabahı yazar; akşam kartında yatış kaydı bugün yatış aralığının dışında da olabilir; üst şeritte "beklenen uyanış" ve "~" (tahmini); Hafta satırı son 7 günün ortalaması (uyku, yatış kaydı ve ertesi uyanış ikisi de varsa) | **Görüşün gerek** (`docs/05` "Günün çerçevesi") | `src/core/ui/today/`, `src/core/ui/week/WeekScreen.tsx` |
 | 12 Kas 2026 | Ç3c: sahnenin tonları: `calm` soluk zemin, `focus` kart zemini, `energy` modül rengine %12 karışım; şerit tek satır (saat, renk noktası, ad · dk, "Çık"); sahnedeyken Bugün ekranının başka hiçbir parçası görünmez; "Takıldım" sahneden çıkar ve standart kartta üç yolu açar | **Görüşün gerek** (`docs/05` "Sahne") | `src/core/ui/today/Scene.tsx` |
