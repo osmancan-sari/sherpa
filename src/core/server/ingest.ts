@@ -11,8 +11,8 @@ import { actAs, deviceTokenOwner, type TokenOwner } from "./db";
 
 // The ingest endpoint, POST /api/ingest/<source>/<kind> (docs/02-mimari.md, "Cihaz anahtarları
 // ve giriş ucu"): the first way in that has no session. The checks, in order: the token (401),
-// the kind (404), the scope (403), the module switched on (409), the rate (429), the body
-// (400, by the field's name), the Idempotency-Key (a repeat is not handled twice). Then the
+// the rate (429), the kind (404), the scope (403), the module switched on (409), the body
+// (413, 400 by the field's name), the Idempotency-Key (a repeat is not handled twice). Then the
 // handler runs on the server, in the token owner's name. The token is never written anywhere:
 // not to the log, not to an error, not to an event; neither is the body.
 
@@ -21,7 +21,35 @@ export const INGEST_PER_MINUTE = 20;
 /** The largest body taken, in bytes. */
 export const INGEST_MAX_BYTES = 64 * 1024;
 
+/** A request "processing" for longer than this was cut off: its key may be taken again. */
+export const INGEST_ABANDONED_MS = 5 * 60_000;
+
 const IDEMPOTENCY_KEY = /^[!-~]{1,200}$/;
+
+/** The body as text, or null once it passes the limit (whatever Content-Length said). */
+async function readLimited(request: Request, limit: number): Promise<string | null> {
+  if (!request.body) return "";
+  const reader = request.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let size = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    size += value.byteLength;
+    if (size > limit) {
+      await reader.cancel();
+      return null;
+    }
+    chunks.push(value);
+  }
+  const body = new Uint8Array(size);
+  let offset = 0;
+  for (const chunk of chunks) {
+    body.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  return new TextDecoder().decode(body);
+}
 
 type Status = "processing" | "done" | "rejected" | "failed";
 
@@ -87,7 +115,13 @@ export async function handleIngest(
     const deps: ServerDeps = { db, registry: env.registry, now, ai: env.ai ?? aiConfigFromEnv() };
     const log = requestLog(db, owner, source, kind);
 
-    // 2. The kind; 3. the scope; 4. the module.
+    // 2. The rate: what this token sent in the last minute, refused or not. Over it, nothing
+    // is written, so a flood of any kind fills nothing.
+    if ((await log.lastMinute()) >= INGEST_PER_MINUTE) {
+      return answer(429, { error: "rate_limited" }, { "Retry-After": "60" });
+    }
+
+    // 3. The kind; 4. the scope; 5. the module.
     const target = targetOf(env.registry, source, kind);
     if (!target) return log.reject(404, "unknown_kind");
     if (!owner.scopes.includes(scopeOf(source, kind))) return log.reject(403, "forbidden");
@@ -98,18 +132,11 @@ export async function handleIngest(
       ctx = active.ctx;
     }
 
-    // 5. The rate: what this token sent in the last minute.
-    if ((await log.lastMinute(now())) >= INGEST_PER_MINUTE) {
-      return answer(429, { error: "rate_limited" }, { "Retry-After": "60" });
-    }
-
-    // 6. The body.
+    // 6. The body, read no further than the limit.
     const length = Number(request.headers.get("content-length") ?? 0);
     if (length > INGEST_MAX_BYTES) return log.reject(413, "body_too_large");
-    const text = await request.text();
-    if (new TextEncoder().encode(text).length > INGEST_MAX_BYTES) {
-      return log.reject(413, "body_too_large");
-    }
+    const text = await readLimited(request, INGEST_MAX_BYTES);
+    if (text === null) return log.reject(413, "body_too_large");
     let json: unknown;
     try {
       json = text.trim() === "" ? {} : JSON.parse(text);
@@ -183,36 +210,57 @@ function requestLog(db: Db, owner: TokenOwner, source: string, kind: string) {
       return answer(http, issues ? { error, issues } : { error });
     },
 
-    async lastMinute(now: Date): Promise<number> {
+    /** Requests of this token in the last minute (by the server's clock: rows are stamped so). */
+    async lastMinute(): Promise<number> {
       const { count, error } = await db
         .from("ingest_requests")
         .select("id", { count: "exact", head: true })
         .eq("token_id", owner.tokenId)
-        .gte("created_at", new Date(now.getTime() - 60_000).toISOString());
+        .gte("created_at", new Date(Date.now() - 60_000).toISOString());
       if (error) throw new Error(error.message);
       return count ?? 0;
     },
 
     /**
-     * Takes the key (its digest) for this request: its row id, "done" when the key was handled before, or
-     * "busy" when that request is still running. A request without a key always gets a row.
+     * Takes the key (its digest) for this request: its row id, "done" when the key was handled
+     * before, or "busy" when that request is still running. A request without a key always gets
+     * a row. A request left "processing" longer than INGEST_ABANDONED_MS (its function was cut
+     * off) gives its key up: it is marked failed and this one takes over.
      */
     async claim(key: string | null): Promise<string | "done" | "busy"> {
-      const { data, error } = await db
-        .from("ingest_requests")
-        .insert({ ...base, idempotency_key: key, status: "processing", http_status: 102 })
-        .select("id")
-        .single();
-      if (!error) return data.id;
-      if (error.code !== "23505" || key === null) throw new Error(error.message);
-      const first = await db
-        .from("ingest_requests")
-        .select("status")
-        .eq("token_id", owner.tokenId)
-        .eq("idempotency_key", key)
-        .maybeSingle();
-      if (first.error) throw new Error(first.error.message);
-      return first.data?.status === "done" ? "done" : "busy";
+      for (let attempt = 0; attempt < 2; attempt++) {
+        const { data, error } = await db
+          .from("ingest_requests")
+          .insert({ ...base, idempotency_key: key, status: "processing", http_status: 102 })
+          .select("id")
+          .single();
+        if (!error) return data.id;
+        if (error.code !== "23505" || key === null) throw new Error(error.message);
+        const first = await db
+          .from("ingest_requests")
+          .select("id, status, created_at")
+          .eq("token_id", owner.tokenId)
+          .eq("idempotency_key", key)
+          .maybeSingle();
+        if (first.error) throw new Error(first.error.message);
+        if (!first.data) continue;
+        if (first.data.status === "done") return "done";
+        const abandoned = Date.parse(first.data.created_at) < Date.now() - INGEST_ABANDONED_MS;
+        if (!abandoned) return "busy";
+        const released = await db
+          .from("ingest_requests")
+          .update({
+            status: "failed",
+            http_status: 500,
+            error: "abandoned",
+            idempotency_key: null,
+            finished_at: new Date().toISOString(),
+          })
+          .eq("id", first.data.id)
+          .eq("status", "processing");
+        if (released.error) throw new Error(released.error.message);
+      }
+      return "busy";
     },
 
     /** Ends the claimed row; a request that did not get through gives its key back. */

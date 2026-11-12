@@ -70,3 +70,23 @@ export async function signIn(page: Page, email = ALLOWED_EMAIL): Promise<void> {
   await page.getByRole("button", { name: "Giriş yap" }).click();
   await expect(page.getByRole("heading", { name: "Bugün", exact: true })).toBeVisible();
 }
+
+/**
+ * Room in the day for tests that need it. The test account's day ends at 23:59
+ * (tests/e2e/data.ts); late in the evening a 30- or 60-minute task no longer fits and the screen
+ * rightly offers nothing. Once the real time is past 10:00 the page's clock is held at 10:00
+ * TODAY: the calendar day stays the one the data is written for (today(), due in an hour), and
+ * the clock is never ahead of the server, so a session the server stamps never looks overdue.
+ * Before 10:00 the real time already leaves the whole day. Returns the pages' "now". (Ç3d step
+ * 3 audit: seven tests failed after 22:30.)
+ */
+export async function roomInTheDay(...pages: Page[]): Promise<Date> {
+  const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Istanbul" }).format(
+    new Date(),
+  );
+  const morning = new Date(`${today}T10:00:00+03:00`);
+  if (Date.now() <= morning.getTime()) return new Date();
+  for (const page of pages) await page.clock.setFixedTime(morning);
+  // The pages' "now": data meant to be "five minutes ago" on the screen is written from it.
+  return morning;
+}

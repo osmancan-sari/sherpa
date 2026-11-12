@@ -48,7 +48,7 @@ Paket sürümlerini ezberden yazma; kurarken güncel kararlı sürümü kullan v
 | `npm run format` / `npm run format:check` | Prettier: yaz / denetle |
 | `npm run test` / `npm run test:watch` | Vitest birim testleri |
 | `npm run test:db` | Veritabanı testleri: RLS, kısıtlar, fonksiyonlar, iş zarfı (yerel Supabase ister) |
-| `npm run test:e2e` | Derler, sonra Playwright (3100 portu, yerel Supabase ve Mailpit ister) |
+| `npm run test:e2e` | Derler, sonra Playwright (3100 portu, yerel Supabase ve Mailpit ister). İstanbul saatiyle 22:30–24:00 arasında başlamaz: test hesabının günü 23:59'da biter ve testlerin çoğu gerçek saatle koşar (Ç4'e kadar; `SHERPA_E2E_LATE=1` yine de başlatır) |
 | `npm run db:start` / `db:stop` / `db:status` | Yerel Supabase (Docker) |
 | `npm run db:new -- <ad>` | Yeni migration dosyası |
 | `npm run db:migrate` | Bekleyen migration'ları yerel veritabanına uygular |

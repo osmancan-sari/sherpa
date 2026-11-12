@@ -1,6 +1,7 @@
 import { formatMinutes, istanbulInstant } from "@/lib/date";
 import { insert, rows, seedModule, update, waitFor } from "./data";
 import { expect, test } from "./fixtures";
+import { roomInTheDay } from "./helpers";
 
 // The planner on the Today screen (Ç3). The account's day runs from midnight to 23:59
 // (tests/e2e/data.ts), so these tests do not depend on the hour they run at.
@@ -8,6 +9,7 @@ import { expect, test } from "./fixtures";
 test("opening the app plans the week and the day; the first touch is the user's", async ({
   page,
 }) => {
+  await roomInTheDay(page);
   const mod = await seedModule();
   const [item] = await insert("work_items", {
     module_id: mod.id,
@@ -89,6 +91,7 @@ test("Ertele moves the work to tomorrow; put off three times, the screen asks to
 test("Takıldım closes the session and offers three ways on: a smaller step, waiting, not today", async ({
   page,
 }) => {
+  await roomInTheDay(page);
   const mod = await seedModule();
   const [hard] = await insert("tasks", { module_id: mod.id, title: "Zor bölüm", importance: 4 });
   const [other] = await insert("tasks", { module_id: mod.id, title: "Hocaya soru" });
@@ -173,6 +176,7 @@ test("a waiting task's follow-up day brings a short reminder; the answer puts it
 });
 
 test("X dk'm var finds the work that fits; the keys start and finish it", async ({ page }) => {
+  await roomInTheDay(page);
   const mod = await seedModule();
   await insert("tasks", [
     { module_id: mod.id, title: "Uzun okuma", est_minutes: 60, importance: 4 },

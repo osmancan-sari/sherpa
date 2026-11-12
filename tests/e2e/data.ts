@@ -1,3 +1,4 @@
+import { createHash, randomBytes } from "node:crypto";
 import { adminClient } from "./supabase";
 
 // Test data for the signed-in specs. Everything goes through the project owner's client and is
@@ -131,4 +132,36 @@ export async function waitFor<T>(
     value = await read();
   }
   return value;
+}
+
+/** A device token in the test account, as Settings makes it: only its digest is stored (Ç3d). */
+export async function deviceToken(scopes: string[]): Promise<{ id: string; token: string }> {
+  const token = `shp_${randomBytes(32).toString("base64url")}`;
+  const [row] = await insert<{ id: string }>("device_tokens", {
+    name: "Kestirmeler",
+    token_hash: createHash("sha256").update(token).digest("hex"),
+    hint: token.slice(0, 8),
+    scopes,
+  });
+  return { id: row.id, token };
+}
+
+/** Posts to the ingest endpoint the way the phone's automation does: no cookies, a token. */
+export async function postIngest(
+  baseURL: string,
+  path: string,
+  token: string | null,
+  body: unknown = {},
+  key?: string,
+): Promise<Response> {
+  return fetch(`${baseURL}/api/ingest/${path}`, {
+    method: "POST",
+    redirect: "manual",
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...(key ? { "Idempotency-Key": key } : {}),
+    },
+    body: JSON.stringify(body),
+  });
 }

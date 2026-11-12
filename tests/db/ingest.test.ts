@@ -14,6 +14,17 @@ import { adminDb, makeModule, ok, ownerDb, ownerId, strangerDb, strangerId, wipe
 // owner's name. The end-to-end spec (tests/e2e/ingest.spec.ts) tries the same through Next.
 
 vi.mock("server-only", () => ({}));
+// The week kept after a bedtime may fail; the bedtime must stand anyway.
+const flags = vi.hoisted(() => ({ failWeek: false }));
+vi.mock("@/core/server/plan", async (importOriginal) => {
+  const real = await importOriginal<typeof import("@/core/server/plan")>();
+  return {
+    keepWeekOnServer: async (deps: Parameters<typeof real.keepWeekOnServer>[0]) => {
+      if (flags.failWeek) throw new Error("the week could not be written");
+      return real.keepWeekOnServer(deps);
+    },
+  };
+});
 const { handleIngest, INGEST_PER_MINUTE, INGEST_MAX_BYTES } = await import("@/core/server/ingest");
 
 const owner = ownerDb();
@@ -134,6 +145,7 @@ beforeEach(async () => {
   await wipe();
   seen.length = 0;
   failNext = false;
+  flags.failWeek = false;
 });
 afterAll(wipe);
 
@@ -401,7 +413,7 @@ describe("the core's kinds", () => {
     const after = await loadPlanRows(owner, new Date("2026-11-12T09:00:00+03:00"));
     expect(isReturning(input(after))).toBe(false);
 
-    // With a moment of its own: the night before 05:00 belongs to the day before.
+    // With a moment of its own, after the night (05:00): that day.
     await call({
       path: "core/wake",
       token,
@@ -475,5 +487,128 @@ describe("the core's kinds", () => {
     const after = (recommitted.day_capacity as Record<string, number>)["2026-11-13"];
     expect(after).toBeLessThan(before - 30);
     expect(recommitted.updated_at > committed.updated_at).toBe(true);
+  });
+});
+
+describe("the ingest endpoint's edges (Ç3d step 3 audit)", () => {
+  it("limits a flood of refused requests too, and stops writing it", async () => {
+    const token = await tokenWith(["core/bed"]);
+    for (let n = 0; n < INGEST_PER_MINUTE; n++) {
+      expect((await call({ path: "core/wake", token })).status).toBe(403);
+    }
+    expect(await call({ path: "core/yok", token })).toEqual({
+      status: 429,
+      body: { error: "rate_limited" },
+    });
+    expect(await ownerRows("ingest_requests")).toHaveLength(INGEST_PER_MINUTE);
+  });
+
+  it("gives up the key of a request cut off while processing, after five minutes", async () => {
+    await makeModule(owner);
+    const token = await tokenWith(["sinama/kayit"]);
+    const [tokenRow] = ok(await owner.from("device_tokens").select("id"));
+    const digest = await hashToken("k-uzun");
+    const stamp = (minutesAgo: number) => new Date(Date.now() - minutesAgo * 60_000).toISOString();
+    const [recent] = ok(
+      await adminDb()
+        .from("ingest_requests")
+        .insert({
+          user_id: ownerId(),
+          token_id: tokenRow.id,
+          source: "sinama",
+          kind: "kayit",
+          idempotency_key: digest,
+          status: "processing",
+          http_status: 102,
+          created_at: stamp(2),
+        })
+        .select(),
+    );
+    // Two minutes: maybe still running.
+    expect(
+      (await call({ path: "sinama/kayit", token, body: { title: "A" }, key: "k-uzun" })).status,
+    ).toBe(409);
+    ok(
+      await adminDb()
+        .from("ingest_requests")
+        .update({ created_at: stamp(10) })
+        .eq("id", recent.id)
+        .select(),
+    );
+    // Ten minutes: cut off. The new request takes the key over and is handled.
+    expect(
+      await call({ path: "sinama/kayit", token, body: { title: "A" }, key: "k-uzun" }),
+    ).toEqual({
+      status: 200,
+      body: { ok: true },
+    });
+    const [old] = ok(await adminDb().from("ingest_requests").select("*").eq("id", recent.id));
+    expect(old).toMatchObject({ status: "failed", error: "abandoned", idempotency_key: null });
+    expect(seen).toHaveLength(1);
+  });
+
+  it("takes a moment at most a day back and five minutes ahead, the context's too", async () => {
+    const token = await tokenWith(["core/wake", "core/context"]);
+    const old = await call({
+      path: "core/wake",
+      token,
+      body: { at: new Date(Date.now() - 25 * 3_600_000).toISOString() },
+    });
+    expect(old).toEqual({
+      status: 400,
+      body: { error: "invalid_body", issues: [{ path: "at", message: "is more than a day ago" }] },
+    });
+    const ahead = await call({
+      path: "core/context",
+      token,
+      body: { context: "home", at: new Date(Date.now() + 10 * 60_000).toISOString() },
+    });
+    expect(ahead.body).toMatchObject({ error: "invalid_body", issues: [{ path: "at" }] });
+    expect(await ownerRows("days")).toEqual([]);
+    expect(await ownerRows("events")).toEqual([]);
+  });
+
+  it("puts a waking before 05:00 on the day before, as the screen sees it then", async () => {
+    ok(await owner.from("settings").insert({}).select());
+    const token = await tokenWith(["core/wake"]);
+    await call({
+      path: "core/wake",
+      token,
+      body: { at: "2026-11-12T04:30:00+03:00" },
+      now: new Date("2026-11-12T04:31:00+03:00"),
+    });
+    expect((await ownerRows("days")).map((row) => row.date)).toEqual(["2026-11-11"]);
+  });
+
+  it("refuses a body announced larger than the limit before reading it", async () => {
+    const token = await tokenWith(["core/wake"]);
+    const result = await call({
+      path: "core/wake",
+      token,
+      headers: { "Content-Length": String(INGEST_MAX_BYTES + 1) },
+    });
+    expect(result).toEqual({ status: 413, body: { error: "body_too_large" } });
+  });
+
+  it("keeps the bedtime when the week cannot be kept after it", async () => {
+    flags.failWeek = true;
+    const token = await tokenWith(["core/bed"]);
+    expect(await call({ path: "core/bed", token })).toEqual({ status: 200, body: { ok: true } });
+    const [day] = await ownerRows("days");
+    expect(day.bed_at).not.toBeNull();
+  });
+
+  it("does not let the user rewrite when a request came or what it was", async () => {
+    const token = await tokenWith(["core/wake"]);
+    await call({ path: "core/wake", token });
+    const [row] = await ownerRows("ingest_requests");
+    for (const change of [
+      { created_at: "2000-01-01T00:00:00Z" },
+      { kind: "bed" },
+      { token_id: row.token_id },
+    ]) {
+      const { error } = await owner.from("ingest_requests").update(change).eq("id", row.id);
+      expect(error?.code, JSON.stringify(change)).toBe("42501");
+    }
   });
 });

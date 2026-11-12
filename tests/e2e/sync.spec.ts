@@ -1,7 +1,7 @@
 import type { Browser, BrowserContext, Page } from "@playwright/test";
-import { insert, rows, seedModule, waitFor } from "./data";
+import { deviceToken, insert, postIngest, rows, seedModule, update, waitFor } from "./data";
 import { expect, test } from "./fixtures";
-import { STORAGE_STATE } from "./helpers";
+import { roomInTheDay, STORAGE_STATE } from "./helpers";
 
 // Two devices, one account: what happens on the phone shows on the second screen without a
 // reload (docs/11-yayin-ve-cihazlar.md, "Eşitleme"). Both pages stay open the whole time;
@@ -77,12 +77,14 @@ test("a session started on the phone runs on the desktop, and Bitti there ends i
     est_minutes: 45,
   });
 
+  await roomInTheDay(desktop);
   await desktop.goto("/");
   const desktopNow = desktop.getByRole("region", { name: "Şimdi" });
   await expect(desktopNow.getByRole("button", { name: "Başla" })).toBeVisible();
   const desktopNavigations = forbidReloads(desktop);
 
   const mobile = await phone(browser, baseURL!);
+  await roomInTheDay(mobile.page);
   await mobile.page.goto("/");
   const mobileNow = mobile.page.getByRole("region", { name: "Şimdi" });
   await mobileNow.getByRole("button", { name: "Başla" }).tap();
@@ -143,6 +145,7 @@ test("a change made outside the app reaches an open screen too", async ({ page }
 test("a fixed block added elsewhere re-plans the open screen at once (Ç3)", async ({ page }) => {
   const mod = await seedModule();
   await insert("tasks", { module_id: mod.id, title: "Rapor yazımı", est_minutes: 45 });
+  const clock = await roomInTheDay(page);
   await page.goto("/");
   const now = page.getByRole("region", { name: "Şimdi" });
   await expect(now.getByRole("heading")).toHaveText("Rapor yazımı");
@@ -151,12 +154,57 @@ test("a fixed block added elsewhere re-plans the open screen at once (Ç3)", asy
   // A meeting that started five minutes ago, added on another device.
   await insert("blocks", {
     title: "Acil toplantı",
-    starts_at: new Date(Date.now() - 5 * 60_000).toISOString(),
-    ends_at: new Date(Date.now() + 60 * 60_000).toISOString(),
+    starts_at: new Date(clock.getTime() - 5 * 60_000).toISOString(),
+    ends_at: new Date(clock.getTime() + 60 * 60_000).toISOString(),
   });
   await expect(now).toContainText("Sabit blok", { timeout: 3000 });
   await expect(now.getByRole("heading")).toHaveText("Acil toplantı");
   // The work is still on the day, after the block (or, late at night, for if there is time).
   await expect(page.getByRole("main")).toContainText("Rapor yazımı");
   expect(navigations()).toBe(0);
+});
+
+test("what the ingest endpoint writes reaches open screens: the waking, a record, the last use (Ç3d)", async ({
+  page,
+  browser,
+  baseURL,
+}) => {
+  // The day's frame on, so the top bar shows the waking.
+  const [settings] = await rows("settings");
+  await update("settings", settings.id as string, {
+    day_frame: { wake: ["06:00", "09:00"], bed: ["22:00", "01:00"], sleep_minutes: 480 },
+  });
+  await insert("modules", { slug: "deneme", name: "Deneme", color: "#6250d6" });
+  const { token } = await deviceToken(["core/wake", "deneme/kayit"]);
+
+  await page.goto("/");
+  const wake = page.getByTestId("wake-line");
+  await expect(wake).toHaveText(/^beklenen uyanış/);
+  const other = await browser.newContext({ baseURL, storageState: STORAGE_STATE });
+  const moduleTab = await other.newPage();
+  await moduleTab.goto("/m/deneme");
+  await expect(moduleTab.getByRole("heading", { name: "Deneme", level: 1 })).toBeVisible();
+  const settingsTab = await other.newPage();
+  await settingsTab.goto("/ayarlar");
+  await expect(settingsTab.getByTestId("device-token")).toContainText("Henüz kullanılmadı");
+  const navigations = [forbidReloads(page), forbidReloads(moduleTab), forbidReloads(settingsTab)];
+
+  // The phone's alarm automation: Today shows the waking.
+  expect((await postIngest(baseURL!, "core/wake", token)).status).toBe(200);
+  await expect(wake).toHaveText(/^uyanış \d\d:\d\d$/);
+
+  // A collector's record: the module's page lists it, and its work is proposed.
+  const sent = await postIngest(baseURL!, "deneme/kayit", token, {
+    title: "Dışarıdan gelen kayıt",
+  });
+  expect(sent.status).toBe(200);
+  await expect(moduleTab.getByText("Dışarıdan gelen kayıt").first()).toBeVisible();
+  await waitFor(
+    () => rows("work_items"),
+    (list) => list.some((item) => item.title === "Dışarıdan gelen kayıt"),
+  );
+  // Settings shows the token's last use.
+  await expect(settingsTab.getByTestId("device-token")).toContainText("Son kullanım:");
+  expect(navigations.map((count) => count())).toEqual([0, 0, 0]);
+  await other.close();
 });

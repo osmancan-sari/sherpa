@@ -36,8 +36,14 @@ create trigger set_updated_at before update on public.ingest_requests
 
 alter table public.ingest_requests enable row level security;
 revoke all on table public.ingest_requests from anon, authenticated;
--- Kept, never removed: the record of what came in.
-grant select, insert, update on table public.ingest_requests to authenticated;
+-- Kept, never removed: the record of what came in. The moment and the kind of a request are
+-- fixed once written (the rate limit counts by them); only how it ended changes, and its key is
+-- given back when it failed.
+grant select on table public.ingest_requests to authenticated;
+grant insert (token_id, source, kind, idempotency_key, status, http_status, error, finished_at)
+  on table public.ingest_requests to authenticated;
+grant update (status, http_status, error, finished_at, idempotency_key)
+  on table public.ingest_requests to authenticated;
 
 create policy "own rows: read" on public.ingest_requests for select to authenticated
   using (user_id = (select auth.uid()));

@@ -1,5 +1,6 @@
 import { insert, rows, seedModule, update, waitFor } from "./data";
 import { expect, test } from "./fixtures";
+import { roomInTheDay } from "./helpers";
 
 // The first Today screen: the pool in order, the "now" card, Başla and Bitti, unplanned work.
 
@@ -58,6 +59,7 @@ test("Başla then Bitti leaves one session record and finishes the task", async 
 test("two sessions are never open at once: starting another task stops the first", async ({
   page,
 }) => {
+  await roomInTheDay(page);
   const mod = await seedModule();
   await insert("tasks", [
     { module_id: mod.id, title: "Birinci iş", due_at: at(60) },
@@ -95,6 +97,7 @@ test("two sessions are never open at once: starting another task stops the first
 });
 
 test("the pool is ordered by deadline, then importance", async ({ page }) => {
+  await roomInTheDay(page);
   const mod = await seedModule();
   await insert("tasks", [
     { module_id: mod.id, title: "Tarihsiz" },
@@ -127,6 +130,7 @@ test("the pool is ordered by deadline, then importance", async ({ page }) => {
 test("one tap finishes a task from the list, and the finish can be taken back", async ({
   page,
 }) => {
+  await roomInTheDay(page);
   const mod = await seedModule();
   await insert("tasks", [
     { module_id: mod.id, title: "Önce bu", due_at: at(60) },
@@ -178,6 +182,7 @@ test("unplanned work: one line starts a session without a task", async ({ page }
 test("a work item is started as its next sitting, and the time counts towards it", async ({
   page,
 }) => {
+  await roomInTheDay(page);
   const mod = await seedModule();
   const [item] = await insert("work_items", {
     module_id: mod.id,
@@ -349,6 +354,7 @@ test("a read that fails is not shown as an empty day", async ({ page }) => {
 });
 
 test("a write that fails is taken back on the screen and said so", async ({ page }) => {
+  await roomInTheDay(page);
   const mod = await seedModule();
   await insert("tasks", [
     { module_id: mod.id, title: "Birinci iş", due_at: at(60) },
