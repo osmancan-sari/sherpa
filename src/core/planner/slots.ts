@@ -1,3 +1,4 @@
+import { readFrame } from "@/core/contract/frame";
 import type { Block, DayType, Settings } from "@/core/types";
 import { istanbulInstant, shiftDay } from "@/lib/date";
 import { overlapMinutes, type Range } from "./timing";
@@ -15,6 +16,7 @@ export const DEFAULT_SETTINGS: PlannerSettings = {
   slot: { deepMin: 45, deepMax: 90, lightMin: 15, breakMin: 15 },
   defaultDayType: "home",
   returnAfterDays: 3,
+  frame: null,
 };
 
 /** A learned value is used only once this many samples are behind it. */
@@ -48,6 +50,7 @@ export function plannerSettings(row: Settings | null | undefined): PlannerSettin
     },
     defaultDayType: row.default_day_type ?? d.defaultDayType,
     returnAfterDays: row.return_after_days ?? d.returnAfterDays,
+    frame: readFrame(row.day_frame),
   };
 }
 
@@ -199,7 +202,13 @@ export function dayCapacity(
   /** Only the slot time inside these ranges (a work's windows); null for all of it. */
   allowed: Range[] | null = null,
 ): number {
-  const start = istanbulInstant(day, settings.dayStart);
+  // With the day's frame the day starts where the frame says (its waking and morning work).
+  // Days the frame did not work out start at the end of their waking range.
+  const own = settings.dayStarts?.[day];
+  const start =
+    own !== undefined
+      ? new Date(own)
+      : istanbulInstant(day, settings.frame ? settings.frame.wake[1] : settings.dayStart);
   const end = istanbulInstant(day, settings.finishLine);
   const window = {
     start: bounds.from && bounds.from > start ? bounds.from : start,

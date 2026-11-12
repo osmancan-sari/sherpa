@@ -56,6 +56,11 @@ export type PlanCallInput = {
   note: string | null;
   /** `replan` only: what is already done today. */
   done_today?: string[];
+  /**
+   * With the day's frame (Ç3c): the working window, from after waking and the morning routine
+   * to the finish line, and the expected bedtime ("HH:mm"). Nothing else of sleep goes out.
+   */
+  day?: { start: string; finish: string; bed: string };
 };
 
 export const planOutput = z.object({
@@ -90,11 +95,13 @@ const PLAN_RULES = `
   engine refuses it). Each with one short reason the user reads behind "neden?".
 - "estimates": only where the given minutes are clearly wrong for the work, 5 to 90.
 - "warnings": at most two short sentences, only for what the user must know today.
-- Plan within "capacity_minutes"; the engine cuts what does not fit.`;
+- Plan within "capacity_minutes"; the engine cuts what does not fit.
+- "day", when given, is the working window ("start" to "finish") and the expected bedtime
+  ("bed"); work belongs inside the window. Do not plan, judge or mention sleep.`;
 
 export const planSpec: AiCallSpec<PlanOutput> = {
   kind: "plan",
-  version: "plan-3",
+  version: "plan-4",
   maxTokens: 6000,
   schema: planOutput,
   system: `You plan one day of a planning app's user. The engine already made a valid plan
@@ -107,7 +114,7 @@ ${SHARED_RULES}`,
 
 export const replanSpec: AiCallSpec<PlanOutput> = {
   kind: "replan",
-  version: "replan-3",
+  version: "replan-4",
   maxTokens: 6000,
   schema: planOutput,
   system: `The user's day fell apart and they asked to plan the rest of it again. "done_today"

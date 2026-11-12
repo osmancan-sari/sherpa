@@ -5,8 +5,9 @@ import {
   DEFAULT_SETTINGS,
   type PlanInput,
   type PlanRows,
+  planInput,
 } from "@/core/planner";
-import { moduleRow, rhythm, task, workItem } from "@/core/testing/factories";
+import { dayRow, moduleRow, rhythm, settingsRow, task, workItem } from "@/core/testing/factories";
 import { istanbulInstant } from "@/lib/date";
 import { adviceOf, MAX_CANDIDATES, planCallInput, weekCallInput } from "./planning";
 
@@ -166,5 +167,28 @@ describe("the week call's input", () => {
     ]);
     expect(call.base).toEqual([item.id]);
     expect(call.last_week).toBeNull();
+  });
+});
+
+describe("the day's frame in the plan call (Ç3c)", () => {
+  it("carries the working window and the expected bedtime, and nothing else of sleep", () => {
+    const data = rows({
+      settings: settingsRow(),
+      days: [
+        dayRow({ date: DATE, woke_at: at("07:10").toISOString(), woke_estimated: true }),
+        dayRow({
+          date: "2026-11-11",
+          bed_at: istanbulInstant("2026-11-11", "23:40").toISOString(),
+        }),
+      ],
+    });
+    const framed = planInput(data, { date: DATE, now: at("09:00"), context: "desk" });
+    const call = planCallInput(data, framed, buildPlan(framed), null, false);
+    expect(call.day).toEqual({ start: "07:10", finish: "19:00", bed: "01:00" });
+    const text = JSON.stringify(call);
+    expect(text).not.toMatch(/woke|bed_at|23:40|sleep|estimated/);
+    // Without the frame there is no "day" at all.
+    const plain = planCallInput(rows(), input(), buildPlan(input()), null, false);
+    expect(plain).not.toHaveProperty("day");
   });
 });

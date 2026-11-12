@@ -8,6 +8,7 @@ import type {
   Rhythm,
   RhythmLog,
   Session,
+  Settings,
   Task,
   WorkItem,
 } from "@/core/types";
@@ -283,6 +284,26 @@ export function lifeModePeriod(overrides: Partial<LifeModePeriod> = {}): LifeMod
     starts_on: "2026-11-09",
     ends_on: "2026-11-15",
     note: null,
+    created_at: STAMP,
+    updated_at: STAMP,
+    ...overrides,
+  };
+}
+
+/** The settings row; with the day's frame on, the user's ranges (Ç3c). */
+export function settingsRow(overrides: Partial<Settings> = {}): Settings {
+  return {
+    id: testId(),
+    user_id: USER_ID,
+    finish_line_default: "19:00:00",
+    day_start_default: "08:00:00",
+    capacity_factors: { home: 0.7, office: 0.4, campus: 0.5 },
+    slot: { deep_min: 45, deep_max: 90, light_min: 15, break_min: 15 },
+    default_day_type: "home",
+    return_after_days: 3,
+    ai_enabled: true,
+    ai_monthly_budget_usd: 5,
+    day_frame: { wake: ["06:00", "09:00"], bed: ["22:00", "01:00"], sleep_minutes: 480 },
     created_at: STAMP,
     updated_at: STAMP,
     ...overrides,

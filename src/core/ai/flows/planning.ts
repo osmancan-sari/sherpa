@@ -62,6 +62,16 @@ export function planCallInput(
     weekday: WEEKDAYS[weekdayOf(input.date)],
     life_mode: input.lifeMode,
     capacity_minutes: base.usableMinutes,
+    // The day's window and bedtime only; the sleep history stays here (Ç3c).
+    ...(input.frame
+      ? {
+          day: {
+            start: formatTime(input.dayStart),
+            finish: formatTime(input.finishLine),
+            bed: formatTime(input.frame.bed),
+          },
+        }
+      : {}),
     base: {
       top3: base.top3,
       placed: base.slots.flatMap((slot) => (slot.assignment ? [slot.assignment.candidate.id] : [])),

@@ -1,3 +1,4 @@
+import type { FrameSettings } from "@/core/contract/frame";
 import type { Timing } from "@/core/contract/timing";
 import type {
   Block,
@@ -26,6 +27,14 @@ export type PlannerSettings = {
   slot: { deepMin: number; deepMax: number; lightMin: number; breakMin: number };
   defaultDayType: DayType;
   returnAfterDays: number;
+  /** The day's frame (Ç3c); null: off, the planner works as in Ç3b. */
+  frame: FrameSettings | null;
+  /**
+   * Where each day's work starts (instants in ms by day key), when the frame knows better than
+   * `dayStart`: today from the waking, tomorrow from its expected waking, the days after from
+   * their latest waking. Day capacities read it.
+   */
+  dayStarts?: Record<string, number>;
 };
 
 /** A learned value (`planner_stats`): `est_multiplier:<module slug>:<task kind>`, `capacity:<day type>`. */
@@ -51,6 +60,8 @@ export type PlanInput = {
   finishLine: Date;
   /** The evening closing was done for this day: the screen is in its night state. */
   closed?: boolean;
+  /** The day's frame (Ç3c): waking, bedtime, the sleep plans. Absent when the frame is off. */
+  frame?: DayFrame;
   /** Fixed blocks of this day and the days after it (later days count for urgency). */
   blocks: Block[];
   /** Open tasks, and the ones finished recently (for the day's progress). */
@@ -88,6 +99,44 @@ export type PlanInput = {
 };
 
 export type WeekShare = { minutes: number; from: number };
+
+/** Why a night's sleep is under its target (docs/04-planlayici.md, "Uyku planı"). */
+export type ShortSleep = "obligation" | "late_bed" | "early_wake";
+
+/** One night and the morning after it. */
+export type SleepPlan = {
+  /** The latest waking the morning's first obligation allows (or the range's end). */
+  latestWake: Date;
+  /** The planned waking: the user's own value, else the latest, pulled earlier by the load. */
+  wake: Date;
+  /** The planned bedtime: the waking minus the sleep target, inside the bedtime range. */
+  bed: Date;
+  /** The waking the day is planned with when none is recorded: a real bedtime moves it. */
+  expectedWake: Date;
+  /** Expected sleep: the expected waking minus the bedtime (real or planned). */
+  sleepMinutes: number;
+  short: ShortSleep | null;
+};
+
+/** The day's frame as the planner reads it (Ç3c). */
+export type DayFrame = {
+  /** Recorded waking, else the user's value for the day, else the sleep plan's. */
+  wake: Date;
+  /** A waking is recorded (by "Uyandım", or estimated from the first touch). */
+  woke: boolean;
+  estimated: boolean;
+  /** Recorded bedtime, else the user's value for the night, else the sleep plan's. */
+  bed: Date;
+  bedAt: Date | null;
+  /** The end of tonight's bedtime range: the night state comes then at the latest. */
+  bedEnd: Date;
+  /** The morning state lasts until then (an hour after the waking range). */
+  morningUntil: Date;
+  /** Last night and this morning. */
+  lastNight: SleepPlan;
+  /** Tonight and tomorrow morning. */
+  tonight: SleepPlan;
+};
 
 export type CandidateType = "task" | "item" | "rhythm" | "follow_up";
 
@@ -140,6 +189,8 @@ export type Slot = {
   minutes: number;
   kind: SlotKind;
   assignment: Assignment | null;
+  /** Outside the working window (Ç3c): wake-bound work, the evening, bed-bound work. */
+  part?: "wake" | "evening" | "bed";
 };
 
 export type WarningKind =
@@ -168,6 +219,10 @@ export type NowState =
   | { kind: "suggest"; assignment: Assignment; at?: Date }
   | { kind: "done"; finished: number; minutes: number }
   | { kind: "night" }
+  /** Ç3c: the day has begun and nobody said "Uyandım"; `first` is the first wake-bound work. */
+  | { kind: "morning"; first: Assignment | null }
+  /** Ç3c: past the finish line (or closed), before bed; `next` is the evening's next work. */
+  | { kind: "evening"; next: Assignment | null; closed: boolean }
   | { kind: "return"; top3: Candidate[] }
   | { kind: "empty" };
 
@@ -187,4 +242,14 @@ export type Plan = {
   plannedMinutes: number;
   /** Every candidate the day had, scored, best first. */
   candidates: Candidate[];
+  /** The day's frame (Ç3c): where its parts begin and end. Absent when the frame is off. */
+  frame?: {
+    wake: Date;
+    /** Where the working window begins: the waking plus the wake-bound work. */
+    workStart: Date;
+    finishLine: Date;
+    /** Where the evening ends: the bedtime minus the bed-bound work. */
+    eveningEnd: Date;
+    bed: Date;
+  };
 };

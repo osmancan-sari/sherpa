@@ -5,7 +5,7 @@ import {
   lifeModeOn,
   type PlannerStat,
   type PlanRows,
-  plannerSettings,
+  weekSettings,
   readShares,
   storedPlan,
   type WeekAdvice,
@@ -106,7 +106,8 @@ export function weekInput(rows: PlanRows, now: Date): WeekInput {
     rhythms: rows.rhythms,
     modules: rows.modules,
     blocks: rows.blocks,
-    settings: plannerSettings(rows.settings),
+    // With the day's frame each day starts at its expected waking (Ç3c).
+    settings: weekSettings(rows, now),
     stats: rows.stats.map((row) => ({
       key: row.key,
       value: Number(row.value),

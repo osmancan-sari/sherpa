@@ -34,5 +34,14 @@ export type { WeekAdvice, WeekInput, WeekLoad, WeekPlan, LoadInput, RecommitReas
 export { capacityFactors, estimateMultipliers } from "./learn";
 export { ANSWER_MINUTES, OVERRUN_FACTOR, overrun } from "./overrun";
 export type { Overrun } from "./overrun";
-export { planInput, tomorrowInput, lifeModeOn, readShares, storedPlan } from "./input";
+export {
+  planInput,
+  tomorrowInput,
+  lifeModeOn,
+  readShares,
+  storedPlan,
+  weekSettings,
+} from "./input";
+export { bedInstant, dayStartClock, sleepPlan, MORNING_GRACE } from "./frame";
+export type { FrameDay, SleepArgs } from "./frame";
 export type { PlanRows, StoredDayPlan } from "./input";

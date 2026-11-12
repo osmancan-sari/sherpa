@@ -6,7 +6,7 @@ Bu dosyayı Claude Code günceller. Yeni bir oturum yalnızca bu dosyayı ve `pr
 
 - Faz: **Ç3c (Sahne ve günün çerçevesi) sürüyor** (12 Kas 2026). Ç0–Ç3b bitti (`c3b-tamam`); D1–D4 tamamlandı
 - Adım: 2 (planlayıcı)
-- Son commit: C3c step 1: day frame columns, timing anchor and after_finish, the sittings race closed
+- Son commit: C3c step 2: the planner's day frame (sleep plan, anchors, evening, states)
 
 ### Ç3c planı
 
@@ -16,7 +16,7 @@ Bu dosyayı Claude Code günceller. Yeni bir oturum yalnızca bu dosyayı ve `pr
 | --- | --- | --- |
 | 0 | Tasarım `docs/03`, `04`, `05`, `06`, `07`, `09`, `12`'ye işlendi | bitti |
 | 1 | Veri ve zarf: migration (`days` uyanış ve yatış sütunları, `settings.day_frame`), `day_frame` doğrulaması, `timing.anchor`, `order`, `after_finish`; Ç3b'nin yarışı: kalemin oturum işini kalem satırını kilitleyerek açan `start_session` ve `save_week_sittings`, yarış testi | bitti (`20261112123800_day_frame.sql`). Yarış testi önce eski kodla koşuldu: 20 turun 5'inde kalemin iki açık oturum işi oldu; düzeltmeden sonra 3 × 20 turda hiç. `src/core/contract/frame.ts` (+ `frame.test.ts` 4), `timing.test.ts` +6, `tests/db/planning.test.ts` +5. Adım denetimi 2. adımla birlikte |
-| 2 | Planlayıcı: uyku planı, günün başı, çapalı işler, akşam, `morning`/`evening`/`night`, haftanın günlük kapasitesi; önce testler | |
+| 2 | Planlayıcı: uyku planı, günün başı, çapalı işler, akşam, `morning`/`evening`/`night`, haftanın günlük kapasitesi; önce testler | bitti: `src/core/planner/frame.ts` (`sleepPlan`, `dayFrameOf`, `dayStartClock`), `plan.ts` (`frameParts`, durumlar), `candidates.ts` (çapalı adaylar ayrı), `input.ts` (`planInput` çerçeveyi kurar, `weekSettings`), `slots.ts` (`dayStarts`). Plan çağrısı çerçeve açıkken `day` (pencere ve beklenen yatış) taşır: `plan-4`, `replan-4`. Testler: `frame.test.ts` 23 (önce yazıldı; iki beklentim yanlıştı, aşağıda), `flows/planning.test.ts` +1. Ç3 ve Ç3b testleri değişmedi |
 | 3 | Uyanış ve yatış: kayıt, tahmini uyanış, kaydırma, planlanan değerlerin günün kaydına yazılması, ayarlar | |
 | 4 | Oturum ve gün olayları; yalnızca sahibine teslim | |
 | 5 | Sahne: `ui.scene`, şerit, çıkış ve dönüş, hata sınırı, `StepRunner`; `deneme`'de iki sahne | |
@@ -542,6 +542,9 @@ Süre sapmasındaki artış çoğunlukla `enrich`'in kendi tahminlerinin çalı�
 
 | Tarih | Karar | Gerekçe | Etkilediği dosyalar |
 | --- | --- | --- | --- |
+| 12 Kas 2026 | Ç3c: akşam gündüz gibi yuvalara kesilir (90 dk derin, 15 dk mola): 20:00–22:00 pencereli bir saatlik iş 19:00'dan başlayan akşamda 20:45'e düşer. Akşamın boş yuvaları da planın yuvalarındadır (`part: "evening"`). Yeni testimin ilk beklentisi 20:00'ydi; doküman "aynı yuva kuralları" diyor, beklentiyi kurala göre düzelttim | Gündüzle aynı kural; ayrı bir akşam kuralı kurmamak. **Görüşün gerek** (akşamda mola anlamsız olabilir) | `src/core/planner/plan.ts`, `frame.test.ts` |
+| 12 Kas 2026 | Ç3c: zamanı geçmiş uyanışa bağlı iş (sabah rutini yapılmadı) gün boyu önerilmez, "vakit kalırsa"ya da düşmez; yatışa bağlı iş de zamanı geçince düşer | Ürün kuralı 2: kaçan iş sessizce bırakılır; öğlen "sabah rutini" önermek anlamsız | `src/core/planner/plan.ts` |
+| 12 Kas 2026 | Ç3c: sabah durumu uyanış aralığının sonundan 60 dk sonra biter; o saate kadar "Uyandım" denmemişse gün beklenen uyanışla kurulur. Uyku planının yükü gün için o günün zorunlu işleri + haftanın kalan payının kalan günlere eşit bölümü; haftanın kapasitesinde yarından sonraki günler en geç uyanıştan sayılır (yük çekmesi hesaplanmaz); 8 günden ötesi uyanış aralığının sonundan | Kural 3 (ritüel yok) ve hesap maliyeti. **Görüşün gerek** (sabahın süresi) | `src/core/planner/frame.ts` |
 | 12 Kas 2026 | Ç3c: **Test değişikliği:** uçtan uca testlerin hesabı `day_frame: null` ile kurulur (`TEST_DAY`); günün çerçevesini sınayan testler onu kendileri açar | Çerçeve açıkken "Günaydın" ve akşam ekranları gerçek saate bağlıdır; Ç3 ve Ç3b'nin testleri günün her saatinde koşar (hesabın günü 00:00–23:59). Beklentilerin hiçbiri değişmedi | `tests/e2e/data.ts` |
 | 12 Kas 2026 | Ç3c: `settings.day_frame` boşsa çerçeve kapalıdır, planlayıcı Ç3b'deki gibi çalışır; sütunun başlangıç değeri kullanıcının aralıklarıdır (var olan satırlar da bu değeri alır). Bozuk bir değer varsayılanlarla okunur | Çerçevenin açıkken bile pencere içindeki planı değiştirmediği ayrıca sınanır (2. adım); kapalı yol eski testlerin dayanağıdır | `supabase/migrations/20261112123800_day_frame.sql`, `src/core/contract/frame.ts`, `docs/03` |
 | 12 Kas 2026 | Ç3c: aynı çapadaki işlerin sırası `timing.order` (1–99); `anchor` saat aralıkları, yol ve `after_finish` ile birlikte kullanılmaz (`rest_days` ile kullanılır); `after_finish` yalnızca `true` yazılır, `false` atılır; üçü de sabit zamanda kullanılmaz | `docs/12` "modülün verdiği order" diyordu ama alanı tanımlamıyordu; çapalı iş saate değil uyanışa bağlı olduğu için pencere ve yol anlamsız | `src/core/contract/timing.ts`, `docs/03`, `docs/06` |

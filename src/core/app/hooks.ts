@@ -18,7 +18,14 @@ import { listModules } from "@/core/data/module-rows";
 import { getOpenSession, listSessions } from "@/core/data/sessions";
 import { listDays, listLifeModes, listStats, listWeekPlans } from "@/core/data/planning";
 import { listRhythmLogs, listRhythms, listTasks, listWorkItems } from "@/core/data/work";
-import { buildPlan, type PlanRows, planInput, plannerSettings, planningDay } from "@/core/planner";
+import {
+  buildPlan,
+  dayStartClock,
+  type PlanRows,
+  planInput,
+  plannerSettings,
+  planningDay,
+} from "@/core/planner";
 import { type Context, type Db, type ModuleRow, unwrap } from "@/core/types";
 import { dayKey, shiftDay, weekStart } from "@/lib/date";
 import { readClock, readServerClock, subscribeClock } from "./clock";
@@ -343,7 +350,7 @@ export function useTodayPlan() {
   const result = useMemo(() => {
     if (!rows || now.getTime() === 0) return null;
     const settings = plannerSettings(rows.settings);
-    const date = planningDay(now, settings.dayStart);
+    const date = planningDay(now, dayStartClock(settings));
     const input = planInput(rows, { date, now, context });
     return { input, plan: buildPlan(input), rows };
   }, [rows, now, context]);

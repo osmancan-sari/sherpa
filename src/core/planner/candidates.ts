@@ -206,7 +206,11 @@ function withTiming(
 function openToday(candidate: Candidate, input: PlanInput): boolean {
   if (!candidate.timing?.windows) return true;
   const from = windowStartOf(input).getTime();
-  const to = input.finishLine.getTime();
+  // Work that may go into the evening (Ç3c) is open until bedtime.
+  const to =
+    input.frame && candidate.timing.after_finish
+      ? input.frame.bed.getTime()
+      : input.finishLine.getTime();
   return (allowedOn(candidate.timing, input.date) ?? []).some(
     (range) =>
       (Math.min(range.end, to) - Math.max(range.start, from)) / 60_000 >= candidate.minutes,
@@ -217,7 +221,12 @@ function openToday(candidate: Candidate, input: PlanInput): boolean {
  * The day's candidates, and the work kept out by its windows: what is left of them today is
  * too short, or they do not cover today. The warnings tell what could not be planned.
  */
-export function candidatesOf(input: PlanInput): { candidates: Candidate[]; closed: Candidate[] } {
+export function candidatesOf(input: PlanInput): {
+  candidates: Candidate[];
+  closed: Candidate[];
+  /** With the day's frame (Ç3c): work bound to the waking or the bedtime, kept out of the slots. */
+  anchored: Candidate[];
+} {
   const { date, lifeMode } = input;
   const modules = new Map(
     input.modules.filter((mod) => mod.status === "active").map((mod) => [mod.id, mod]),
@@ -442,11 +451,16 @@ export function candidatesOf(input: PlanInput): { candidates: Candidate[]; close
   markFloorWork(input, scored, modules);
   // The AI may put work off, but never mandatory work (the engine has the last word). This runs
   // after every mandatory mark, the weekly floors included.
+  const kept = scored
+    .filter((candidate) => !deferred.has(candidate.id) || candidate.mandatory !== null)
+    .sort(compareScored);
+  // Anchored work is placed at the waking or the bedtime, never in the slots. Without the frame
+  // the anchor means nothing (it carries no hours) and the work is planned like any other.
+  if (!input.frame) return { candidates: kept, closed, anchored: [] };
   return {
-    candidates: scored
-      .filter((candidate) => !deferred.has(candidate.id) || candidate.mandatory !== null)
-      .sort(compareScored),
+    candidates: kept.filter((candidate) => !candidate.timing?.anchor),
     closed,
+    anchored: kept.filter((candidate) => candidate.timing?.anchor),
   };
 }
 

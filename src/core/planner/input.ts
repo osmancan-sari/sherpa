@@ -17,9 +17,10 @@ import type {
   WorkItem,
 } from "@/core/types";
 import { istanbulInstant, shiftDay, weekStart } from "@/lib/date";
+import { dayFrameOf, dayStartClock } from "./frame";
 import { planningDay } from "./plan";
 import { dayTypeOf, plannerSettings } from "./slots";
-import type { PlanAdvice, PlanInput, WeekShare } from "./types";
+import type { PlanAdvice, PlanInput, PlannerSettings, WeekShare } from "./types";
 
 // The planner's input put together from the rows the app reads. Pure, and the same for the
 // screen (which re-plans on every change) and the server (which asks the AI): both plan the
@@ -134,7 +135,7 @@ export function planInput(
   const stored = storedPlan(day);
   const week = rows.weekPlans.find((row) => row.week_start === weekStart(date)) ?? null;
   const dayBegins = istanbulInstant(date);
-  return {
+  const base: PlanInput = {
     now,
     date,
     // Derived from the day's blocks (docs/03-veri-modeli.md, "Türetilen değerler"); the
@@ -175,12 +176,33 @@ export function planInput(
     startedToday: rows.sessions.some((row) => Date.parse(row.started_at) >= dayBegins.getTime()),
     advice: stored.advice ?? undefined,
   };
+  // The day's frame (Ç3c): the day starts at the waking and its morning work, not at the first
+  // touch; the days ahead start where their wakings are expected.
+  if (!settings.frame) return base;
+  const { frame, dayStarts } = dayFrameOf(base, settings.frame, rows.days);
+  return {
+    ...base,
+    frame,
+    dayStart: new Date(dayStarts[date]),
+    settings: { ...settings, dayStarts },
+  };
+}
+
+/**
+ * The planner settings the week is measured with: with the day's frame, each day of the week
+ * starts where the frame expects it to (docs/04-planlayici.md, "Günün çerçevesi", rule 4).
+ */
+export function weekSettings(rows: PlanRows, now: Date): PlannerSettings {
+  const settings = plannerSettings(rows.settings);
+  if (!settings.frame) return settings;
+  const date = planningDay(now, dayStartClock(settings));
+  return planInput(rows, { date, now, context: "desk" }).settings;
 }
 
 /** Tomorrow's input at the evening closing (and for the night screen's "first thing tomorrow"). */
 export function tomorrowInput(rows: PlanRows, options: { now: Date; context: Context }): PlanInput {
   // After midnight, before the night ends, "tomorrow" is the day that is starting.
-  const date = shiftDay(planningDay(options.now, plannerSettings(rows.settings).dayStart), 1);
+  const date = shiftDay(planningDay(options.now, dayStartClock(plannerSettings(rows.settings))), 1);
   return {
     ...planInput(rows, { ...options, date }),
     prompt: null,
