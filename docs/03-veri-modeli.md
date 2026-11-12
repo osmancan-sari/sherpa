@@ -414,7 +414,7 @@ Giriş ucuna gelen, anahtarı doğrulanmış isteklerin kaydı. Hız sınırı v
 ```
 token_id -> device_tokens
 source text, kind text        -- 'core', 'wake'
-idempotency_key text null     -- isteğin `Idempotency-Key` başlığı (1–200 karakter); (token_id, idempotency_key) tekil
+idempotency_key text null     -- isteğin `Idempotency-Key` başlığının SHA-256 özeti (başlık 1–200 görünür ASCII karakter); (token_id, idempotency_key) tekil
 status enum(processing, done, rejected, failed)
 http_status int
 error text null               -- hatanın adı ('invalid_body: at', 'forbidden'); gövde ve anahtar yazılmaz

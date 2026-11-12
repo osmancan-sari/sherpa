@@ -19,6 +19,8 @@ export const CORE_EVENTS = {
   dayStarted: "core.day_started",
   /** Ç3c: tonight's bedtime was recorded; to every active module. */
   dayClosed: "core.day_closed",
+  /** Ç3d: a context came from outside (the ingest endpoint `core/context`); to every module. */
+  contextReported: "core.context_reported",
 } as const;
 
 export type EmitResult = { event: AppEvent; failures: { module: string; error: unknown }[] };

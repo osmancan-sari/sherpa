@@ -130,3 +130,17 @@ test("the app asks not to be indexed", async ({ request, page }) => {
   await page.goto("/giris");
   await expect(page.locator('meta[name="robots"]')).toHaveAttribute("content", /noindex/);
 });
+
+test("the endpoints with their own key answer 401 without it, and their look-alikes stay gated (Ç3d)", async ({
+  request,
+}) => {
+  const response = await request.post("/api/ingest/core/wake", { maxRedirects: 0 });
+  expect(response.status()).toBe(401);
+  expect(await response.json()).toEqual({ error: "unauthorized" });
+  // Only the exact shapes skip the session gate.
+  for (const path of ["/api/ingest/core", "/api/ingest/core/wake/x", "/api/ingestx/core/wake"]) {
+    const gated = await request.post(path, { maxRedirects: 0 });
+    expect(gated.status(), path).toBe(401);
+    expect(await gated.json(), path).toEqual({ error: "unauthorized" });
+  }
+});

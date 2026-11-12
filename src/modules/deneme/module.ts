@@ -6,6 +6,7 @@ import { KitTab } from "./components/KitTab";
 import { denemeScene } from "./scene";
 import { FocusView, HistoryView, ItemPage, SettingsForm } from "./components/Views";
 import { kayitReader } from "./extract";
+import { ingest } from "./ingest";
 import { type DenemeKind, listItems, SOURCE_TYPE } from "./queries";
 import { addItem, EVENTS, listeners, onOutcome, proposalFor, settingsOf } from "./rules";
 
@@ -177,6 +178,9 @@ export const deneme: ModuleDefinition = {
   extractors: [kayitReader],
 
   tables: ["deneme_items"],
+
+  // While the app is closed (Ç3d): records from outside.
+  ingest,
 
   // Interface
   ui: {

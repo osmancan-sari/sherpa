@@ -1,7 +1,15 @@
-import type { NextRequest } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { updateSession } from "@/lib/supabase/proxy";
 
+/**
+ * The two endpoints that answer without a session and check their own key (Ç3d,
+ * docs/02-mimari.md "Kimlik ve güvenlik"): the ingest endpoint (a device token) and the
+ * scheduler's (CRON_SECRET). Both answer 401 without their key and never return data.
+ */
+const OWN_KEY = /^\/api\/(ingest\/[^/]+\/[^/]+|jobs\/tick)$/;
+
 export async function proxy(request: NextRequest) {
+  if (OWN_KEY.test(request.nextUrl.pathname)) return NextResponse.next();
   return updateSession(request);
 }
 

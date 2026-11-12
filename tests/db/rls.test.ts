@@ -73,6 +73,13 @@ const SAMPLES: Record<string, (ids: Record<string, string>) => Row> = {
     hint: "shp_AbCd",
     scopes: ["core/wake"],
   }),
+  ingest_requests: (ids) => ({
+    token_id: ids.device_tokens,
+    source: "core",
+    kind: "wake",
+    status: "done",
+    http_status: 200,
+  }),
 };
 
 /** Insert order: parents first. Tables not named here go last, in any order. */
@@ -86,12 +93,21 @@ const ORDER = [
   "rhythm_logs",
   "block_series",
   "blocks",
+  "device_tokens",
+  "ingest_requests",
 ];
 
 /** Tables whose rows are never changed or removed by design; the grants say so too. */
 const NO_UPDATE = new Set(["events", "ai_calls", "ai_feedback"]);
 // Device tokens are revoked, not removed (Ç3d).
-const NO_DELETE = new Set(["events", "inbox_entries", "ai_calls", "ai_feedback", "device_tokens"]);
+const NO_DELETE = new Set([
+  "events",
+  "inbox_entries",
+  "ai_calls",
+  "ai_feedback",
+  "device_tokens",
+  "ingest_requests",
+]);
 
 async function exposedTables(): Promise<string[]> {
   const key = process.env.SUPABASE_SECRET_KEY!;

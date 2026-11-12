@@ -116,6 +116,24 @@ describe("planInput", () => {
     expect(input.lastSeenAt).toEqual(at("07:30", "2026-11-11"));
   });
 
+  it("counts a recorded waking and bedtime as use, even when they came from outside (Ç3d)", () => {
+    // The phone's automation wrote them; nobody touched a screen those days.
+    const woke = dayRow({ date: "2026-11-11", woke_at: at("06:50", "2026-11-11").toISOString() });
+    const slept = dayRow({ date: "2026-11-10", bed_at: at("23:40", "2026-11-10").toISOString() });
+    const input = planInput(rows({ days: [slept, woke] }), {
+      date: DATE,
+      now: at("09:00"),
+      context: "desk",
+    });
+    expect(input.lastSeenAt).toEqual(at("06:50", "2026-11-11"));
+    const asleep = planInput(rows({ days: [slept] }), {
+      date: DATE,
+      now: at("09:00"),
+      context: "desk",
+    });
+    expect(asleep.lastSeenAt).toEqual(at("23:40", "2026-11-10"));
+  });
+
   it("adds up this week's minutes per module", () => {
     const mod = moduleRow();
     const monday = session({

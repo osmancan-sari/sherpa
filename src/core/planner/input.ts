@@ -84,7 +84,7 @@ export function lifeModeOn(periods: LifeModePeriod[], day: string): LifeMode {
 
 /**
  * The latest sign of use before the given instant: a session, a rhythm log, an entry, finished
- * work, a day's first touch or its closing.
+ * work, a day's first touch or its closing, a recorded waking or bedtime.
  */
 export function lastActivityBefore(rows: PlanRows, before: Date): Date | null {
   const limit = before.getTime();
@@ -98,10 +98,13 @@ export function lastActivityBefore(rows: PlanRows, before: Date): Date | null {
   rows.rhythmLogs.forEach((row) => see(row.created_at));
   rows.inbox.forEach((row) => see(row.created_at));
   rows.tasks.forEach((row) => see(row.done_at));
-  // Opening a screen and touching it, and the evening closing, are use as well.
+  // Opening a screen and touching it, and the evening closing, are use as well; so are a
+  // recorded waking and bedtime, also when the phone's automation wrote them (Ç3d).
   rows.days.forEach((row) => {
     see(row.started_at);
     see(row.closed_at);
+    see(row.woke_at);
+    see(row.bed_at);
   });
   return latest > 0 ? new Date(latest) : null;
 }

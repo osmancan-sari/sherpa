@@ -573,6 +573,60 @@ export type Database = {
         };
         Relationships: [];
       };
+      ingest_requests: {
+        Row: {
+          created_at: string;
+          error: string | null;
+          finished_at: string | null;
+          http_status: number;
+          id: string;
+          idempotency_key: string | null;
+          kind: string;
+          source: string;
+          status: Database["public"]["Enums"]["ingest_status"];
+          token_id: string;
+          updated_at: string;
+          user_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          created_at?: string;
+          error?: string | null;
+          finished_at?: string | null;
+          http_status: number;
+          id?: string;
+          idempotency_key?: string | null;
+          kind: string;
+          source: string;
+          status: Database["public"]["Enums"]["ingest_status"];
+          token_id: string;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Update: {
+          created_at?: string;
+          error?: string | null;
+          finished_at?: string | null;
+          http_status?: number;
+          id?: string;
+          idempotency_key?: string | null;
+          kind?: string;
+          source?: string;
+          status?: Database["public"]["Enums"]["ingest_status"];
+          token_id?: string;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "ingest_requests_token_id_user_id_fkey";
+            columns: ["token_id", "user_id"];
+            isOneToOne: false;
+            referencedRelation: "device_tokens";
+            referencedColumns: ["id", "user_id"];
+          },
+        ];
+      };
       life_mode_periods: {
         Row: {
           created_at: string;
@@ -1486,6 +1540,7 @@ export type Database = {
       energy_kind: "deep" | "light" | "physical";
       horizon_scope: "month" | "term";
       inbox_status: "new" | "needs_confirm" | "routed" | "dismissed";
+      ingest_status: "processing" | "done" | "rejected" | "failed";
       life_mode: "normal" | "busy" | "minimum" | "holiday";
       module_kind: "lifelong" | "term" | "until_goal";
       module_status: "active" | "paused" | "archived";
@@ -1616,6 +1671,7 @@ export const Constants = {
       energy_kind: ["deep", "light", "physical"],
       horizon_scope: ["month", "term"],
       inbox_status: ["new", "needs_confirm", "routed", "dismissed"],
+      ingest_status: ["processing", "done", "rejected", "failed"],
       life_mode: ["normal", "busy", "minimum", "holiday"],
       module_kind: ["lifelong", "term", "until_goal"],
       module_status: ["active", "paused", "archived"],
