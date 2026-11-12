@@ -19,7 +19,7 @@ import { closeUnanswered, confirmSession, startSession } from "@/core/data/sessi
 import { createTask, createWorkItem, reopenTask } from "@/core/data/work";
 import { buildPlan, planInput, storedPlan, tomorrowInput } from "@/core/planner";
 import { dayKey, istanbulInstant, shiftDay, weekStart } from "@/lib/date";
-import { makeModule, ok, ownerDb, wipe } from "./helpers";
+import { makeModule, ok, ownerDb, strangerDb, wipe } from "./helpers";
 
 // What the planner keeps (src/core/data/planning.ts, keep.ts) against the local database.
 
@@ -493,5 +493,125 @@ describe("the week's sittings and a sitting started meanwhile (Ç3b audit)", () 
     );
     const sittings = ok(await db.from("tasks").select("*").eq("work_item_id", item.id));
     expect(sittings.map((task) => task.status)).toEqual(["doing"]);
+  });
+
+  it("Başla on an item and the keeper writing its sittings at the same moment leave one open sitting each round (Ç3c)", async () => {
+    const mod = await makeModule(db);
+    const week = weekStart(dayKey(new Date()));
+    const doubled: string[] = [];
+    // Twenty rounds, each with a fresh item: the two writes leave together, so they meet in
+    // the database in either order (and, before the fix, in between).
+    for (let round = 0; round < 20; round++) {
+      const item = await createWorkItem(db, {
+        module_id: mod.id,
+        title: `Rapor ${round}`,
+        effort_total_minutes: 45,
+      });
+      await Promise.all([
+        startSession(db, { workItemId: item.id }),
+        saveWeekPlan(
+          db,
+          {
+            weekStart: week,
+            committed: [{ itemId: item.id, minutes: 45, sittings: [45], required: false, from: 0 }],
+            moduleBudgets: {},
+            capacityMinutes: 600,
+            capacityByDay: {},
+            left: [],
+            lifeMode: "normal",
+            source: "auto",
+            reasons: {},
+          },
+          { tasks: [], items: [item] },
+        ),
+      ]);
+      const open = ok(
+        await db
+          .from("tasks")
+          .select("id")
+          .eq("work_item_id", item.id)
+          .in("status", ["todo", "doing", "waiting"]),
+      );
+      if (open.length !== 1) doubled.push(`round ${round}: ${open.length} open sittings`);
+    }
+    expect(doubled).toEqual([]);
+  });
+});
+
+describe("the day's frame columns and the sittings function (Ç3c)", () => {
+  it("a new settings row has the user's frame; the value must be an object or empty", async () => {
+    const row = ok(await db.from("settings").insert({}).select().single());
+    expect(row.day_frame).toEqual({
+      wake: ["06:00", "09:00"],
+      bed: ["22:00", "01:00"],
+      sleep_minutes: 480,
+    });
+    const bad = await db.from("settings").update({ day_frame: "06:00" }).eq("id", row.id);
+    expect(bad.error).not.toBeNull();
+    const off = await db.from("settings").update({ day_frame: null }).eq("id", row.id);
+    expect(off.error).toBeNull();
+  });
+
+  it("a day keeps its waking and bedtime, estimated or not", async () => {
+    const row = ok(
+      await db
+        .from("days")
+        .insert({
+          date: TODAY,
+          woke_at: istanbulInstant(TODAY, "07:10").toISOString(),
+          woke_estimated: true,
+          expected_bed: "00:30",
+        })
+        .select()
+        .single(),
+    );
+    expect(row).toMatchObject({ woke_estimated: true, expected_bed: "00:30:00", bed_at: null });
+  });
+
+  it("another account's call opens and drops nothing of the owner's sittings", async () => {
+    const mod = await makeModule(db);
+    const item = await createWorkItem(db, {
+      module_id: mod.id,
+      title: "Rapor",
+      effort_total_minutes: 90,
+    });
+    const stranger = strangerDb();
+    const result = await stranger.rpc("save_week_sittings", {
+      p_committed: [{ item_id: item.id, sittings: [45, 45] }],
+    });
+    expect(result.error).toBeNull();
+    const sittings = ok(await db.from("tasks").select("id").eq("work_item_id", item.id));
+    expect(sittings).toEqual([]);
+  });
+
+  it("opens the share's sittings once; a second call adds none and drops the extra ones", async () => {
+    const mod = await makeModule(db);
+    const item = await createWorkItem(db, {
+      module_id: mod.id,
+      title: "Rapor",
+      effort_total_minutes: 135,
+    });
+    const call = (sittings: number[]) =>
+      db.rpc("save_week_sittings", { p_committed: [{ item_id: item.id, sittings }] });
+    expect((await call([45, 45, 45])).error).toBeNull();
+    expect((await call([45, 45, 45])).error).toBeNull();
+    let open = ok(
+      await db
+        .from("tasks")
+        .select("position, est_minutes, status")
+        .eq("work_item_id", item.id)
+        .eq("status", "todo")
+        .order("position"),
+    );
+    expect(open.map((task) => task.position)).toEqual([1, 2, 3]);
+    expect((await call([45])).error).toBeNull();
+    open = ok(
+      await db
+        .from("tasks")
+        .select("position, est_minutes, status")
+        .eq("work_item_id", item.id)
+        .eq("status", "todo"),
+    );
+    expect(open.map((task) => task.position)).toEqual([1]);
   });
 });

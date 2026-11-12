@@ -47,9 +47,14 @@ export async function userId(): Promise<string> {
  * The test account's day: from midnight to a minute before the next. The tests run at any hour
  * (overnight too), and the planner leaves the time after the finish line to the night; with
  * the whole day as working time, what a test adds is planned whenever it runs. Tests of the
- * finish line and the night set their own times.
+ * finish line and the night set their own times. The day's frame (Ç3c) is off: with it the
+ * screen would greet the morning and quiet the evening at real hours; its specs switch it on.
  */
-export const TEST_DAY = { day_start_default: "00:00", finish_line_default: "23:59" };
+export const TEST_DAY = {
+  day_start_default: "00:00",
+  finish_line_default: "23:59",
+  day_frame: null,
+};
 
 /** Removes everything the test account owns, and gives it the whole-day settings above. */
 export async function resetData(): Promise<void> {

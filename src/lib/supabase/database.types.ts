@@ -308,56 +308,77 @@ export type Database = {
       };
       days: {
         Row: {
+          bed_at: string | null;
           closed_at: string | null;
           closing_note: string | null;
           created_at: string;
           date: string;
           day_type: Database["public"]["Enums"]["day_type"] | null;
+          expected_bed: string | null;
+          expected_wake: string | null;
           finish_line: string | null;
           id: string;
           life_mode: Database["public"]["Enums"]["life_mode"];
           plan: Json | null;
           plan_reasons: Json | null;
           plan_source: Database["public"]["Enums"]["plan_source"] | null;
+          planned_bed: string | null;
+          planned_wake: string | null;
           started_at: string | null;
           top3: string[];
           updated_at: string;
           user_id: string;
+          woke_at: string | null;
+          woke_estimated: boolean;
         };
         ComputedFields: never;
         Insert: {
+          bed_at?: string | null;
           closed_at?: string | null;
           closing_note?: string | null;
           created_at?: string;
           date: string;
           day_type?: Database["public"]["Enums"]["day_type"] | null;
+          expected_bed?: string | null;
+          expected_wake?: string | null;
           finish_line?: string | null;
           id?: string;
           life_mode?: Database["public"]["Enums"]["life_mode"];
           plan?: Json | null;
           plan_reasons?: Json | null;
           plan_source?: Database["public"]["Enums"]["plan_source"] | null;
+          planned_bed?: string | null;
+          planned_wake?: string | null;
           started_at?: string | null;
           top3?: string[];
           updated_at?: string;
           user_id?: string;
+          woke_at?: string | null;
+          woke_estimated?: boolean;
         };
         Update: {
+          bed_at?: string | null;
           closed_at?: string | null;
           closing_note?: string | null;
           created_at?: string;
           date?: string;
           day_type?: Database["public"]["Enums"]["day_type"] | null;
+          expected_bed?: string | null;
+          expected_wake?: string | null;
           finish_line?: string | null;
           id?: string;
           life_mode?: Database["public"]["Enums"]["life_mode"];
           plan?: Json | null;
           plan_reasons?: Json | null;
           plan_source?: Database["public"]["Enums"]["plan_source"] | null;
+          planned_bed?: string | null;
+          planned_wake?: string | null;
           started_at?: string | null;
           top3?: string[];
           updated_at?: string;
           user_id?: string;
+          woke_at?: string | null;
+          woke_estimated?: boolean;
         };
         Relationships: [];
       };
@@ -904,6 +925,7 @@ export type Database = {
           ai_monthly_budget_usd: number;
           capacity_factors: NonNullable<Json>;
           created_at: string;
+          day_frame: Json | null;
           day_start_default: string;
           default_day_type: Database["public"]["Enums"]["day_type"];
           finish_line_default: string;
@@ -919,6 +941,7 @@ export type Database = {
           ai_monthly_budget_usd?: number;
           capacity_factors?: NonNullable<Json>;
           created_at?: string;
+          day_frame?: Json | null;
           day_start_default?: string;
           default_day_type?: Database["public"]["Enums"]["day_type"];
           finish_line_default?: string;
@@ -933,6 +956,7 @@ export type Database = {
           ai_monthly_budget_usd?: number;
           capacity_factors?: NonNullable<Json>;
           created_at?: string;
+          day_frame?: Json | null;
           day_start_default?: string;
           default_day_type?: Database["public"]["Enums"]["day_type"];
           finish_line_default?: string;
@@ -1369,6 +1393,7 @@ export type Database = {
         };
       };
       istanbul_today: { Args: Record<PropertyKey, never>; Returns: string };
+      save_week_sittings: { Args: { p_committed: Json; p_only?: string[] }; Returns: undefined };
       start_session: {
         Args: {
           p_module_id?: string;

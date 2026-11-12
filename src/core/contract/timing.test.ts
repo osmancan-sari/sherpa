@@ -268,3 +268,75 @@ describe("the user's form", () => {
     expect(readTiming({ travel: { after: 15 } })).toEqual({ travel: { after: 15 } });
   });
 });
+
+describe("the day's frame in timing (Ç3c)", () => {
+  it("takes an anchor with its order, and after_finish, on a deadline, a recurrence and a task", () => {
+    for (const when of [DUE, WEEKLY]) {
+      expect(issuesOf(proposal({ when, timing: { anchor: "wake", order: 2 } }))).toEqual([]);
+      expect(issuesOf(proposal({ when, timing: { after_finish: true } }))).toEqual([]);
+    }
+    expect(checkTiming({ anchor: "bed" }, { kind: "task" }).issues).toEqual([]);
+    expect(
+      checkTiming({ anchor: "wake", rest_days: 1 }, { ...WEEKLY.recurrence, kind: "recurrence" })
+        .issues,
+    ).toEqual([]);
+  });
+
+  it("refuses them on a fixed time", () => {
+    for (const timing of [{ anchor: "wake" }, { after_finish: true }]) {
+      const issues = issuesOf(proposal({ when: FIXED, timing: timing as never }));
+      expect(issues.join(" ")).toMatch(/not used by a fixed time/);
+    }
+  });
+
+  it("refuses an anchor with hours, travel or after_finish, and an order without an anchor", () => {
+    const form = { kind: "deadline" } as const;
+    for (const extra of [
+      { windows: [{ from: "07:00", to: "09:00" }] },
+      { prefer: [{ from: "07:00", to: "09:00" }] },
+      { avoid: [{ from: "07:00", to: "09:00" }] },
+      { travel: { before: 10 } },
+      { after_finish: true },
+    ]) {
+      const { issues } = checkTiming({ anchor: "wake", ...extra }, form);
+      expect(issues.map((issue) => issue.reason)).toEqual(["anchor"]);
+    }
+    expect(checkTiming({ order: 1 }, form).issues.map((issue) => issue.reason)).toEqual(["anchor"]);
+    expect(checkTiming({ anchor: "noon" }, form).issues.map((issue) => issue.reason)).toEqual([
+      "anchor",
+    ]);
+    expect(checkTiming({ anchor: "wake", order: 0 }, form).issues).toHaveLength(1);
+    expect(checkTiming({ anchor: "wake", order: 100 }, form).issues).toHaveLength(1);
+  });
+
+  it("drops after_finish: false (only true is a constraint)", () => {
+    expect(checkTiming({ after_finish: false }, { kind: "task" })).toEqual({
+      timing: null,
+      issues: [],
+    });
+    expect(readTiming({ after_finish: false, anchor: "bed" })).toEqual({ anchor: "bed" });
+  });
+
+  it("keeps each new field's source on its own", () => {
+    const provenance: Record<string, "module" | "user" | "ai" | "default"> = {
+      "timing.anchor": "user",
+    };
+    const merged = mergeTiming({ anchor: "bed" }, { anchor: "wake", order: 1 }, provenance);
+    expect(merged.value).toEqual({ anchor: "bed", order: 1 });
+    expect(merged.kept).toEqual(["timing.anchor"]);
+    expect(merged.changed).toEqual(["timing.order"]);
+    expect(provenance["timing.order"]).toBe("module");
+  });
+
+  it("the user's form keeps an anchor it does not change", () => {
+    const edit = editTiming(
+      { anchor: "wake", order: 1 },
+      { anchor: "wake", order: 2 },
+      { kind: "task" },
+      {},
+    );
+    expect(edit.timing).toEqual({ anchor: "wake", order: 2 });
+    expect(edit.provenance).toEqual({ "timing.order": "user" });
+    expect(() => editTiming(null, { order: 2 }, { kind: "task" }, {})).toThrow(TimingError);
+  });
+});

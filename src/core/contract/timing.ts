@@ -19,9 +19,24 @@ export type Timing = {
   travel?: { before?: number; after?: number };
   /** Hard, rhythms only: at least this many free days between two doings. */
   rest_days?: number;
+  /** Hard (Ç3c): right after waking, or ending at bedtime; never spread over the slots. */
+  anchor?: "wake" | "bed";
+  /** The place among work on the same anchor (1 first); only with `anchor`. */
+  order?: number;
+  /** Ç3c: may also go after the finish line, into the evening. Only `true` is written. */
+  after_finish?: true;
 };
 
-export const TIMING_FIELDS = ["windows", "prefer", "avoid", "travel", "rest_days"] as const;
+export const TIMING_FIELDS = [
+  "windows",
+  "prefer",
+  "avoid",
+  "travel",
+  "rest_days",
+  "anchor",
+  "order",
+  "after_finish",
+] as const;
 export type TimingField = (typeof TIMING_FIELDS)[number];
 
 /** At most this many ranges in one list. */
@@ -30,6 +45,8 @@ export const MAX_WINDOWS = 14;
 export const MAX_TRAVEL = 180;
 /** Rest days: a month (28 days) must still hold two doings. */
 export const MAX_REST_DAYS = 26;
+/** Places on one anchor. */
+export const MAX_ORDER = 99;
 
 /** Why a timing value was refused; the form says it in one sentence (src/core/ui). */
 export type TimingProblem =
@@ -42,7 +59,9 @@ export type TimingProblem =
   | "travel"
   | "rest_days"
   | "rest_fit"
-  | "not_used";
+  | "not_used"
+  /** Ç3c: an anchor with hours or travel, an order without an anchor, an anchor after the finish line. */
+  | "anchor";
 
 const CLOCK = /^(?:[01]\d|2[0-3]):[0-5]\d$|^24:00$/;
 
@@ -92,6 +111,9 @@ export const timingSchema = z.strictObject({
     .strictObject({ before: travelMinutes.optional(), after: travelMinutes.optional() })
     .optional(),
   rest_days: z.number().int().min(1).max(MAX_REST_DAYS).optional(),
+  anchor: z.enum(["wake", "bed"]).optional(),
+  order: z.number().int().min(1).max(MAX_ORDER).optional(),
+  after_finish: z.boolean().optional(),
 });
 
 /** Why the schema refused a value, from where and how it failed. */
@@ -100,6 +122,7 @@ function reasonOf(issue: { code: string; path: PropertyKey[] }): TimingProblem {
   const last = path[path.length - 1];
   if (path[0] === "travel") return "travel";
   if (path[0] === "rest_days") return "rest_days";
+  if (path[0] === "anchor" || path[0] === "order" || path[0] === "after_finish") return "anchor";
   if (path.includes("days")) return "days";
   if (last === "from" || last === "to") return issue.code === "custom" ? "order" : "clock";
   if (path.length === 1 && issue.code === "too_small") return "empty";
@@ -129,6 +152,20 @@ export function formIssues(timing: Timing, form: TimingForm): TimingIssue[] {
       if (field !== "travel" && timing[field] !== undefined) notUsed(field, "fixed time");
     }
   }
+  // The day's frame (Ç3c): anchored work is tied to waking or bedtime, not to hours.
+  const combo = (field: TimingField, message: string) =>
+    issues.push({ path: [field], message, reason: "anchor" });
+  if (form.kind !== "fixed") {
+    if (timing.order !== undefined && timing.anchor === undefined) {
+      combo("order", "order is only used with an anchor");
+    }
+    if (timing.anchor !== undefined) {
+      for (const field of ["windows", "prefer", "avoid", "travel"] as const) {
+        if (timing[field] !== undefined) combo(field, "not used with an anchor");
+      }
+      if (timing.after_finish) combo("after_finish", "not used with an anchor");
+    }
+  }
   if ((form.kind === "deadline" || form.kind === "task") && timing.rest_days !== undefined) {
     notUsed("rest_days", form.kind === "task" ? "task" : "deadline");
   }
@@ -149,12 +186,16 @@ export function formIssues(timing: Timing, form: TimingForm): TimingIssue[] {
 }
 
 /** A value with nothing in it is no constraint at all. */
-export function normalizeTiming(timing: Timing | null | undefined): Timing | null {
+export function normalizeTiming(
+  timing: (Omit<Timing, "after_finish"> & { after_finish?: boolean }) | null | undefined,
+): Timing | null {
   if (!timing) return null;
   const out: Timing = {};
   for (const field of TIMING_FIELDS) {
     const value = timing[field];
     if (value === undefined || value === null) continue;
+    // Only `true` is a constraint.
+    if (field === "after_finish" && value !== true) continue;
     if (field === "travel") {
       const travel = value as NonNullable<Timing["travel"]>;
       const kept: NonNullable<Timing["travel"]> = {};
@@ -320,6 +361,11 @@ export function timingSummary(timing: Timing | null | undefined): string {
     parts.push(`yol ${timing.travel.before ?? 0}+${timing.travel.after ?? 0} dk`);
   }
   if (timing.rest_days) parts.push(`${timing.rest_days} gün ara`);
+  if (timing.anchor) {
+    const where = timing.anchor === "wake" ? "uyanınca" : "yatmadan önce";
+    parts.push(timing.order ? `${where} (${timing.order}.)` : where);
+  }
+  if (timing.after_finish) parts.push("akşam da olur");
   return parts.join(" · ");
 }
 

@@ -1,6 +1,6 @@
 import { type Plan, type PlanInput, wholeDaySlotMinutes } from "@/core/planner";
 import { type StoredDayPlan, storedPlan } from "@/core/planner/input";
-import { sittingChanges, type WeekPlan } from "@/core/planner/week";
+import type { WeekPlan } from "@/core/planner/week";
 import {
   check,
   type DayRow,
@@ -325,52 +325,17 @@ export async function saveWeekPlan(
       .select()
       .single(),
   );
-  const only = context.only ? new Set(context.only) : null;
-  const scope = only
-    ? { committed: plan.committed.filter((entry) => only.has(entry.itemId)) }
-    : plan;
-  // The sittings as they are now, read fresh: the screen's list may be seconds old, and a
-  // sitting the user started by hand meanwhile must count (else the item gets a second one).
-  const itemIds = [
-    ...new Set([
-      ...scope.committed.map((entry) => entry.itemId),
-      ...context.tasks.flatMap((task) => (task.work_item_id ? [task.work_item_id] : [])),
-    ]),
-  ].filter((id) => !only || only.has(id));
-  const fresh =
-    itemIds.length === 0
-      ? []
-      : unwrap(await db.from("tasks").select("*").in("work_item_id", itemIds));
-  const changes = sittingChanges(scope, fresh);
-  if (changes.drop.length > 0) {
-    check(
-      await db
-        .from("tasks")
-        .update({ status: "dropped" })
-        .in("id", changes.drop)
-        .eq("status", "todo"),
-    );
-  }
-  const inserts = changes.create.flatMap(({ itemId, minutes, position }) => {
-    const item = context.items.find((entry) => entry.id === itemId);
-    if (!item) return [];
-    return [
-      {
-        module_id: item.module_id,
-        work_item_id: item.id,
-        title: item.title,
-        est_minutes: Math.min(90, Math.max(5, minutes)),
-        due_at: item.due_at,
-        energy: item.energy ?? ("light" as const),
-        context: item.context ?? ("any" as const),
-        importance: item.importance,
-        position,
-        source_type: item.source_type,
-        source_id: item.source_id,
-      },
-    ];
-  });
-  if (inserts.length > 0) check(await db.from("tasks").insert(inserts));
+  // The sittings are worked out in the database with each item's row locked (the same rule as
+  // `sittingChanges`): a "Başla" on the item at the same moment waits or is waited for, so the
+  // item never gets two open sittings (Ç3c; the race Ç3b left).
+  check(
+    await db.rpc("save_week_sittings", {
+      p_committed: toJson(
+        plan.committed.map((entry) => ({ item_id: entry.itemId, sittings: entry.sittings })),
+      ),
+      p_only: context.only,
+    }),
+  );
   return row;
 }
 

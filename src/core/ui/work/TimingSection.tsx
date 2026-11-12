@@ -27,6 +27,10 @@ export type TimingDraft = Record<ListName, DraftRange[]> & {
   before: string;
   after: string;
   rest: string;
+  /** The day's frame (Ç3c): "" for none. */
+  anchor: "" | "wake" | "bed";
+  order: string;
+  afterFinish: boolean;
 };
 
 const LISTS: { name: ListName; label: string }[] = [
@@ -61,6 +65,9 @@ export function draftOf(timing: Timing | null): TimingDraft {
     before: timing?.travel?.before ? String(timing.travel.before) : "",
     after: timing?.travel?.after ? String(timing.travel.after) : "",
     rest: timing?.rest_days ? String(timing.rest_days) : "",
+    anchor: timing?.anchor ?? "",
+    order: timing?.order ? String(timing.order) : "",
+    afterFinish: timing?.after_finish === true,
   };
 }
 
@@ -89,6 +96,9 @@ export function valueOf(draft: TimingDraft): unknown {
             ...(after !== undefined ? { after } : {}),
           },
     rest_days: number(draft.rest),
+    anchor: draft.anchor === "" ? undefined : draft.anchor,
+    order: draft.anchor === "" ? undefined : number(draft.order),
+    after_finish: draft.afterFinish ? true : undefined,
   };
 }
 
@@ -147,6 +157,8 @@ export function issueText(issue: TimingIssue): string {
       return "Bu kadar dinlenme günüyle hedef döneme sığmıyor.";
     case "not_used":
       return "Günlük ritimde dinlenme günü olmaz.";
+    case "anchor":
+      return "Uyanışa ya da yatışa bağlı iş saat aralığı, yol ve akşam almaz.";
     default:
       return "Aralıklardan biri geçersiz.";
   }
