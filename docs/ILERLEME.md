@@ -6,7 +6,7 @@ Bu dosyayı Claude Code günceller. Yeni bir oturum yalnızca bu dosyayı ve `pr
 
 - Faz: **Ç3b (Zaman kısıtları) sürüyor** (12 Kas 2026; istem `prompts/c3b-zaman-kisitlari.md`). Ç0–Ç3 bitti; D1–D4 tamamlandı
 - Adım: 6 (kapanış: uçtan uca testler)
-- Son commit: Ç3b adım 6 (uçtan uca testler, görüntüler)
+- Son commit: Ç3b faz denetimi 2. tur düzeltmeleri
 
 ### Ç3b planı
 

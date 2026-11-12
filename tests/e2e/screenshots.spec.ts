@@ -380,13 +380,19 @@ for (const theme of ["dark", "light"] as const) {
         timing: { windows: [{ days: [1, 2, 3, 4, 5], from: "09:00", to: "12:00" }] },
       },
     ]);
-    await insert("work_items", {
+    const [burs] = await insert("work_items", {
       module_id: okul.id,
       title: "Burs başvurusu",
       effort_total_minutes: 45,
       due_at: dueToday,
       timing: { windows: [{ days: [weekday], from: "10:00", to: "12:00" }] },
     });
+    await page.goto("/");
+    // The week keeper gives the new item its sitting; the screen is taken once it has.
+    await waitFor(
+      () => rows("tasks"),
+      (list) => list.some((task) => task.work_item_id === burs.id),
+    );
     await page.goto("/");
     await expect(now.getByRole("heading")).toHaveText("Salon antrenmanı");
     await expect(page.getByRole("region", { name: "Uyarılar" })).toContainText(

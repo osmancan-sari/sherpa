@@ -9,6 +9,7 @@ import {
   planDay,
   saveDayPlan,
   saveStats,
+  saveWeekPlan,
   setLifeMode,
   skipToday,
   touchDay,
@@ -460,5 +461,37 @@ describe("a session nobody answered for", () => {
       ok(await db.from("sessions").select("confirmed_at").eq("id", session.id).single())
         .confirmed_at,
     ).not.toBeNull();
+  });
+});
+
+describe("the week's sittings and a sitting started meanwhile (Ç3b audit)", () => {
+  it("a sitting the user started after the screen read its list is counted: no second one", async () => {
+    const mod = await makeModule(db);
+    const item = await createWorkItem(db, {
+      module_id: mod.id,
+      title: "Rapor",
+      effort_total_minutes: 90,
+    });
+    // The screen read the tasks (none yet); then the user started the item by hand.
+    const stale: never[] = [];
+    await startSession(db, { workItemId: item.id });
+    const week = weekStart(dayKey(new Date()));
+    await saveWeekPlan(
+      db,
+      {
+        weekStart: week,
+        committed: [{ itemId: item.id, minutes: 45, sittings: [45], required: false, from: 0 }],
+        moduleBudgets: {},
+        capacityMinutes: 600,
+        capacityByDay: {},
+        left: [],
+        lifeMode: "normal",
+        source: "auto",
+        reasons: {},
+      },
+      { tasks: stale, items: [item] },
+    );
+    const sittings = ok(await db.from("tasks").select("*").eq("work_item_id", item.id));
+    expect(sittings.map((task) => task.status)).toEqual(["doing"]);
   });
 });
