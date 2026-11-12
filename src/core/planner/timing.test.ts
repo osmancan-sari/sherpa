@@ -421,6 +421,23 @@ describe("conflicts", () => {
     expect(placement(buildPlan(input({ tasks: [later] })), later.id)).toBeNull();
   });
 
+  it("travel is hard too: mandatory work whose footprint fits nowhere is not placed without it", () => {
+    // 08:00–09:20 free: 30 + 60 + 30 needs 120.
+    const gym = timed(
+      { travel: { before: 30, after: 30 } },
+      {
+        title: "Salon",
+        est_minutes: 60,
+        context: "out",
+        energy: "physical",
+        due_at: iso("19:00"),
+      },
+    );
+    const plan = buildPlan(input({ tasks: [gym], finishLine: at("09:20") }));
+    expect(placement(plan, gym.id)).toBeNull();
+    expect(plan.warnings.map((row) => row.text)).toContain("Bugün uygun saat kalmadı: Salon.");
+  });
+
   it("only a window forbids the cut to the longest slot; preferred hours do not", () => {
     // 90 minutes × 1.2 learned = 110: longer than any slot. Due today, it is started anyway.
     const mod = moduleRow();
@@ -566,6 +583,8 @@ describe("X dk'm var", () => {
       { est_minutes: 30, context: "out", energy: "physical" },
     );
     expect(pickForMinutes(input({ tasks: [trip] }), 45)).toBeNull();
+    // Its window opens in half an hour: it fits the hour, but it cannot be started now.
+    expect(pickForMinutes(input({ now: at("15:30"), tasks: [gym] }), 60)).toBeNull();
     expect(pickForMinutes(input({ tasks: [trip] }), 50)?.id).toBe(trip.id);
   });
 });

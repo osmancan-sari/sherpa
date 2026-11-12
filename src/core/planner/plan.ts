@@ -351,9 +351,9 @@ export function buildPlan(input: PlanInput): Plan {
     if (placed.has(candidate.id)) return true;
     if (!overCapacity && plannedMinutes + candidate.minutes > usableMinutes) return false;
     if (candidate.timing && placeTimed(candidate, overCapacity)) return true;
-    // A window is hard: work that has one goes nowhere else. Other constraints (travel,
-    // preferred hours) give way for mandatory work, as without them.
-    if (candidate.timing?.windows || (candidate.timing && !overCapacity)) return false;
+    // Windows and travel are hard: such work goes nowhere else. Preferred and avoided hours
+    // give way for mandatory work, as without them.
+    if (bound(candidate) || (candidate.timing && !overCapacity)) return false;
     let index = slots.findIndex((slot) => !slot.assignment && fits(candidate, slot, input.context));
     // Mandatory work goes in even where its energy does not match, as long as it fits.
     if (index < 0 && overCapacity) {
@@ -611,7 +611,7 @@ function warningsOf(
   for (const candidate of [...closed, ...candidates]) {
     if (candidate.mandatory !== "due_today" && candidate.mandatory !== "urgent") continue;
     if (placed.has(candidate.id)) continue;
-    if (!closed.includes(candidate) && !candidate.timing?.windows) continue;
+    if (!closed.includes(candidate) && !bound(candidate)) continue;
     warnings.push({
       kind: "no_time_today",
       subjectId: candidate.id,
@@ -769,6 +769,12 @@ function warningsOf(
     .map((warning) => ({ ...warning, moduleId: warning.moduleId ?? moduleOf(warning.subjectId) }));
 }
 
+/** The work can start now: right away, or right after its travel there (not later in a window). */
+function startsNow(spot: Spot | null, slot: Slot, candidate: Candidate): boolean {
+  if (!spot) return false;
+  return spot.workStart === slot.start.getTime() + (candidate.travelBefore ?? 0) * MINUTE;
+}
+
 /** "X dk'm var": the best work that fits in the given minutes, now, wherever it was planned. */
 export function pickForMinutes(input: PlanInput, minutes: number): Candidate | null {
   // Under a light slot's length the minutes are a break: physical work or a short light one.
@@ -783,7 +789,7 @@ export function pickForMinutes(input: PlanInput, minutes: number): Candidate | n
   return (
     buildCandidates(input).find((candidate) =>
       candidate.timing
-        ? spotAt([slot], 0, candidate, input) !== null
+        ? startsNow(spotAt([slot], 0, candidate, input), slot, candidate)
         : fits(candidate, slot, input.context),
     ) ?? null
   );

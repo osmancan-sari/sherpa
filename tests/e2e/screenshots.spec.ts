@@ -348,6 +348,54 @@ for (const theme of ["dark", "light"] as const) {
     await page.goto("/");
     await expect(now).toContainText("Yarın ilk iş:");
     await shot("bugun-gece");
+
+    // Ç3b: time constraints on the screens. The day is open again; a workout with travel is
+    // due, the bank's hours are gone, and an item's only window this week has passed.
+    await update("days", today.id as string, { finish_line: "23:59" });
+    const [okul] = (await rows("modules")).filter((row) => row.slug === "okul-ornek");
+    const [saglik] = (await rows("modules")).filter((row) => row.slug === "saglik-ornek");
+    const weekday =
+      ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].indexOf(
+        new Intl.DateTimeFormat("en-US", { timeZone: "Europe/Istanbul", weekday: "short" }).format(
+          shotNow,
+        ),
+      ) + 1;
+    const dueToday = new Date(`${shotDay}T23:00:00+03:00`).toISOString();
+    await insert("tasks", [
+      {
+        module_id: saglik.id,
+        title: "Salon antrenmanı",
+        est_minutes: 60,
+        importance: 4,
+        context: "out",
+        energy: "physical",
+        due_at: dueToday,
+        timing: { windows: [{ from: "07:00", to: "22:00" }], travel: { before: 20, after: 20 } },
+      },
+      {
+        module_id: okul.id,
+        title: "Öğrenci işleri",
+        est_minutes: 20,
+        due_at: dueToday,
+        timing: { windows: [{ days: [1, 2, 3, 4, 5], from: "09:00", to: "12:00" }] },
+      },
+    ]);
+    await insert("work_items", {
+      module_id: okul.id,
+      title: "Burs başvurusu",
+      effort_total_minutes: 45,
+      due_at: dueToday,
+      timing: { windows: [{ days: [weekday], from: "10:00", to: "12:00" }] },
+    });
+    await page.goto("/");
+    await expect(now.getByRole("heading")).toHaveText("Salon antrenmanı");
+    await expect(page.getByRole("region", { name: "Uyarılar" })).toContainText(
+      "Bugün uygun saat kalmadı",
+    );
+    await shot("bugun-zaman");
+    await page.goto("/hafta");
+    await expect(page.getByRole("region", { name: "Uygun saat" })).toBeVisible();
+    await shot("hafta-zaman");
   });
 }
 

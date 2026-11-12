@@ -150,7 +150,7 @@ Kısıtların çoğunu modüller kendi ayarlarından yazar; kullanıcı bunları
 
 **Zaman çizelgesi (DayStrip).** Yol süresi, işin önünde ve arkasında aynı modül renginin soluk, taralı hali olarak çizilir; üzerine gelince (telefonda dokununca) "yol 20 dk" yazar.
 
-**Şimdi kartı ve Sıradakiler.** Yol süresi olan işte süre satırı `Modül · 60 dk · yol 20+20 dk` biçimindedir. Kart, işin çalışma aralığı değil ayak izi başladığında önerir (yola çıkma zamanı). Planın sıradaki işi pencereye ya da yola bağlıysa ve ayak izi henüz başlamadıysa kart onu saatiyle gösterir ("16:40'ta yola çık"); kullanıcı yine de hemen başlatabilir. **Görüşün gerek.**
+**Şimdi kartı ve Sıradakiler.** Yol süresi olan işte süre satırı `Modül · 60 dk · yol 20+20 dk` biçimindedir. Kart, işin çalışma aralığı değil ayak izi başladığında önerir (yola çıkma zamanı). Planın sıradaki işi pencereye ya da yola bağlıysa ve ayak izi henüz başlamadıysa kart onu saatiyle gösterir ("Yola çıkış 16:40"; yolu yoksa "Başlangıç 16:45"); kullanıcı yine de hemen başlatabilir. **Görüşün gerek.**
 
 **Uyarılar.** "Bugün uygun saat kalmadı: …" ve "Bu hafta uygun saat yok: …" AlertBar'da ve Hafta ekranında öbür uyarılar gibi görünür; eylemi "Modüle git".
 

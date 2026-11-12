@@ -329,10 +329,19 @@ export async function saveWeekPlan(
   const scope = only
     ? { committed: plan.committed.filter((entry) => only.has(entry.itemId)) }
     : plan;
-  const tasks = only
-    ? context.tasks.filter((task) => task.work_item_id !== null && only.has(task.work_item_id))
-    : context.tasks;
-  const changes = sittingChanges(scope, tasks);
+  // The sittings as they are now, read fresh: the screen's list may be seconds old, and a
+  // sitting the user started by hand meanwhile must count (else the item gets a second one).
+  const itemIds = [
+    ...new Set([
+      ...scope.committed.map((entry) => entry.itemId),
+      ...context.tasks.flatMap((task) => (task.work_item_id ? [task.work_item_id] : [])),
+    ]),
+  ].filter((id) => !only || only.has(id));
+  const fresh =
+    itemIds.length === 0
+      ? []
+      : unwrap(await db.from("tasks").select("*").in("work_item_id", itemIds));
+  const changes = sittingChanges(scope, fresh);
   if (changes.drop.length > 0) {
     check(
       await db
