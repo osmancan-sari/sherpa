@@ -332,6 +332,8 @@ describe("the database's trigger (phase audit)", () => {
   it("sends nothing while Vault holds no address, and is the server's alone", async () => {
     // pg_cron runs this every 15 minutes (migration 20261112200337_jobs.sql). Without the app's
     // address and the secret in Vault (the local stack, a project not set up) it does nothing.
+    // Precondition: the local Vault holds neither name. Values put there by hand to try the
+    // trigger (as in the phase's manual check) must be deleted again, or this test fails.
     const quiet = await adminDb().rpc("sherpa_tick");
     expect(quiet.error).toBeNull();
     expect(quiet.data).toBeNull();

@@ -86,6 +86,26 @@ describe("a module's server code", () => {
     }
   });
 
+  it("closes the back door's other spellings too (phase audit, round 2)", async () => {
+    const restricted = async (code: string, file: string) =>
+      (await problems(code, file)).some((problem) =>
+        /^no-restricted-(imports|syntax):/.test(problem),
+      );
+    const cases: [string, string][] = [
+      ['import { x } from "@/modules/ornek/helper";\nexport const y = x;\n', "jobs.ts"],
+      ['import { x } from "@/modules/okul/scene";\nexport const y = x;\n', "rules.ts"],
+      ['export const y = () => import("./helper");\n', "jobs.ts"],
+      ['export const y = () => require("./helper");\n', "ingest.ts"],
+      ['import { x } from "./server/../helper";\nexport const y = x;\n', "jobs.ts"],
+      ['import { x } from "../rules/../scene";\nexport const y = x;\n', "server/ninova.ts"],
+      ['import { useState } from "react";\nexport const y = useState;\n', "server/view.tsx"],
+      ['"use client";\nexport const y = 1;\n', "server/view.tsx"],
+    ];
+    for (const [code, file] of cases) {
+      expect(await restricted(code, `src/modules/ornek/${file}`), `${file}: ${code}`).toBe(true);
+    }
+  });
+
   it("leaves the module's screens alone", async () => {
     const code = '"use client";\nimport { useState } from "react";\nexport const x = useState;\n';
     expect(await problems(code, "src/modules/ornek/components/View.tsx")).toEqual([]);

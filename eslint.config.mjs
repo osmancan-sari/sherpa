@@ -80,7 +80,8 @@ const MODULE_SERVER_TOP = [
   "src/modules/*/ingest.ts",
   "src/modules/*/jobs.ts",
 ];
-const MODULE_SERVER_DIR = ["src/modules/*/server/**/*.ts"];
+// Every file under server/, whatever its extension: a .tsx there is server code too.
+const MODULE_SERVER_DIR = ["src/modules/*/server/**/*.{ts,tsx,mts,js,jsx,mjs}"];
 // Inside the module, server code imports only server code: the four files and server/. A helper
 // elsewhere in the module would let a browser import in through the back door.
 const SERVER_NEIGHBOURS = "(rules|queries|ingest|jobs)$|server/";
@@ -94,6 +95,23 @@ const RELATIVE_FROM_DIR = {
   regex: `^\\.\\./(?!${SERVER_NEIGHBOURS})`,
   message: MODULE_SERVER_RELATIVE_MESSAGE,
 };
+// The other spellings of the same back door (phase audit, round 2): a path that walks back
+// ("./server/../helper"), and the alias ("@/modules/<slug>/helper"; a module's server code
+// reaches its own files by relative paths, and other modules not at all).
+const WALKS_BACK = {
+  regex: "^.+/\\.\\.(/|$)",
+  message: MODULE_SERVER_RELATIVE_MESSAGE,
+};
+const MODULE_ALIAS = {
+  regex: "^@/modules(/|$)",
+  message: MODULE_SERVER_RELATIVE_MESSAGE,
+};
+// Dynamic imports and require: server code has no use for them, and they would slip past the
+// path patterns above.
+const NO_DYNAMIC_IMPORT = [
+  { selector: "ImportExpression", message: MODULE_SERVER_RELATIVE_MESSAGE },
+  { selector: "CallExpression[callee.name='require']", message: MODULE_SERVER_RELATIVE_MESSAGE },
+];
 const BROWSER_ONLY = {
   regex:
     "^(react(-dom)?|next/(navigation|link|image|router|dynamic|script)|next-themes|lucide-react|@tanstack/.*|@base-ui/.*|@/components/.*|@/core/(app|ui|voice)|@/lib/supabase/client|(\\.{1,2}/)+(.*/)?components)(/.*)?$",
@@ -147,9 +165,14 @@ const eslintConfig = defineConfig([
     rules: {
       "no-restricted-imports": [
         "error",
-        { patterns: [AI_SDK_PATTERN, BROWSER_ONLY, RELATIVE_FROM_TOP] },
+        { patterns: [AI_SDK_PATTERN, BROWSER_ONLY, RELATIVE_FROM_TOP, WALKS_BACK, MODULE_ALIAS] },
       ],
-      "no-restricted-syntax": ["error", ...AI_SDK_SYNTAX, ...MODULE_SERVER_SYNTAX],
+      "no-restricted-syntax": [
+        "error",
+        ...AI_SDK_SYNTAX,
+        ...MODULE_SERVER_SYNTAX,
+        ...NO_DYNAMIC_IMPORT,
+      ],
       "no-restricted-globals": ["error", ...BROWSER_GLOBALS],
     },
   },
@@ -158,9 +181,14 @@ const eslintConfig = defineConfig([
     rules: {
       "no-restricted-imports": [
         "error",
-        { patterns: [AI_SDK_PATTERN, BROWSER_ONLY, RELATIVE_FROM_DIR] },
+        { patterns: [AI_SDK_PATTERN, BROWSER_ONLY, RELATIVE_FROM_DIR, WALKS_BACK, MODULE_ALIAS] },
       ],
-      "no-restricted-syntax": ["error", ...AI_SDK_SYNTAX, ...MODULE_SERVER_SYNTAX],
+      "no-restricted-syntax": [
+        "error",
+        ...AI_SDK_SYNTAX,
+        ...MODULE_SERVER_SYNTAX,
+        ...NO_DYNAMIC_IMPORT,
+      ],
       "no-restricted-globals": ["error", ...BROWSER_GLOBALS],
     },
   },

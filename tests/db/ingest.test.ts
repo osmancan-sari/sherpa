@@ -617,3 +617,21 @@ describe("the ingest endpoint's edges (Ç3d step 3 audit)", () => {
     }
   });
 });
+
+describe("a refused body and its key (phase audit, round 2)", () => {
+  it("gives the key back when the handler refuses the body: the same key may come again", async () => {
+    const token = await tokenWith(["core/wake"]);
+    const tooOld = new Date(Date.now() - 25 * 3_600_000).toISOString();
+    const refused = await call({ path: "core/wake", token, body: { at: tooOld }, key: "alarm-7" });
+    expect(refused.status).toBe(400);
+    expect(await ownerRows("days")).toEqual([]);
+    // Corrected and sent again with the same key: handled, not a "duplicate".
+    expect(await call({ path: "core/wake", token, key: "alarm-7" })).toEqual({
+      status: 200,
+      body: { ok: true },
+    });
+    expect(await ownerRows("days")).toHaveLength(1);
+    const [first] = await ownerRows("ingest_requests");
+    expect(first).toMatchObject({ status: "rejected", http_status: 400, idempotency_key: null });
+  });
+});

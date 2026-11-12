@@ -4,7 +4,7 @@ Bu dosyayı Claude Code günceller. Yeni bir oturum yalnızca bu dosyayı ve `pr
 
 ## Durum
 
-- Faz: **Ç3d (Sunucu zemini) bitti** (13 Kas 2026; faz denetimi bir tur, GEÇTİ). Migration'lar `sherpa-dev`'de; `sherpa-prod`, Vercel `CRON_SECRET`, Vault ve `git push` senin onayını bekliyor ("Senden bekleyenler" → Ç3d). Ç0–Ç3c yayında; D1–D4 tamamlandı
+- Faz: **Ç3d (Sunucu zemini) kapanışta** (13 Kas 2026; faz denetimi 2 tur GEÇTİ, 3. tur ve etiket sırada). Migration'lar `sherpa-dev`'de; `sherpa-prod`, Vercel `CRON_SECRET`, Vault ve `git push` senin onayını bekliyor ("Senden bekleyenler" → Ç3d). Ç0–Ç3c yayında; D1–D4 tamamlandı
 - Adım: 5 (kapanış) bitti; yayın onay bekliyor
 - Son commit: C3d phase audit fixes and the phase report
 
@@ -355,7 +355,7 @@ Uygulama kapalıyken çalışan taraf: cihaz anahtarları, oturumsuz giriş ucu,
 
 Ç3c'den devralınanlar: dışarıdan yazılan uyanış ve yatış "son kullanım" sayılır (`lastActivityBefore`; `input.test.ts`, `ingest.test.ts`: dışarıdan uyanış "geri dönüş"ü kapatır); gerçek yatıştan sonra haftanın yeniden kurulmasının veritabanı testi (`ingest.test.ts`: 22:30'da taahhüt, 00:30 yatış `core/bed` ile, yarının kapasitesi 30 dakikadan çok düşer, hafta sunucuda yeniden kurulur).
 
-Testler: 434 birim, 256 veritabanı, 173 uçtan uca (`npm run check:full` yeşil, 13 Kas 00:19, faz denetiminin düzeltmelerinden sonra). Ekran görüntüleri `docs/ekran-goruntuleri/c3d/` (115 dosya; yeni: `ayarlar-baglantilar`, pano ve telefon). Baktıklarım: Ayarlar → Bağlantılar (pano ve telefon): yeni anahtar bir kez, liste, son kullanım.
+Testler: 435 birim, 257 veritabanı, 173 uçtan uca (`npm run check:full` yeşil, 13 Kas 00:29, faz denetiminin 2. turunun düzeltmelerinden sonra). Ekran görüntüleri `docs/ekran-goruntuleri/c3d/` (115 dosya; yeni: `ayarlar-baglantilar`, pano ve telefon). Baktıklarım: Ayarlar → Bağlantılar (pano ve telefon): yeni anahtar bir kez, liste, son kullanım.
 
 **Giriş ucunun güvenlik sınırları ve onları tutan testler**
 
@@ -391,6 +391,7 @@ Testler: 434 birim, 256 veritabanı, 173 uçtan uca (`npm run check:full` yeşil
 - Adım denetimi 3 (giriş ucu): GEÇMEDİ. Tek engelleyici 22:30'dan sonra düşen eski uçtan uca testlerdi; kod değil. Önemli: hız sınırı redlerden sonraydı, takılı "işleniyor" anahtarı kilitliyordu, kırılgan iki test. Hepsi düzeltildi; saate bağlı testler için yaklaşım değişti (`roomInTheDay` ve 22:30–24:00 kapısı; aşağıda açık).
 - Adım denetimi 3 düzeltmeleri + 4 (zamanlanmış işler): GEÇTİ, 3 önemli (iki iş testi 00:00–00:30 arasında saate bağlıydı, `.env.example`'ta `CRON_SECRET`, kurulum adımları); düzeltildi.
 - Faz denetimi, 1. tur (`d4ecc45`): GEÇTİ, `check:full` denetçinin koşusunda da yeşil (433 / 255 / 173). Önemli: (1) `sherpa_tick()`'in testi yoktu: Vault boşken `null`, oturumlara ve genel anahtara kapalı, `job_users` yalnızca gizli anahtara (`jobs.test.ts` +1; `cron.job` API'den görünmediği için elle doğrulandı, yerelde ve `sherpa-dev`'e gönderimde); (2) lint yalnızca doğrudan içe aktarmaya bakıyordu, `jobs.ts` → `./yardimci` → `react` geçerdi: modülün sunucu dosyaları modül içinde artık yalnızca `rules`, `queries`, `ingest`, `jobs`, `server/` içe aktarır (`module-server-lint.test.ts` +1); (3) 22:30–24:00 kapısı açık kalıyor (Ç4); (4) kayıt özetleri güncellendi. Notlar: yineleme anahtarı artık türe bağlı (özete `<kaynak>/<tür>` girer; testli); hız sınırının sayıp sonra yazması `docs/02`'de; `docs/06` hata iletisinin nereye yazıldığı ve `docs/03` anahtarın ne zaman boşaltıldığı koda uyduruldu; telefonda Bağlantılar satırlarının dizilişi ve adresin bölünmesi Ç4 cilasına (aşağıda).
+- Faz denetimi, 2. tur (`896a9ef`): GEÇTİ, `check:full` denetçide de yeşil (434 / 256 / 173). Önemli: (1) arka kapı başka yazımlarla açıktı: takma ad (`@/modules/…`), dinamik `import()`, `require`, geri dönen yol (`./server/../helper`), `server/` altında `.tsx`. Hepsi kapandı (`module-server-lint.test.ts` +1, sekiz durum); (2) işleyicinin reddettiği gövdeden sonra aynı anahtarla yeniden göndermenin testi (`ingest.test.ts` +1). Notlar: tetik testinin yerel Vault'un boş olmasına dayandığı yoruma yazıldı; kayıt etiketten önce "bitti" diyordu, düzeltildi. Açık (kabul): işleyicinin hata iletisi sunucu günlüğüne gider; modülün iletisi gövdeden değer taşıyabilir (`docs/06` modül yazarını uyarıyor).
 
 **Sonraki faz (Ç3e) için notlar**
 
@@ -531,7 +532,7 @@ Testler: 413 birim, 207 veritabanı, 166 uçtan uca (`npm run check:full` yeşil
 
 ## Sıradaki adım
 
-Ç3d bitti (`c3d-tamam`); üretime çıkışı senin onayını bekliyor ("Senden bekleyenler" → Ç3d). Sıradaki faz **Ç3e (Modülün bölümleri)**, yeni oturumda: istem `prompts/c3e-modul-bolumleri.md`, etiket `c3e-tamam`.
+Ç3d kapanışta (etiket `c3d-tamam` son denetimden sonra); üretime çıkışı senin onayını bekliyor ("Senden bekleyenler" → Ç3d). Sıradaki faz **Ç3e (Modülün bölümleri)**, yeni oturumda: istem `prompts/c3e-modul-bolumleri.md`, etiket `c3e-tamam`.
 
 **Sıra (kullanıcının kararı, 12 Kas 2026): Ç3c → Ç3d → Ç3e → Ç4.** Modüller tasarlanmadan önce altyapı üç katmana hazır olmalı (`docs/12-sahne-ve-otomasyon.md`, "Neden").
 
