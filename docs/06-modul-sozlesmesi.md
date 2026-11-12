@@ -30,7 +30,7 @@ Modül yalnızca kendi klasörünü, dış paketleri (`react`, `next/link`, `luc
 | `@/core/app/hooks` | `useModuleQuery(row, anahtar, fn)`: modülün bağlamıyla hesaplanan ve her veri değişiminde tazelenen sorgu; `useNow()`: ortak saat |
 | `@/core/app/actions` | `useRefreshAll()`: modül kendi bağlamıyla bir şey yazdıktan sonra ekranı hemen tazeler |
 | `@/core/ui/Notices` | `useNotify()`, `SAVE_FAILED`: ekranın altındaki tek satırlık bildirim |
-| `@/core/ui/kit` | Bileşen takımı |
+| `@/core/ui/kit` | Bileşen takımı (`StepRunner` dahil) |
 | `@/components/ui/*`, `@/lib/date`, `@/lib/utils` | Düğme ve giriş alanı, tarih yardımcıları |
 | `@/lib/supabase/database.types` | Modülün kendi tablolarının satır tipleri (`Tables<"<slug>_…">`) |
 
@@ -152,7 +152,9 @@ Her modülün kendine özel bir arayüzü vardır; modüller birbirine benzemek 
 | Şimdi kartı | Kartın çerçevesi ve eylem düğmeleri | Kendi işleri için kart içeriği ve ek eylemler verir |
 | Hızlı eylemler | Sayfa başında eylem çubuğu | Modüle özel eylemleri ekler ("not gir", "tartı gir") |
 | Ayarlar | `/ayarlar/moduller/<slug>` | Kendi ayar formunu verir |
-| Bileşen takımı | Tablo (satır içi düzenleme, süzgeç), zaman çizelgesi, ızgara, çizgi ve çubuk grafik, sayı adımlayıcı, seçim çipleri, zamanlayıcı, boş ve hata durumları | Bunları kullanır; yetmediği yerde kendi bileşenini yazar |
+| Bileşen takımı | Tablo (satır içi düzenleme, süzgeç), zaman çizelgesi, ızgara, çizgi ve çubuk grafik, sayı adımlayıcı, seçim çipleri, zamanlayıcı, adım yürütücü (`StepRunner`), boş ve hata durumları | Bunları kullanır; yetmediği yerde kendi bileşenini yazar |
+| Sahne (Ç3c) | İş çalışırken Bugün ekranını sahneye bırakma, üstte çekirdeğin şeridi, çıkış ve dönüş, hata sınırı | Kendi işleri için sahne bileşenini ve ne zaman geleceğini verir (aşağıda "Sahne") |
+| Sesli anlatım (Ç3c) | `say`: cihazın sesiyle, sıralı, kesilebilir anlatım; cihaz başına ayar | Ne söyleneceğine karar verir |
 
 ```ts
 type ModuleUi = {
@@ -162,6 +164,7 @@ type ModuleUi = {
   actions?: { key: string; label: string; run: (ctx: ModuleUiContext) => void | Promise<void> }[]
   settings?: ComponentType
   history?: ComponentType            // 4. bölge; yoksa çekirdek haftalık harcanan süreyi gösterir
+  scene?: ModuleScene                // Ç3c: iş çalışırken Bugün ekranını devralan görünüm (aşağıda)
 }
 
 type ModuleViewProps = { params: Record<string, string> }   // alt sayfalarda ':id' gibi parçalar
@@ -173,8 +176,73 @@ type ModuleUiContext = ModuleContext & {
     => Promise<{ status: "ok", suggestions: T[], note } | { status: "skipped" | "failed" | "unknown" }>
                                      // yapıştırılan metni modülün okuyucusuyla okutur (yapay zeka)
   navigate: (path: string) => void   // /m/<slug>/ altında bir yola gider
+  say: Say                           // Ç3c: sesli anlatım (aşağıda)
 }
 ```
+
+### Sahne (Ç3c)
+
+Modül, kendi işi çalışırken Bugün ekranını devralan bir **sahne** verebilir: arka plan, kendi düğmeleri, adımlar, sayaçlar. Tasarımın gerekçesi `docs/12-sahne-ve-otomasyon.md`, bölüm A.
+
+```ts
+type ModuleScene = {
+  when: (subject: SceneSubject) => boolean     // bu iş için sahne var mı (türüne, kaynağına, meta'sına göre)
+  component: ComponentType<SceneProps>
+  look?: { tone: 'calm' | 'focus' | 'energy' } // çekirdeğin geçiş ve arka plan tonu
+}
+
+type SceneSubject =
+  | { kind: 'task'; task: Task; workItem: WorkItem | null }
+  | { kind: 'rhythm'; rhythm: Rhythm }
+
+type SceneProps = {
+  subject: SceneSubject
+  session: { id: string; startedAt: Date; elapsedSeconds: number }   // sunucudaki başlangıçtan; her cihazda aynı
+  device: 'pano' | 'telefon'
+  controls: {
+    finish: () => Promise<void>      // çekirdeğin "Bitti"si
+    stop: () => Promise<void>        // "Durdur"
+    stuck: () => void                // "Takıldım" akışını açar (sahneden çıkar)
+    exit: () => void                 // sahneden çık; oturum sürer
+  }
+  say: Say
+  today: TodayBrief                  // günün kısa özeti (anlatım için; yalnızca okuma)
+  ctx: ModuleUiContext
+}
+```
+
+Kurallar:
+
+1. **Ne zaman.** `plan.now` `running` ise, çalışan işin (iş ya da ritim; plansız oturumda sahne yoktur) modülü `scene` tanımlamışsa ve `when` doğru dönerse Bugün ekranı sahneyi çizer. Öneri durumunda standart kart kalır. İş bitince, durunca ya da ertelenince standart ekran döner. `when` hata verirse sahne yok sayılır.
+2. **Çekirdeğin şeridi.** Sahnenin üstünde her zaman ince bir şerit durur: saat, işin adı, geçen süre, "Çık". Şerit çekirdeğindir, sahne onu gizleyemez. "Çık" standart ekrana döner; oturum sürer, kartta "Sahneye dön" çıkar. Çıkış cihaza özgüdür (öbür cihaz sahnede kalır) ve o oturum için hatırlanır.
+3. **Oturum çekirdeğindir.** Başlatma, bitirme, ölçme, "Devam ediyor musun?" ve 30 dakika kuralı değişmez; sahne oturumu yalnızca `controls` ile etkiler.
+4. **Sahne serbesttir** ama çekirdeğin tasarım dilini ve temasını kullanır, hareket azaltma tercihine uyar. Pano ve telefon aynı sahneyi kendi yerleşimiyle çizer (`device`). Sahnenin kalıcı durumu (hangi adımdayım) modülün kendi tablosundadır; ekranda tutulan durum öbür cihaza taşınmaz.
+5. **Hata.** Sahne bileşeni hata verirse çekirdek standart kartı gösterir ve tek satırla bildirir ("Sahne açılamadı; iş sürüyor."); oturum etkilenmez.
+6. **Tam ekranla ilişkisi.** `fullscreen` kullanıcının modül sayfasından açtığı görünümdür; sahne iş çalışırken Bugün ekranında kendiliğinden gelir. Aynı bileşen ikisinde de kullanılabilir.
+
+**Adım yürütücü (`StepRunner`, bileşen takımında).** Sıralı adımlı sahneler (rutin, pişirme, antrenman) için: adım listesi (ad, süre ya da tekrar sayısı, açıklama), geri sayım, "Sonraki", "Atla", her adım bitince ve liste bitince geri çağrı. Yalnızca arayüzdür; hangi adımda olunduğunu modül saklar (`step` ve `onStep` ile denetimli kullanılır).
+
+### Sesli anlatım ve günün özeti (Ç3c)
+
+```ts
+type Say = (text: string, options?: { interrupt?: boolean }) => void
+
+type TodayBrief = {
+  top: { title: string; module: string; reason: string | null }[]   // günün 3 işi
+  blocks: { title: string; startsAt: Date; endsAt: Date }[]         // bugünün sabit blokları
+  finishLine: Date
+  wokeAt: Date | null
+}
+```
+
+- Tek giriş noktası `src/core/voice/`; ilk sağlayıcı cihazın kendi konuşma sentezidir (Türkçe ses). Art arda gelen metinler sıraya girer, `interrupt` sıradakileri atar; uzun metin cümlelere bölünür.
+- Ayarlar cihaz başınadır (Ayarlar → Sesli anlatım): açık ya da kapalı, ses, hız, "bu cihaz dokunuş olmadan da konuşsun". Kendiliğinden konuşma yalnızca bu ayarın açık olduğu cihazda olur; öbür cihaz yalnızca son 10 dakikada dokunulduysa konuşur.
+- Anlatım kapalıysa, cihazda ses yoksa ya da tarayıcı izin vermezse `say` hiçbir şey yapmaz ve hata vermez. Sahne anlatıma bağımlı kurulmaz: söylenen her şey ekranda da yazar.
+- Anlatılan metin ürün kurallarına uyar: suçlama ve geçmişi sayma yok.
+
+### Günün kaydını okuma (Ç3c)
+
+`ctx.days(sinceDay)` modülün günün çerçevesini okumasıdır (yalnızca okuma): `{ date, wokeAt, wokeEstimated, bedAt, plannedWake, plannedBed }[]`. Sabah ve akşam rutini gibi modüller uyanış, yatış ve uyku geçmişini buradan çizer.
 
 Sınama modülü `deneme` her bağlantı noktasının çalışan örneğidir (`alerts` tanımlıdır ama çekirdek modül uyarılarını Ç3'te, `AlertBar` ile göstermeye başlar); yalnızca `NEXT_PUBLIC_SHERPA_DEMO_MODULE=1` verilen ortamlarda (yerel geliştirme, testler) kaydolur, üretimde kaydolmaz.
 
@@ -204,6 +272,7 @@ type ModuleContext = {
     rhythmLogs: (sinceDay: string) => Promise<RhythmLog[]>
   }
   saveSettings: (settings: object) => Promise<void>        // modules.settings
+  days: (sinceDay: string) => Promise<DayFrameRecord[]>   // Ç3c: uyanış ve yatış kayıtları (yalnızca okuma)
 }
 
 type WorkProposal = {
@@ -231,6 +300,9 @@ type Timing = {
   avoid?: TimeWindow[]                 // esnek: kaçınılır, başka yer yoksa yine konur
   travel?: { before?: number; after?: number }   // dakika
   rest_days?: number                   // yalnızca tekrar biçiminde: iki yapılış arasında en az bu kadar boş gün
+  anchor?: 'wake' | 'bed'              // Ç3c: uyanıştan hemen sonra ya da yatıştan hemen önce (yuvalara dağıtılmaz)
+  order?: number                       // Ç3c: aynı çapadaki işlerin sırası (1, 2, …); yalnızca `anchor` ile
+  after_finish?: true                  // Ç3c: bitiş çizgisinden sonra, akşama da konabilir
 }
 
 type ProposalResult = {
@@ -273,7 +345,17 @@ Akış:
 3. Kaynak kayıt değişince modül aynı `key` ile yeniden `propose` eder. Kalem henüz haftaya taahhüt edilmediyse sessizce güncellenir; edildiyse değişiklik kullanıcıya tek satırla bildirilir ("Midterm bir gün öne alındı, plan güncellendi").
 4. Kullanıcı kalemi kapatınca (bitti ya da bırakıldı) çekirdek modüle sonucu bildirir (`onOutcome`): harcanan süre, kaç oturum, ertelenme sayısı. Modül bunu kendi tahmin ipuçlarını düzeltmek için kullanabilir.
 
-**Olaylar.** `emit` olayı `events` tablosuna yazar ve yayınlandığı yerde, o türü dinleyen etkin modüllerin `on` işleyicilerine sırayla verir. Duraklatılmış ve arşivlenmiş modül olay almaz. Bir işleyicinin hatası öbürlerini ve yayınlayanı durdurmaz. Çekirdeğin kendi olayları `core.` ile başlar; bugün tek tanesi vardır: `core.prompt_answered` (`{ module, kind, subject_type, subject_id, value }`).
+**Olaylar.** `emit` olayı `events` tablosuna yazar ve yayınlandığı yerde, o türü dinleyen etkin modüllerin `on` işleyicilerine sırayla verir. Duraklatılmış ve arşivlenmiş modül olay almaz. Bir işleyicinin hatası öbürlerini ve yayınlayanı durdurmaz. Çekirdeğin kendi olayları `core.` ile başlar:
+
+| Olay | Ne zaman | Yük | Kime |
+| --- | --- | --- | --- |
+| `core.prompt_answered` | Modülün sorusu cevaplandı | `{ module, kind, subject_type, subject_id, value }` | Dinleyen etkin modüllere |
+| `core.session_started` (Ç3c) | Oturum başladı | `{ module, session_id, task_id, rhythm_id, source: { type, id }, started_at }` | Yalnızca işin modülüne |
+| `core.session_ended` (Ç3c) | Oturum kapandı | aynısı + `{ ended_at, result, minutes, measured }`; `result`: `done`, `stopped`, `deferred`, `stuck`, `unanswered` | Yalnızca işin modülüne |
+| `core.day_started` (Ç3c) | Uyanış kaydedildi | `{ date, woke_at, estimated }` | Etkin bütün modüllere |
+| `core.day_closed` (Ç3c) | Yatış kaydedildi | `{ date, bed_at }` | Etkin bütün modüllere |
+
+Oturum olayları yalnızca işin sahibi modüle verilir (oturumun `module_id`'si); modül başka modülün işini bu yoldan izleyemez. Plansız ve modülsüz oturumun olayı kaydedilir ama kimseye verilmez. `source` oturum işinin ya da ritmin kaynağıdır (`source_type`, `source_id`); modül kendi kaydını böyle tanır. Bir oturum başka bir iş başlatılınca kapanırsa `stopped` olarak bildirilir.
 
 `ModuleDefinition`'a iki alan eklenir:
 

@@ -39,6 +39,10 @@ Neden şimdi: kullanıcının birinci önceliği, modüller tek tek tasarlanmada
 
 Mevcut kod bir kavram için başka ad kullanıyorsa koddaki adı koru ve dokümanı ona göre yaz.
 
+## Ç3b'den devralınan iş
+
+`docs/ILERLEME.md` içindeki "Bilinen sorunlar"da yazan yarış: kalemden Başla'ya basıldığı anda hafta bekçisi de aynı kalem için oturum işi yazarsa kalemin iki açık oturum işi olabiliyor (Ç3b'de pencere daraltıldı, kapanmadı). Bu adım oturumların başlamasına ve olaylarına dokunduğu için burada kalıcı olarak çöz: oturum işini açma ve oturumu başlatma tek işlemli bir veritabanı fonksiyonunda olsun; yarışı sınayan bir veritabanı testi yaz. Sırada 4. adımdan (oturum olayları) önce yap.
+
 ## Önerilen sıra
 
 1. **Veri ve zarf.** Migration (`days`, `settings`), `timing.anchor` ve `timing.after_finish` şeması ve doğrulaması. Denetçi (adım kipi).

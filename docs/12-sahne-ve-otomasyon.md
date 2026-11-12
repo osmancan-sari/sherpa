@@ -1,6 +1,6 @@
 # Modül sahnesi, günün çerçevesi ve otomasyon zemini
 
-**Durum: tasarım. Henüz kurulmadı; Ç3c ve Ç3d adımlarında kurulacak.** Bu doküman o iki adımın kaynağıdır. Adımlar kurulurken içerik ilgili numaralı dokümanlara (`03`, `04`, `05`, `06`, `07`, `10`, `11`) işlenir; bu dosya özet ve gerekçe olarak kalır.
+**Durum: A–D bölümleri numaralı dokümanlara işlendi ve Ç3c'de kuruluyor; E bölümü Ç3d'de.** Bölüm A–D'nin bağlayıcı hali artık `docs/03-veri-modeli.md`, `docs/04-planlayici.md` ("Günün çerçevesi"), `docs/05-arayuz.md` ("Sahne", "Günün çerçevesi"), `docs/06-modul-sozlesmesi.md` ("Sahne", "Sesli anlatım", "Olaylar") ve `docs/07-yol-haritasi.md` içindedir; çelişkide onlar geçerlidir. Bu dosya özet ve gerekçe olarak kalır. Kurulurken netleşenler: aynı çapadaki işlerin sırası `timing.order`; çerçeve `settings.day_frame` boşken kapalıdır; sahnenin bağlamında `session.id` de vardır; modül günün kaydını `ctx.days` ile okur.
 
 ## Neden
 

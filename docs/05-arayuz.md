@@ -60,6 +60,7 @@ Geniş ekranda tek sayfa, kaydırma yok:
 | `ModuleChips` | Modül başına tek satır durum; dokununca modül sayfası |
 | `QuickAdd` | Hızlı giriş; her ekrandan `N` ile açılır |
 | `PromptCard` | Olay sonrası tek soru |
+| `SceneFrame` (Ç3c) | Çalışan işin modül sahnesi: çekirdeğin şeridi, hata sınırı, geçiş |
 
 ### NowCard durumları
 
@@ -70,8 +71,11 @@ Geniş ekranda tek sayfa, kaydırma yok:
 | `block` | Bloğun adı, bitiş saati | Yalnızca hızlı giriş |
 | `prompt` | Tek soru ve seçenekleri | Seçenek düğmeleri, Sonra |
 | `done` | "Bugün tamam", kısa özet (kaç iş, kaç dakika) | Vakit kalırsa listesini aç |
-| `night` | Saat, yarının ilk işi | Yok |
+| `night` | Saat, yarının ilk işi (çerçeve açıkken yarının uyanışı da) | Yok |
+| `morning` (Ç3c) | "Günaydın", günün kısa özeti | Uyandım, Biraz önce |
+| `evening` (Ç3c) | "Akşam", sıradaki akşam işi, bu gecenin yatışı, yarının uyanışı, uyku süresi | Başla, Yatıyorum, Günü kapat, geç yatacağım, erken kalkacağım |
 | `return` | "Kaldığın yerden devam", bugünün 3 işi | Başla |
+| `running` + sahne (Ç3c) | Modülün sahnesi, üstte çekirdeğin şeridi | Çık; sahnenin kendi düğmeleri |
 
 - **Takıldım:** Oturumu kapatır ve üç seçenek sunar: adımı küçült (yeni bir iş yaz), birini bekliyorum (bekliyor durumuna al), bugün değil (ertele).
 - **Başka bir şey yapıyorum:** Tek satırlık giriş açar; yazılan şey için plansız oturum başlar. Modül seçimi isteğe bağlı.
@@ -106,6 +110,40 @@ Geniş ekranda tek sayfa, kaydırma yok:
 | `R` | Yeniden planla |
 | `G` sonra `B` / `H` / `G` | Bugün / Hafta / Gelen kutusu |
 | `1`–`9` | n. modülün sayfası |
+
+### Sahne (Ç3c)
+
+Çalışan işin modülü bir sahne veriyorsa (`docs/06-modul-sozlesmesi.md`, "Sahne") Bugün ekranı ona bırakılır:
+
+```
+┌──────────────────────────────────────────────────────────────────────┐
+│ 08:14   Sabah rutini · 6 dk                                    Çık   │  ← çekirdeğin şeridi
+├──────────────────────────────────────────────────────────────────────┤
+│                        (modülün sahnesi)                             │
+│        arka plan · adımlar · sayaç · modülün düğmeleri               │
+└──────────────────────────────────────────────────────────────────────┘
+```
+
+- Şerit: saat, modülün rengi ve işin adı, geçen süre, "Çık". Telefonda da tek satır.
+- Geçiş kısa bir solmadır; hareket azaltma tercihinde hiç yoktur. `look.tone` arka planın tonunu verir: `calm` sakin, `focus` koyu ve düz, `energy` modülün rengine çalan. Son hali Ç4'te.
+- "Çık"tan sonra standart ekran; kartın altında "Sahneye dön". Çıkış o cihazda, o oturum için hatırlanır.
+- Sahne hata verirse standart kart ve altında tek satır: "Sahne açılamadı; iş sürüyor."
+- **Görüşün gerek:** sahnenin yalnızca çalışan işte gelmesi; şeridin içeriği; "Çık"tan sonra dönüş yolu; tonların karşılığı.
+
+### Günün çerçevesi (Ç3c)
+
+Çerçeve açıkken (`settings.day_frame`, `docs/04-planlayici.md` "Günün çerçevesi"):
+
+- **Günaydın** (`morning`): kartta "Günaydın", büyük "Uyandım" düğmesi, yanında "Biraz önce" (15, 30, 60 dk önce; iki dokunuş), altında günün kısa özeti: günün 3 işi, ilk sabit blok, bitiş çizgisi. Ekranın geri kalanı (Sıradakiler, şerit) olağan haliyle durur. "Uyandım"dan sonra kart uyanışa bağlı ilk işi önerir.
+- **Akşam** (`evening`): sakin kart. Üstte "Akşam"; varsa sıradaki akşam ya da yatışa bağlı iş ve Başla; "Bu gece yatış 23:30 · yarın uyanış 07:30 · uyku 8 sa" satırı (uyku hedefin altındaysa nedeniyle: "Yarın 08:30'da Ders; bu gece en çok 7 sa uyku."); "Yatıyorum", "Günü kapat" (kapanış yapılmadıysa); iki küçük düğme: "Bu gece geç yatacağım" ve "Yarın erken kalkacağım" (her biri 30, 60, 90 dk seçer; yalnızca o geceyi ve o sabahı değiştirir). Sıradakiler, uyarılar ve "vakit kalırsa" gösterilmez.
+- **Gece:** büyük saat ve "Yarın uyanış 07:30 · ilk iş: …".
+- **Üst şerit:** "uyanış 07:40" (tahminiyse "~07:40"; kayıt yoksa beklenen, "beklenen 08:00") ve "yatış 22:00–01:00".
+- **Zaman çizelgesi** uyanıştan beklenen yatışa uzanır; uyanışa bağlı, çalışma, akşam ve yatışa bağlı bölümler zemin tonuyla ayrılır, bitiş çizgisi ince bir çizgidir.
+- **Akşam kapanışının sonunda** "Onayla"nın yanında "Onayla ve yat" (kapanışı yazar ve yatışı kaydeder).
+- **Hafta:** en üstte tek satır: son 7 günün ortalama uyanışı, yatışı ve uykusu (kayıt olan günlerden; yoksa satır yok). Seri, puan, rozet yok.
+- **Ayarlar → Günün çerçevesi:** uyanış ve yatış aralığı, uyku hedefi (saat), gün tipine özel aralıklar (isteğe bağlı), "Uyandım'dan sonra ilk rutin kendiliğinden başlasın".
+- **Ayarlar → Sesli anlatım (bu cihaz):** açık ya da kapalı, ses (cihazın Türkçe sesleri), hız, "Bu cihaz dokunuş olmadan da konuşsun", "Dene".
+- **Görüşün gerek:** Günaydın ve akşam ekranlarının içeriği ve metinleri; "Biraz önce" ve "geç yatacağım" seçenekleri; üst şeritteki gösterim; zaman çizelgesindeki bölümlerin görünüşü; Hafta'daki satır.
 
 ## Telefon
 

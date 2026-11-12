@@ -86,6 +86,20 @@ Kurallar:
 - Yapay zeka `timing`'i yalnızca serbest girişte, satırda açıkça yazıyorsa doldurur (`docs/10-yapay-zeka.md`); tahmin etmez. `timing`, `size` çağrısının kapsam karşılaştırmasına girmez.
 - `schema` 1 olarak kalır: alan eklemedir, `timing` taşımayan zarf eskisi gibi çalışır.
 
+**Günün çerçevesine bağlı alanlar (Ç3c).** Planlayıcının davranışı `docs/04-planlayici.md`, "Günün çerçevesi".
+
+| Alan | Anlamı | Türü |
+| --- | --- | --- |
+| `anchor` | `wake`: uyanıştan hemen sonra; `bed`: yatıştan hemen önce. Yuvalara dağıtılmaz | Kesin |
+| `order` | Aynı çapaya bağlı işlerin sırası; küçük önce | Kesin |
+| `after_finish` | `true`: bitiş çizgisinden sonra, akşama da konabilir | Kesin |
+
+- `anchor` `windows`, `prefer`, `avoid` ve `travel` ile birlikte kullanılmaz (çapalı iş saate değil uyanışa ya da yatışa bağlıdır); `rest_days` ile kullanılabilir.
+- `order` 1–99 arası tam sayıdır ve yalnızca `anchor` ile verilir.
+- `after_finish` yalnızca `true` olarak yazılır (`false` "kısıt yok" sayılır, atılır) ve `anchor` ile birlikte kullanılmaz.
+- Biçime göre: üçü de son tarih ve tekrar biçiminde ve işte (oturum işi dahil) kullanılır; sabit zaman biçiminde kullanılmaz.
+- Kaynakları `timing.anchor`, `timing.order`, `timing.after_finish`; öbür alt alanlar gibi olgu alanıdır.
+
 ## Tablolar
 
 ### areas
@@ -245,7 +259,7 @@ ended_at timestamptz null
 measured boolean default true -- false ise öğrenmeye girmez
 confirmed_at timestamptz null -- "Devam ediyor musun?" sorusuna "devam" denen an
 ```
-Aynı anda en fazla bir açık oturum olur (tekil indeks). Oturumlar dört veritabanı fonksiyonuyla yürür, hepsi çağıranın yetkisiyle: `close_unanswered_session` ("Devam ediyor musun?" sorusu 30 dakika cevapsız kalınca oturumu tahmini sürede, ölçülmemiş olarak kapatır; iş havuza döner, tahmin kalemin eforuna eklenir), `start_session` (iş, kalem, ritim ya da yalnızca başlıkla plansız iş; açık oturum varsa önce onu durdurur), `end_session` (`done`: iş biter ya da ritim kaydı düşer; `stopped`: iş havuza döner; iki durumda da süre kalemin `effort_done_minutes` değerine eklenir), `complete_task` (tek dokunuşla bitirme).
+Aynı anda en fazla bir açık oturum olur (tekil indeks). Bir kalemin oturum işini açmak (`start_session` kalemde, hafta bekçisinin `save_week_sittings`'i) kalem satırını kilitleyerek yapılır: aynı anda yapılan iki yazma sırayla işlenir ve kalemin iki açık oturum işi olmaz (Ç3c). Oturumlar dört veritabanı fonksiyonuyla yürür, hepsi çağıranın yetkisiyle: `close_unanswered_session` ("Devam ediyor musun?" sorusu 30 dakika cevapsız kalınca oturumu tahmini sürede, ölçülmemiş olarak kapatır; iş havuza döner, tahmin kalemin eforuna eklenir), `start_session` (iş, kalem, ritim ya da yalnızca başlıkla plansız iş; açık oturum varsa önce onu durdurur), `end_session` (`done`: iş biter ya da ritim kaydı düşer; `stopped`: iş havuza döner; iki durumda da süre kalemin `effort_done_minutes` değerine eklenir), `complete_task` (tek dokunuşla bitirme).
 
 ### days
 Günün planı ve sonucu. `(user_id, date)` tekil.
@@ -261,7 +275,16 @@ plan_source enum(closing, ai, auto)   -- kapanışta onaylandı / yapay zeka ön
 plan_reasons jsonb null       -- yapay zekanın gerekçeleri ("neden?")
 closed_at timestamptz null    -- akşam kapanışı yapıldıysa
 closing_note text null
+-- Günün çerçevesi (Ç3c, docs/04-planlayici.md "Günün çerçevesi"):
+woke_at timestamptz null      -- uyanış ("Uyandım"; dışarıdan da yazılabilir, Ç3d)
+woke_estimated boolean default false   -- "Uyandım" denmedi; günün ilk dokunuşundan alındı
+bed_at timestamptz null       -- bu gecenin yatışı ("Yatıyorum"); denmezse boş kalır, uydurulmaz
+planned_wake time null        -- uyku planının bu gün için seçtiği uyanış (kayıt için)
+planned_bed time null         -- uyku planının bu gece için seçtiği yatış (kayıt için)
+expected_wake time null       -- kullanıcının yalnızca bu gün için verdiği uyanış ("yarın erken kalkacağım")
+expected_bed time null        -- kullanıcının yalnızca bu gece için verdiği yatış ("bu gece geç yatacağım")
 ```
+Yatış saatleri (`planned_bed`, `expected_bed`) günün gecesine aittir: 12:00'den önceki bir saat ertesi günün takvim gününe düşer (`01:00` → gece yarısından sonra). Uyku süresi = sonraki günün `woke_at`'i − `bed_at`; ikisi de kayıtlıysa hesaplanır, uyanış tahminiyse süre de tahmini sayılır. `planned_*` değerleri planlayıcının her an yeniden hesaplayabildiği değerlerin kaydıdır (geçmiş ve haftalık özet için); plan bunları okumaz.
 
 ### week_plans
 Haftalık taahhüt. `(user_id, week_start)` tekil.
@@ -352,7 +375,24 @@ default_day_type enum(home, office, campus)
 return_after_days int default 3
 ai_enabled boolean default true
 ai_monthly_budget_usd numeric default 5   -- 0: yapay zeka o ay kapalı; eksi olamaz
+day_frame jsonb null          -- Ç3c: günün çerçevesi; boşsa çerçeve kapalı (Ç3b'deki gibi)
 ```
+`day_frame` (Ç3c):
+```json
+{
+  "wake": ["06:00", "09:00"],
+  "bed": ["22:00", "01:00"],
+  "sleep_minutes": 480,
+  "by_day_type": { "office": { "wake": ["06:00", "07:30"] } },
+  "start_on_wake": false
+}
+```
+- `wake` ve `bed` birer aralıktır (`HH:mm`, İstanbul); yatış aralığı gece yarısını aşabilir (bitişi 12:00'den önceyse ertesi gündür). Uyanış aralığı gece yarısını aşamaz.
+- `sleep_minutes` uyku hedefi, 240–720 dakika.
+- `by_day_type` isteğe bağlıdır: o tipteki gün için uyanış aralığı ve o günün gecesi için yatış aralığı.
+- `start_on_wake`: "Uyandım"dan sonra uyanışa bağlı ilk iş kendiliğinden başlar.
+- Sütunun başlangıç değeri kullanıcının verdiği değerlerdir (uyanış 06:00–09:00, yatış 22:00–01:00, uyku 8 saat). Boş değer çerçeveyi kapatır: planlayıcı Ç3b'deki gibi çalışır (günün başı ilk dokunuş ya da `day_start_default`, bitiş çizgisinden sonrası gece). Doğrulama uygulamadadır (`src/core/contract/frame.ts`); veritabanı yalnızca değerin bir nesne olduğunu denetler.
+- `day_start_default` çerçeve açıkken günün başını belirlemez (uyanış belirler); çerçeve kapalıyken eskisi gibi kullanılır.
 
 ### ai_calls, ai_feedback
 Yapay zeka çağrılarının kaydı ve kullanıcı düzeltmeleri. Tanımları `docs/10-yapay-zeka.md` içinde. İkisi de yalnızca eklenir.

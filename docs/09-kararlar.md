@@ -28,6 +28,13 @@
 | 12 Kas 2026 | Kesin pencere her kuraldan önce gelir (bugün teslim olan iş bile pencere dışına konmaz, uyarı çıkar); pencere planlayıcıyı bağlar, kullanıcıyı değil (elle her saatte başlatılır) | Kapalı salona plan yapılmaz; ama son söz kullanıcıdadır |
 | 12 Kas 2026 | Yol süresi tanımlı iş her bağlamda önerilir; kullanıcı zaten işin bağlamındaysa yol sayılmaz | Yoksa "dışarıda" bağlamlı iş ikinci ekranda hiç önerilmezdi; yol, yer değiştirmenin bedelidir |
 | 12 Kas 2026 | Yapay zeka zaman kısıtını yalnızca satırda açıkça yazıyorsa doldurur; işin türünden saat tahmin etmez | Yanlış tahmin edilmiş kesin pencere işi sessizce plandan düşürür |
+| 12 Kas 2026 | Modüller tasarlanmadan önce altyapı üç katmana hazır olur: Ç3c (sahne, oturum ve gün olayları, sesli anlatım, günün çerçevesi) ve Ç3d (sunucu zemini), Ç4'ten önce | Kullanıcının birinci önceliği; modül tasarım oturumları bu bağlantı noktalarına göre yapılacak (`docs/12-sahne-ve-otomasyon.md`) |
+| 12 Kas 2026 | Modül, işi çalışırken Bugün ekranını bir sahneyle devralabilir; çekirdeğin şeridi ve oturumu her zaman çekirdeğindir | Rutin, pişirme, antrenman gibi işler ana ekranda kendi yüzünü ister; oturum kuralları tek yerde kalmalı |
+| 12 Kas 2026 | Sesli anlatım çekirdeğin servisidir (`say`); ilk sağlayıcı cihazın kendi sesi, ücretli ses sonra aynı arayüze | Ücretsiz ve çevrimdışı başlamak; modüller sağlayıcıyı bilmez |
+| 12 Kas 2026 | Gün uyanışla başlar, yatışla biter. Uyanış ve yatış aralıktır (06:00–09:00, 22:00–01:00), uyku hedefi 8 saat; planlayıcı bir uyku planı kurar, uyku iş yüküne feda edilmez, uyku borcu tutulmaz, uygulama uyandırmaz | Sabah ve akşam modülleri bunlar olmadan kurulamaz; uyku planın kendisidir, artığı değil |
+| 12 Kas 2026 | Bitiş çizgisinden sonraya yalnızca `timing.after_finish` taşıyan iş konur (akşam); çizgi herkes için kalkmaz | Açık soruyu kapatır: akşam sporu gibi işler planlanabilir, gün yine bitiş çizgisinde biter |
+| 12 Kas 2026 (Ç3c) | `settings.day_frame` boşsa çerçeve kapalıdır ve planlayıcı Ç3b'deki gibi çalışır; sütunun başlangıç değeri kullanıcının aralıklarıdır | Ç3 ve Ç3b'nin uçtan uca testleri günün bütün saatlerinde çalışır; çerçeveyi açık bir veride "Günaydın" ekranı bu testleri saate bağlardı. Gerçek hesapta çerçeve açıktır |
+| 12 Kas 2026 (Ç3c) | Kalemin oturum işini açan iki yazma (kalemde Başla, hafta bekçisi) kalem satırını kilitleyen veritabanı fonksiyonlarında yapılır | Ç3b'de daraltılan ama kapanmayan yarış kalıcı olarak kapanır |
 
 ## Tasarım ve teknik kararlar (öneri; itiraz yoksa geçerli)
 
@@ -92,7 +99,7 @@
 - [ ] Saatli randevular için bildirim nasıl olsun: web push denensin mi, telefonun takvimine ayrıca mı yazılsın?
 - [ ] Akşam kapanışı için hatırlatma istenir mi?
 - [ ] Günün 3 işi yapısı kullanıcının doğrudan isteği değildi; gerçek modüllerle iki hafta kullanımdan sonra kalıp kalmayacağı yeniden değerlendirilecek.
-- [ ] Saat penceresi bitiş çizgisinden sonraya düşen iş (ör. akşam 21:00 spor) planlansın mı? Şimdilik planlayıcı bitiş çizgisinden sonraya hiçbir iş koymuyor ve böyle bir işi kaydederken uyarıyor (Ç3b). Seçenekler: çizgi herkes için kalsın (akşam işi sabit blok olur ya da çizgi ileri alınır); kesin penceresi olan iş çizgiden sonraya konabilsin. Spor modülü tasarlanırken karar verilecek.
+- [x] Saat penceresi bitiş çizgisinden sonraya düşen iş (ör. akşam 21:00 spor) planlansın mı? **Kapandı (12 Kas 2026):** `timing.after_finish` taşıyan iş akşama konabilir; öbür işler için çizgi kalır (Ç3c, `docs/04-planlayici.md` "Günün çerçevesi").
 - [ ] Zaman çarpanları (tercih edilen 1,25; kaçınılan 0,5) ve "yarısı" eşiği gerçek kullanımda uyuyor mu? Ç3b'de kodda sabit; gerekirse ayara taşınır.
 
 Okul: `docs/moduller/okul.md` 11. bölüm.

@@ -4,9 +4,26 @@ Bu dosyayı Claude Code günceller. Yeni bir oturum yalnızca bu dosyayı ve `pr
 
 ## Durum
 
-- Faz: **Ç3b (Zaman kısıtları) bitti** (12 Kas 2026, `c3b-tamam`; faz denetimi üç tur). Migration'lar `sherpa-dev`'de ve `sherpa-prod`'da; `main` ve etiket GitHub'a gönderilir. Ç0–Ç3b bitti; D1–D4 tamamlandı
-- Adım: 7 (yayın: etiket ve gönderim)
-- Son commit: Ç3b faz denetimi 3. tur (GEÇTİ)
+- Faz: **Ç3c (Sahne ve günün çerçevesi) sürüyor** (12 Kas 2026). Ç0–Ç3b bitti (`c3b-tamam`); D1–D4 tamamlandı
+- Adım: 0 (tasarımın numaralı dokümanlara işlenmesi)
+- Son commit: C3c design into the numbered docs
+
+### Ç3c planı
+
+İstem `prompts/c3c-sahne-ve-gun.md`. Her adımın sonunda `npm run check` (veri adımlarında `test:db` de) ve commit; 1., 2. ve 4. adımdan sonra denetçi (adım kipi). Planlayıcıda önce test, sonra kod. Çerçeve kapalıyken (`settings.day_frame` boş) planlayıcı Ç3b'deki gibi çalışır; Ç3 ve Ç3b testleri buna dayanır.
+
+| # | Adım | Durum |
+| --- | --- | --- |
+| 0 | Tasarım `docs/03`, `04`, `05`, `06`, `07`, `09`, `12`'ye işlendi | bitti |
+| 1 | Veri ve zarf: migration (`days` uyanış ve yatış sütunları, `settings.day_frame`), `day_frame` doğrulaması, `timing.anchor`, `order`, `after_finish`; Ç3b'nin yarışı: kalemin oturum işini kalem satırını kilitleyerek açan `start_session` ve `save_week_sittings`, yarış testi | |
+| 2 | Planlayıcı: uyku planı, günün başı, çapalı işler, akşam, `morning`/`evening`/`night`, haftanın günlük kapasitesi; önce testler | |
+| 3 | Uyanış ve yatış: kayıt, tahmini uyanış, kaydırma, planlanan değerlerin günün kaydına yazılması, ayarlar | |
+| 4 | Oturum ve gün olayları; yalnızca sahibine teslim | |
+| 5 | Sahne: `ui.scene`, şerit, çıkış ve dönüş, hata sınırı, `StepRunner`; `deneme`'de iki sahne | |
+| 6 | Sesli anlatım: `src/core/voice/`, cihaz başına ayar, `say`, `today` | |
+| 7 | Ekranlar: Günaydın, akşam, üst şerit, zaman çizelgesi, Hafta satırı | |
+| 8 | Kapanış: uçtan uca testler, ekran görüntüleri, `check:full`, faz denetimi, rapor, `c3c-tamam` | |
+| 9 | Yayın: migration `dev`, sonra `prod`; kod sonra | |
 
 ### Ç3b planı
 
@@ -371,7 +388,13 @@ Faz denetimi:
 
 ## Sıradaki adım
 
-Ç4 (Pano ve telefon cilası), yeni oturumda. Ç3b üretime gidiyor; kullanıcı üretimde "Zaman" bölümünü dener ("Senden bekleyenler" → Ç3b yayını).
+**Sıra (kullanıcının kararı, 12 Kas 2026): Ç3c → Ç3d → Ç4.** Modüller tasarlanmadan önce altyapı üç katmana hazır olmalı (`docs/12-sahne-ve-otomasyon.md`, "Neden").
+
+1. **Ç3c (Sahne ve günün çerçevesi):** istem `prompts/c3c-sahne-ve-gun.md`, etiket `c3c-tamam`.
+2. **Ç3d (Sunucu zemini):** istem `prompts/c3d-sunucu-zemini.md`, etiket `c3d-tamam`.
+3. `c3d-tamam` yokken Ç4'e başlanmaz.
+
+Ç3b üretimde; kullanıcı üretimde "Zaman" bölümünü dener ("Senden bekleyenler" → Ç3b yayını).
 
 Sonra Ç4 (Pano ve telefon cilası): yeni oturumda `docs/05-arayuz.md` ve `docs/11-yayin-ve-cihazlar.md` okunarak başlanır. Önce Ç3'ün ve Ç3b'nin "Görüşün gerek" satırları. Ç2'nin "Sunum slaytları cuma" ölçütü açık: Okul modülü kurulunca yeniden denenecek (D3, karar 5).
 

@@ -16,6 +16,8 @@ Her faz tek başına kullanılabilir bir şey bırakır. Bir fazın kabul ölç�
 | Ç2. Yapay zeka geçidi | Girişten ve modül tekliflerinden süre ve öncelik tahmini | Ç1 |
 | Ç3. Planlayıcı | Plan ufukları, yuvalı gün planı, bitiş çizgisi, akşam kapanışı, Hafta ekranı | Ç1 (yapay zeka önerileri için Ç2) |
 | Ç3b. Zaman kısıtları | İşlerin saat penceresi, kaçınılan saatleri, yol süresi ve dinlenme günü; planlayıcı bunlara uyar | Ç3 |
+| Ç3c. Sahne ve günün çerçevesi | Modülün işi çalışırken Bugün ekranını devralan sahne, oturum ve gün olayları, sesli anlatım; uyanış, yatış, uyku planı, çapalı işler, akşam | Ç3b |
+| Ç3d. Sunucu zemini | Uygulama kapalıyken çalışan taraf: cihaz anahtarları, giriş ucu, zamanlanmış işler, sunucuda modül bağlamı | Ç3c |
 | Ç4. Pano ve telefon cilası | Gün boyu açık duracak kalitede pano; uygulama gibi çalışan telefon | Ç3 |
 | Ç5. Claude köprüsü | Claude sohbetleri Sherpa'yı okuyup yazar | Ç1 |
 
@@ -144,6 +146,64 @@ Tasarım: `docs/03-veri-modeli.md` ("Zaman kısıtları"), `docs/04-planlayici.m
 - [ ] `docs/04-planlayici.md` içindeki "Zaman kısıtları (Ç3b)" test listesinin tamamı yazılı ve geçiyor
 - [ ] Migration önce `dev`, sonra `prod` projesinde; kod ondan sonra yayında
 
+### Ç3c: Sahne ve günün çerçevesi
+
+Tasarım: `docs/12-sahne-ve-otomasyon.md` (bölüm A–D); kurulduğu haliyle `docs/03-veri-modeli.md` (`days`, `settings.day_frame`, `timing.anchor`, `timing.order`, `timing.after_finish`), `docs/04-planlayici.md` ("Günün çerçevesi"), `docs/05-arayuz.md` ("Sahne", "Günün çerçevesi"), `docs/06-modul-sozlesmesi.md` ("Sahne", "Sesli anlatım", "Olaylar"). Karar: `docs/09-kararlar.md`, 12 Kas 2026.
+
+Modüller tek tek tasarlanmadan önce altyapının üç katmana hazır olması için (kullanıcının kararı, 12 Kas 2026). Hiçbir şey bir modüle özel kurulmaz; her bağlantı noktasının örneği `deneme` modülündedir.
+
+**Kapsam**
+- Migration: `days` uyanış ve yatış sütunları, `settings.day_frame`; kalemin oturum işini açmayı kalem satırını kilitleyerek yapan veritabanı fonksiyonları (Ç3b'den kalan yarış)
+- Zarf: `timing.anchor`, `timing.order`, `timing.after_finish`; doğrulama ve biçime göre izin
+- Planlayıcı: günün başının uyanışa bağlanması, uyku planı, çapalı işler, akşam, `morning` ve `evening` durumları, haftanın günlük kapasitesinde uyanış
+- Uyanış ve yatış kaydı, tahmini uyanış, "geç yatacağım" ve "erken kalkacağım", ayarlar
+- Oturum ve gün olayları (`core.session_started`, `core.session_ended`, `core.day_started`, `core.day_closed`)
+- Sahne (`ui.scene`), çekirdeğin şeridi, çıkış ve dönüş, hata sınırı, `StepRunner`; `deneme`'de serbest ve adımlı iki sahne
+- Sesli anlatım (`src/core/voice/`), cihaz başına ayarlar, `say` ve `today`
+- Ekranlar: Günaydın, akşam, üst şerit, zaman çizelgesinin bölümleri, Hafta'da tek satır
+
+**Kabul ölçütleri**
+- [ ] `deneme` modülü bir sahne tanımlıyor: işi başlatınca Bugün ekranı sahneye geçiyor, bitince geri dönüyor; panoda ve telefonda
+- [ ] Sahnedeyken üst şerit duruyor; "Çık" standart ekrana döndürüyor, oturum sürüyor, "Sahneye dön" çalışıyor
+- [ ] Sahne hata verince standart kart geliyor, oturum etkilenmiyor
+- [ ] Sahnesi olmayan modülde ve `scene.when` yanlış dönen işte ekran Ç3'teki gibi
+- [ ] `StepRunner` ile adımlı bir örnek sahne: geri sayım, sonraki, atla
+- [ ] Modül `core.session_started` ve `core.session_ended` olaylarını yalnızca kendi işleri için alıyor; `core.day_started` ve `core.day_closed` etkin bütün modüllere gidiyor
+- [ ] `say`: cihazın sesiyle Türkçe konuşuyor, sıra ve kesme çalışıyor, kapalıyken sessiz ve hatasız; cihaz başına ayar
+- [ ] Sesli anlatım gerçek telefonda (dokunuştan sonra) ve gerçek panoda denendi; sonuç `docs/ILERLEME.md` içinde (elle doğrulanacak)
+- [ ] "Uyandım" ve "Yatıyorum" kaydediliyor; "Uyandım" denmeden dokunulunca uyanış tahmini olarak işaretleniyor
+- [ ] Çalışma penceresi uyanışa göre başlıyor: geç uyanılan günde plan kısalıyor; uyanış yokken beklenen uyanış kullanılıyor
+- [ ] Uyku planı: ilk yükümlülüğe göre en geç uyanış; yük sığmayınca uyanışın ve yatışın birlikte erkene çekilmesi; iş yükünün uykuyu hedefin altına düşürmemesi; sabit yükümlülük düşürünce ekranın söylemesi
+- [ ] Gerçek yatış kaydedilince yarının beklenen uyanışı ve planı değişiyor (geç yatış → kısalan gün, erken yatış → uzayan gün); kapasite 30 dakikadan çok düşünce haftanın taahhüdü yeniden kuruluyor
+- [ ] Akşam ekranı bu gecenin yatışını, yarının uyanışını ve uyku süresini birlikte gösteriyor
+- [ ] `anchor: 'wake'` taşıyan iş uyanıştan hemen sonra, `anchor: 'bed'` taşıyan iş yatıştan önce duruyor; yuvalara dağıtılmıyor
+- [ ] `after_finish` taşımayan hiçbir iş bitiş çizgisinden sonraya konmuyor; taşıyan iş akşama konabiliyor
+- [ ] `morning` ve `evening` durumları doğru koşullarda geliyor; "bu gece geç yatacağım" ve "yarın erken kalkacağım" yalnızca o günü etkiliyor
+- [ ] Ayarlar'da uyanış ve yatış aralıkları ile uyku hedefi değişiyor; gün tipine özel aralık verilebiliyor
+- [ ] Günün çerçevesi kullanılmayan veride (uyanış kaydı yok, çapa yok, `after_finish` yok) çalışma penceresinin içindeki plan Ç3b'dekiyle aynı; Ç3 ve Ç3b testleri değiştirilmeden geçiyor ya da değişen her test gerekçesiyle kayıtlı
+- [ ] Kalemden Başla ile hafta bekçisinin oturum işi yazması aynı anda olunca kalemin tek açık oturum işi kalıyor (veritabanı testi)
+- [ ] Migration önce `dev`, sonra `prod` projesinde; kod ondan sonra yayında
+
+### Ç3d: Sunucu zemini
+
+Tasarım: `docs/12-sahne-ve-otomasyon.md`, bölüm E. İstem `prompts/c3d-sunucu-zemini.md`.
+
+**Kapsam**
+- Cihaz anahtarları (`device_tokens`): üretme, kapsam, son kullanım, iptal; Ayarlar → Bağlantılar
+- Giriş ucu `POST /api/ingest/<kaynak>/<tür>`: anahtar ve kapsam denetimi, şema doğrulaması, yinelenen istek, hız sınırı; çekirdeğin türleri `core/wake`, `core/bed`, `core/context`
+- Modülün `ingest` ve `jobs` alanları; tek zamanlayıcı ucu ve `job_runs`; çekirdeğin kendi işleri aynı düzenle
+- Sunucuda modül bağlamı (yalnızca anahtarın sahibinin verisi); modül sunucu kodunun tarayıcıya özgü bir şey içe aktarmaması (lint)
+
+**Kabul ölçütleri**
+- [ ] Ayarlar → Bağlantılar'da anahtar üretiliyor (bir kez gösteriliyor), kapsamı seçiliyor, iptal ediliyor; iptal edilen anahtar reddediliyor
+- [ ] Anahtar yalnızca kapsamındaki uca yazabiliyor; okuma yapamıyor; yanlış ya da eksik anahtar 401, kapsam dışı 403
+- [ ] `core/wake` ve `core/bed` uçları uyanışı ve yatışı kaydediyor; açık ekranlar canlı güncelleniyor
+- [ ] `deneme` modülünün bir `ingest` türü: geçerli gövde işleniyor, geçersiz gövde adıyla reddediliyor, yinelenen istek ikinci kez işlenmiyor
+- [ ] `deneme` modülünün bir zamanlanmış işi uygulama kapalıyken çalışıyor; `job_runs` kaydı düşüyor; aynı iş iki kez tetiklenince veri bozulmuyor
+- [ ] Sunucuda çalışan işleyici yalnızca anahtarın sahibinin verisine erişiyor (başka hesabın verisine erişemediği testle)
+- [ ] Modülün sunucu kodu tarayıcıya özgü bir şey içe aktarınca lint hata veriyor
+- [ ] iPhone Kestirmeler ile `core/wake` gerçek telefonda denendi (elle doğrulanacak; adımları `docs/ILERLEME.md` içinde)
+
 ### Ç4: Pano ve telefon cilası
 
 Tasarım: `docs/05-arayuz.md`, `docs/11-yayin-ve-cihazlar.md`.
@@ -199,4 +259,4 @@ Bir modülün süreci: tasarım oturumu (bkz. `prompts/modul-tasarim-oturumu.md`
 
 Okul modülünün adımları için taslak kapsam ve kabul ölçütleri `docs/moduller/okul.md` ve `docs/moduller/okul-ninova.md` içindedir; tasarım oturumunda kesinleşir.
 
-Önerilen sıra: Ç0 → Ç1 → Ç2 → Ç3 → Ç3b → Ç4; Okul adım 1 tasarımı onaylanınca, Ç5 ve Okul adım 2 ihtiyaca göre araya girer. (Ç3, Okul adım 1'den önce bitti; Ç3b modüller tasarlanmadan önce yapılır, çünkü iş zarfını değiştirir.)
+Önerilen sıra: Ç0 → Ç1 → Ç2 → Ç3 → Ç3b → Ç3c → Ç3d → Ç4 (Ç3c ve Ç3d kullanıcının kararıyla Ç4'ten önce, 12 Kas 2026); Okul adım 1 tasarımı onaylanınca, Ç5 ve Okul adım 2 ihtiyaca göre araya girer. (Ç3, Okul adım 1'den önce bitti; Ç3b modüller tasarlanmadan önce yapılır, çünkü iş zarfını değiştirir.)
