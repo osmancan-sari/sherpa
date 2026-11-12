@@ -319,6 +319,30 @@ export async function seedDemo(db: Db, now: Date): Promise<DemoSummary> {
     { module_id: ev.id, title: "Ampul al", est_minutes: 15, context: "out" as const },
     { module_id: saglik.id, title: "Alışveriş listesi", est_minutes: 15, due_at: endOf(1) },
     { module_id: okul.id, title: "Danışmana e-posta", est_minutes: 10, kind: "admin" as const },
+    // Time constraints (Ç3b): office hours with travel, a window in the afternoon, a crowded hour.
+    {
+      module_id: ev.id,
+      title: "Banka işlemi",
+      est_minutes: 30,
+      context: "out" as const,
+      timing: {
+        windows: [{ days: [1, 2, 3, 4, 5], from: "09:00", to: "17:00" }],
+        travel: { before: 15, after: 15 },
+      },
+    },
+    {
+      module_id: okul.id,
+      title: "Kütüphaneden kitap al",
+      est_minutes: 20,
+      timing: { windows: [{ from: "16:00", to: "18:30" }] },
+    },
+    {
+      module_id: saglik.id,
+      title: "Market alışverişi",
+      est_minutes: 40,
+      energy: "physical" as const,
+      timing: { avoid: [{ days: [1, 2, 3, 4, 5], from: "17:30", to: "19:30" }] },
+    },
     {
       module_id: okul.id,
       title: "Staj belgesi",

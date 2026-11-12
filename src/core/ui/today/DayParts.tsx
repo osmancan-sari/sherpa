@@ -114,22 +114,46 @@ export function DayStrip({
       </div>
       <div className="overflow-x-auto">
         <div className="bg-muted relative h-8 min-w-[36rem] overflow-hidden rounded-lg">
-          {plan.slots.map((slot) =>
-            slot.assignment ? (
+          {plan.slots.flatMap((slot) => {
+            const assignment = slot.assignment;
+            if (!assignment) return [];
+            const color =
+              modules.get(assignment.candidate.moduleId)?.row.color ?? "var(--muted-foreground)";
+            const trip = (start: number, end: number, key: string, minutes: number) => (
+              <span
+                key={key}
+                data-testid="strip-travel"
+                title={`yol ${minutes} dk`}
+                aria-label={`yol ${minutes} dk`}
+                className="absolute inset-y-2 rounded-sm opacity-40"
+                style={{
+                  left: left(start),
+                  width: width(start, end),
+                  backgroundImage: `repeating-linear-gradient(135deg, ${color} 0 3px, transparent 3px 6px)`,
+                }}
+              />
+            );
+            const before = (assignment.travelBefore ?? 0) * 60_000;
+            const after = (assignment.travelAfter ?? 0) * 60_000;
+            const start = slot.start.getTime();
+            const end = slot.end.getTime();
+            return [
+              ...(before > 0
+                ? [trip(start - before, start, `b-${start}`, assignment.travelBefore!)]
+                : []),
+              ...(after > 0 ? [trip(end, end + after, `a-${start}`, assignment.travelAfter!)] : []),
               <span
                 key={`s-${slot.start.getTime()}`}
-                title={`${formatTime(slot.start)}–${formatTime(slot.end)} ${slot.assignment.candidate.title}`}
+                title={`${formatTime(slot.start)}–${formatTime(slot.end)} ${assignment.candidate.title}`}
                 className="absolute inset-y-1 rounded-sm opacity-80"
                 style={{
                   left: left(slot.start.getTime()),
                   width: width(slot.start.getTime(), slot.end.getTime()),
-                  backgroundColor:
-                    modules.get(slot.assignment.candidate.moduleId)?.row.color ??
-                    "var(--muted-foreground)",
+                  backgroundColor: color,
                 }}
-              />
-            ) : null,
-          )}
+              />,
+            ];
+          })}
           {blocks.map((block) => (
             <span
               key={block.id}

@@ -31,7 +31,7 @@ import { ClientOnly } from "../ClientOnly";
 import { useNotify } from "../Notices";
 import { QuickAddButton } from "../QuickAdd";
 import { AlertBar, DayStrip, isTyping, MinutesDialog, TopBar } from "./DayParts";
-import { NowCard, sessionTargetOf } from "./NowCard";
+import { NowCard, sessionTargetOf, travelText } from "./NowCard";
 
 // The Today screen (docs/05-arayuz.md): drawn from the planner's plan, re-made on every change
 // and every minute. The "now" card, the next things, the day as a strip, at most two warnings,
@@ -285,6 +285,7 @@ function CandidateRow({
   const parts = [
     mod?.row.name,
     formatMinutes(candidate.minutes),
+    travelText(candidate.travelBefore, candidate.travelAfter),
     candidate.progress,
     candidate.type === "follow_up" ? "takip" : null,
     candidate.dueAt ? formatDue(candidate.dueAt, now) : null,

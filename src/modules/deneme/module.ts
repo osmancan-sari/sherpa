@@ -13,7 +13,7 @@ import { addItem, EVENTS, listeners, onOutcome, proposalFor, settingsOf } from "
 // thing that makes the point. It is switched on only where NEXT_PUBLIC_SHERPA_DEMO_MODULE=1
 // (src/modules/registry.ts); it never runs against production data.
 
-const KINDS: DenemeKind[] = ["hedef", "aliskanlik", "etkinlik"];
+const KINDS: DenemeKind[] = ["hedef", "aliskanlik", "etkinlik", "antrenman"];
 
 export const deneme: ModuleDefinition = {
   slug: "deneme",
@@ -73,6 +73,7 @@ export const deneme: ModuleDefinition = {
             { value: "hedef", label: "Hedef" },
             { value: "aliskanlik", label: "Alışkanlık" },
             { value: "etkinlik", label: "Etkinlik" },
+            { value: "antrenman", label: "Antrenman" },
           ],
         },
         { name: "due_on", label: "Tarih", type: "date" },

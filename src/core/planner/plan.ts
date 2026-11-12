@@ -13,6 +13,7 @@ import {
 import { buildSlots, capacityFactor, kindOf, slotMinutes } from "./slots";
 import { allowedOn, betterState, TIME_FACTOR, type TimeState, timeState } from "./timing";
 import { weekNoTime } from "./week";
+import { outsideDay, readTiming } from "@/core/contract/timing";
 import type { Assignment, Candidate, NowState, Plan, PlanInput, Slot, Warning } from "./types";
 
 // The day plan (docs/04-planlayici.md, "Gün nasıl kurulur"): slots, capacity, the mandatory
@@ -650,6 +651,47 @@ function warningsOf(
       kind: "no_time_week",
       subjectId: row.id,
       text: `Bu hafta uygun saat yok: ${row.title}.`,
+      moduleId: row.moduleId,
+    });
+  }
+
+  // Work whose windows lie wholly outside the day's hours can never be planned: said until the
+  // windows or the finish line change (rule 9).
+  const { dayStart, finishLine } = input.settings;
+  const active = new Set(input.modules.map((mod) => mod.id));
+  const outside = [
+    ...input.tasks
+      .filter((task) => task.status === "todo" || task.status === "doing")
+      .filter((task) => active.has(task.module_id))
+      .map((task) => ({
+        id: task.id,
+        title: task.title,
+        moduleId: task.module_id,
+        timing: readTiming(task.timing),
+      })),
+    ...input.workItems
+      .filter((item) => item.status === "active" && active.has(item.module_id))
+      .map((item) => ({
+        id: item.id,
+        title: item.title,
+        moduleId: item.module_id,
+        timing: readTiming(item.timing),
+      })),
+    ...input.rhythms
+      .filter((rhythm) => rhythm.active && active.has(rhythm.module_id))
+      .map((rhythm) => ({
+        id: rhythm.id,
+        title: rhythm.title,
+        moduleId: rhythm.module_id,
+        timing: readTiming(rhythm.timing),
+      })),
+  ].filter((row) => outsideDay(row.timing, dayStart, finishLine));
+  for (const row of outside) {
+    if (spoken(row.id)) continue;
+    warnings.push({
+      kind: "outside_day",
+      subjectId: row.id,
+      text: `Saatleri bitiş çizgisinden sonra: ${row.title}.`,
       moduleId: row.moduleId,
     });
   }

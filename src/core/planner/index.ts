@@ -28,6 +28,7 @@ export {
   recommitReason,
   sittingChanges,
   weekCapacity,
+  weekNoTime,
 } from "./week";
 export type { WeekAdvice, WeekInput, WeekLoad, WeekPlan, LoadInput, RecommitReason } from "./week";
 export { capacityFactors, estimateMultipliers } from "./learn";

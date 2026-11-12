@@ -146,6 +146,7 @@ export type WarningKind =
   | "deadline"
   | "no_time_today"
   | "no_time_week"
+  | "outside_day"
   | "floor"
   | "next_step"
   | "deferred_often"

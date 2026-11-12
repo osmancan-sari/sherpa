@@ -322,3 +322,20 @@ export function timingSummary(timing: Timing | null | undefined): string {
   if (timing.rest_days) parts.push(`${timing.rest_days} gün ara`);
   return parts.join(" · ");
 }
+
+/**
+ * The windows never meet the planned day: on every day they lie before its start or after its
+ * finish line ("HH:mm"), so the planner can never place the work (docs/04-planlayici.md, rule 9).
+ */
+export function outsideDay(
+  timing: Timing | null | undefined,
+  dayStart: string,
+  finishLine: string,
+): boolean {
+  if (!timing?.windows) return false;
+  const start = clockMinutes(dayStart);
+  const end = clockMinutes(finishLine);
+  return timing.windows.every(
+    (range) => clockMinutes(range.to) <= start || clockMinutes(range.from) >= end,
+  );
+}

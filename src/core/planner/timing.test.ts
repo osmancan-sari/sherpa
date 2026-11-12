@@ -507,8 +507,28 @@ describe("conflicts", () => {
     );
     expect(blocked.warnings.map((row) => row.kind)).toEqual(["no_time_week"]);
     // Not committed and not due this week: no warning.
+    // (Its window lies before the day's start: that is said on its own.)
     const loose = buildPlan(input({ workItems: [early], committed: [] }));
-    expect(loose.warnings).toEqual([]);
+    expect(loose.warnings.map((row) => row.kind)).toEqual(["outside_day"]);
+  });
+
+  it("work whose windows lie wholly after the finish line is said to be unplannable", () => {
+    const gym = timed({ windows: [{ from: "20:00", to: "24:00" }] }, { title: "Salon" });
+    const early = timed({ windows: [{ from: "05:00", to: "07:00" }] }, { title: "Koşu" });
+    const plan = buildPlan(input({ tasks: [gym, early] }));
+    expect(placement(plan, gym.id)).toBeNull();
+    expect(plan.warnings.map((row) => row.text)).toEqual([
+      "Saatleri bitiş çizgisinden sonra: Salon.",
+      "Saatleri bitiş çizgisinden sonra: Koşu.",
+    ]);
+    // One range inside the day is enough to plan it on some day.
+    const mixed = timed({
+      windows: [
+        { from: "20:00", to: "24:00" },
+        { days: [6], from: "10:00", to: "12:00" },
+      ],
+    });
+    expect(buildPlan(input({ tasks: [mixed] })).warnings).toEqual([]);
   });
 
   it("the AI may not plan work outside its window: the advice is dropped and said", () => {

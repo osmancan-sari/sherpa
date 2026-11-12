@@ -8,6 +8,7 @@ Yalnızca `NEXT_PUBLIC_SHERPA_DEMO_MODULE=1` verilen ortamlarda kaydolur (`src/m
 | --- | --- |
 | Kendi tablosu (`deneme_items`) ve sorguları | `queries.ts`, `supabase/migrations/*_deneme_items.sql` |
 | İş teklifi: son tarih, tekrar ve sabit zaman biçimleri; geri çekme | `rules.ts` (`proposalFor`, `addItem`, `changeItem`, `removeItem`) |
+| Zaman kısıtları (`timing`): pencere, tercih, kaçınma, yol, dinlenme günü | `rules.ts` (`antrenman` türü, `WORKOUT_TIMING`) |
 | Sonuç bildirimi ve olay sorusu | `rules.ts` (`onOutcome`, `listeners`) |
 | Olay yayını ve dinleme | `rules.ts` (`EVENTS`, `listeners`) |
 | Çip, şimdi kartı içeriği, uyarı, giriş türü, yapılı blok, mod davranışı, haftalık rapor, yaşam döngüsü | `module.ts` |

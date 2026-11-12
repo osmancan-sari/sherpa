@@ -43,6 +43,7 @@ export function EditDialog({
   onClose,
   extra,
   hints = {},
+  section,
 }: {
   title: string;
   fields: EditField[];
@@ -57,12 +58,19 @@ export function EditDialog({
   extra?: ReactNode;
   /** Field name → the AI's reason, for values the AI set (shown under the field). */
   hints?: Record<string, string>;
+  /**
+   * A section of its own under the fields (the "Zaman" section), told the current values: it
+   * may keep the save off, and a change in it is a change of the form.
+   */
+  section?: (values: EditValues) => { node: ReactNode; valid: boolean; changed: boolean };
 }) {
   const [values, setValues] = useState<EditValues>(initial);
   const set = (name: string, value: string) => setValues((old) => ({ ...old, [name]: value }));
+  const sectionState = section?.(values);
   const valid =
     fields.every((field) => !fieldProblem(field, values[field.name] ?? "")) &&
-    (validate?.(values) ?? true);
+    (validate?.(values) ?? true) &&
+    (sectionState?.valid ?? true);
 
   const submit = (event: FormEvent) => {
     event.preventDefault();
@@ -72,7 +80,7 @@ export function EditDialog({
         .filter((field) => (values[field.name] ?? "") !== (initial[field.name] ?? ""))
         .map((field) => [field.name, values[field.name] ?? ""]),
     );
-    if (Object.keys(changed).length > 0) onSave(changed, values);
+    if (Object.keys(changed).length > 0 || sectionState?.changed) onSave(changed, values);
     onClose();
   };
 
@@ -125,6 +133,7 @@ export function EditDialog({
             );
           })}
         </div>
+        {sectionState?.node}
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex flex-wrap gap-2">{extra}</div>
           <div className="flex gap-2">

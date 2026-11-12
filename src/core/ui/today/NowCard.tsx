@@ -108,7 +108,7 @@ function CardFor({
   }
   if (state.kind === "prompt") return <PromptState prompt={state.prompt} modules={modules} />;
   if (state.kind === "suggest") {
-    return <Suggest assignment={state.assignment} date={date} modules={modules} />;
+    return <Suggest assignment={state.assignment} at={state.at} date={date} modules={modules} />;
   }
   if (state.kind === "done") {
     return (
@@ -192,12 +192,20 @@ function Why({ reasons }: { reasons: string[] }) {
   );
 }
 
+/** "60 dk · yol 20+20 dk" (docs/05-arayuz.md, "Zaman kısıtları"). */
+export function travelText(before = 0, after = 0): string | null {
+  return before + after > 0 ? `yol ${before}+${after} dk` : null;
+}
+
 function Suggest({
   assignment,
+  at,
   date,
   modules,
 }: {
   assignment: Assignment;
+  /** Work bound to its time whose footprint starts later: when to start (or set off). */
+  at?: Date;
   date: string;
   modules: Map<string, KnownModule>;
 }) {
@@ -295,9 +303,19 @@ function Suggest({
         <ModuleLine mod={mod} />
         <h2 className={TITLE}>{candidate.title}</h2>
         <p className="text-muted-foreground tabular-nums md:text-lg">
-          {formatMinutes(assignment.minutes)}
-          {candidate.progress ? ` · ${candidate.progress}` : ""}
+          {[
+            formatMinutes(assignment.minutes),
+            travelText(assignment.travelBefore, assignment.travelAfter),
+            candidate.progress,
+          ]
+            .filter(Boolean)
+            .join(" · ")}
         </p>
+        {at ? (
+          <p className="tabular-nums md:text-lg" data-testid="suggest-at">
+            {assignment.travelBefore ? "Yola çıkış" : "Başlangıç"} {formatTime(at)}
+          </p>
+        ) : null}
         <Why reasons={assignment.reasons} />
       </div>
       <div className="flex flex-wrap gap-2">

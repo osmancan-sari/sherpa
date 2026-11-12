@@ -4,7 +4,7 @@ import type { Tables } from "@/lib/supabase/database.types";
 // The module's own table. Nobody else reads or writes it (docs/06-modul-sozlesmesi.md).
 
 export type DenemeItem = Tables<"deneme_items">;
-export type DenemeKind = "hedef" | "aliskanlik" | "etkinlik";
+export type DenemeKind = "hedef" | "aliskanlik" | "etkinlik" | "antrenman";
 
 export const SOURCE_TYPE = "deneme.item";
 
@@ -12,6 +12,7 @@ export const KIND_LABEL: Record<DenemeKind, string> = {
   hedef: "Hedef",
   aliskanlik: "Alışkanlık",
   etkinlik: "Etkinlik",
+  antrenman: "Antrenman",
 };
 
 function unwrap<T>(result: { data: T; error: { message: string } | null }): NonNullable<T> {

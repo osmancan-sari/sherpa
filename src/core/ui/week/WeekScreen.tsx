@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { type FormEvent, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,7 +13,14 @@ import {
 } from "@/core/app/hooks";
 import { useRecommitWeek, useSetLifeMode } from "@/core/app/plan-actions";
 import { weekInput } from "@/core/data/keep";
-import { dayCapacity, lifeModeOn, loadByWeek, readShares, type WeekLoad } from "@/core/planner";
+import {
+  dayCapacity,
+  lifeModeOn,
+  loadByWeek,
+  readShares,
+  type WeekLoad,
+  weekNoTime,
+} from "@/core/planner";
 import { blocksOfDay } from "@/core/today/select";
 import type { LifeMode } from "@/core/types";
 import { dayKey, formatDue, formatMinutes, shiftDay, weekStart } from "@/lib/date";
@@ -77,6 +85,14 @@ function WeekBody() {
   // The AI's reasons for the week's items, when it chose them (`week`).
   const reasons = (plan?.reasons ?? {}) as Record<string, string>;
   const [thisWeek] = loads;
+  // Work this week's windows cannot hold (docs/04-planlayici.md, "Zaman kısıtları", rule 8).
+  const noTime = weekNoTime({
+    ...weekInput(rows, now),
+    weekStart: week,
+    committed: plan?.committed ?? null,
+    shares,
+    rhythmLogs: rows.rhythmLogs,
+  });
 
   return (
     <>
@@ -100,6 +116,31 @@ function WeekBody() {
       <DayStrip week={week} rows={rows} input={input} now={now} />
 
       <CapacityBar load={thisWeek} modules={moduleMap} />
+
+      {noTime.length > 0 ? (
+        <section aria-label="Uygun saat" className="flex flex-col gap-2">
+          {noTime.map((row) => {
+            const slug = moduleMap.get(row.moduleId)?.row.slug;
+            return (
+              <p
+                key={row.id}
+                className="border-border flex flex-wrap items-center justify-between gap-2 rounded-xl border px-4 py-2 text-sm"
+              >
+                <span>
+                  <span className="health-attention">Uyarı</span> · Bu hafta uygun saat yok:{" "}
+                  {row.title}.
+                </span>
+                <Link
+                  href={slug ? `/m/${slug}` : "/m"}
+                  className="text-muted-foreground hover:text-foreground underline-offset-4 hover:underline"
+                >
+                  Modüle git
+                </Link>
+              </p>
+            );
+          })}
+        </section>
+      ) : null}
 
       <section aria-label="Haftanın kalemleri" className="flex flex-col gap-3">
         <h2 className="text-muted-foreground text-xs font-medium tracking-widest uppercase">

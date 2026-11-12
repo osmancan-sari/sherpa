@@ -29,6 +29,15 @@ export function settingsOf(ctx: ModuleContext): Settings {
 
 const keyOf = (item: Pick<DenemeItem, "id">) => `item:${item.id}`;
 
+/** The gym: open 07:00–22:00, crowded on weekday evenings, best on weekend mornings, 20 minutes away. */
+export const WORKOUT_TIMING = {
+  windows: [{ from: "07:00", to: "22:00" }],
+  prefer: [{ days: [6, 7], from: "10:00", to: "12:00" }],
+  avoid: [{ days: [1, 2, 3, 4, 5], from: "18:00", to: "20:30" }],
+  travel: { before: 20, after: 20 },
+  rest_days: 1,
+};
+
 /**
  * The envelope for a record. The module states what it knows (the deadline, a length the user
  * typed) and leaves the rest empty: a goal without a length gets bounds, not a guess.
@@ -50,6 +59,19 @@ export function proposalFor(item: DenemeItem, settings: Settings, now: Date): Wo
         session_minutes: Math.max(5, Math.min(item.minutes ?? settings.default_minutes ?? 15, 90)),
       },
       fit: { energy: "light" },
+    };
+  }
+
+  if (kind === "antrenman") {
+    // A workout at the gym: every time constraint the envelope has (docs/03-veri-modeli.md,
+    // "Zaman kısıtları"). A real module would build these from its settings (the gym's hours,
+    // the way there); here they are fixed.
+    return {
+      ...base,
+      when: { recurrence: { count: 3, period: "week", floor: 1 } },
+      effort: { session_minutes: Math.max(5, Math.min(item.minutes ?? 60, 90)) },
+      fit: { energy: "physical", context: "out" },
+      timing: WORKOUT_TIMING,
     };
   }
 
