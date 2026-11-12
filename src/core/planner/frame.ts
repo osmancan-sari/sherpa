@@ -243,7 +243,11 @@ export function dayFrameOf(
       bedAt,
       expectedWake: ownWake ? istanbulInstant(day, ownWake) : null,
     });
-    return { plan, footprint };
+    // For the week's capacity the load's pull is left out: finishing work today lightens
+    // tomorrow and moves its waking back, which must not read as lost capacity (plan stability).
+    // A real bedtime or the user's own waking does count.
+    const steady = bedAt || ownWake ? plan.expectedWake : plan.latestWake;
+    return { plan, footprint, steady };
   };
 
   const date = base.date;
@@ -259,7 +263,7 @@ export function dayFrameOf(
 
   const dayStarts: Record<string, number> = {
     [date]: plus(wake, last.footprint).getTime(),
-    [tomorrow]: plus(next.plan.expectedWake, next.footprint).getTime(),
+    [tomorrow]: plus(next.steady, next.footprint).getTime(),
   };
   for (let index = 2; index < DAYS_AHEAD; index++) {
     const day = shiftDay(date, index);

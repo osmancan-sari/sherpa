@@ -480,6 +480,9 @@ export function buildPlan(input: PlanInput): Plan {
  * `after_finish` work the day did not place. Anchored work whose time has gone by is left out:
  * a missed routine is not offered all day. The evening is no capacity.
  */
+/** Minutes past its end the morning's line is still offered (Ç3c). */
+export const WAKE_GRACE = 60;
+
 function frameParts(
   input: PlanInput,
   anchored: Candidate[],
@@ -496,17 +499,22 @@ function frameParts(
     assignment: { candidate, minutes: candidate.minutes, reasons: engineReasons(candidate, input) },
     part,
   });
-  const line = (list: Candidate[], from: number, part: "wake" | "bed") => {
-    const out: Slot[] = [];
+  /** Back to back from `from`; kept while the line is not over by more than `grace` minutes. */
+  const line = (list: Candidate[], from: number, part: "wake" | "bed", grace = 0) => {
+    const slots: Slot[] = [];
     let cursor = from;
     for (const candidate of list) {
       const slot = row(candidate, cursor, part);
       cursor = slot.end.getTime();
-      if (cursor > now) out.push(slot);
+      slots.push(slot);
     }
-    return out;
+    return cursor + grace * MINUTE > now
+      ? slots.filter((slot) => slot.end.getTime() > now || grace > 0)
+      : [];
   };
-  const wake = line(anchoredIn(anchored, "wake"), frame.wake.getTime(), "wake");
+  // A morning said late ("Biraz önce: 30 dk") still gets its routine: the line stays offered
+  // until an hour after it would have ended.
+  const wake = line(anchoredIn(anchored, "wake"), frame.wake.getTime(), "wake", WAKE_GRACE);
   const bedWork = anchoredIn(anchored, "bed");
   const bedMinutes = bedWork.reduce((sum, candidate) => sum + candidate.minutes, 0);
   const eveningEnd = frame.bed.getTime() - bedMinutes * MINUTE;

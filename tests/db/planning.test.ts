@@ -539,6 +539,45 @@ describe("the week's sittings and a sitting started meanwhile (Ç3b audit)", () 
 });
 
 describe("the day's frame columns and the sittings function (Ç3c)", () => {
+  it("a sitting started by its own id while the keeper trims the item is never dropped under its session (Ç3c audit)", async () => {
+    const mod = await makeModule(db);
+    const lost: string[] = [];
+    for (let round = 0; round < 15; round++) {
+      const item = await createWorkItem(db, {
+        module_id: mod.id,
+        title: `Rapor ${round}`,
+        effort_total_minutes: 135,
+      });
+      const first = await db.rpc("save_week_sittings", {
+        p_committed: [{ item_id: item.id, sittings: [45, 45, 45] }],
+      });
+      expect(first.error).toBeNull();
+      const sittings = ok(
+        await db.from("tasks").select("id, position").eq("work_item_id", item.id).order("position"),
+      );
+      const last = sittings[sittings.length - 1];
+      // The keeper trims the item to one sitting while the user starts its last one.
+      // Whichever comes first: the keeper drops the sitting and the start is refused, or the
+      // start wins and the keeper keeps it. Never a session on a dropped sitting.
+      const [start] = await Promise.all([
+        startSession(db, { taskId: last.id }).then(
+          () => "started",
+          (error: Error) => error.message,
+        ),
+        db.rpc("save_week_sittings", { p_committed: [{ item_id: item.id, sittings: [45] }] }),
+      ]);
+      const started = ok(await db.from("tasks").select("status").eq("id", last.id).single());
+      if (start === "started" && started.status !== "doing") {
+        lost.push(`round ${round}: ${started.status}`);
+      }
+      if (start !== "started") expect(start).toBe("this task is closed");
+      const open = await db.from("sessions").select("id").is("ended_at", null).maybeSingle();
+      if (open.data)
+        await db.rpc("end_session", { p_session_id: open.data.id, p_outcome: "stopped" });
+    }
+    expect(lost).toEqual([]);
+  });
+
   it("a new settings row has the user's frame; the value must be an object or empty", async () => {
     const row = ok(await db.from("settings").insert({}).select().single());
     expect(row.day_frame).toEqual({

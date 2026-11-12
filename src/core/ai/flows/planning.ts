@@ -74,7 +74,10 @@ export function planCallInput(
       : {}),
     base: {
       top3: base.top3,
-      placed: base.slots.flatMap((slot) => (slot.assignment ? [slot.assignment.candidate.id] : [])),
+      // The working window only: anchored and evening work are not the AI's to choose.
+      placed: base.slots.flatMap((slot) =>
+        slot.assignment && !slot.part ? [slot.assignment.candidate.id] : [],
+      ),
     },
     candidates: base.candidates.slice(0, MAX_CANDIDATES).map((candidate) => ({
       id: candidate.id,

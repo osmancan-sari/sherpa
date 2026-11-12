@@ -280,6 +280,9 @@ export async function answerFollowUp(
   return row;
 }
 
+/** Postgres: deadlock detected. */
+const DEADLOCK = "40P01";
+
 // --- The week --------------------------------------------------------------------------------
 
 export async function listWeekPlans(db: Db, sinceWeek: string): Promise<WeekPlanRow[]> {
@@ -328,14 +331,18 @@ export async function saveWeekPlan(
   // The sittings are worked out in the database with each item's row locked (the same rule as
   // `sittingChanges`): a "Başla" on the item at the same moment waits or is waited for, so the
   // item never gets two open sittings (Ç3c; the race Ç3b left).
-  check(
-    await db.rpc("save_week_sittings", {
+  const write = () =>
+    db.rpc("save_week_sittings", {
       p_committed: toJson(
         plan.committed.map((entry) => ({ item_id: entry.itemId, sittings: entry.sittings })),
       ),
       p_only: context.only,
-    }),
-  );
+    });
+  let result = await write();
+  // A "Başla" that held one item while waiting for another can meet the keeper in a deadlock;
+  // the database cancels one of the two and nothing is half written: try once more.
+  if (result.error?.code === DEADLOCK) result = await write();
+  check(result);
   return row;
 }
 

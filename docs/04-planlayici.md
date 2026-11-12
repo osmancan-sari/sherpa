@@ -195,6 +195,10 @@ Kurallar:
 - "Uyandım" denmeden günün ilk dokunuşu yapılırsa uyanış o an yazılır ve tahmini işaretlenir (`woke_estimated`); ilk dokunuş (`started_at`) da yazılmaya devam eder.
 - Akşam kapanışı yapıldıysa (`closed`) çerçeve açıkken ekran gece değil akşam durumundadır (yalnızca "Yatıyorum" kalır); gece yatışla ya da yatış aralığının sonuyla gelir.
 - Uyku planının günün yükü için o günün adayları, günün başı en geç uyanışla kurulmuş bir girdiyle hesaplanır (döngüsüzlük için).
+- Uyanışa bağlı işlerin dizisi, bittiği andan 60 dakika sonrasına kadar önerilir ("Biraz önce: 30 dk" denince rutin kaybolmasın); sonra o gün düşer. Yatışa bağlı iş zamanı geçince düşer. **Görüşün gerek.**
+- Haftanın kapasitesinde yarın, yüke göre erkene çekilmiş uyanıştan değil en geç uyanıştan (yatış kaydı ya da kullanıcının değeri varsa ondan) sayılır: bugün iş bitirmek yarının yükünü hafifletip uyanışı geri kaydırır; bu, kapasite kaybı sayılıp taahhüdü yeniden kurdurmamalı.
+- Basitleştirmeler: "bugün kapalı" denetimi `after_finish` işte akşamın sonu yerine beklenen yatışa bakar (yatışa bağlı işler düşülmez); "Saatleri bitiş çizgisinden sonra" uyarısı çerçeve açıkken bütün `after_finish` işlerde susar; gecenin bittiği saat ve 8 günden ötesinin başı genel uyanış aralığından (gün tipine özel aralık değil); yarının girdisi bugünün hayat modunu ve haftanın payını taşır (Pazar gecesi, Pazartesinin uyku planı biten haftanın payından hesaplanır); hafta ayarı `desk` bağlamıyla kurulur.
+- "Bu hafta uygun saat yok": çerçeve açıkken her gün kendi başından sayılır, `after_finish` işin akşamı da (yatış aralığının sonuna kadar) bakılır.
 
 ## "Şimdi" durumu
 

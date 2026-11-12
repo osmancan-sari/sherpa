@@ -265,7 +265,32 @@ describe("anchored work", () => {
     expect(plan.plannedMinutes).toBe(30);
   });
 
-  it("a rhythm can be anchored too, and is done once its day's doing is logged", () => {
+  it("work on one anchor without an order goes by score", () => {
+    const low = anchored("wake", { est_minutes: 10, importance: 1 });
+    const high = anchored("wake", { est_minutes: 10, importance: 4 });
+    const plan = planAt(
+      "07:01",
+      rows({ days: [today({ woke_at: iso("07:00") })], tasks: [low, high] }),
+    );
+    expect(placement(plan, high.id)).toBe("07:00–07:10 wake");
+    expect(placement(plan, low.id)).toBe("07:10–07:20 wake");
+  });
+
+  it("the user's bedtime for tonight moves tomorrow's expected waking", () => {
+    const late = inputAt(
+      "21:00",
+      rows({ days: [today({ woke_at: iso("07:00"), expected_bed: "00:30:00" })] }),
+    );
+    expect(late.frame?.bed).toEqual(at("00:30", NEXT));
+    expect(late.frame?.tonight.expectedWake).toEqual(at("08:30", NEXT));
+    const early = inputAt(
+      "21:00",
+      rows({ days: [today({ woke_at: iso("07:00"), expected_bed: "22:30:00" })] }),
+    );
+    expect(early.frame?.tonight.expectedWake).toEqual(at("06:30", NEXT));
+  });
+
+  it("a rhythm can be anchored too", () => {
     const routine = rhythm({
       period: "day",
       target_count: 1,
@@ -297,6 +322,18 @@ describe("anchored work", () => {
       }),
     );
     expect(placement(own, winddown.id)).toBe("23:10–23:30 bed");
+  });
+
+  it("a morning said late ('30 dk önce') still offers its routine; an hour after the line it goes (Ç3c audit)", () => {
+    const routine = anchored("wake", { est_minutes: 15 });
+    const late = rows({ days: [today({ woke_at: iso("07:10") })], tasks: [routine] });
+    // Said at 07:40 with "30 dk önce": the routine's place (07:10–07:25) is already behind.
+    expect(planAt("07:40", late).now).toMatchObject({
+      kind: "suggest",
+      assignment: { candidate: { id: routine.id } },
+    });
+    expect(placement(planAt("08:24", late), routine.id)).toBe("07:10–07:25 wake");
+    expect(placement(planAt("08:26", late), routine.id)).toBeNull();
   });
 
   it("a wake-bound routine that was missed is not offered all day", () => {
@@ -333,6 +370,27 @@ describe("the evening", () => {
     // The evening is not capacity: the day's usable minutes are what they were.
     const without = planAt("10:00", rows({ days: woke, tasks: [plain] }));
     expect(plan.usableMinutes).toBe(without.usableMinutes);
+  });
+
+  it("an evening-only weekly floor that may go after the finish line is not 'no time this week' (Ç3c audit)", () => {
+    const evening = (afterFinish: boolean) =>
+      rhythm({
+        period: "week",
+        target_count: 2,
+        floor_count: 1,
+        est_minutes: 60,
+        energy: "physical",
+        timing: {
+          windows: [{ from: "20:00", to: "22:00" }],
+          ...(afterFinish ? { after_finish: true as const } : {}),
+        },
+      });
+    const kinds = (afterFinish: boolean) =>
+      planAt("10:00", rows({ days: woke, rhythms: [evening(afterFinish)] })).warnings.map(
+        (warning) => warning.kind,
+      );
+    expect(kinds(true)).not.toContain("no_time_week");
+    expect(kinds(false)).toContain("no_time_week");
   });
 
   it("after_finish work with room in the day is done in the day", () => {
@@ -432,6 +490,18 @@ describe("the week's capacity with the frame", () => {
         loadInput(data(iso("00:30", NEXT)), at("00:35", NEXT)),
       ),
     ).toBe("capacity_lost");
+    // The load's pull is not capacity: a heavy tomorrow that pulls the waking earlier and then
+    // lightens (work finished today) loses nothing.
+    const heavy = rows({
+      tasks: Array.from({ length: 6 }, () => task({ est_minutes: 90, due_at: iso("18:00", NEXT) })),
+      days: [today({ woke_at: iso("07:00") })],
+    });
+    const pulled = inputAt("20:00", heavy).frame!.tonight;
+    expect(pulled.wake < pulled.latestWake).toBe(true);
+    const heavyDays = dayCapacities(loadInput(heavy, at("20:00")), week);
+    const light = rows({ ...heavy, tasks: [] });
+    const lightDays = dayCapacities(loadInput(light, at("20:00")), week);
+    expect(heavyDays[NEXT]).toBe(lightDays[NEXT]);
     // The days after tomorrow start at their latest waking (09:00 here), whatever the bed.
     expect(late["2026-11-14"]).toBe(early["2026-11-14"]);
   });

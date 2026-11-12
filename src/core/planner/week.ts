@@ -5,6 +5,7 @@ import { nextSessionMinutes } from "@/core/contract/envelope";
 import { readTiming, type Timing } from "@/core/contract/timing";
 import { moduleWeight, rhythmState, rhythmTarget, shareWorked, weeklyFloor } from "./candidates";
 import { busyRanges, dayCapacity, freeRanges } from "./slots";
+import { bedInstant } from "./frame";
 import { allowedOn } from "./timing";
 import type { PlannerSettings, PlannerStat, WeekShare } from "./types";
 
@@ -302,22 +303,42 @@ export function weekNoTime(
     if (day >= today) days.push(day);
   }
   const busy = busyRanges(input.blocks);
+  const { settings } = input;
+  // With the day's frame (Ç3c) a day starts where the frame expects it, and work that may go
+  // into the evening has the evening as well, up to the end of the bedtime range.
+  const startOf = (day: string) =>
+    settings.dayStarts?.[day] ??
+    istanbulInstant(day, settings.frame ? settings.frame.wake[1] : settings.dayStart).getTime();
+  const freeIn = (start: number, end: number) =>
+    end > start ? freeRanges({ start, end }, busy, 0) : [];
   const free = new Map(
-    days.map((day) => {
-      const start = Math.max(
-        input.now.getTime(),
-        istanbulInstant(day, input.settings.dayStart).getTime(),
-      );
-      const end = istanbulInstant(day, input.settings.finishLine).getTime();
-      return [day, end > start ? freeRanges({ start, end }, busy, 0) : []];
-    }),
+    days.map((day) => [
+      day,
+      freeIn(
+        Math.max(input.now.getTime(), startOf(day)),
+        istanbulInstant(day, settings.finishLine).getTime(),
+      ),
+    ]),
+  );
+  const evening = new Map(
+    days.map((day) => [
+      day,
+      settings.frame
+        ? freeIn(
+            Math.max(input.now.getTime(), istanbulInstant(day, settings.finishLine).getTime()),
+            bedInstant(day, settings.frame.bed[1]).getTime(),
+          )
+        : [],
+    ]),
   );
   const holds = (timing: Timing, minutes: number) => {
     const before = (timing.travel?.before ?? 0) * 60_000;
     const after = (timing.travel?.after ?? 0) * 60_000;
+    const ranges = (day: string) =>
+      timing.after_finish ? [...free.get(day)!, ...evening.get(day)!] : free.get(day)!;
     return days.some((day) =>
       (allowedOn(timing, day) ?? []).some((window) =>
-        free.get(day)!.some((range) => {
+        ranges(day).some((range) => {
           const workStart = Math.max(range.start + before, window.start);
           const workEnd = workStart + minutes * 60_000;
           return workEnd <= window.end && workEnd + after <= range.end;

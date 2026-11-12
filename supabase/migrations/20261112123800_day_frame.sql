@@ -98,6 +98,12 @@ begin
     if v_task.id is null then
       raise exception 'task not found' using errcode = 'P0002';
     end if;
+    -- A sitting: its item is locked too, and the sitting read again under the lock, so the
+    -- keeper never drops it while it is being started.
+    if v_task.work_item_id is not null then
+      perform 1 from public.work_items where id = v_task.work_item_id for update;
+      select * into v_task from public.tasks where id = p_task_id;
+    end if;
     if v_task.status in ('done', 'dropped') then
       raise exception 'this task is closed' using errcode = '22023';
     end if;
@@ -185,7 +191,9 @@ begin
     v_todos := coalesce(array_length(v_todo_ids, 1), 0);
     v_wanted := greatest(0, jsonb_array_length(v_sittings) - v_busy);
     if v_todos > v_wanted then
-      update public.tasks set status = 'dropped' where id = any (v_todo_ids[v_wanted + 1 : v_todos]);
+      -- Still unstarted only: a sitting started meanwhile is never dropped.
+      update public.tasks set status = 'dropped'
+       where id = any (v_todo_ids[v_wanted + 1 : v_todos]) and status = 'todo';
     end if;
 
     -- New sittings go after every place the item has had, so two never share one.
