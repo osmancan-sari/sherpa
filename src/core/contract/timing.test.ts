@@ -113,7 +113,7 @@ describe("timing in the envelope", () => {
 
   it("refuses rest days that do not fit the period, and rest days on a daily rhythm", () => {
     // Three times a week with a day between: Monday, Wednesday, Friday fits (5 ≤ 7).
-    expect(issuesOf(proposal({ when: WEEKLY, timing: { rest_days: 2 } }))).toEqual([]);
+    expect(issuesOf(proposal({ when: WEEKLY, timing: { rest_days: 1 } }))).toEqual([]);
     // With two days between: 1 + 3 + 3 = 7 days. Fits exactly.
     expect(issuesOf(proposal({ when: WEEKLY, timing: { rest_days: 2 } }))).toEqual([]);
     // Four times with two days between: 10 days. Does not fit a week.

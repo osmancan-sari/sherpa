@@ -1,6 +1,12 @@
 import { currentMark, planCorrections, readMark, saveCorrections } from "@/core/ai/marks";
 import { markUserEdited } from "@/core/contract/envelope";
-import { checkTiming, editTiming, type Timing, TimingError } from "@/core/contract/timing";
+import {
+  checkTiming,
+  editTiming,
+  readTiming,
+  type Timing,
+  TimingError,
+} from "@/core/contract/timing";
 import {
   check,
   type Db,
@@ -305,7 +311,8 @@ export async function updateRhythm(db: Db, id: string, edit: RhythmEdit): Promis
     };
     const edited = editTiming(
       current.timing,
-      timingEdit === undefined ? current.timing : timingEdit,
+      // Only the target or period changed: the stored value as the planner reads it.
+      timingEdit === undefined ? readTiming(current.timing) : timingEdit,
       form,
       provenance,
     );

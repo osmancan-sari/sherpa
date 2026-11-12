@@ -373,6 +373,25 @@ export function mergeProposal(stored: Stored, incoming: IncomingFields): MergeRe
       changed.push(...timing.changed);
     }
     kept.push(...timing.kept);
+
+    // A rhythm's rest days must fit what the record ends up with: the user may own the target,
+    // the period or the rest days, and the proposal only checked its own values.
+    if ("target_count" in incoming.facts) {
+      const value = (field: string) => (field in patch ? patch[field] : stored?.values[field]);
+      const issues = formIssues(timing.value ?? {}, {
+        kind: "recurrence",
+        count: Number(value("target_count")),
+        period: value("period") as "day" | "week" | "month",
+      });
+      if (issues.length > 0) {
+        throw new ProposalError(
+          issues.map(
+            (issue) =>
+              `timing.${issue.path.join(".")}: ${issue.message} (with the record's values)`,
+          ),
+        );
+      }
+    }
   }
 
   if (changed.length > 0 || !stored || !same(stored.provenance, provenance)) {

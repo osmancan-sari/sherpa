@@ -905,6 +905,41 @@ describe("time constraints (Ç3b)", () => {
     expect(row.timing).toEqual({ avoid: mine });
   });
 
+  it("refuses a rhythm whose rest days do not fit what the record ends up with", async () => {
+    const mod = await makeModule(db);
+    const twice = { recurrence: { count: 2, period: "week" as const } };
+    const { id } = await propose(db, mod, prep({ key: "r", when: twice }));
+    // The user raises the target to four; the module then asks for three rest days.
+    await updateRhythm(db, id, { target_count: 4 });
+    const refused = await propose(
+      db,
+      mod,
+      prep({ key: "r", when: twice, timing: { rest_days: 3 } }),
+    ).catch((error: unknown) => error);
+    expect(refused).toBeInstanceOf(ProposalError);
+    const row = ok(await db.from("rhythms").select("*").eq("id", id).single());
+    expect(row).toMatchObject({ target_count: 4, timing: null });
+    // The other way round: the user's rest days stay, the module may not raise its count past them.
+    const other = await propose(db, mod, prep({ key: "s", when: twice }));
+    await updateRhythm(db, other.id, { timing: { rest_days: 3 } });
+    await expect(
+      propose(db, mod, prep({ key: "s", when: { recurrence: { count: 4, period: "week" } } })),
+    ).rejects.toBeInstanceOf(ProposalError);
+  });
+
+  it("a fixed time proposed again without travel has none", async () => {
+    const mod = await makeModule(db);
+    const { id } = await propose(
+      db,
+      mod,
+      prep({ key: "m", when: FIXED, timing: { travel: { before: 15, after: 10 } } }),
+    );
+    const again = await propose(db, mod, prep({ key: "m", when: FIXED }));
+    expect(again.changed.sort()).toEqual(["travel_after_min", "travel_before_min"]);
+    const row = ok(await db.from("blocks").select("*").eq("id", id).single());
+    expect(row).toMatchObject({ travel_before_min: 0, travel_after_min: 0 });
+  });
+
   it("the user's form goes through the same schema", async () => {
     const mod = await makeModule(db);
     const { id } = await propose(db, mod, prep());

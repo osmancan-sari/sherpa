@@ -77,7 +77,8 @@ Kurallar:
 - Bölümün kendisi ve her alanı isteğe bağlıdır. Boş liste yazılmaz (alan hiç verilmez): boş `windows` işi hiçbir yere koydurmazdı.
 - Aralık: `{ "days"?: number[], "from": "HH:mm", "to": "HH:mm" }`. `days` haftanın günleridir (1 = Pazartesi … 7 = Pazar); verilmezse her gün. Saatler İstanbul saatidir, `from < to` olmalıdır, `to` `"24:00"` olabilir. Gece yarısını aşan aralık iki aralık olarak yazılır. Bir listede en çok 14 aralık.
 - `travel.before` ve `travel.after` 0–180 arası tam sayıdır; biri verilmezse 0.
-- `rest_days` yalnızca tekrar biçiminde kullanılır; `period = day` ile kullanılmaz. Hedef sığmalıdır: `(count − 1) × (rest_days + 1) + 1 ≤ dönemin gün sayısı` (hafta 7, ay 28); sığmayan teklif reddedilir.
+- `days` verilirse boş olamaz ve bir günü iki kez içeremez. `"24:00"` yalnızca bitiş olabilir. `rest_days` 1–26 arası tam sayıdır (ayda iki yapılış sığsın). Boş nesne ve boş `travel` "kısıt yok" sayılır.
+- `rest_days` yalnızca tekrar biçiminde kullanılır; `period = day` ile kullanılmaz. Hedef sığmalıdır: `(count − 1) × (rest_days + 1) + 1 ≤ dönemin gün sayısı` (hafta 7, ay 28); sığmayan teklif reddedilir. Denetim kaydın birleşmiş değerleriyle yapılır: kullanıcı hedefi değiştirmişse modülün dinlenme günü o hedefe göre sığmalıdır.
 - Biçime göre: son tarih biçiminde `rest_days` dışındaki alanlar; tekrar biçiminde hepsi; sabit zaman biçiminde yalnızca `travel` (bloğun `travel_before_min` ve `travel_after_min` sütunlarına yazılır). Biçimin kullanmadığı alan reddedilir.
 - Saklama: `work_items.timing`, `tasks.timing`, `rhythms.timing` (`jsonb`, boş geçilebilir). Veritabanı yalnızca değerin bir nesne olduğunu denetler; biçimi uygulama zarfla aynı şemayla doğrular. Kullanıcının formdan girdiği değer de aynı şemadan geçer.
 - Oturum işinin kendi `timing` değeri varsa o geçerlidir; yoksa bağlı olduğu kalemin değeri. İkisi birleştirilmez.

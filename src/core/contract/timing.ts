@@ -168,7 +168,7 @@ export function normalizeTiming(timing: Timing | null | undefined): Timing | nul
 
 /**
  * Checks a timing value for a form. Null and an empty object are "no constraint". The issues
- * name the field (`timing.windows.0.to`) and why.
+ * name the field inside the value (`windows.0.to`) and why.
  */
 export function checkTiming(
   value: unknown,
