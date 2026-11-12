@@ -359,6 +359,12 @@ test("a write that fails is taken back on the screen and said so", async ({ page
   const upcoming = page.getByRole("region", { name: "Sıradakiler" });
   await expect(now.getByRole("heading")).toHaveText("Birinci iş");
   await expect(upcoming.getByRole("listitem")).toHaveText([/İkinci iş/]);
+  // The keeper has written the day's plan (since Ç3c its week write is an RPC too, which the
+  // interception below would hold up).
+  await waitFor(
+    () => rows("days"),
+    (list) => list.some((row) => row.plan_source !== null),
+  );
 
   // Every write of these two buttons fails, a moment after it was sent: long enough to see
   // that the screen had already changed.

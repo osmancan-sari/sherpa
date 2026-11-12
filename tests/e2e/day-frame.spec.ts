@@ -76,7 +76,7 @@ test("Settings: the frame's ranges, sleep target and a day type's range are save
   );
 });
 
-test("the first touch of a morning stands for the waking (estimated) and every module hears the day begin", async ({
+test("the first touch of a morning stands for the waking (estimated) and the day's start is published", async ({
   page,
 }) => {
   await frameOn();
@@ -107,12 +107,16 @@ test("a first touch after the morning is no waking: the day runs on its expected
   await page.goto("/");
   await expect(nowCard(page)).toBeVisible();
   await touchUntilSeen(page);
-  // The touch itself is written; the waking is not.
+  // The touch itself is written; the waking is not, even a while later (the estimate would
+  // follow the touch in the same chain).
   await waitFor(
     () => rows("days"),
     (list) => list.some((row) => row.started_at !== null),
   );
-  expect((await rows("days")).every((row) => row.woke_at === null)).toBe(true);
+  for (let look = 0; look < 6; look++) {
+    expect((await rows("days")).every((row) => row.woke_at === null)).toBe(true);
+    await page.waitForTimeout(250);
+  }
   expect(await events("core.day_started")).toEqual([]);
 });
 
@@ -171,4 +175,26 @@ test("each way out of a session is told to the work's module: Ertele, Takıldım
   expect(
     ended.every((row) => row.payload.module === mod.slug && row.payload.task_id === task.id),
   ).toBe(true);
+});
+
+test("the keeper keeps the sleep plan's record: tonight's bedtime and tomorrow's waking", async ({
+  page,
+}) => {
+  await frameOn();
+  await page.clock.setFixedTime(dayAt("12:00"));
+  await page.goto("/");
+  await expect(nowCard(page)).toBeVisible();
+  // No obligations and a light day: up at the end of the range (09:00), in bed at 01:00.
+  const days = await waitFor(
+    () => rows("days"),
+    (list) =>
+      list.some((row) => row.date === istanbulDay(-1) && row.planned_bed !== null) &&
+      list.some((row) => row.date === istanbulDay(0) && row.planned_wake !== null),
+  );
+  expect(days.find((row) => row.date === istanbulDay(-1))?.planned_bed).toBe("01:00:00");
+  expect(days.find((row) => row.date === istanbulDay(0))?.planned_wake).toBe("09:00:00");
+  // Written once: the same value is not written again on the next round.
+  const stamp = days.find((row) => row.date === istanbulDay(0))?.updated_at;
+  await page.waitForTimeout(1500);
+  expect((await rows("days")).find((row) => row.date === istanbulDay(0))?.updated_at).toBe(stamp);
 });

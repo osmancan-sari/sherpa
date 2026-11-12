@@ -8,7 +8,7 @@ import {
   type SessionTarget,
   startSession,
 } from "./sessions";
-import { completeTask } from "./work";
+import { completeTask, dropTask } from "./work";
 
 // Session and day events (docs/06-modul-sozlesmesi.md, "Olaylar"; Ç3c). Every way a session
 // starts or ends goes through here, so the work's module hears of it: started, and ended as
@@ -152,6 +152,13 @@ export async function completeTaskTold(told: Told, taskId: string) {
     if (ended) await tellEnded(told, ended, "done");
   }
   return task;
+}
+
+/** "Bırak": a session running on the task is stopped (told "stopped"), then the task is dropped. */
+export async function dropTaskTold(told: Told, taskId: string) {
+  const open = await getOpenSession(told.db);
+  if (open?.task_id === taskId) await endSessionTold(told, open.id, "stopped");
+  return dropTask(told.db, taskId);
 }
 
 /**

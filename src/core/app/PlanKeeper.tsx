@@ -184,7 +184,9 @@ export function PlanKeeper() {
   useEffect(() => {
     if (!date) return;
     const day = rows?.days.find((row) => row.date === date);
-    if (day?.started_at && (!framed || day.woke_at)) touched.current = date;
+    if (day?.started_at && (!framed || day.woke_at || Date.now() >= morningUntil)) {
+      touched.current = date;
+    }
     const onTouch = (event: Event) => {
       if (touched.current === date) return;
       touched.current = date;

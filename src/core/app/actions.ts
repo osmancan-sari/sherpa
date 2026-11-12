@@ -19,13 +19,17 @@ import {
   snoozePrompt,
 } from "@/core/data/inbox";
 import { answerModulePrompt, closeWorkItem } from "@/core/data/outcome";
-import { getOpenSession, type SessionTarget } from "@/core/data/sessions";
-import { completeTaskTold, endSessionTold, startSessionTold } from "@/core/data/session-events";
+import type { SessionTarget } from "@/core/data/sessions";
+import {
+  completeTaskTold,
+  dropTaskTold,
+  endSessionTold,
+  startSessionTold,
+} from "@/core/data/session-events";
 import {
   createRhythm,
   createTask,
   createWorkItem,
-  dropTask,
   logRhythm,
   type NewRhythm,
   type NewTask,
@@ -274,12 +278,7 @@ export function useDropTask() {
   const onError = useFailureNotice();
   const registry = useRegistry();
   return useCoreMutation({
-    mutate: async (db, taskId: string) => {
-      // A session running on it is stopped first, and its module told.
-      const open = await getOpenSession(db);
-      if (open?.task_id === taskId) await endSessionTold({ db, registry }, open.id, "stopped");
-      return dropTask(db, taskId);
-    },
+    mutate: (db, taskId: string) => dropTaskTold({ db, registry }, taskId),
     optimistic: (taskId, queryClient) => {
       const open = queryClient.getQueryData<Session | null>(keys.openSession);
       return [

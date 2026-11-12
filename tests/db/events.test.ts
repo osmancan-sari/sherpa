@@ -2,15 +2,17 @@ import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import { createRegistry } from "@/core/contract/registry";
 import type { ModuleDefinition } from "@/core/contract/types";
 import { setModuleStatus } from "@/core/data/module-rows";
+import { closeWorkItem } from "@/core/data/outcome";
 import {
   closeUnansweredTold,
   completeTaskTold,
+  dropTaskTold,
   endSessionTold,
   startSessionTold,
   tellDayClosed,
   tellDayStarted,
 } from "@/core/data/session-events";
-import { createRhythm, createTask } from "@/core/data/work";
+import { createRhythm, createTask, createWorkItem } from "@/core/data/work";
 import type { AppEvent } from "@/core/types";
 import { makeModule, ok, ownerDb, wipe } from "./helpers";
 
@@ -146,6 +148,35 @@ describe("session events", () => {
     expect(kinds(a.heard)).toEqual(["core.session_started", "core.session_ended:stopped"]);
     expect(b.heard).toEqual([]);
     expect(session.module_id).toBe(modA.id);
+  });
+
+  it("closing an item with its sitting running tells 'done' when finished, 'stopped' when dropped; Bırak tells 'stopped'", async () => {
+    const { a, told, modA, registry } = await setup();
+    const finished = await createWorkItem(db, {
+      module_id: modA.id,
+      title: "Rapor",
+      effort_total_minutes: 90,
+    });
+    await startSessionTold(told, { workItemId: finished.id });
+    await closeWorkItem(db, registry, finished.id, "done");
+    const dropped = await createWorkItem(db, {
+      module_id: modA.id,
+      title: "Taslak",
+      effort_total_minutes: 90,
+    });
+    await startSessionTold(told, { workItemId: dropped.id });
+    await closeWorkItem(db, registry, dropped.id, "dropped");
+    const task = await createTask(db, { module_id: modA.id, title: "Bir" });
+    await startSessionTold(told, { taskId: task.id });
+    await dropTaskTold(told, task.id);
+    expect(kinds(a.heard).filter((kind) => kind.startsWith("core.session_ended"))).toEqual([
+      "core.session_ended:done",
+      "core.session_ended:stopped",
+      "core.session_ended:stopped",
+    ]);
+    expect(ok(await db.from("tasks").select("status").eq("id", task.id).single()).status).toBe(
+      "dropped",
+    );
   });
 
   it("a paused module hears nothing", async () => {
