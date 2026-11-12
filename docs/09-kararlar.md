@@ -24,6 +24,10 @@
 | 12 Kas 2026 | Günün 3 işi: önce bugün teslim zorunlu işler, kalan yer planlayıcının ve yapay zekanın seçtikleriyle dolar. Ritimler normalde üçlüye girmez (zaman çizelgesinde ve Sıradakiler'de kalır); bir ritim yalnızca tabanı tehlikedeyse girer | Gerçek modelle denemede (D3) zorunlu işler ve bir ritim üçlüyü doldurdu, yapay zekanın seçtikleri hiç görünmedi |
 | 12 Kas 2026 | `enrich` süreyi boş bırakırsa `size` çağrısı devreye girer (modül tekliflerindeki gibi) | Gerçek modelde iş kalemi seçilince süre çoğu zaman boş kalıyordu |
 | 12 Kas 2026 | Planlama istemleri suçlayıcı ve geçmişi sayan cümleleri açıkça yasaklar (ürün kuralı 2); `ai:eval` bunu ayrı örneklerle sınar | Gerçek modelin uyarılarında "dünkü iki iş yapılmadı" gibi cümleler çıktı |
+| 12 Kas 2026 | İş zarfına zaman kısıtları eklenir (`timing`): kesin saat penceresi, tercih edilen ve kaçınılan saatler, yol süresi, tekrarlar arası dinlenme günü. Ç3b adımı olarak, Ç4'ten ve modül tasarımlarından önce yapılır | Kullanıcının endişesi: işlerin kendine özgü kısıtları var (salon saatleri, kalabalık saatten kaçınma, yol) ve bunlar modülden modüle, işten işe değişir; motor bunları bilmeden doğru plan kuramaz. Zarfı modüller yazılmadan değiştirmek ucuz |
+| 12 Kas 2026 | Kesin pencere her kuraldan önce gelir (bugün teslim olan iş bile pencere dışına konmaz, uyarı çıkar); pencere planlayıcıyı bağlar, kullanıcıyı değil (elle her saatte başlatılır) | Kapalı salona plan yapılmaz; ama son söz kullanıcıdadır |
+| 12 Kas 2026 | Yol süresi tanımlı iş her bağlamda önerilir; kullanıcı zaten işin bağlamındaysa yol sayılmaz | Yoksa "dışarıda" bağlamlı iş ikinci ekranda hiç önerilmezdi; yol, yer değiştirmenin bedelidir |
+| 12 Kas 2026 | Yapay zeka zaman kısıtını yalnızca satırda açıkça yazıyorsa doldurur; işin türünden saat tahmin etmez | Yanlış tahmin edilmiş kesin pencere işi sessizce plandan düşürür |
 
 ## Tasarım ve teknik kararlar (öneri; itiraz yoksa geçerli)
 
@@ -88,6 +92,8 @@
 - [ ] Saatli randevular için bildirim nasıl olsun: web push denensin mi, telefonun takvimine ayrıca mı yazılsın?
 - [ ] Akşam kapanışı için hatırlatma istenir mi?
 - [ ] Günün 3 işi yapısı kullanıcının doğrudan isteği değildi; gerçek modüllerle iki hafta kullanımdan sonra kalıp kalmayacağı yeniden değerlendirilecek.
+- [ ] Saat penceresi bitiş çizgisinden sonraya düşen iş (ör. akşam 21:00 spor) planlansın mı? Şimdilik planlayıcı bitiş çizgisinden sonraya hiçbir iş koymuyor ve böyle bir işi kaydederken uyarıyor (Ç3b). Seçenekler: çizgi herkes için kalsın (akşam işi sabit blok olur ya da çizgi ileri alınır); kesin penceresi olan iş çizgiden sonraya konabilsin. Spor modülü tasarlanırken karar verilecek.
+- [ ] Zaman çarpanları (tercih edilen 1,25; kaçınılan 0,5) ve "yarısı" eşiği gerçek kullanımda uyuyor mu? Ç3b'de kodda sabit; gerekirse ayara taşınır.
 
 Okul: `docs/moduller/okul.md` 11. bölüm.
 

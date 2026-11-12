@@ -216,11 +216,21 @@ type WorkProposal = {
        | { fixed: { starts_at: string; ends_at: string; location?: string } }
   effort?: { total_minutes?: number; session_minutes?: number; bounds?: { min: number; max: number } }
   fit?: { energy?: Energy; context?: Context }
+  timing?: Timing                      // zaman kısıtları (Ç3b); aşağıda
   importance?: 1 | 2 | 3 | 4
   depends_on?: string[]
   flex?: { splittable?: boolean; droppable?: boolean }
   artifact?: string
   meta?: Record<string, unknown>       // modüle özel; çekirdek yorumlamaz, yapay zekaya bağlam olarak verir
+}
+
+type TimeWindow = { days?: number[]; from: string; to: string }   // days: 1 = Pazartesi … 7 = Pazar; saatler 'HH:mm', İstanbul
+type Timing = {
+  windows?: TimeWindow[]               // kesin: iş yalnızca bu aralıklara yerleşir
+  prefer?: TimeWindow[]                // esnek: bu aralıklarda öne geçer
+  avoid?: TimeWindow[]                 // esnek: kaçınılır, başka yer yoksa yine konur
+  travel?: { before?: number; after?: number }   // dakika
+  rest_days?: number                   // yalnızca tekrar biçiminde: iki yapılış arasında en az bu kadar boş gün
 }
 
 type ProposalResult = {
@@ -251,6 +261,7 @@ Zarfın kuralları (`src/core/contract/envelope.ts`, saf fonksiyonlar; yazma `sr
 - Biçimin kullanmadığı alan reddedilir, sessizce atılmaz: tekrar biçiminde toplam efor, sınır, önem, bağımlılık, çıktı ve `flex`; sabit zaman biçiminde efor, `fit`, önem, bağımlılık, çıktı, `flex` ve `meta`.
 - **Olgu alanları** (başlık, son tarih, en erken, çıktı, bağımlılıklar, `meta`, tekrar ve sabit zaman değerleri) her teklifte yazılır; boş gelen olgu da yazılır (son tarih kalkabilir). **Yargı alanları** (efor, oturum süresi, önem, enerji, bağlam, bölünebilirlik) yalnızca dolu geldiğinde yazılır.
 - Kullanıcının değiştirdiği alan hiçbir teklifte ezilmez; teklif o alanı `kept` içinde geri bildirir.
+- **Zaman kısıtları (`timing`, Ç3b).** Modül, işlerinin ne zaman yapılabileceğini bildiği kadarıyla yazar: açılış saatleri, kaçınılan saatler, yol, dinlenme günü. Alanların tanımı, sınırları ve biçime göre hangilerinin kullanılabildiği `docs/03-veri-modeli.md` içinde "Zaman kısıtları" bölümündedir; planlayıcının davranışı `docs/04-planlayici.md` içinde. Beş alt alan da olgu alanıdır ve kaynağı alt alan başına tutulur (`timing.windows` …): kullanıcı bir işte kaçınılan saati değiştirirse modülün sonraki teklifi yalnızca onu ezmez. Modül bu değerleri genellikle kendi ayarından üretir (kullanıcı salon saatini bir kez girer, modül her işe yazar). Geçersiz `timing` (ters saat, boş liste, sığmayan `rest_days`, biçimin kullanmadığı alan) teklifi reddettirir.
 - Efor boş ve `bounds` verilmişse sınırın ortası (5 dakikaya yuvarlanır) `default` kaynağıyla yazılır; var olan bir değerin üzerine yazılmaz. Sınır da yoksa efor boş kalır.
 - Teklif edilen kalem `active` açılır (`proposed` durumu yapay zekanın bölme önerileri içindir, Ç2).
 - `withdraw` hiçbir şeyi silmez: kalem ve açık oturum işleri `dropped`, ritim pasif, blok `cancelled` olur; kalemde çalışan oturum varsa durdurulur; bitmiş kayda dokunulmaz. Geri çekilen `key` yeniden teklif edilirse aynı kayıt geri gelir; kullanıcının kendi kapattığı kayıt (kalem, ritim, blok) geri gelmez. Kimin kapattığı `provenance` içinde durum alanının kaynağı olarak tutulur.

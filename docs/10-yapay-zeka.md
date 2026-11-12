@@ -23,7 +23,7 @@ Sherpa'nın arkasında, bütün işleri gören ve zamanı planlayan bir yapay ze
 
 | Çağrı | Ne zaman | Model | Girdi | Çıktı |
 | --- | --- | --- | --- | --- |
-| `enrich` | Her hızlı girişte | hızlı | Metin, modüllerin `intake` kataloğu, benzer 5 geçmiş işin gerçek süresi, bugünün tarihi | Modül, tür, başlık, süre, enerji, bağlam, önem, son tarih; gerekiyorsa adımlar; her alan için güven |
+| `enrich` | Her hızlı girişte | hızlı | Metin, modüllerin `intake` kataloğu, benzer 5 geçmiş işin gerçek süresi, bugünün tarihi | Modül, tür, başlık, süre, enerji, bağlam, önem, son tarih; satırda açıkça yazıyorsa zaman kısıtı (`timing`, Ç3b); gerekiyorsa adımlar; her alan için güven |
 | `size` | Bir modül, yargı alanları boş bir iş zarfı teklif ettiğinde; kalemin kapsamı değişince; `enrich` süreyi boş bıraktığında | hızlı | Zarf (`meta` dahil), modülün `sizingHints` metni, aynı modülün benzer bitmiş kalemlerinin gerçek süreleri | Toplam efor, oturum uzunluğu, gerekiyorsa önem ve enerji; güven ve gerekçe |
 | `decompose` | Kullanıcı bir kalemde "adımlara böl" dediğinde (hedefler Ç4'te) | planlama | Hedef, son tarih, modül bağlamı | Alt kalemler, sıra ve bağımlılıklar, her birinin kaba eforu |
 | `extract` | Ninova duyurusu ya da yapıştırılan metin geldiğinde | hızlı | Metin, yayın tarihi, dersin açık değerlendirmeleri | Değerlendirme önerisi: hangi kalem, tarih, saat, yer, kapsam |
@@ -53,6 +53,7 @@ AI_MODEL_PLAN=claude-sonnet-5-5      # plan, replan, week, month, review, decomp
 9. **Bütçe sınırı.** Her çağrının belirteç sayısı ve maliyeti kaydedilir (`ai_calls`). Aylık toplam ayarlardaki sınıra ulaşınca yapay zeka o ay kapanır ve ekranda tek satırla bildirilir.
 10. **İstikrar.** Efor bir kez tahmin edilir; plan her sabah baştan kurulmaz. Yeniden tahmin ve yeniden taahhüt yalnızca `docs/04-planlayici.md` içindeki tetikleyicilerle olur. Aynı girdi için önceki sonuç kullanılır (çağrı tekrarlanmaz).
 11. **Gizlilik.** Gönderilen veri iş başlıkları, ders adları, tarihler ve kullanıcının yazdığı notlardır. Şifre, kimlik bilgisi ve iş yerine ait içerik gönderilmez (iş görevleri zaten Sherpa'da tutulmaz).
+12. **Zaman kısıtları (Ç3b).** `enrich`, `timing`'i yalnızca satırda açıkça yazıyorsa doldurur: "akşam 8'den sonra" → `windows`, "kalabalık saatte olmasın, 18–20 arası" → `avoid`, "20 dk yol" → `travel`. Yazmıyorsa boş bırakır; işin türünden saat tahmin etmez. "Cumaya kadar", "yarın 17:00'de teslim" gibi ifadeler son tarihtir, pencere değildir. `rest_days` üretmez (serbest giriş ritim açmaz). `size` `timing`'e dokunmaz. Planlama çağrılarında (`plan`, `replan`, `week`) adayların özeti zaman kısıtını kısa biçimde taşır; yapay zeka pencere dışına öneri yaparsa motor reddeder (kural 5). Konan değer öbür alanlar gibi işaretlidir ve gerekçesi saklanır; kaynağı alt alan başınadır.
 
 ## Maliyet
 

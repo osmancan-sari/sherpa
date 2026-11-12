@@ -124,6 +124,38 @@ Yapay zeka açıkken serbest metin gelen kutusunda beklemez: giriş hemen gelen 
 
 Her modül hızlı girişe kendi türlerini ekler (sözleşmenin `intake` bölümü): Okul "sınav/teslim" ve "not", Beslenme "tartı" ve "alışveriş kalemi" gibi.
 
+## Zaman kısıtları (Ç3b)
+
+Kısıtların çoğunu modüller kendi ayarlarından yazar; kullanıcı bunları tek bir işte değiştirmek ya da elle eklenen bir işe koymak isteyince formda görür. Veri: `docs/03-veri-modeli.md`, "Zaman kısıtları".
+
+**Formda "Zaman" bölümü.** İş, iş kalemi ve ritim düzenleme formlarında, öbür alanların altında kapalı gelir. Kısıt varsa kapalıyken tek satırlık özeti görünür; yoksa yalnızca başlığı. Açılınca:
+
+```
+▾ Zaman
+  Yalnızca şu saatlerde    [ Her gün      ▾ ] [ 07:00 ] – [ 23:00 ]   ✕
+                           + aralık ekle
+  Tercih edilen saatler    + aralık ekle
+  Kaçınılan saatler        [ Hafta içi    ▾ ] [ 18:00 ] – [ 20:30 ]   ✕
+                           + aralık ekle
+  Yol                      gidiş [ 20 ] dk   dönüş [ 20 ] dk
+  Dinlenme                 iki yapılış arasında en az [ 1 ] gün        (yalnızca ritimde)
+```
+
+- Gün seçimi: Her gün, Hafta içi, Hafta sonu ya da tek tek günler.
+- Kapalıyken özet: `07:00–23:00 · kaçın: hafta içi 18:00–20:30 · yol 20+20 dk · 1 gün ara`.
+- Modülün ya da yapay zekanın koyduğu değer öbür alanlardaki gibi işaretlidir; kullanıcı değiştirince o alt alan kullanıcının olur.
+- Geçersiz giriş (bitişi başlangıcından erken aralık, sığmayan dinlenme günü) kaydedilmez, alanın altında tek cümleyle söylenir.
+- Aralıkların hepsi bitiş çizgisinden sonraya düşüyorsa bölümün altında uyarı: "Bu saatler bitiş çizgisinden (19:00) sonra; planlayıcı bu işi yerleştiremez."
+- Oturum işinde bölüm boşken "kalemin saatleri geçerli" yazar.
+
+**Zaman çizelgesi (DayStrip).** Yol süresi, işin önünde ve arkasında aynı modül renginin soluk, taralı hali olarak çizilir; üzerine gelince (telefonda dokununca) "yol 20 dk" yazar.
+
+**Şimdi kartı ve Sıradakiler.** Yol süresi olan işte süre satırı `Modül · 60 dk · yol 20+20 dk` biçimindedir. Kart, işin çalışma aralığı değil ayak izi başladığında önerir (yola çıkma zamanı).
+
+**Uyarılar.** "Bugün uygun saat kalmadı: …" ve "Bu hafta uygun saat yok: …" AlertBar'da ve Hafta ekranında öbür uyarılar gibi görünür; eylemi "Modüle git".
+
+**Hızlı giriş.** Yapay zeka açıkken satırda açıkça yazılan saat kısıtı işe işlenir ("spor akşam 8'den sonra"); yapılı kullanımda ayrı bir kısaltma yoktur, kısıt formdan girilir.
+
 ## Gelen kutusu
 
 Yönlendirilmemiş girişlerin listesi. Her satırda: metin, önerilen modül (varsa), tek dokunuşla "işe çevir", "bloğa çevir", "sil". Yapay zeka açıksa öneriler dolu gelir; kapalıysa kullanıcı seçer.

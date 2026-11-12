@@ -5,7 +5,7 @@ Bu dosyayı Claude Code günceller. Yeni bir oturum yalnızca bu dosyayı ve `pr
 ## Durum
 
 - Faz: **Ç3 (Planlayıcı) bitti** (12 Kas 2026, `c3-tamam`; faz denetimi iki tur). Ç0–Ç3 bitti; D1–D4 tamamlandı (Ç3 üretimde, yapay zeka üretimde açık; gerçek modelle ölçüm "Senden bekleyenler" → D3)
-- Sıradaki: Ç4 (Pano ve telefon cilası), yeni oturumda
+- Sıradaki: **Ç3b (Zaman kısıtları)**, yeni oturumda; istem `prompts/c3b-zaman-kisitlari.md`. Ç4 ondan sonra
 - Son commit: D3 kararları (günün 3 işi, `enrich` → `size`, planlama istemlerinde ton kuralı ve `ai:eval` ton örnekleri). Açık kalan ölçüt: Ç2'nin "Sunum slaytları cuma"sı, Okul modülü kurulunca yeniden denenecek
 
 ### Ç3 planı
@@ -294,7 +294,9 @@ Faz denetimi:
 
 ## Sıradaki adım
 
-Ç4 (Pano ve telefon cilası): yeni oturumda `docs/05-arayuz.md` ve `docs/11-yayin-ve-cihazlar.md` okunarak başlanır. Önce Ç3'ün "Görüşün gerek" satırları. Ç2'nin "Sunum slaytları cuma" ölçütü açık: Okul modülü kurulunca yeniden denenecek (D3, karar 5).
+**Önce Ç3b (Zaman kısıtları).** Kullanıcının kararıyla (12 Kas 2026) Ç4'ten önce iş zarfına `timing` eklenir. Tasarım dokümanlara işlendi (`docs/03`, `04`, `05`, `06`, `07`, `09`, `10`); istem `prompts/c3b-zaman-kisitlari.md`, kabul ölçütleri `docs/07-yol-haritasi.md` içinde "Ç3b". Etiket `c3b-tamam`. `c3b-tamam` yokken Ç4'e başlanmaz.
+
+Sonra Ç4 (Pano ve telefon cilası): yeni oturumda `docs/05-arayuz.md` ve `docs/11-yayin-ve-cihazlar.md` okunarak başlanır. Önce Ç3'ün "Görüşün gerek" satırları. Ç2'nin "Sunum slaytları cuma" ölçütü açık: Okul modülü kurulunca yeniden denenecek (D3, karar 5).
 
 ## Senden bekleyenler
 

@@ -15,6 +15,7 @@ Her faz tek başına kullanılabilir bir şey bırakır. Bir fazın kabul ölç�
 | Ç1. Çekirdek ve modül temeli | Elle kullanılabilen iş havuzu, basit Bugün ekranı, modül sistemi | Ç0 |
 | Ç2. Yapay zeka geçidi | Girişten ve modül tekliflerinden süre ve öncelik tahmini | Ç1 |
 | Ç3. Planlayıcı | Plan ufukları, yuvalı gün planı, bitiş çizgisi, akşam kapanışı, Hafta ekranı | Ç1 (yapay zeka önerileri için Ç2) |
+| Ç3b. Zaman kısıtları | İşlerin saat penceresi, kaçınılan saatleri, yol süresi ve dinlenme günü; planlayıcı bunlara uyar | Ç3 |
 | Ç4. Pano ve telefon cilası | Gün boyu açık duracak kalitede pano; uygulama gibi çalışan telefon | Ç3 |
 | Ç5. Claude köprüsü | Claude sohbetleri Sherpa'yı okuyup yazar | Ç1 |
 
@@ -114,6 +115,35 @@ Tasarım: `docs/04-planlayici.md`.
 - [ ] Yapay zekanın zorunlu bir işi erteleme önerisi motor tarafından reddediliyor (testle)
 - [ ] Hafta içinde tetikleyici yokken haftalık taahhüt değişmiyor
 
+### Ç3b: Zaman kısıtları
+
+Tasarım: `docs/03-veri-modeli.md` ("Zaman kısıtları"), `docs/04-planlayici.md` ("Zaman kısıtları"), `docs/05-arayuz.md` ("Zaman kısıtları"), `docs/06-modul-sozlesmesi.md`, `docs/10-yapay-zeka.md` (kural 12). Karar: `docs/09-kararlar.md`, 12 Kas 2026.
+
+Ç3'ten sonra, modüller tasarlanmadan önce eklenen küçük bir çekirdek adımıdır: iş zarfına `timing` bölümü gelir, planlayıcı bu kısıtlara uyar.
+
+**Kapsam**
+- Migration: `work_items`, `tasks`, `rhythms` tablolarına `timing` sütunu (yalnızca ekleme)
+- Zarf: `timing` şeması, doğrulaması, biçime göre izinli alanlar, alt alan başına kaynak; sabit zaman biçiminde `travel` → bloğun yol sütunları
+- Planlayıcı: zaman süzgeci, ayak izi ve yol, bağlam ve yol kuralı, tercih ve kaçınma çarpanı, bekletme, dinlenme günü, aciliyet ve taban hesabı, hafta yükü ve uyarılar
+- Yapay zeka: `enrich` açıkça yazılan kısıtı doldurur; planlama çağrılarının girdisinde kısıt özeti; `ai:eval` örnekleri
+- Arayüz: formlarda "Zaman" bölümü, zaman çizelgesinde yol, kartta ve Sıradakiler'de yol, iki yeni uyarı
+- `deneme` modülü: `timing`'in her alanını kullanan en az bir kayıt türü; örnek veride kısıtlı işler
+
+**Kabul ölçütleri**
+- [ ] `timing` taşımayan veride plan değişmiyor: Ç3'ün birim, veritabanı ve uçtan uca testleri hiçbiri değiştirilmeden geçiyor
+- [ ] Zarf `timing`'i üç biçimde kabul ediyor, geçersizini adını söyleyerek reddediyor; kullanıcının değiştirdiği alt alanı modülün sonraki teklifi ezmiyor
+- [ ] Penceresi 16:00–18:00 olan iş sabah yuvalarına konmuyor; saat gelince öneriliyor
+- [ ] Kaçınılan saatte başka uygun yuva varken iş oraya konmuyor; yokken konuyor
+- [ ] 60 dakikalık iş, 20 + 20 dakika yolla zaman çizelgesinde 100 dakika yer kaplıyor, yol ayrı görünüyor; oturum yalnızca çalışmayı ölçüyor
+- [ ] Yol süreli iş ikinci ekranda da öneriliyor; telefonda işin bağlamı seçiliyken yol sayılmıyor
+- [ ] Dinlenme günü olan ritim yapıldığı günün ertesinde önerilmiyor; taban tehlikesi kalan uygun günlere göre hesaplanıyor
+- [ ] Bugün teslim olan işin uygun saati kalmadıysa iş pencere dışına konmuyor ve uyarı çıkıyor; haftada uygun saat yoksa Hafta ekranı söylüyor
+- [ ] Kullanıcı pencere dışında bir işi elle başlatabiliyor
+- [ ] Formdaki "Zaman" bölümünden girilen kısıt kaydediliyor, geçersizi kaydedilmiyor; özet satırı doğru
+- [ ] Serbest girişte açıkça yazılan saat kısıtı işe işleniyor (sahte sağlayıcıyla uçtan uca; gerçek modelle `ai:eval`: açık pencere, açık kaçınma, açık yol, ve kısıt olmayan iki satırda boş kalma)
+- [ ] `docs/04-planlayici.md` içindeki "Zaman kısıtları (Ç3b)" test listesinin tamamı yazılı ve geçiyor
+- [ ] Migration önce `dev`, sonra `prod` projesinde; kod ondan sonra yayında
+
 ### Ç4: Pano ve telefon cilası
 
 Tasarım: `docs/05-arayuz.md`, `docs/11-yayin-ve-cihazlar.md`.
@@ -169,4 +199,4 @@ Bir modülün süreci: tasarım oturumu (bkz. `prompts/modul-tasarim-oturumu.md`
 
 Okul modülünün adımları için taslak kapsam ve kabul ölçütleri `docs/moduller/okul.md` ve `docs/moduller/okul-ninova.md` içindedir; tasarım oturumunda kesinleşir.
 
-Önerilen sıra: Ç0 → Ç1 → Ç2 → Okul adım 1 → Ç3 → Ç4; Ç5 ve Okul adım 2, ihtiyaca göre araya girer.
+Önerilen sıra: Ç0 → Ç1 → Ç2 → Ç3 → Ç3b → Ç4; Okul adım 1 tasarımı onaylanınca, Ç5 ve Okul adım 2 ihtiyaca göre araya girer. (Ç3, Okul adım 1'den önce bitti; Ç3b modüller tasarlanmadan önce yapılır, çünkü iş zarfını değiştirir.)

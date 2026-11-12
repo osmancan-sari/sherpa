@@ -32,6 +32,7 @@ Modüller çekirdek tablolara doğrudan yazmaz; çekirdeğe **iş zarfı** tekli
   },
   "effort": { "total_minutes": null, "session_minutes": null, "bounds": { "min": 120, "max": 600 } },
   "fit": { "energy": "deep", "context": "desk" },
+  "timing": null,
   "importance": 4,
   "depends_on": [],
   "flex": { "splittable": true, "droppable": false },
@@ -48,6 +49,41 @@ Modüller çekirdek tablolara doğrudan yazmaz; çekirdeğe **iş zarfı** tekli
 - `key` üç hedef tabloda da saklanır (`work_items`, `rhythms`, `blocks`); her birinde `(module_id, key)` tekildir.
 - `source.id` modülün kendi kaydının kimliğidir (`uuid`).
 - `artifact` kalemin çıktısına bağlantıdır (dosya yolu ya da adres).
+- `timing` işin ne zaman yapılabileceğini kısıtlar (aşağıda "Zaman kısıtları"). Boşsa kısıt yoktur.
+
+### Zaman kısıtları (`timing`, Ç3b)
+
+Bazı işler her saate konamaz: salonun açılış saatleri, mesai saatinde yapılacak bir başvuru, kalabalık saatten kaçınma, gidiş geliş yolu, üst üste iki gün yapılmaması gereken antrenman. Zarf bunları tek bir isteğe bağlı bölümde taşır; planlayıcının bunlarla ne yaptığı `docs/04-planlayici.md` içinde "Zaman kısıtları" bölümündedir.
+
+```json
+"timing": {
+  "windows": [{ "from": "07:00", "to": "23:00" }],
+  "avoid":   [{ "days": [1, 2, 3, 4, 5], "from": "18:00", "to": "20:30" }],
+  "travel":  { "before": 20, "after": 20 },
+  "rest_days": 1
+}
+```
+
+| Alan | Anlamı | Türü |
+| --- | --- | --- |
+| `windows` | İş yalnızca bu aralıklara yerleşir | Kesin |
+| `prefer` | Bu aralıklarda öne geçer | Esnek |
+| `avoid` | Bu aralıklardan kaçınılır; başka yer yoksa yine konur | Esnek |
+| `travel` | İşin önüne ve arkasına eklenen yol süresi, dakika (`before`, `after`) | Kesin |
+| `rest_days` | Tekrarlı işin iki yapılışı arasında en az bu kadar boş gün (1: pazartesi yapıldıysa en erken çarşamba) | Kesin |
+
+Kurallar:
+
+- Bölümün kendisi ve her alanı isteğe bağlıdır. Boş liste yazılmaz (alan hiç verilmez): boş `windows` işi hiçbir yere koydurmazdı.
+- Aralık: `{ "days"?: number[], "from": "HH:mm", "to": "HH:mm" }`. `days` haftanın günleridir (1 = Pazartesi … 7 = Pazar); verilmezse her gün. Saatler İstanbul saatidir, `from < to` olmalıdır, `to` `"24:00"` olabilir. Gece yarısını aşan aralık iki aralık olarak yazılır. Bir listede en çok 14 aralık.
+- `travel.before` ve `travel.after` 0–180 arası tam sayıdır; biri verilmezse 0.
+- `rest_days` yalnızca tekrar biçiminde kullanılır; `period = day` ile kullanılmaz. Hedef sığmalıdır: `(count − 1) × (rest_days + 1) + 1 ≤ dönemin gün sayısı` (hafta 7, ay 28); sığmayan teklif reddedilir.
+- Biçime göre: son tarih biçiminde `rest_days` dışındaki alanlar; tekrar biçiminde hepsi; sabit zaman biçiminde yalnızca `travel` (bloğun `travel_before_min` ve `travel_after_min` sütunlarına yazılır). Biçimin kullanmadığı alan reddedilir.
+- Saklama: `work_items.timing`, `tasks.timing`, `rhythms.timing` (`jsonb`, boş geçilebilir). Veritabanı yalnızca değerin bir nesne olduğunu denetler; biçimi uygulama zarfla aynı şemayla doğrular. Kullanıcının formdan girdiği değer de aynı şemadan geçer.
+- Oturum işinin kendi `timing` değeri varsa o geçerlidir; yoksa bağlı olduğu kalemin değeri. İkisi birleştirilmez.
+- Kaynak alt alan başına tutulur: `provenance` içinde `timing.windows`, `timing.prefer`, `timing.avoid`, `timing.travel`, `timing.rest_days`. Beşi de olgu alanıdır: modül her teklifte yazar, boş gelen alan silinir; kullanıcının değiştirdiği alt alan ezilmez.
+- Yapay zeka `timing`'i yalnızca serbest girişte, satırda açıkça yazıyorsa doldurur (`docs/10-yapay-zeka.md`); tahmin etmez. `timing`, `size` çağrısının kapsam karşılaştırmasına girmez.
+- `schema` 1 olarak kalır: alan eklemedir, `timing` taşımayan zarf eskisi gibi çalışır.
 
 ## Tablolar
 
@@ -92,6 +128,7 @@ energy enum(deep, light, physical), context enum(any, desk, home, campus, office
 depends_on uuid[] default '{}'
 depends_on_keys text[] default '{}'    -- zarftaki bağımlılık anahtarları; depends_on bunların kayda çözülmüş hali
 splittable boolean default true, droppable boolean default false
+timing jsonb null                      -- zaman kısıtları (yukarıda "Zaman kısıtları"); boşsa kısıt yok
 artifact_url text null
 provenance jsonb default '{}'          -- { "effort_total_minutes": "ai", "due_at": "module", "importance": "user" }
 ai jsonb null                          -- yapay zekanın gerekçeleri ve güveni
@@ -128,6 +165,7 @@ meta jsonb default '{}'       -- modüle özel küçük veriler
 ai jsonb null                 -- yapay zekanın koyduğu alanlar, güven ve gerekçe; kullanıcının değiştirdikleri
 done_at timestamptz null
 defer_count int default 0     -- "Ertele" ile kaç kez ertelendi; 3 olunca planlayıcı uyarır
+timing jsonb null             -- zaman kısıtları; boşsa bağlı olduğu kalemin değeri geçerlidir
 ```
 90 dakikadan uzun iş kaydedilemez; arayüz iş kalemine çevirmeyi önerir (toplam efor + oturumlar).
 
@@ -145,6 +183,7 @@ energy enum(deep, light, physical)
 context enum(any, desk, home, campus, office, out, commute)
 active boolean default true
 mode_targets jsonb null       -- { busy: 1, minimum: 0, holiday: 0 } gibi mod başına hedef
+timing jsonb null             -- zaman kısıtları; `rest_days` yalnızca burada anlamlıdır
 provenance jsonb default '{}'
 source_type text null, source_id uuid null
 meta jsonb default '{}'
