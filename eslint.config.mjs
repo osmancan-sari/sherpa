@@ -74,17 +74,20 @@ const AI_SDK_SYNTAX = dynamicImports(AI_SDK_ESQUERY, AI_SDK_PATTERN.message);
 // runs on the server (its rules, queries, ingest handlers and jobs) imports nothing made for
 // the browser and touches no browser object. It runs with no screen: in the ingest endpoint and
 // the scheduler.
-const MODULE_SERVER_TOP = [
-  "src/modules/*/rules.ts",
-  "src/modules/*/queries.ts",
-  "src/modules/*/ingest.ts",
-  "src/modules/*/jobs.ts",
-];
+// Its rules, queries, ingest handlers, jobs and text readers (`extractors`, run by the AI
+// route), under any extension: "./rules" resolves to rules.mts or rules.tsx as well.
+const SERVER_NAMES = "{rules,queries,ingest,jobs,extract}";
+const ANY_SOURCE = "{ts,tsx,mts,js,jsx,mjs}";
+const MODULE_SERVER_TOP = [`src/modules/*/${SERVER_NAMES}.${ANY_SOURCE}`];
 // Every file under server/, whatever its extension: a .tsx there is server code too.
-const MODULE_SERVER_DIR = ["src/modules/*/server/**/*.{ts,tsx,mts,js,jsx,mjs}"];
+// … and when one of them grows into a folder ("./rules" resolves to rules/index.ts).
+const MODULE_SERVER_DIR = [
+  `src/modules/*/server/**/*.${ANY_SOURCE}`,
+  `src/modules/*/${SERVER_NAMES}/**/*.${ANY_SOURCE}`,
+];
 // Inside the module, server code imports only server code: the four files and server/. A helper
 // elsewhere in the module would let a browser import in through the back door.
-const SERVER_NEIGHBOURS = "(rules|queries|ingest|jobs)$|server/";
+const SERVER_NEIGHBOURS = "(rules|queries|ingest|jobs|extract)(/|$)|server/";
 const MODULE_SERVER_RELATIVE_MESSAGE =
   'A module\'s server code imports, inside the module, only rules, queries, ingest, jobs and server/ (docs/06-modul-sozlesmesi.md, "Sunucu zemini").';
 const RELATIVE_FROM_TOP = {
@@ -100,6 +103,11 @@ const RELATIVE_FROM_DIR = {
 // reaches its own files by relative paths, and other modules not at all).
 const WALKS_BACK = {
   regex: "^.+/\\.\\.(/|$)",
+  message: MODULE_SERVER_RELATIVE_MESSAGE,
+};
+// createRequire would load any path at run time, past every pattern here.
+const NODE_MODULE = {
+  regex: "^(node:)?module$",
   message: MODULE_SERVER_RELATIVE_MESSAGE,
 };
 const MODULE_ALIAS = {
@@ -165,7 +173,16 @@ const eslintConfig = defineConfig([
     rules: {
       "no-restricted-imports": [
         "error",
-        { patterns: [AI_SDK_PATTERN, BROWSER_ONLY, RELATIVE_FROM_TOP, WALKS_BACK, MODULE_ALIAS] },
+        {
+          patterns: [
+            AI_SDK_PATTERN,
+            BROWSER_ONLY,
+            RELATIVE_FROM_TOP,
+            WALKS_BACK,
+            MODULE_ALIAS,
+            NODE_MODULE,
+          ],
+        },
       ],
       "no-restricted-syntax": [
         "error",
@@ -181,7 +198,16 @@ const eslintConfig = defineConfig([
     rules: {
       "no-restricted-imports": [
         "error",
-        { patterns: [AI_SDK_PATTERN, BROWSER_ONLY, RELATIVE_FROM_DIR, WALKS_BACK, MODULE_ALIAS] },
+        {
+          patterns: [
+            AI_SDK_PATTERN,
+            BROWSER_ONLY,
+            RELATIVE_FROM_DIR,
+            WALKS_BACK,
+            MODULE_ALIAS,
+            NODE_MODULE,
+          ],
+        },
       ],
       "no-restricted-syntax": [
         "error",

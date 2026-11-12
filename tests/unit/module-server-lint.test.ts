@@ -71,10 +71,10 @@ describe("a module's server code", () => {
     const restricted = async (code: string, file: string) =>
       (await problems(code, file)).some((problem) => problem.startsWith("no-restricted-imports"));
     const use = (from: string) => `import { x } from "${from}";\nexport const y = x;\n`;
-    for (const from of ["./helper", "./scene", "./subject", "./extract", "../okul/rules"]) {
+    for (const from of ["./helper", "./scene", "./subject", "../okul/rules"]) {
       expect(await restricted(use(from), "src/modules/ornek/jobs.ts"), from).toBe(true);
     }
-    for (const from of ["./rules", "./queries", "./ingest", "./server/ninova"]) {
+    for (const from of ["./rules", "./queries", "./ingest", "./extract", "./server/ninova"]) {
       expect(await restricted(use(from), "src/modules/ornek/jobs.ts"), from).toBe(false);
     }
     // Inside server/: its own files, and the module's server files above it.
@@ -103,6 +103,37 @@ describe("a module's server code", () => {
     ];
     for (const [code, file] of cases) {
       expect(await restricted(code, `src/modules/ornek/${file}`), `${file}: ${code}`).toBe(true);
+    }
+  });
+
+  it("holds every spelling of a server file: any extension, a folder, the text reader (after c3d-tamam)", async () => {
+    const react = 'import { useState } from "react";\nexport const y = useState;\n';
+    for (const file of [
+      "ingest.tsx",
+      "rules.mts",
+      "jobs.js",
+      "rules/index.ts",
+      "ingest/ninova.ts",
+      "extract.ts",
+    ]) {
+      const found = await problems(react, `src/modules/ornek/${file}`);
+      expect(
+        found.some((problem) => problem.startsWith("no-restricted-imports")),
+        file,
+      ).toBe(true);
+    }
+    // createRequire would load any path at run time.
+    const loader =
+      'import { createRequire } from "node:module";\nexport const y = createRequire;\n';
+    expect(
+      (await problems(loader, "src/modules/ornek/jobs.ts")).some((problem) =>
+        problem.startsWith("no-restricted-imports"),
+      ),
+    ).toBe(true);
+    // A folder of rules may use its own files and the module's server files.
+    for (const from of ["./ders", "../queries", "../rules/ders"]) {
+      const code = `import { x } from "${from}";\nexport const y = x;\n`;
+      expect(await problems(code, "src/modules/ornek/rules/index.ts"), from).toEqual([]);
     }
   });
 
