@@ -553,6 +553,15 @@ Sonra Ç4 (Pano ve telefon cilası): yeni oturumda `docs/05-arayuz.md` ve `docs/
 
 Ç3d'nin dört migration'ı var (`20261112185119_device_tokens.sql`, `20261112190922_server_act_as.sql`, `20261112192519_ingest_requests.sql`, `20261112200337_jobs.sql`); hepsi ekleme yapar, kod onları ister, bu yüzden **migration koddan önce** gider. Yayın sırası kapanış adımında (aşağıdaki durum satırları orada güncellenir).
 
+**0. Yayın sırası (senin onayınla; `sherpa-dev` tamam, 13 Kas):**
+
+1. `npx supabase db push --remote=jqqvfdjrkpxbklocsqvq --dry-run`: yalnızca dört Ç3d migration'ı görünmeli; sonra aynısı `--yes` ile.
+2. Vercel Production'a `CRON_SECRET`: değer depo dışındaki `.env.cloud-prod` dosyasında (`CRON_SECRET=`), `npx vercel env add CRON_SECRET production`.
+3. `sherpa-prod` Vault'una iki değer (aşağıda 2.; sır yine `.env.cloud-prod`'taki `CRON_SECRET`).
+4. `git push origin main`, sonra `git push origin c3d-tamam`. Vercel üretimi yayınlar; günlük yedek zamanlayıcı `vercel.json`'dan kendiliğinden kurulur.
+
+Bana "yayına al" dersen 1, 2 ve 4'ü ben yaparım; 3'ü de `.env.d1`'deki veritabanı parolasıyla yapabilirim ya da SQL Editor'a sen yapıştırırsın.
+
 **1. Zamanlayıcının sırrı ve sunucunun anahtarı (Vercel).** Uygulama sunucuda iki değer ister:
 
 - `SUPABASE_SECRET_KEY`: Production'da `sherpa-prod`'un, Preview'da `sherpa-dev`'in gizli anahtarı (D1'de girilmişse yeniden gerekmez; kapanışta `npx vercel env ls` ile bakacağım).
