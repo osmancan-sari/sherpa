@@ -4,9 +4,9 @@ Bu dosyayı Claude Code günceller. Yeni bir oturum yalnızca bu dosyayı ve `pr
 
 ## Durum
 
-- Faz: **Ç3b (Zaman kısıtları): kod, testler, denetim ve faz raporu bitti; `c3b-tamam` etiketi yayını bekliyor** (12 Kas 2026). Migration `sherpa-dev`'de; `sherpa-prod`'a gönderme ve `git push` kullanıcıda ("Senden bekleyenler" → Ç3b yayını). Ç0–Ç3 bitti; D1–D4 tamamlandı
-- Adım: 7 (yayın)
-- Son commit: Ç3b faz raporu (etiket yayını bekliyor)
+- Faz: **Ç3b (Zaman kısıtları) bitti** (12 Kas 2026, `c3b-tamam`; faz denetimi üç tur). Migration'lar `sherpa-dev`'de ve `sherpa-prod`'da; `main` ve etiket GitHub'a gönderilir. Ç0–Ç3b bitti; D1–D4 tamamlandı
+- Adım: 7 (yayın: etiket ve gönderim)
+- Son commit: Ç3b faz denetimi 3. tur (GEÇTİ)
 
 ### Ç3b planı
 
@@ -19,7 +19,7 @@ Her adımın sonunda `npm run check` ve commit; 1., 2. ve 4. adımdan sonra dene
 | 3 | Hafta yükü ve uyarılar: `loadByWeek` yol talebi, "Bugün uygun saat kalmadı", "Bu hafta uygun saat yok", uyarı önceliği | bitti: `loadByWeek` ve `fixedDemand` oturum başına yolu ekler; `weekNoTime` (`src/core/planner/week.ts`) haftanın kalan günlerinde pencere içinde bir ayak izine yer olup olmadığına bakar (boş aralık × pencere; yol pencere dışına düşebilir); günün uyarılarında "Bugün uygun saat kalmadı"dan hemen sonra. Testler: `week.test.ts` +6 (ikisi denetim düzeltmelerinde), `timing.test.ts` +1 |
 | 4 | Yapay zeka: `enrich` şeması ve istemi (yalnızca açıkça yazılan), planlama girdisinde kısıt özeti, sahte sağlayıcı, `ai:eval` örnekleri | bitti: `enrich-2` (`timing`; kayıt `aiTiming` ile zarfın şemasından geçer, kalemde kaynak alt alan başına), `plan-3`, `replan-3`, `week-3` (adayda ve kalemde `time` özeti, `timingSummary`), sahte sağlayıcı açık yazılan pencere, kaçınma ve yolu okur, `ai:eval` +5 örnek ve zaman kısıtı puanı. Gerçek modelle `ai:eval` (12 Kas): zaman kısıtı 5/5, ton 4/4 temiz, yönlendirme %94, iş/kalem %91, son tarih %97, süre sapması %19; maliyet yaklaşık 0,05 $. Testler: `src/core/ai/flows/timing.test.ts` 5, `planning.test.ts` +1, `eval.test.ts` +1, `tests/db/ai-flows.test.ts` +2 (biri denetim düzeltmesinde) |
 | 5 | Arayüz: formlarda "Zaman" bölümü, zaman çizelgesinde yol, kartta ve Sıradakiler'de yol, uyarılar; `deneme` modülünde `timing`'in her alanını kullanan kayıt türü; örnek veride kısıtlı işler | bitti: `src/core/ui/work/TimingSection.tsx` (iş, kalem ve ritim formlarında; `EditDialog` `section`), şeritte yol taralı, kartta ve listede "yol 20+20 dk", kartta "Yola çıkış / Başlangıç SS:dd", Hafta'da "Bu hafta uygun saat yok"; yeni uyarı "Saatleri bitiş çizgisinden sonra: …" (motor, testli). `deneme`: `antrenman` türü (`20261112102537_deneme_workout.sql`, `WORKOUT_TIMING`). Örnek veri: üç kısıtlı iş |
-| 6 | Kapanış: uçtan uca testler, ekran görüntüleri (`docs/ekran-goruntuleri/c3b/`), `check:full`, faz denetimi, faz raporu, `c3b-tamam` | bitti, etiket hariç (yayın ölçütüne bağlı): `tests/e2e/timing.spec.ts` 8, `timing.ai.spec.ts` 1; görüntüler (yeni: `zaman-form`, `bugun-zaman`, `hafta-zaman`); `check:full` yeşil (362 / 184 / 148). Faz denetimi iki tur (aşağıda faz raporu) |
+| 6 | Kapanış: uçtan uca testler, ekran görüntüleri (`docs/ekran-goruntuleri/c3b/`), `check:full`, faz denetimi, faz raporu, `c3b-tamam` | bitti: `tests/e2e/timing.spec.ts` 8, `timing.ai.spec.ts` 1; görüntüler (yeni: `zaman-form`, `bugun-zaman`, `hafta-zaman`); `check:full` yeşil (362 / 184 / 148). Faz denetimi üç tur (aşağıda faz raporu) |
 | 7 | Yayın: migration `sherpa-dev`, sonra `sherpa-prod`; sonra kod | `sherpa-dev`: bitti (iki migration, `migration list` ile doğrulandı). `sherpa-prod`: bitti (12 Kas 2026, kullanıcının izniyle; deneme çalıştırmasında yalnızca bu iki migration). Kod (`git push`) ve etiket ondan sonra |
 
 ### Ç3 planı
@@ -308,7 +308,7 @@ Faz denetimi:
 
 ### Ç3b: Zaman kısıtları (12 Kas 2026)
 
-İş zarfına `timing` bölümü geldi (kesin pencere, tercih edilen ve kaçınılan saatler, yol, dinlenme günü) ve planlayıcı bunlara uyar. Etiket `c3b-tamam` yayın ölçütüne bağlı olarak bekliyor ("Senden bekleyenler" → Ç3b yayını); geri kalan her şey bitti.
+İş zarfına `timing` bölümü geldi (kesin pencere, tercih edilen ve kaçınılan saatler, yol, dinlenme günü) ve planlayıcı bunlara uyar. Etiket `c3b-tamam`.
 
 **Kabul ölçütleri**
 
@@ -326,13 +326,14 @@ Faz denetimi:
 | Formdaki "Zaman" bölümü kaydediyor, geçersizi kaydetmiyor, özet doğru | Sağlandı | Uçtan uca (iş ve ritim formu) |
 | Serbest girişte açıkça yazılan kısıt işleniyor (sahte sağlayıcıyla uçtan uca; gerçek modelle `ai:eval`) | Sağlandı | `tests/e2e/timing.ai.spec.ts`; gerçek modelle `ai:eval` 12 Kas'ta koşuldu: zaman kısıtı 5/5 (açık pencere, açık kaçınma, açık yol, kısıtsız iki satır boş), ton 4/4. Kayıt yerel `ai_calls`'taydı ve sonraki test koşuları yerel veriyi sildi; denetçi bu sonucu depodan doğrulayamadı. Yeniden görmek için `npm run ai:eval` (yanıtlar yeniden kullanılmaz çünkü yerel kayıt silindi; birkaç sent) |
 | `docs/04` Ç3b test listesinin tamamı yazılı ve geçiyor | Sağlandı | 18 maddenin her biri (denetçi tek tek eşledi) |
-| Migration önce `dev`, sonra `prod`; kod ondan sonra yayında | Sağlandı | `dev` (`migration list --linked`), sonra `prod` (kullanıcının izniyle, deneme çalıştırmasıyla doğrulanıp); kod `main` ile GitHub'a, Vercel üretime yayınlar |
+| Migration önce `dev`, sonra `prod`; kod ondan sonra yayında | Sağlandı (kodun üretimde açılması kullanıcıda doğrulanacak) | `dev` ve `prod` (kullanıcının izniyle; deneme çalıştırmasında yalnızca bu iki migration; faz denetiminin 3. turu iki projede de `migration list` ile doğruladı). Kod etiketten sonra `main` ile GitHub'a gönderilir, Vercel üretime yayınlar |
 
 **Denetim**
 
 - Adım denetimleri: 1. adım GEÇTİ (2 önemli); 2. adım GEÇTİ (5 önemli); 3–4. adımlar 1. tur GEÇMEDİ (Ç2'nin geçit testi kırılmıştı: commit'ten önce `test:db` koşmamıştım), 2. tur GEÇTİ (2 önemli). Hepsi düzeltildi ("Verdiğim kararlar").
 - Faz denetimi, 1. tur GEÇMEDİ: denetçinin `check:full`'ünde Ç3'ün kararsız bir uçtan uca testi düştü; altında bekçi ile elle Başla arasında gerçek bir yarış vardı. Yarışın penceresi daraltıldı (taze okuma) ve sınandı; yol kesinliği, "X dk'm var", görüntüler düzeltildi.
 - Faz denetimi, 2. tur GEÇMEDİ: tek engelleyici yayın ölçütü (`prod`). Kodda engelleyici yok; önemli bulgu (taze okumanın testi) ve notlar düzeltildi. `check:full` yeşil. Etiket bu yüzden atılmadı: etiket koşulu "son denetçi raporunda engelleyici yok" diyor. `prod` gönderilince denetçinin yalnızca migration listesini doğrulaması yeter.
+- Faz denetimi, 3. tur GEÇTİ: `check:full` yeşil, migration'lar iki projede doğrulandı. Önemli iki bulgu düzeltildi: ILERLEME yapılmamış gönderimi yapılmış diye yazıyordu (şimdi gerçek sırayla); iki uçtan uca test gerçek saatte koşuyordu ve 22:20'den sonra düşebilirdi (sabit saat). Notlar: `docs/05`'in gün seçimi ve hata cümlesi uygulamadan geride (görüşün gerek satırına bağlı, kararından sonra düzeltilecek); kaçınılan saatin uçtan uca testi yok (birim testi var).
 - Açık kalanlar (Bilinen sorunlar): bekçi ile Başla arasında bir gidiş-dönüşlük yarış; `weekNoTime` her planda çalışır.
 
 **Dokümanın uygulamada tutmadığı yerler ve yerine yapılan** (ayrıntı `docs/04` "Uygulama notları (Ç3b)")
@@ -370,7 +371,7 @@ Faz denetimi:
 
 ## Sıradaki adım
 
-**Ç3b yayını (kullanıcıda):** migration'ı `sherpa-prod`'a gönder, sonra etiketi doğrulat ve kodu gönder ("Senden bekleyenler" → Ç3b yayını). `c3b-tamam` atılmadan Ç4'e başlanmaz.
+Ç4 (Pano ve telefon cilası), yeni oturumda. Ç3b üretime gidiyor; kullanıcı üretimde "Zaman" bölümünü dener ("Senden bekleyenler" → Ç3b yayını).
 
 Sonra Ç4 (Pano ve telefon cilası): yeni oturumda `docs/05-arayuz.md` ve `docs/11-yayin-ve-cihazlar.md` okunarak başlanır. Önce Ç3'ün ve Ç3b'nin "Görüşün gerek" satırları. Ç2'nin "Sunum slaytları cuma" ölçütü açık: Okul modülü kurulunca yeniden denenecek (D3, karar 5).
 
@@ -378,7 +379,7 @@ Sonra Ç4 (Pano ve telefon cilası): yeni oturumda `docs/05-arayuz.md` ve `docs/
 
 ### Ç3b yayını: tamamlandı (12 Kas 2026)
 
-Migration'lar `prod`'da (kullanıcının izniyle), `main` ve `c3b-tamam` GitHub'da. Kalan: üretimde bir işin "Zaman" bölümünden bir aralık kaydedip denemek (giriş gerektirir).
+Migration'lar `prod`'da (kullanıcının izniyle), sonra `c3b-tamam` atılıp `main` ve etiket GitHub'a gönderilir (oturumun son adımı). Kalan: üretimde bir işin "Zaman" bölümünden bir aralık kaydedip denemek (giriş gerektirir).
 
 Kayıt için, önceki açıklama:
 

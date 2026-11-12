@@ -151,6 +151,8 @@ test("60 minutes with 20 + 20 travel: the travel is drawn on its own, the sessio
     energy: "physical",
     timing: { travel: { before: 20, after: 20 } },
   });
+  // A fixed hour: late in the evening a 100-minute footprint would not fit before 23:59.
+  await page.clock.setFixedTime(dayAt("10:00"));
   await page.goto("/");
   const card = nowCard(page);
   // Work elsewhere is offered on the second screen too, with its travel.
@@ -166,6 +168,7 @@ test("60 minutes with 20 + 20 travel: the travel is drawn on its own, the sessio
     (list) => list.length === 1,
   );
   // The session is the work's: it starts when Başla is pressed, travel is not part of it.
+  // The database stamps it with its own (real) clock.
   expect(Date.now() - Date.parse(session.started_at as string)).toBeLessThan(60_000);
   await card.getByRole("button", { name: "Bitti" }).click();
   await waitFor(
@@ -185,6 +188,7 @@ test("on the phone, in the work's own context, its travel is not counted", async
     timing: { travel: { before: 20, after: 20 } },
   });
   await page.setViewportSize({ width: 390, height: 844 });
+  await page.clock.setFixedTime(dayAt("10:00"));
   await page.goto("/");
   const card = nowCard(page);
   await expect(card).toContainText("yol 20+20 dk");
