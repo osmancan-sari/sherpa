@@ -101,7 +101,21 @@ function same(a: unknown, b: unknown): boolean {
     const [x, y] = [Date.parse(a), Date.parse(b)];
     if (!Number.isNaN(x) && x === y && /^\d{4}-\d{2}-\d{2}/.test(a)) return true;
   }
-  return JSON.stringify(a) === JSON.stringify(b);
+  // Objects (a timing value) compare by content, whatever the order of their keys.
+  return JSON.stringify(canonical(a)) === JSON.stringify(canonical(b));
+}
+
+function canonical(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(canonical);
+  if (value !== null && typeof value === "object") {
+    const source = value as Record<string, unknown>;
+    return Object.fromEntries(
+      Object.keys(source)
+        .sort()
+        .map((key) => [key, canonical(source[key])]),
+    );
+  }
+  return value;
 }
 
 export type Correction = { column: string; kind: AiKind; ai: unknown; user: unknown };

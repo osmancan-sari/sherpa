@@ -98,7 +98,11 @@ describe("a call that reaches the provider", () => {
     const { provider, calls: asked } = counting();
     const deps = { db, config: config(provider) };
     await runAiCall(deps, enrichSpec, input("Kitap oku"));
-    await runAiCall(deps, { ...enrichSpec, version: "enrich-2" }, input("Kitap oku"));
+    await runAiCall(
+      deps,
+      { ...enrichSpec, version: `${enrichSpec.version}-next` },
+      input("Kitap oku"),
+    );
     expect(asked).toHaveLength(2);
   });
 

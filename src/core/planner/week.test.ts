@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { block, moduleRow, rhythm, task, workItem } from "@/core/testing/factories";
+import { block, moduleRow, rhythm, rhythmLog, task, workItem } from "@/core/testing/factories";
 import { istanbulInstant, shiftDay } from "@/lib/date";
 import { DEFAULT_SETTINGS } from "./slots";
 import {
@@ -503,6 +503,43 @@ describe("time constraints in the week (Ç3b)", () => {
     expect(
       weekNoTime({ ...week({ items: [short], now: at(MONDAY, "17:30") }), committed: [short.id] }),
     ).toHaveLength(1);
+  });
+
+  it("a worked share or a met floor needs no more time this week", () => {
+    const early = workItem({
+      title: "Erken",
+      effort_total_minutes: 120,
+      effort_done_minutes: 45,
+      timing: { windows: [{ from: "06:00", to: "07:30" }] },
+    });
+    const committed = { committed: [early.id] };
+    expect(weekNoTime({ ...week({ items: [early] }), ...committed })).toHaveLength(1);
+    expect(
+      weekNoTime({
+        ...week({ items: [early] }),
+        ...committed,
+        shares: { [early.id]: { minutes: 45, from: 0 } },
+      }),
+    ).toEqual([]);
+    // Monday only, done this Monday: the floor of one is met for the week.
+    const monday = rhythm({
+      title: "Yüzme",
+      floor_count: 1,
+      est_minutes: 60,
+      timing: { windows: [{ days: [1], from: "09:00", to: "11:00" }] },
+    });
+    const tuesday = { now: at(shiftDay(MONDAY, 1), "08:00"), rhythms: [monday] };
+    expect(weekNoTime({ ...week(tuesday), committed: [] })).toHaveLength(1);
+    expect(
+      weekNoTime({
+        ...week(tuesday),
+        committed: [],
+        rhythmLogs: [rhythmLog(monday.id, MONDAY)],
+      }),
+    ).toEqual([]);
+    // A monthly rhythm is not judged by a week.
+    const monthly = rhythm({ ...monday, id: crypto.randomUUID(), period: "month" });
+    expect(weekNoTime({ ...week({ ...tuesday, rhythms: [monthly] }), committed: [] })).toEqual([]);
   });
 
   it("a rhythm with a floor counts too", () => {

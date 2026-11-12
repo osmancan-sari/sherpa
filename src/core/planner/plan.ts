@@ -632,13 +632,25 @@ function warningsOf(
     stats: input.stats,
     lifeMode: input.lifeMode,
     committed: input.committed ?? null,
+    shares: input.shares,
+    rhythmLogs: input.rhythmLogs,
   });
+  // One warning per piece of work: a sitting's "no time today" already speaks for its item.
+  const spoken = (id: string) =>
+    warnings.some(
+      (warning) =>
+        warning.subjectId === id ||
+        [...closed, ...candidates].some(
+          (row) => row.id === warning.subjectId && row.item?.id === id,
+        ),
+    );
   for (const row of week) {
-    if (warnings.some((warning) => warning.subjectId === row.id)) continue;
+    if (spoken(row.id)) continue;
     warnings.push({
       kind: "no_time_week",
       subjectId: row.id,
       text: `Bu hafta uygun saat yok: ${row.title}.`,
+      moduleId: row.moduleId,
     });
   }
 
@@ -711,7 +723,7 @@ function warningsOf(
     input.workItems.find((row) => row.id === id)?.module_id;
   return warnings
     .slice(0, MAX_WARNINGS)
-    .map((warning) => ({ ...warning, moduleId: moduleOf(warning.subjectId) }));
+    .map((warning) => ({ ...warning, moduleId: warning.moduleId ?? moduleOf(warning.subjectId) }));
 }
 
 /** "X dk'm var": the best work that fits in the given minutes, now, wherever it was planned. */

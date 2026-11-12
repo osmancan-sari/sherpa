@@ -480,6 +480,18 @@ describe("conflicts", () => {
       "Bugün uygun saat kalmadı: Banka.",
       "Bu hafta uygun saat yok: Erken.",
     ]);
+    // A sitting with no time today speaks for its item: no second warning about the item.
+    const sitting = task({
+      title: "Erken oturum",
+      work_item_id: early.id,
+      position: 1,
+      due_at: iso("19:00"),
+      timing: { windows: [{ from: "06:00", to: "07:30" }] },
+    });
+    const once = buildPlan(
+      input({ now: at("14:00"), workItems: [early], tasks: [sitting], committed: [early.id] }),
+    );
+    expect(once.warnings.map((row) => row.kind)).toEqual(["no_time_today"]);
     // Not committed and not due this week: no warning.
     const loose = buildPlan(input({ workItems: [early], committed: [] }));
     expect(loose.warnings).toEqual([]);

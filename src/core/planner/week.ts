@@ -1,9 +1,9 @@
-import type { Block, LifeMode, ModuleRow, Rhythm, Task, WorkItem } from "@/core/types";
+import type { Block, LifeMode, ModuleRow, Rhythm, RhythmLog, Task, WorkItem } from "@/core/types";
 import { isBlocked } from "@/core/today/select";
 import { dayKey, istanbulInstant, shiftDay, weekStart } from "@/lib/date";
 import { nextSessionMinutes } from "@/core/contract/envelope";
 import { readTiming, type Timing } from "@/core/contract/timing";
-import { moduleWeight, rhythmTarget, weeklyFloor } from "./candidates";
+import { moduleWeight, rhythmState, rhythmTarget, shareWorked, weeklyFloor } from "./candidates";
 import { busyRanges, dayCapacity, freeRanges } from "./slots";
 import { allowedOn } from "./timing";
 import type { PlannerSettings, PlannerStat, WeekShare } from "./types";
@@ -277,7 +277,15 @@ export type NoTime = { id: string; title: string; moduleId: string };
  * of the week leave no free stretch for one footprint (travel may lie outside the window, not
  * outside the free time). "Bu hafta uygun saat yok".
  */
-export function weekNoTime(input: WeekInput & { committed: string[] | null }): NoTime[] {
+export function weekNoTime(
+  input: WeekInput & {
+    committed: string[] | null;
+    /** The committed items' shares: an item whose share is worked needs no more time. */
+    shares?: Record<string, WeekShare>;
+    /** Rhythm logs: a floor already met needs no more time. */
+    rhythmLogs?: RhythmLog[];
+  },
+): NoTime[] {
   const week = weekStart(input.weekStart);
   const weekEnd = istanbulInstant(shiftDay(week, 7)).getTime();
   const mode = modeOf(input, week);
@@ -322,15 +330,20 @@ export function weekNoTime(input: WeekInput & { committed: string[] | null }): N
     if (!timing?.windows || remainingEffort(item) <= 0) continue;
     const due = item.due_at !== null && Date.parse(item.due_at) < weekEnd;
     if (!committed.has(item.id) && !due) continue;
+    if (!due && shareWorked(input, item)) continue;
     if (!holds(timing, nextSessionMinutes(item))) {
       found.push({ id: item.id, title: item.title, moduleId: item.module_id });
     }
   }
   if (mode !== "holiday") {
     for (const rhythm of input.rhythms) {
+      // A weekly floor that is still owed; a month's or a day's rhythm is not judged by a week.
       if (!rhythm.active || !active.has(rhythm.module_id) || rhythm.floor_count <= 0) continue;
+      if (rhythm.period !== "week") continue;
       const timing = readTiming(rhythm.timing);
       if (!timing?.windows) continue;
+      const state = rhythmState(rhythm, input.rhythmLogs ?? [], today, mode);
+      if (state.done >= Math.min(rhythm.floor_count, state.target)) continue;
       if (!holds(timing, rhythm.est_minutes)) {
         found.push({ id: rhythm.id, title: rhythm.title, moduleId: rhythm.module_id });
       }

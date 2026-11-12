@@ -158,6 +158,37 @@ describe("enrich", () => {
     ).toBeNull();
   });
 
+  it("the user's change of the AI's time constraint is a correction; the same value is not", async () => {
+    await makeModule(db);
+    const line = await addInboxEntry(db, "Sınama salonu akşam 8'den sonra");
+    const task = await enrichEntry(deps(), registry, line.id, NOW);
+    const big = await addInboxEntry(db, "Sınama dönem projesi akşam 8'den sonra");
+    const item = await enrichEntry(deps(), registry, big.id, NOW);
+    if (task.status !== "applied" || item.status !== "applied") throw new Error("not applied");
+    const feedback = async () => ok(await db.from("ai_feedback").select("*"));
+
+    // The same value, its keys in another order: nothing to learn.
+    await updateTask(db, task.id, { timing: { windows: [{ to: "24:00", from: "20:00" }] } });
+    await updateWorkItem(db, item.id, { timing: { windows: [{ to: "24:00", from: "20:00" }] } });
+    expect(await feedback()).toEqual([]);
+
+    await updateTask(db, task.id, { timing: { windows: [{ from: "19:00", to: "24:00" }] } });
+    await updateWorkItem(db, item.id, { timing: null });
+    const rows = await feedback();
+    expect(rows.map((row) => row.user_value)).toEqual(
+      expect.arrayContaining([
+        { timing: { windows: [{ from: "19:00", to: "24:00" }] } },
+        { timing: null },
+      ]),
+    );
+    expect(rows.every((row) => (row.ai_value as { timing: unknown }).timing !== undefined)).toBe(
+      true,
+    );
+    const stored = ok(await db.from("work_items").select("*").eq("id", item.id).single());
+    expect(readMark(stored.ai)!.user_edited).toContain("timing");
+    expect(stored.provenance).toMatchObject({ "timing.windows": "user" });
+  });
+
   it("asks size nothing when the line or the AI gave a duration", async () => {
     await makeModule(db);
     const typed = await addInboxEntry(db, "Sınama okuma notları 20dk [ai:nominutes]");
