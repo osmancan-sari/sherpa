@@ -32,23 +32,27 @@ test("the tick runs the jobs with the app closed, and only with its secret", asy
   expect(done.status).toBe(200);
   const summary = (await done.json()) as Record<string, number | boolean>;
   expect(Object.keys(summary).sort()).toEqual(["accounts", "failed", "ok", "ran"]);
+  // What is due depends on the hour (docs/02-mimari.md): the hourly job always; the week from
+  // 00:15, the blocks from 00:30, the test module's digest from 05:00.
+  const clock = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Europe/Istanbul",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  }).format(new Date());
+  const expected = [
+    "core/sessions",
+    ...(clock >= "00:15" ? ["core/week"] : []),
+    ...(clock >= "00:30" ? ["core/blocks"] : []),
+    ...(clock >= "05:00" ? ["deneme/ozet"] : []),
+  ];
   const runs = await waitFor(
     () => rows("job_runs"),
-    (list) => list.length >= 3,
+    (list) => list.length >= expected.length,
   );
-  const jobs = runs.map((run) => run.job);
-  expect(jobs).toEqual(expect.arrayContaining(["core/week", "core/blocks", "core/sessions"]));
+  expect(runs.map((run) => run.job).sort()).toEqual(expected.sort());
   expect(runs.every((run) => run.status === "done")).toBe(true);
-  // The test module's morning digest, once its hour (05:00) has come.
-  const hour = Number(
-    new Intl.DateTimeFormat("en-GB", {
-      timeZone: "Europe/Istanbul",
-      hour: "2-digit",
-      hourCycle: "h23",
-    }).format(new Date()),
-  );
-  if (hour >= 5) {
-    expect(jobs).toContain("deneme/ozet");
+  if (expected.includes("deneme/ozet")) {
     const [mod] = await rows("modules");
     expect(mod.settings).toMatchObject({ daily_digest: { open: 0 } });
   }

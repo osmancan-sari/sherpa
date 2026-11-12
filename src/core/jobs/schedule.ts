@@ -37,11 +37,15 @@ export type DueJob<J extends ScheduledJob = ScheduledJob> = {
   run: JobRun | null;
 };
 
-/** The jobs to run now, in the order given. */
+/**
+ * The jobs to run now, in the order given. `stampedNow` is the clock the runs' start times were
+ * stamped with (the database's); it decides whether a run was cut off. Default: `now`.
+ */
 export function dueJobs<J extends ScheduledJob>(
   jobs: readonly J[],
   now: Date,
   runs: readonly JobRun[],
+  stampedNow: Date = now,
 ): DueJob<J>[] {
   const due: DueJob<J>[] = [];
   for (const job of jobs) {
@@ -53,7 +57,7 @@ export function dueJobs<J extends ScheduledJob>(
       continue;
     }
     if (run.status === "done" || run.attempts >= JOB_ATTEMPTS) continue;
-    const cutOff = now.getTime() - run.startedAt.getTime() > JOB_STALE_MS;
+    const cutOff = stampedNow.getTime() - run.startedAt.getTime() > JOB_STALE_MS;
     if (run.status === "failed" || cutOff) due.push({ job, slot, run });
   }
   return due;

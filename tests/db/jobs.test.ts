@@ -164,14 +164,15 @@ describe("the tick", () => {
         .select(),
     );
     // Started three hours ago and never answered for: twice the estimate and more.
-    const started = new Date(Date.now() - 3 * 3_600_000).toISOString();
+    // A fixed hour: before 00:30 the daily jobs would not be due yet (Ç3d step 4 audit).
+    const started = new Date(MORNING.getTime() - 3 * 3_600_000).toISOString();
     ok(
       await owner
         .from("sessions")
         .insert({ task_id: task.id, module_id: mod.id, started_at: started })
         .select(),
     );
-    await runJobs({ registry, ai: NO_AI, users: [ownerId()] });
+    await tick();
     const blocks = ok(await owner.from("blocks").select("occurrence_on"));
     expect(blocks.length).toBeGreaterThanOrEqual(7);
     const [session] = ok(await owner.from("sessions").select("ended_at, measured"));
@@ -196,6 +197,80 @@ describe("the tick", () => {
     await tick();
     const [second] = ok(await owner.from("modules").select("settings"));
     expect(second.settings).toEqual(first.settings);
+  });
+});
+
+describe("the tick's other paths (Ç3d step 4 audit)", () => {
+  it("takes a run left running for over half an hour for cut off, and runs it again", async () => {
+    await makeModule(owner);
+    const old = new Date(Date.now() - 45 * 60_000).toISOString();
+    ok(
+      await adminDb()
+        .from("job_runs")
+        .insert({ user_id: ownerId(), job: "sinama/say", slot: "2026-11-12", started_at: old })
+        .select(),
+    );
+    await tick();
+    expect(counted).toHaveLength(1);
+    const say = (await runsOf()).find((run) => run.job === "sinama/say");
+    expect(say).toMatchObject({ status: "done", attempts: 2 });
+  });
+
+  it("leaves a fresh run alone, and a paused module's jobs too", async () => {
+    const mod = await makeModule(owner);
+    ok(
+      await adminDb()
+        .from("job_runs")
+        .insert({ user_id: ownerId(), job: "sinama/say", slot: "2026-11-12" })
+        .select(),
+    );
+    await tick();
+    expect(counted).toEqual([]);
+    ok(await owner.from("modules").update({ status: "paused" }).eq("id", mod.id).select());
+    await tick(new Date("2026-11-13T06:00:00+03:00"));
+    expect(counted).toEqual([]);
+    const nextDay = (await runsOf()).filter((run) => run.slot.startsWith("2026-11-13"));
+    expect(nextDay.map((run) => run.job).sort()).toEqual([
+      "core/blocks",
+      "core/sessions",
+      "core/week",
+    ]);
+  });
+
+  it("runs a weekly job once a week, from Monday's hour", async () => {
+    const weekly: string[] = [];
+    const haftalik: ModuleDefinition = {
+      ...sinama,
+      slug: "haftalik",
+      jobs: [
+        {
+          key: "rapor",
+          every: "week",
+          at: "08:00",
+          run: async (ctx) => {
+            weekly.push(ctx.now().toISOString());
+          },
+        },
+      ],
+    };
+    const only: ModuleRegistry = {
+      list: [haftalik],
+      get: (slug) => (slug === "haftalik" ? haftalik : undefined),
+    };
+    await makeModule(owner, "haftalik", "Haftalık");
+    const at = (iso: string) =>
+      runJobs({ registry: only, now: () => new Date(iso), ai: NO_AI, users: [ownerId()] });
+    await at("2026-11-09T07:00:00+03:00"); // Monday, before its hour
+    await at("2026-11-11T12:00:00+03:00"); // Wednesday: missed on Monday, runs now
+    await at("2026-11-15T22:00:00+03:00"); // Sunday: the same week
+    await at("2026-11-16T09:00:00+03:00"); // the next Monday
+    expect(weekly).toEqual(["2026-11-11T09:00:00.000Z", "2026-11-16T06:00:00.000Z"]);
+    expect(
+      (await runsOf())
+        .filter((run) => run.job === "haftalik/rapor")
+        .map((run) => run.slot)
+        .sort(),
+    ).toEqual(["2026-11-09", "2026-11-16"]);
   });
 });
 

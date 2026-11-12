@@ -101,15 +101,31 @@ async function runFor(deps: ServerDeps): Promise<{ ran: number; failed: number }
   const jobs: Runnable[] = CORE_JOBS.map((job) => ({ ...job, run: () => job.run(deps) }));
   for (const definition of deps.registry.list) {
     if (!definition.jobs?.length) continue;
-    const active = await activeModule(deps, definition.slug);
-    if (!active) continue;
-    const ctx: ModuleContext = active.ctx;
+    // A module whose row cannot be read now waits for the next tick; the core's jobs and the
+    // other modules' run anyway.
+    let switchedOn = false;
+    try {
+      switchedOn = (await activeModule(deps, definition.slug)) !== null;
+    } catch (error) {
+      console.error(
+        `module ${definition.slug} not read`,
+        error instanceof Error ? error.message : "",
+      );
+    }
+    if (!switchedOn) continue;
     for (const job of definition.jobs) {
       jobs.push({
         id: `${definition.slug}/${job.key}`,
         every: job.every,
         at: job.at,
-        run: () => job.run(ctx),
+        // A fresh context for every job: its row (and settings) as the previous job left them,
+        // not as they were before the tick.
+        run: async () => {
+          const active = await activeModule(deps, definition.slug);
+          if (!active) throw new Error("the module was switched off");
+          const ctx: ModuleContext = active.ctx;
+          await job.run(ctx);
+        },
       });
     }
   }
@@ -117,7 +133,8 @@ async function runFor(deps: ServerDeps): Promise<{ ran: number; failed: number }
   const runs = await recentRuns(deps.db);
   let ran = 0;
   let failed = 0;
-  for (const due of dueJobs(jobs, deps.now(), runs)) {
+  // Periods by the job clock; cut-off runs by the database's, which stamped them.
+  for (const due of dueJobs(jobs, deps.now(), runs, new Date())) {
     const id = await claim(deps.db, due.job.id, due.slot, due.run);
     if (!id) continue; // Another tick took it.
     try {
