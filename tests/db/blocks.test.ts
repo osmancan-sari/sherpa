@@ -35,6 +35,9 @@ const mondays = {
   weekday: 1,
   start_time: "09:00",
   end_time: "11:00",
+  // Fixed, like NOW: left out, the database starts the series on the real today, and from
+  // 13 November on the test's Thursday fell before it (found by the Ç3d closing run).
+  valid_from: "2026-11-01",
 };
 
 const seriesBlocks = async (seriesId: string) =>
