@@ -4,9 +4,9 @@ Bu dosyayı Claude Code günceller. Yeni bir oturum yalnızca bu dosyayı ve `pr
 
 ## Durum
 
-- Faz: **Ç3b (Zaman kısıtları) sürüyor** (12 Kas 2026; istem `prompts/c3b-zaman-kisitlari.md`). Ç0–Ç3 bitti; D1–D4 tamamlandı
-- Adım: 6 (kapanış: uçtan uca testler)
-- Son commit: Ç3b faz denetimi 2. tur düzeltmeleri
+- Faz: **Ç3b (Zaman kısıtları): kod, testler, denetim ve faz raporu bitti; `c3b-tamam` etiketi yayını bekliyor** (12 Kas 2026). Migration `sherpa-dev`'de; `sherpa-prod`'a gönderme ve `git push` kullanıcıda ("Senden bekleyenler" → Ç3b yayını). Ç0–Ç3 bitti; D1–D4 tamamlandı
+- Adım: 7 (yayın)
+- Son commit: Ç3b faz raporu (etiket yayını bekliyor)
 
 ### Ç3b planı
 
@@ -19,8 +19,8 @@ Her adımın sonunda `npm run check` ve commit; 1., 2. ve 4. adımdan sonra dene
 | 3 | Hafta yükü ve uyarılar: `loadByWeek` yol talebi, "Bugün uygun saat kalmadı", "Bu hafta uygun saat yok", uyarı önceliği | bitti: `loadByWeek` ve `fixedDemand` oturum başına yolu ekler; `weekNoTime` (`src/core/planner/week.ts`) haftanın kalan günlerinde pencere içinde bir ayak izine yer olup olmadığına bakar (boş aralık × pencere; yol pencere dışına düşebilir); günün uyarılarında "Bugün uygun saat kalmadı"dan hemen sonra. Testler: `week.test.ts` +6 (ikisi denetim düzeltmelerinde), `timing.test.ts` +1 |
 | 4 | Yapay zeka: `enrich` şeması ve istemi (yalnızca açıkça yazılan), planlama girdisinde kısıt özeti, sahte sağlayıcı, `ai:eval` örnekleri | bitti: `enrich-2` (`timing`; kayıt `aiTiming` ile zarfın şemasından geçer, kalemde kaynak alt alan başına), `plan-3`, `replan-3`, `week-3` (adayda ve kalemde `time` özeti, `timingSummary`), sahte sağlayıcı açık yazılan pencere, kaçınma ve yolu okur, `ai:eval` +5 örnek ve zaman kısıtı puanı. Gerçek modelle `ai:eval` (12 Kas): zaman kısıtı 5/5, ton 4/4 temiz, yönlendirme %94, iş/kalem %91, son tarih %97, süre sapması %19; maliyet yaklaşık 0,05 $. Testler: `src/core/ai/flows/timing.test.ts` 5, `planning.test.ts` +1, `eval.test.ts` +1, `tests/db/ai-flows.test.ts` +2 (biri denetim düzeltmesinde) |
 | 5 | Arayüz: formlarda "Zaman" bölümü, zaman çizelgesinde yol, kartta ve Sıradakiler'de yol, uyarılar; `deneme` modülünde `timing`'in her alanını kullanan kayıt türü; örnek veride kısıtlı işler | bitti: `src/core/ui/work/TimingSection.tsx` (iş, kalem ve ritim formlarında; `EditDialog` `section`), şeritte yol taralı, kartta ve listede "yol 20+20 dk", kartta "Yola çıkış / Başlangıç SS:dd", Hafta'da "Bu hafta uygun saat yok"; yeni uyarı "Saatleri bitiş çizgisinden sonra: …" (motor, testli). `deneme`: `antrenman` türü (`20261112102537_deneme_workout.sql`, `WORKOUT_TIMING`). Örnek veri: üç kısıtlı iş |
-| 6 | Kapanış: uçtan uca testler, ekran görüntüleri (`docs/ekran-goruntuleri/c3b/`), `check:full`, faz denetimi, faz raporu, `c3b-tamam` | sürüyor: `tests/e2e/timing.spec.ts` 8, `timing.ai.spec.ts` 1; görüntüler (yeni: `zaman-form`, `bugun-zaman`, `hafta-zaman`); `check:full` yeşil (362 / 183 / 148). Faz denetimi 2. tur bekleniyor |
-| 7 | Yayın: migration `sherpa-dev`, sonra `sherpa-prod`; sonra kod | bekliyor |
+| 6 | Kapanış: uçtan uca testler, ekran görüntüleri (`docs/ekran-goruntuleri/c3b/`), `check:full`, faz denetimi, faz raporu, `c3b-tamam` | bitti, etiket hariç (yayın ölçütüne bağlı): `tests/e2e/timing.spec.ts` 8, `timing.ai.spec.ts` 1; görüntüler (yeni: `zaman-form`, `bugun-zaman`, `hafta-zaman`); `check:full` yeşil (362 / 184 / 148). Faz denetimi iki tur (aşağıda faz raporu) |
+| 7 | Yayın: migration `sherpa-dev`, sonra `sherpa-prod`; sonra kod | `sherpa-dev`: bitti (iki migration, `migration list` ile doğrulandı). `sherpa-prod`: izin reddedildi (otomatik kip "Production Deploy"); kullanıcıda. Kod (`git push`) ve etiket ondan sonra |
 
 ### Ç3 planı
 
@@ -306,13 +306,86 @@ Faz denetimi:
 - **Uçtan uca testler** gece de çalışabilsin diye hesabın günü 00:00–23:59 (`tests/e2e/data.ts`); bitiş çizgisi ya da gece sınayan test kendi saatini yazar. Bir önceki testin sunucudaki yapay zeka isteği sonraki testin hesabına düşebiliyor; giriş çağrılarını sayan testler yalnızca kendi türlerine bakıyor.
 - **Kapı süresi:** `check:full` yaklaşık 7 dakika (ekran görüntüleriyle 9).
 
+### Ç3b: Zaman kısıtları (12 Kas 2026)
+
+İş zarfına `timing` bölümü geldi (kesin pencere, tercih edilen ve kaçınılan saatler, yol, dinlenme günü) ve planlayıcı bunlara uyar. Etiket `c3b-tamam` yayın ölçütüne bağlı olarak bekliyor ("Senden bekleyenler" → Ç3b yayını); geri kalan her şey bitti.
+
+**Kabul ölçütleri**
+
+| Ölçüt | Durum | Nasıl doğrulandı |
+| --- | --- | --- |
+| `timing` taşımayan veride plan değişmiyor; Ç3'ün testleri değişmeden geçiyor | Sağlandı | Ç3'ün birim, veritabanı ve uçtan uca testleri değiştirilmeden yeşil (yalnızca iki dosyada içe aktarım satırı). `src/core/planner/timing.test.ts` "no timing, no change": boş ve bozuk `timing` ile plan içerik olarak aynı. Önceki fazlardan iki test değişti, ikisi de gerekçeli: Ç2'nin geçit testinde sabit sürüm adı (`enrich-2` → `${enrichSpec.version}-next`) ve görüntü testinin sabit saati ("Verdiğim kararlar") |
+| Zarf `timing`'i üç biçimde kabul ediyor, geçersizini adıyla reddediyor; kullanıcının alt alanı ezilmiyor | Sağlandı | `src/core/contract/timing.test.ts` 14, `tests/db/envelope.test.ts` +6 |
+| 16:00–18:00 pencereli iş sabaha konmuyor; saati gelince öneriliyor | Sağlandı | Birim (`timing.test.ts`), uçtan uca (`tests/e2e/timing.spec.ts`: 09:00'da kart "Başlangıç 16/17:xx", 16:00'da öneri) |
+| Kaçınılan saatte başka uygun yuva varken konmuyor, yokken konuyor | Sağlandı (birim) | `timing.test.ts` "preferred and avoided hours" |
+| 60 dk iş + 20 + 20 yol: 100 dk yer, yol ayrı görünüyor, oturum yalnızca çalışmayı ölçüyor | Sağlandı | Birim (yuva 08:20–09:20, yol atamada, sonraki yuva 09:45; `plannedMinutes` 60), uçtan uca (şeritte iki yol parçası; oturum Başla anında açılır). Oturumun yolu ölçmemesi yapısal: oturum Başla'yla açılır, süre yalnızca işin |
+| Yol süreli iş ikinci ekranda da öneriliyor; telefonda işin bağlamındayken yol sayılmıyor | Sağlandı | Birim, uçtan uca (telefon genişliğinde "Dışarıda" seçilince "yol" yazısı kalkar) |
+| Dinlenme günlü ritim ertesi gün önerilmiyor; taban tehlikesi kalan uygun günlere göre | Sağlandı | Birim (dinlenme, ulaşılabilir sayı), uçtan uca |
+| Bugün teslim, uygun saati kalmamış iş pencere dışına konmuyor, uyarı çıkıyor; haftada uygun saat yoksa Hafta söylüyor | Sağlandı | Birim, `week.test.ts` +6, uçtan uca (AlertBar ve Hafta'da "Uygun saat") |
+| Kullanıcı pencere dışında bir işi elle başlatabiliyor | Sağlandı | Uçtan uca (09:00'da Başla) |
+| Formdaki "Zaman" bölümü kaydediyor, geçersizi kaydetmiyor, özet doğru | Sağlandı | Uçtan uca (iş ve ritim formu) |
+| Serbest girişte açıkça yazılan kısıt işleniyor (sahte sağlayıcıyla uçtan uca; gerçek modelle `ai:eval`) | Sağlandı | `tests/e2e/timing.ai.spec.ts`; gerçek modelle `ai:eval` 12 Kas'ta koşuldu: zaman kısıtı 5/5 (açık pencere, açık kaçınma, açık yol, kısıtsız iki satır boş), ton 4/4. Kayıt yerel `ai_calls`'taydı ve sonraki test koşuları yerel veriyi sildi; denetçi bu sonucu depodan doğrulayamadı. Yeniden görmek için `npm run ai:eval` (yanıtlar yeniden kullanılmaz çünkü yerel kayıt silindi; birkaç sent) |
+| `docs/04` Ç3b test listesinin tamamı yazılı ve geçiyor | Sağlandı | 18 maddenin her biri (denetçi tek tek eşledi) |
+| Migration önce `dev`, sonra `prod`; kod ondan sonra yayında | **Kısmen**: `dev` bitti, `prod` ve kod kullanıcıda | Otomatik kip prod'a gönderimi reddetti; adımlar "Senden bekleyenler"de |
+
+**Denetim**
+
+- Adım denetimleri: 1. adım GEÇTİ (2 önemli); 2. adım GEÇTİ (5 önemli); 3–4. adımlar 1. tur GEÇMEDİ (Ç2'nin geçit testi kırılmıştı: commit'ten önce `test:db` koşmamıştım), 2. tur GEÇTİ (2 önemli). Hepsi düzeltildi ("Verdiğim kararlar").
+- Faz denetimi, 1. tur GEÇMEDİ: denetçinin `check:full`'ünde Ç3'ün kararsız bir uçtan uca testi düştü; altında bekçi ile elle Başla arasında gerçek bir yarış vardı. Yarışın penceresi daraltıldı (taze okuma) ve sınandı; yol kesinliği, "X dk'm var", görüntüler düzeltildi.
+- Faz denetimi, 2. tur GEÇMEDİ: tek engelleyici yayın ölçütü (`prod`). Kodda engelleyici yok; önemli bulgu (taze okumanın testi) ve notlar düzeltildi. `check:full` yeşil. Etiket bu yüzden atılmadı: etiket koşulu "son denetçi raporunda engelleyici yok" diyor. `prod` gönderilince denetçinin yalnızca migration listesini doğrulaması yeter.
+- Açık kalanlar (Bilinen sorunlar): bekçi ile Başla arasında bir gidiş-dönüşlük yarış; `weekNoTime` her planda çalışır.
+
+**Dokümanın uygulamada tutmadığı yerler ve yerine yapılan** (ayrıntı `docs/04` "Uygulama notları (Ç3b)")
+
+- "Gün kapalı" iş: penceresi bugün kalmayan iş aday değil ("vakit kalırsa"da da yok); zorunluysa "Bugün uygun saat kalmadı".
+- Ayak izi yalnızca başladığı yuvanın ardından kesintisiz gelen boş yuvalara taşar; yuva kesiminde atılan kısa artıklar kullanılamaz.
+- Atamanın yuvası çalışma aralığıdır; yol atamada taşınır, hiçbir yuvada yer almaz.
+- Kart: sıradaki iş saate bağlıysa ve ayak izi başlamadıysa saatiyle önerilir (`at`). Doküman "ayak izi başladığında önerir" diyordu; öncesinde kartın ne göstereceğini söylemiyordu. **Görüşün gerek.**
+- "Saatleri bitiş çizgisinden sonra" yalnızca formda değil günün uyarısı olarak da çıkar (serbest girişte yapay zekanın yazdığı böyle bir kısıt başka hiçbir yerde söylenmiyordu).
+- "Bu hafta uygun saat yok" hesabı basitleştirildi (boş aralık × pencere, tahmin çarpanı yok, oturum işinin kendi `timing`'i ve ritmin dinlenme günü okunmaz).
+- Formda gün seçimi: Her gün, Hafta içi, Hafta sonu ya da tek gün; birden çok tek gün için birden çok aralık. Hata cümlesi alanın değil bölümün altında. **Görüşün gerek.**
+- `enrich`'in iki şeması (modele giden katı şema ve eski kartları da okuyan şema).
+
+**Motorun en kırılgan yerleri ve onları tutan testler**
+
+- Ayak izinin taşması ve yuva parçalama (`spotAt`, `placeAt`): yuva sınırları, molalar, artık parçalar ve öndeki parçanın yeniden doldurulması (`index--`). Testler: `timing.test.ts` "the footprint" (5), "the time filter" (pencerenin başladığı an ve artan parçalar).
+- Doldurmada bekletme ve zaman çarpanıyla sıralama: Ç3'ün sırası yalnızca `compareScored`'un aynı kalmasıyla korunuyor. Testler: "preferred and avoided hours" (5) ve "no timing, no change".
+- Zorunlu işin yedekleri: penceresi ya da yolu olan iş hiçbir yedeğe düşmez, yalnızca tercihli iş düşer. Testler: "conflicts" (kırpma, enerji, yol).
+- Uyarıların tekilliği ve sırası (aynı iş için tek uyarı, en çok iki): "conflicts" ve "the week's committed work…".
+
+**Modül tasarım oturumları için notlar: bir modül `timing`'i yazarken**
+
+- Değerleri modülün kendi ayarından üretin (salon saatleri, yol bir kez girilir) ve her teklifte hepsini gönderin: beş alt alan da olgu alanıdır, gönderilmeyen silinir; kullanıcının değiştirdiği alt alan korunur.
+- `windows` kesindir: yanlış ya da dar bir pencere işi sessizce plandan düşürür ("Bugün uygun saat kalmadı" ya da "Saatleri bitiş çizgisinden sonra" uyarısı çıkar). Açılış saati gibi gerçekten kesin olmayan şeyi `prefer`/`avoid` ile yazın.
+- Bitiş çizgisinden sonraya düşen pencere (akşam sporu) bugün planlanamaz; açık soru `docs/09`'da.
+- `rest_days` yalnızca haftalık ve aylık ritimde; hedefle sığmalıdır, kullanıcının değiştirdiği hedefle birlikte de denetlenir (sığmazsa teklif reddedilir).
+- Yol, bağlamı `any` olmayan işte anlamlıdır; cihaz işin bağlamındayken sayılmaz. Sabit zamanlı blokta yol bloğun sütunlarına yazılır; yolsuz yeniden teklif yolu 0 yapar.
+- Oturum işinin kendi `timing`'i varsa kalemin değeri geçerli değildir (birleştirilmez).
+
+**Sonraki faz (Ç4) için notlar**
+
+- Görüntülerin üst satırındaki tarih dünü gösterir (görüntüler dün 18:00'de çekilir).
+- Telefonda yüzen "+" düğmesi Sıradakiler'in ilk satırındaki düğmeyi örtüyor (Ç3'ten).
+- "Görüşün gerek" satırları: kart saati, Zaman bölümünün yerleşimi ve özet satırı, şeritte yolun görünüşü, uyarı metinleri, zaman çarpanları, yolun yalnızca tam bağlam eşitliğinde sıfırlanması.
+
 ## Sıradaki adım
 
-**Önce Ç3b (Zaman kısıtları).** Kullanıcının kararıyla (12 Kas 2026) Ç4'ten önce iş zarfına `timing` eklenir. Tasarım dokümanlara işlendi (`docs/03`, `04`, `05`, `06`, `07`, `09`, `10`); istem `prompts/c3b-zaman-kisitlari.md`, kabul ölçütleri `docs/07-yol-haritasi.md` içinde "Ç3b". Etiket `c3b-tamam`. `c3b-tamam` yokken Ç4'e başlanmaz.
+**Ç3b yayını (kullanıcıda):** migration'ı `sherpa-prod`'a gönder, sonra etiketi doğrulat ve kodu gönder ("Senden bekleyenler" → Ç3b yayını). `c3b-tamam` atılmadan Ç4'e başlanmaz.
 
-Sonra Ç4 (Pano ve telefon cilası): yeni oturumda `docs/05-arayuz.md` ve `docs/11-yayin-ve-cihazlar.md` okunarak başlanır. Önce Ç3'ün "Görüşün gerek" satırları. Ç2'nin "Sunum slaytları cuma" ölçütü açık: Okul modülü kurulunca yeniden denenecek (D3, karar 5).
+Sonra Ç4 (Pano ve telefon cilası): yeni oturumda `docs/05-arayuz.md` ve `docs/11-yayin-ve-cihazlar.md` okunarak başlanır. Önce Ç3'ün ve Ç3b'nin "Görüşün gerek" satırları. Ç2'nin "Sunum slaytları cuma" ölçütü açık: Okul modülü kurulunca yeniden denenecek (D3, karar 5).
 
 ## Senden bekleyenler
+
+### Ç3b yayını: bekliyor (12 Kas 2026)
+
+Kod, testler ve faz raporu hazır; `check:full` yeşil. Migration'lar (`20261112091939_timing.sql`: üç tabloya `timing` sütunu; `20261112102537_deneme_workout.sql`: `deneme_items` tür denetiminin genişletilmesi) `sherpa-dev`'de. İkisi de yalnızca ekleme yapar, bu yüzden koddan önce gitmeleri güvenli. `prod`'a gönderimi otomatik kip reddetti ("Production Deploy").
+
+Sırayla (PowerShell, depo kökünde):
+
+1. `npx supabase db push --remote=jqqvfdjrkpxbklocsqvq --dry-run`: yalnızca bu iki migration görünmeli. Sonra aynı komutu `--yes` ile çalıştır. (Ya da bana izin ver, ben yapayım.)
+2. Bana "prod tamam" de: denetçiye migration listesini doğrulatır, `c3b-tamam` etiketini atarım.
+3. `git push origin main`, sonra `git push origin c3b-tamam`. Vercel üretimi kendisi yayınlar.
+4. Üretimde bir işin düzenleme formunda "Zaman" bölümünü aç ve bir aralık kaydet (giriş gerektirdiği için senin doğrulaman gerekir).
 
 ### Kapandı: aynı anda iki faz betiği (10 Kas 2026, 23:25)
 
@@ -592,6 +665,7 @@ Süre sapmasındaki artış çoğunlukla `enrich`'in kendi tahminlerinin çalı�
 | 12 Kas 2026 | Ç3: planlama çağrıları `ai_calls`'a konu (`subject`) olmadan yazılır: gün ve hafta bir tarihtir, sütun kayıt kimliği (uuid) ister. Aynı soru girdinin özetiyle tanınır | Sütunun anlamı değişmesin | `src/core/ai/flows/planning.ts` |
 | 12 Kas 2026 | Ç3: bekçi yazdığından sonra yalnızca yazdığı tabloları yeniden okur | Her şeyi yeniden okumak, yazılmakta olan bir dokunuşun iyimser değişikliğini geri alıyordu (uçtan uca testte görüldü) | `src/core/app/PlanKeeper.tsx` |
 | 12 Kas 2026 | Ç3: **Test değişikliği:** `yapay-zeka.ai.spec.ts` (Ç2) yalnızca giriş çağrılarını (`enrich`, `size`, `decompose`, `extract`) sayar; `ai-gateway.test.ts` "checks cannot be read" testi önce bütün hesapların ayarlarını siler | Yapay zeka açıkken ekran günü ve haftayı da planlıyor (Ç3), bir önceki testin sunucudaki planlama isteği yeni testin hesabına düşebiliyor; uçtan uca hesabın artık her testte bir ayar satırı var ve gizli anahtar onu görüyor | `tests/` |
+| 12 Kas 2026 | Ç3b faz denetimi, 2. tur (GEÇMEDİ, tek engelleyici yayın ölçütü): önemli: taze okumanın veritabanı testi eklendi (`tests/db/planning.test.ts` +1). Notlar: görüntü testi bekçinin oturum işini bekler (pano ve telefon aynı uyarıları gösterir); ulaşılabilir sayının gün düzeyindeki basitleştirmesi `docs/04`'te; "Son commit" satırı güncel. `sherpa-dev`'e migration gönderildi; `prod` otomatik kipte reddedildi, kullanıcıda. Etiket atılmadı | Denetim | `tests/`, `docs/` |
 | 12 Kas 2026 | Ç3b faz denetimi, 1. tur (GEÇMEDİ): engelleyici: (B1) denetçinin `check:full`'ünde Ç3'ün `edit-work.spec.ts` "a work item with an open sitting…" testi düştü (tek başına 10/10 geçiyor). Altta gerçek bir yarış var: hafta bekçisi oturum işlerini ekranın birkaç saniye eski listesinden hesaplıyordu; kullanıcı arada kalemden Başla'ya basınca kalemin iki açık oturum işi oluyordu. Bekçi artık yazmadan hemen önce o kalemlerin işlerini veritabanından taze okur (`writeWeek`); pencere bir gidiş-dönüşe indi, tamamen kapanmadı (aşağıda "Bilinen sorunlar"). Önemli: (Ö1) yalnızca yolu olan zorunlu iş sığmayınca yolsuz yerleşiyordu; yol da kesin: yerleşmez, "Bugün uygun saat kalmadı" (testli); (Ö2) görüntülerde Ç3b'nin öğeleri yoktu: `bugun-zaman` (şeritte yol, kartta yol, iki uyarı) ve `hafta-zaman` eklendi. Notlar: "X dk'm var" penceresi henüz açılmamış işi önermez (testli); kart metni `docs/05`'le eşitlendi; `docs/12` ve `prompts/c3c-*`, `c3d-*` kullanıcının, `a448347`'ye kazara girdi (yukarıda); `weekNoTime` her planda çalışır, ölçülmedi | Denetim | `src/core/data/planning.ts`, `src/core/planner/plan.ts`, `tests/e2e/screenshots.spec.ts`, `docs/04`, `docs/05` |
 | 12 Kas 2026 | Ç3b: **Test değişikliği:** faz görüntüleri tarayıcı saati dün 18:00'e sabitlenerek ve örnek veri o ana göre tohumlanarak çekilir (`screenshots.spec.ts`); saate bağlı yeni uçtan uca testler de dünün saatlerini kullanır | Görüntü testi gündüz koşunca örnek verinin "Ofis" bloğu sürüyor, kartta "Neden?" olmuyor ve test düşüyordu (Ç3'te gece koşulduğu için görünmemişti). Saat ileri sabitlenince oturum belirteci süresi dolmuş görünüyor ve uygulama durmadan yeniliyor; geçmiş bir saat bunu önler | `tests/e2e/screenshots.spec.ts`, `tests/e2e/timing.spec.ts` |
 | 12 Kas 2026 | Ç3b: "Zaman" bölümü yerel `<details>` (kapalı gelir; kapalıyken özet satırı). Gün seçimi: Her gün, Hafta içi, Hafta sonu ya da tek bir gün; birden çok tek gün için birden çok aralık eklenir (modülün yazdığı başka bir gün kümesi korunur ve adıyla gösterilir). Saatler metin alanı (`SS:dd`), çünkü saat alanı `24:00`'ü yazamaz. Kaynak notu: "Modülün ayarından geliyor; değiştirdiğin alan senin olur." ya da yapay zekanın gerekçesi. Şeritte yol, modülün renginde soluk taralı şerit. Kartta saat: "Yola çıkış 16:25" ya da "Başlangıç 16:45" (Türkçe ek sorununu önlemek için saatten önce ad) | **Görüşün gerek** (`docs/05`'in istediği dört konu: bölümün yerleşimi ve özet satırı, şeritte yolun görünüşü, uyarı metinleri) | `src/core/ui/work/`, `src/core/ui/today/` |
