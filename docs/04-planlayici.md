@@ -247,12 +247,15 @@ Kod `src/core/planner/timing.ts` (yardımcılar), `candidates.ts` ve `plan.ts` i
 - **Bugün kapalı iş.** Penceresi bugünü kapsamayan ya da bugünün kalan penceresinde (günün başı ya da şimdiden bitiş çizgisine kadar) kendi süresi kadar kesintisiz aralık bırakmayan iş aday değildir; "vakit kalırsa"da da görünmez. Zorunluysa "Bugün uygun saat kalmadı" uyarısını üretir.
 - **Ayak izinin taşması.** Ayak izi yalnızca başladığı yuvanın ardından kesintisiz gelen boş yuva ve molalara taşar. Yuvalar kesilirken atılan kısa artıklar (15 dakikadan kısa) yuva olmadığı için kullanılamaz.
 - **Atama.** Atamanın yuvası çalışma aralığıdır; yol süreleri atamada (`travelBefore`, `travelAfter`) taşınır ve hiçbir yuvada yer almaz. Yol, cihaz işin bağlamındayken 0'dır ve atamada hiç yazılmaz.
-- **Zorunlu iş.** Enerjisi uymayan zorunlu iş, zaman kuralları içinde kalmak şartıyla enerji süzgeci olmadan yerleşir. "En uzun derin yuvaya kırparak koyma" kuralı zaman kısıtlı işe uygulanmaz: pencere kesindir.
-- **Kart.** Pencereye ya da yola bağlı iş, ayak izi başlayınca önerilir; o zamana kadar kart sıradaki serbest işi önerir. Başka iş yoksa kart bağlı işi `at` (ayak izinin başladığı an) ile önerir; ekran saati söyler. **Görüşün gerek.**
+- **Zorunlu iş.** Enerjisi uymayan zorunlu iş, zaman kuralları içinde kalmak şartıyla enerji süzgeci olmadan yerleşir. Penceresi olan zorunlu iş hiçbir yuvaya sığmazsa yerleşmez ve "Bugün uygun saat kalmadı" der; "en uzun derin yuvaya kırparak koyma" ona uygulanmaz (pencere kesindir). Penceresi olmayan zorunlu iş (yalnızca yol ya da tercih taşıyan) kendi kurallarıyla yerleşemezse Ç3'teki yedeklere (enerji, kırpma) düşer; orada yol ve tercih dikkate alınmaz.
+- **Bugün kapalı işin son tarihi.** Pencereleri bugün kapalı iş de "yetişmeyecek son tarih" uyarısına girer (kullanılabilir süre pencereden sayılır), sonra "Bugün uygun saat kalmadı". Son tarihi bugünse yalnızca ikincisi çıkar.
+- **Kart.** Kart planın zaman sırasındaki ilk işini önerir (Ç3'teki gibi). O iş pencereye ya da yola bağlıysa ve ayak izi henüz başlamadıysa kart onu `at` (ayak izinin başladığı an, yola çıkış) ile önerir; ekran saati söyler, kullanıcı yine elle başlatabilir. Önündeki boş zamanda serbest bir iş olsaydı doldurma onu oraya koyardı. **Görüşün gerek.**
 - **Doldurma.** Zaman kısıtlı işin skoru yuvadaki zaman çarpanıyla çarpılır; sıralama `compareScored` ile yapılır (zorunlu önde). Bekletme yalnızca `prefer` ya da `avoid` taşıyan işe uygulanır.
 - **Ulaşılabilir sayı.** Dinlenme günü, dönemin içindeki değil son gerçek yapılıştan sayılır (önceki dönemin son yapılışı da): kural 5 ile aynı.
 - **Reddedilen öneri.** Yapay zekanın `top3` ya da `prefer` önerisindeki iş bugün kapalıysa ya da penceresi içinde hiçbir boş yuvaya sığmıyorsa öneri uygulanmaz ve uyarı çıkar: "…: bu saatlerde yapılamaz, öneri plana alınmadı."
-- **"X dk'm var".** Zaman kısıtlı iş, verilen dakikalar mola uzunluğundaysa (15 dakikanın altı) önerilmez.
+- **"X dk'm var".** Pencere ya da yol taşıyan iş, verilen dakikalar mola uzunluğundaysa (15 dakikanın altı) önerilmez; yalnızca tercih ya da kaçınma taşıyan iş Ç3'teki gibi değerlendirilir.
+- **Yol ve bağlam.** Yol yalnızca cihazın bağlamı işin bağlamına tam eşitse 0 sayılır (kural 3'ün lafzı). İkinci ekran (`desk`) `home` işini görür ama orada yol sayılmaya devam eder: yolu olan bir ev işi beklenmiyor. **Görüşün gerek.**
+- **Reddedilen öneri ve enerji.** Pencere içindeki tek yuva işin enerjisine uymuyorsa öneri de reddedilir (zorunlu iş hariç: o enerjiden bağımsız yerleşir).
 
 ## Test kapsamı (en az)
 

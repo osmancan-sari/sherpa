@@ -215,7 +215,7 @@ function placeAt(slots: Slot[], spot: Spot, assignment: Assignment, input: PlanI
     start: new Date(spot.workStart),
     end: new Date(spot.workEnd),
     minutes: assignment.minutes,
-    kind: first.kind,
+    kind: kindAt(slots, spot, first),
     assignment,
   });
   const rest = (last.end.getTime() - spot.footEnd) / MINUTE;
@@ -231,6 +231,17 @@ function placeAt(slots: Slot[], spot: Spot, assignment: Assignment, input: PlanI
   }
   slots.splice(spot.index, spot.last - spot.index + 1, ...pieces);
   return pieces[0].assignment === null;
+}
+
+/** The kind of the slot the work starts in (travel may have filled the slot before it). */
+function kindAt(slots: Slot[], spot: Spot, first: Slot): Slot["kind"] {
+  for (let index = spot.index; index <= spot.last; index++) {
+    const slot = slots[index];
+    if (slot.start.getTime() <= spot.workStart && spot.workStart < slot.end.getTime()) {
+      return slot.kind === "break" ? first.kind : slot.kind;
+    }
+  }
+  return first.kind;
 }
 
 /** The assignment of work at a spot: its travel rides along when it has any. */
@@ -314,9 +325,10 @@ export function buildPlan(input: PlanInput): Plan {
     if (advised.indexOf(id) !== at) return false;
     if (closed.some((row) => row.id === id)) return true;
     const candidate = candidates.find((row) => row.id === id);
-    return (
-      Boolean(candidate?.timing?.windows) && spotsOf(slots, candidate!, input, true).length === 0
-    );
+    if (!candidate?.timing?.windows) return false;
+    if (spotsOf(slots, candidate, input).length > 0) return false;
+    // Mandatory work may go where its energy does not match; other work may not.
+    return candidate.mandatory === null || spotsOf(slots, candidate, input, true).length === 0;
   });
 
   const placed = new Set<string>();
@@ -336,7 +348,10 @@ export function buildPlan(input: PlanInput): Plan {
   const tryPlace = (candidate: Candidate, overCapacity: boolean): boolean => {
     if (placed.has(candidate.id)) return true;
     if (!overCapacity && plannedMinutes + candidate.minutes > usableMinutes) return false;
-    if (candidate.timing) return placeTimed(candidate, overCapacity);
+    if (candidate.timing && placeTimed(candidate, overCapacity)) return true;
+    // A window is hard: work that has one goes nowhere else. Other constraints (travel,
+    // preferred hours) give way for mandatory work, as without them.
+    if (candidate.timing?.windows || (candidate.timing && !overCapacity)) return false;
     let index = slots.findIndex((slot) => !slot.assignment && fits(candidate, slot, input.context));
     // Mandatory work goes in even where its energy does not match, as long as it fits.
     if (index < 0 && overCapacity) {
@@ -530,19 +545,15 @@ function nowOf(
       minutes: finishedToday.reduce((sum, task) => sum + task.est_minutes, 0),
     };
   }
-  // Work bound to its time is offered when its footprint starts (the time to set off); other
-  // work comes first meanwhile. With nothing else, the card says when.
-  const footStart = (slot: Slot) =>
-    slot.start.getTime() - (slot.assignment?.travelBefore ?? 0) * MINUTE;
-  const ready = slots.find(
-    (slot) =>
-      slot.assignment &&
-      (!bound(slot.assignment.candidate) || footStart(slot) <= input.now.getTime()),
-  )?.assignment;
-  if (ready) return { kind: "suggest", assignment: ready };
-  const waiting = slots.find((slot) => slot.assignment);
-  if (waiting?.assignment) {
-    return { kind: "suggest", assignment: waiting.assignment, at: new Date(footStart(waiting)) };
+  // The next work in time order. Work bound to its time (windows, travel) is offered when its
+  // footprint starts, the time to set off; before that the card says when (`at`).
+  const next = slots.find((slot) => slot.assignment);
+  if (next?.assignment) {
+    const footStart = next.start.getTime() - (next.assignment.travelBefore ?? 0) * MINUTE;
+    if (bound(next.assignment.candidate) && footStart > input.now.getTime()) {
+      return { kind: "suggest", assignment: next.assignment, at: new Date(footStart) };
+    }
+    return { kind: "suggest", assignment: next.assignment };
   }
   if (finishedToday.length > 0 && !mandatoryLeft) {
     if (usedUp) return { kind: "suggest", assignment: usedUp };
@@ -569,10 +580,12 @@ function warningsOf(
   const warnings: Warning[] = [];
   const titleOf = (id: string) => candidates.find((row) => row.id === id)?.title ?? "";
 
-  // A deadline that the time left cannot hold.
+  // A deadline that the time left cannot hold (work closed today by its windows included).
   const seen = new Set<string>();
-  for (const candidate of candidates) {
+  for (const candidate of [...candidates, ...closed]) {
     if (candidate.dueAt === null || candidate.type === "rhythm") continue;
+    // Closed today and due today: "no time left today" says it.
+    if (closed.includes(candidate) && candidate.mandatory === "due_today") continue;
     const due = new Date(candidate.dueAt);
     if (due.getTime() < input.now.getTime()) continue;
     const key = candidate.item?.id ?? candidate.id;

@@ -397,6 +397,54 @@ describe("conflicts", () => {
     ]);
   });
 
+  it("mandatory work whose window is open but holds no slot for it says so too", () => {
+    const call = timed(
+      { windows: [{ from: "16:00", to: "17:15" }] },
+      { title: "Çağrı", est_minutes: 45, due_at: iso("19:00") },
+    );
+    const plan = buildPlan(input({ tasks: [call] }));
+    expect(placement(plan, call.id)).toBeNull();
+    expect(plan.warnings.map((row) => row.kind)).toEqual(["no_time_today"]);
+  });
+
+  it("mandatory windowed work goes in where its energy does not match, inside its window", () => {
+    // Only the light slot 18:30–19:00 lies in the window; the work is deep.
+    const deep = timed(
+      { windows: [{ from: "18:30", to: "19:00" }] },
+      { energy: "deep", est_minutes: 30, due_at: iso("19:00") },
+    );
+    expect(placement(buildPlan(input({ tasks: [deep] })), deep.id)).toBe("18:30–19:00");
+    const later = timed(
+      { windows: [{ from: "18:30", to: "19:00" }] },
+      { energy: "deep", est_minutes: 30 },
+    );
+    expect(placement(buildPlan(input({ tasks: [later] })), later.id)).toBeNull();
+  });
+
+  it("only a window forbids the cut to the longest slot; preferred hours do not", () => {
+    // 90 minutes × 1.2 learned = 110: longer than any slot. Due today, it is started anyway.
+    const mod = moduleRow();
+    const stats = [{ key: `est_multiplier:${mod.slug}:task`, value: 1.2, sample_size: 6 }];
+    const due = { est_minutes: 90, due_at: iso("19:00"), energy: "deep" as const };
+    const prefers = timed({ prefer: [{ from: "08:00", to: "12:00" }] }, due);
+    expect(
+      placement(buildPlan(input({ modules: [mod], stats, tasks: [prefers] })), prefers.id),
+    ).toBe("08:00–09:30");
+    const windowed = timed({ windows: [{ from: "08:00", to: "12:00" }] }, due);
+    const plan = buildPlan(input({ modules: [mod], stats, tasks: [windowed] }));
+    expect(placement(plan, windowed.id)).toBeNull();
+    expect(plan.warnings.map((row) => row.kind)).toContain("no_time_today");
+  });
+
+  it("work its windows keep out today still warns of a deadline it cannot meet, first", () => {
+    const monday = timed(
+      { windows: [{ days: [1], from: "09:00", to: "17:00" }] },
+      { title: "Vergi", due_at: iso("19:00", "2026-11-13") },
+    );
+    const plan = buildPlan(input({ tasks: [monday] }));
+    expect(plan.warnings.map((row) => row.kind)).toEqual(["deadline", "no_time_today"]);
+  });
+
   it("the no-time warning comes right after a deadline that will not be met", () => {
     const bank = timed(
       { windows: [{ from: "09:00", to: "12:00" }] },
