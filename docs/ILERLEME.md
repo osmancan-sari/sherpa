@@ -4,9 +4,9 @@ Bu dosyayı Claude Code günceller. Yeni bir oturum yalnızca bu dosyayı ve `pr
 
 ## Durum
 
-- Faz: **Ç3 (Planlayıcı) bitti** (12 Kas 2026, `c3-tamam`, yerel etiket; faz denetimi iki tur). Ç0–Ç3 bitti; D1 ve D2 tamamlandı; D3 (`ANTHROPIC_API_KEY`) bekliyor: yapay zekalı her şey sahte sağlayıcıyla sınandı. **Ç3'ün kodu GitHub'a gönderilmedi**: `main`'e gönderilen her commit üretime yayınlanıyor ve Ç3'ün migration'ı henüz `prod`'da yok ("Senden bekleyenler" → D4) Ç0–Ç3 bitti; D1 ve D2 tamamlandı; D3 (`ANTHROPIC_API_KEY`) bekliyor: yapay zekalı her şey sahte sağlayıcıyla sınandı
-- Sıradaki: önce D4 (Ç3'ü yayına almak), sonra Ç4 (Pano ve telefon cilası). Kullanıcı bu gece Ç3'ten sonra durulmasını istedi; Ç4 yeni oturumda
-- Son commit: Ç3 faz raporu
+- Faz: **Ç3 (Planlayıcı) bitti** (12 Kas 2026, `c3-tamam`; faz denetimi iki tur). Ç0–Ç3 bitti; D1, D2 ve D4 tamamlandı (Ç3 üretimde); D3 (`ANTHROPIC_API_KEY`) bekliyor: yapay zekalı her şey sahte sağlayıcıyla sınandı
+- Sıradaki: Ç4 (Pano ve telefon cilası), yeni oturumda
+- Son commit: D4 kaydı
 
 ### Ç3 planı
 
@@ -339,17 +339,17 @@ Adımlar:
 4. Uygulamayı kapatıp yeniden aç: giriş istememeli.
 5. Sonucu (çalıştı ya da nerede takıldı) buraya yaz.
 
-### D4. Ç3'ü yayına almak: bekliyor
+### D4. Ç3'ü yayına almak: tamam
 
-Ç3'ün kodu yalnızca yerel depoda (`main`, `c3-tamam` etiketi). `main` GitHub'a gönderilince Vercel üretime yayınlar; Ç3'ün migration'ı (`20261111202959_planner.sql`: `tasks.defer_count`, `sessions.confirmed_at`, `week_plans` sütunları, oturum işi sırası için tekil indeks, `close_unanswered_session`, planlayıcı tablolarının canlı yayını) önce `prod`'da olmalı, yoksa üretimde Bugün ve Hafta bozulur. `sherpa-dev`'e gönderildi (12 Kas 2026, 02:50). Gözetimsiz oturumda `prod`'a dokunulmadı.
+12 Kas 2026: migration `prod`'a gönderildi (deneme çalıştırmasında yalnızca `20261111202959_planner.sql`; sonra `prod` güncel), `main` ve `c3-tamam` GitHub'da. Not: `--follow-tags` yalnızca açıklamalı etiketleri gönderir; faz etiketleri hafif olduğundan `git push origin <etiket>` ayrıca gerekir.
+
+Kayıt için, eski açıklama: `main` GitHub'a gönderilince Vercel üretime yayınlar; Ç3'ün migration'ı (`20261111202959_planner.sql`: `tasks.defer_count`, `sessions.confirmed_at`, `week_plans` sütunları, oturum işi sırası için tekil indeks, `close_unanswered_session`, planlayıcı tablolarının canlı yayını) önce `prod`'da olmalı, yoksa üretimde Bugün ve Hafta bozulur. `sherpa-dev`'e gönderildi (12 Kas 2026, 02:50). Gözetimsiz oturumda `prod`'a dokunulmadı.
 
 Sırayla (PowerShell, depo kökünde):
 
 1. `npx supabase db push --remote=jqqvfdjrkpxbklocsqvq --dry-run` (yalnızca `20261111202959_planner.sql` görünmeli), sonra aynısı `--yes` ile.
-2. `git push origin main --follow-tags` (`c2-tamam`'dan sonraki commit'ler ve `c3-tamam`). Vercel üretimi kendisi yayınlar.
-3. Üretimde Bugün ve Hafta ekranını aç; bir dakika içinde Hafta'da haftanın kalemleri görünmeli.
-
-Ya da bana "D4'ü yap" de; bu adımları ben yaparım.
+2. `git push origin main`, sonra `git push origin c3-tamam`. Vercel üretimi kendisi yayınlar.
+3. Üretimde Bugün ve Hafta ekranını aç; bir dakika içinde Hafta'da haftanın kalemleri görünmeli (giriş gerektirdiği için kullanıcı doğrular).
 
 ### D3. Yapay zeka anahtarı: bekliyor
 
