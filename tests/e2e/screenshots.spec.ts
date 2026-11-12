@@ -29,8 +29,8 @@ async function userDb() {
 }
 
 /** Sample data, plus the test module with a few records of its own. */
-async function prepare(page: Page): Promise<string> {
-  await seedDemo(await userDb(), new Date());
+async function prepare(page: Page, now: Date): Promise<string> {
+  await seedDemo(await userDb(), now);
   await page.goto("/ayarlar/moduller");
   await page.getByRole("button", { name: "Deneme: etkinleştir" }).click();
   await expect(page.getByRole("link", { name: "Deneme ayarları" })).toBeVisible();
@@ -204,7 +204,15 @@ for (const theme of ["dark", "light"] as const) {
   test(`screens, ${theme}`, async ({ page }, testInfo) => {
     test.setTimeout(120_000);
     await page.addInitScript((value) => localStorage.setItem("theme", value), theme);
-    const itemId = await prepare(page);
+    // The screens are taken at 18:00 of yesterday, with the sample data seeded for that moment:
+    // outside the sample blocks (the office runs 09:00–17:30), the same whenever the run is, and
+    // in the past, so the session's token never looks expired.
+    const shotDay = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Istanbul" }).format(
+      new Date(Date.now() - 86_400_000),
+    );
+    const shotNow = new Date(`${shotDay}T18:00:00+03:00`);
+    await page.clock.setFixedTime(shotNow);
+    const itemId = await prepare(page, shotNow);
     const phone = testInfo.project.use.isMobile === true;
     const shot = async (name: string) => {
       const file = (suffix: string) =>
@@ -296,6 +304,17 @@ for (const theme of ["dark", "light"] as const) {
     await shot("hizli-giris");
     await page.keyboard.press("Escape");
     await expect(dialog).toBeHidden();
+
+    // Ç3b: the "Zaman" section of a task with office hours and travel (sample data).
+    await page.goto("/m/ev-ornek");
+    await page.getByRole("button", { name: "Düzenle: Banka işlemi" }).click();
+    const timingDialog = page.getByRole("dialog", { name: "İşi düzenle" });
+    await timingDialog.getByText("Zaman", { exact: true }).click();
+    await expect(timingDialog.getByLabel("Yol: gidiş (dk)")).toBeVisible();
+    await shot("zaman-form");
+    await page.keyboard.press("Escape");
+    await page.goto("/");
+    await expect(now.getByRole("heading")).toBeVisible();
 
     // Ç3: why this work, the minutes the user has, the closing's draft, the night.
     await now.getByRole("button", { name: "Neden?" }).click();

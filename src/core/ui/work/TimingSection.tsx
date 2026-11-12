@@ -232,39 +232,42 @@ export function TimingSection({
                       </option>
                     ))}
                   </select>
-                  <Input
-                    type="text"
-                    inputMode="numeric"
-                    placeholder="SS:dd"
-                    aria-label={`${name}: başlangıç`}
-                    value={range.from}
-                    onChange={(event) => update({ from: event.target.value })}
-                    className="h-11 w-24 md:h-9"
-                  />
-                  <span aria-hidden>–</span>
-                  <Input
-                    type="text"
-                    inputMode="numeric"
-                    placeholder="SS:dd"
-                    aria-label={`${name}: bitiş`}
-                    value={range.to}
-                    onChange={(event) => update({ to: event.target.value })}
-                    className="h-11 w-24 md:h-9"
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    className="size-11 md:size-9"
-                    aria-label={`${name}: kaldır`}
-                    onClick={() =>
-                      setList(
-                        list.name,
-                        draft[list.name].filter((_, at) => at !== index),
-                      )
-                    }
-                  >
-                    <X aria-hidden />
-                  </Button>
+                  {/* The two times and the remove button wrap together on a narrow screen. */}
+                  <span className="flex items-center gap-2">
+                    <Input
+                      type="text"
+                      inputMode="numeric"
+                      placeholder="SS:dd"
+                      aria-label={`${name}: başlangıç`}
+                      value={range.from}
+                      onChange={(event) => update({ from: event.target.value })}
+                      className="h-11 w-24 md:h-9"
+                    />
+                    <span aria-hidden>–</span>
+                    <Input
+                      type="text"
+                      inputMode="numeric"
+                      placeholder="SS:dd"
+                      aria-label={`${name}: bitiş`}
+                      value={range.to}
+                      onChange={(event) => update({ to: event.target.value })}
+                      className="h-11 w-24 md:h-9"
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      className="size-11 md:size-9"
+                      aria-label={`${name}: kaldır`}
+                      onClick={() =>
+                        setList(
+                          list.name,
+                          draft[list.name].filter((_, at) => at !== index),
+                        )
+                      }
+                    >
+                      <X aria-hidden />
+                    </Button>
+                  </span>
                 </div>
               );
             })}
