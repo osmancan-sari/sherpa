@@ -1,0 +1,275 @@
+# Modül sahnesi, günün çerçevesi ve otomasyon zemini
+
+**Durum: tasarım. Henüz kurulmadı; Ç3c ve Ç3d adımlarında kurulacak.** Bu doküman o iki adımın kaynağıdır. Adımlar kurulurken içerik ilgili numaralı dokümanlara (`03`, `04`, `05`, `06`, `07`, `10`, `11`) işlenir; bu dosya özet ve gerekçe olarak kalır.
+
+## Neden
+
+Kullanıcının çekirdekten beklediği (12 Kas 2026): modüller tek tek tasarlanmadan önce altyapı şu üç katmana hazır olmalı.
+
+| Katman | Ne | Bugün | Eksik |
+| --- | --- | --- | --- |
+| 1. Modülün içi | Kendi verisi, veri bağlantıları, otomasyonları | Kendi tabloları, iş teklifi, olaylar, olay soruları, giriş türleri, yapılı blok ve metin okuyucu. Hepsi uygulama açıkken, tarayıcıda çalışır | Uygulama kapalıyken çalışan hiçbir şey yok: dışarıdan veri alan uç (`/api/ingest`, tasarlandı ama kurulmadı), modülün zamanlanmış işi, sunucuda modül bağlamı. Modül bir oturumun başladığını ya da bittiğini duyamıyor |
+| 2. Modülün sayfası | Girince açılan, modüle özel ekranlar ve grafikler | Hazır: `/m/<slug>`, sekmeler, alt sayfalar, tam ekran görünümler, hızlı eylemler, ayarlar, grafik ve tablo bileşenleri | — |
+| 3. İş sırasında ana ekran | Modülün işi çalışırken Bugün ekranının o modülün yüzüne bürünmesi: arka plan, modüle özel düğmeler, anlatım, ses | Yalnızca kartta bir satır ayrıntı ve bağlantılar (`nowCard`) | Sahne, sesli anlatım, oturum olayları |
+
+Ayrıca günün kendisi bugün yalnızca bir çalışma penceresidir ("ilk dokunuş"tan bitiş çizgisine). Uyanış, yatış ve o saatlere bağlı rutinler yok; sabah ve akşam modülleri bunlar olmadan kurulamaz.
+
+İki adım:
+
+- **Ç3c. Sahne ve günün çerçevesi:** ana ekran tarafı (bölüm A–D).
+- **Ç3d. Sunucu zemini:** uygulama kapalıyken çalışan taraf (bölüm E).
+
+Hiçbiri bir modüle özel değildir. Örneklerde sabah rutini geçer, çünkü bütün parçaları birden kullanan odur; kurulan şey genel bağlantı noktalarıdır ve `deneme` modülünde her birinin örneği bulunur.
+
+---
+
+## A. Sahne
+
+Modül, kendi işi çalışırken Bugün ekranını devralan bir **sahne** verebilir.
+
+```ts
+type ModuleUi = {
+  // …mevcut alanlar
+  scene?: {
+    when: (subject: SceneSubject) => boolean          // bu iş için sahne var mı (türüne, meta'sına göre)
+    component: ComponentType<SceneProps>
+    look?: { tone: 'calm' | 'focus' | 'energy' }      // çekirdeğin geçiş ve arka plan tonu
+  }
+}
+
+type SceneSubject =
+  | { kind: 'task'; task: Task; workItem: WorkItem | null }
+  | { kind: 'rhythm'; rhythm: Rhythm }
+
+type SceneProps = {
+  subject: SceneSubject
+  session: { startedAt: Date; elapsedSeconds: number }   // sunucudaki başlangıçtan; her cihazda aynı
+  device: 'pano' | 'telefon'
+  controls: {
+    finish: () => Promise<void>      // çekirdeğin "Bitti"si
+    stop: () => Promise<void>        // "Durdur"
+    stuck: () => void                // "Takıldım" akışını açar
+    exit: () => void                 // sahneden çık; oturum sürer
+  }
+  say: Say                           // bölüm C
+  today: TodayBrief                  // bölüm C: günün kısa özeti (anlatım için)
+  ctx: ModuleUiContext
+}
+```
+
+Kurallar:
+
+1. **Ne zaman.** `plan.now = running` ve çalışan işin modülü `scene` tanımlamışsa ve `when` doğru dönerse Bugün ekranı sahneyi çizer. Öneri durumunda (`suggest`) standart kart kalır; sahne iş başlayınca gelir. İş bitince, durunca ya da ertelenince standart ekran geri döner.
+2. **Çekirdeğin çerçevesi kalır.** Sahnenin üstünde her zaman ince bir şerit durur: saat, işin adı, geçen süre, "Çık". Şerit sahnenin değil çekirdeğindir; sahne onu gizleyemez. "Çık" standart Bugün ekranına döndürür, oturum sürer ve kartta "Sahneye dön" çıkar.
+3. **Oturum çekirdeğindir.** Başlatma, bitirme, ölçme, "Devam ediyor musun?" ve 30 dakikalık cevapsızlık kuralı değişmez. Sahne oturumu yalnızca `controls` ile etkiler.
+4. **Sahne serbesttir.** Şeridin altındaki bütün alan modülündür: arka plan, kendi düğmeleri, adımlar, sayaçlar, metin. Çekirdeğin tasarım dilini ve temasını kullanır; hareket azaltma tercihine uyar.
+5. **Geçiş.** Standart ekrandan sahneye ve geri geçiş yumuşaktır (kısa bir solma); `look.tone` arka planın tonunu belirler. Ayrıntılı görünüş Ç4'te cilalanır.
+6. **İki cihaz.** Pano ve telefon aynı sahneyi kendi yerleşimiyle çizer (`device`). Sahnenin durumu (hangi adımdayım) modülün kendi verisindedir ve canlı bağlantıyla iki cihazda aynıdır; yalnızca ekranda tutulan durum öbür cihaza taşınmaz.
+7. **Hata.** Sahne hata verirse çekirdek standart kartı gösterir ve tek satırla bildirir; oturum etkilenmez.
+8. **Tam ekranla ilişkisi.** `fullscreen` kullanıcının modül sayfasından kendi açtığı görünümdür; sahne, iş çalışırken Bugün ekranında kendiliğinden gelendir. Aynı bileşen ikisinde de kullanılabilir.
+
+Yerleşim (pano):
+
+```
+┌──────────────────────────────────────────────────────────────────────┐
+│ 08:14   Sabah rutini · 6 dk                                    Çık   │  ← çekirdeğin şeridi
+├──────────────────────────────────────────────────────────────────────┤
+│                                                                      │
+│                        (modülün sahnesi)                             │
+│        arka plan · adımlar · sayaç · modülün düğmeleri               │
+│                                                                      │
+└──────────────────────────────────────────────────────────────────────┘
+```
+
+**Adım yürütücü (bileşen takımına eklenir).** Sıralı adımlı sahneler (rutin, pişirme, antrenman) ortak bir bileşen kullanır: `StepRunner`. Adım listesi (ad, süre ya da tekrar sayısı, açıklama), geri sayım, "sonraki", "atla", adım bitince geri çağrı. Yalnızca arayüzdür; adımların kaydını modül kendi tablosunda tutar. Modül isterse kullanmaz.
+
+**Görüşün gerek:** sahnenin yalnızca çalışan işte gelmesi (öneride değil); şeridin içeriği; "Çık"tan sonra dönüş yolu.
+
+## B. Oturum ve gün olayları
+
+Modül bugün yalnızca kalem kapanınca haber alır (`onOutcome`). Otomasyon için çekirdek şu olayları yayınlar (mevcut `on` düzeniyle; `events` tablosuna yazılır):
+
+| Olay | Ne zaman | Yük | Kime |
+| --- | --- | --- | --- |
+| `core.session_started` | Oturum başladı | iş ya da ritim kimliği, `source`, başlangıç | İşin modülüne |
+| `core.session_ended` | Oturum kapandı | aynısı + sonuç (`done`, `stopped`, `deferred`, `stuck`, `unanswered`), harcanan dakika, ölçüldü mü | İşin modülüne |
+| `core.day_started` | Uyanış kaydedildi (bölüm D) | gün, uyanış saati, tahmini mi | Etkin bütün modüllere |
+| `core.day_closed` | Yatış kaydedildi | gün, yatış saati | Etkin bütün modüllere |
+
+Oturum olayları yalnızca işin sahibi modüle verilir; modül başka modülün işini bu yoldan izleyemez.
+
+## C. Sesli anlatım
+
+Çekirdek modüllere bir **anlat** servisi verir; ne söyleneceğine modül karar verir.
+
+```ts
+type Say = (text: string, options?: { interrupt?: boolean }) => void
+// SceneProps.say ve ModuleUiContext.say
+
+type TodayBrief = {                   // anlatım ve sahneler için günün kısa özeti (yalnızca okuma)
+  top: { title: string; module: string; reason: string | null }[]   // günün odağı
+  blocks: { title: string; startsAt: Date; endsAt: Date }[]         // bugünün sabit blokları
+  finishLine: Date
+  wokeAt: Date | null
+}
+```
+
+Kurallar:
+
+1. **Sağlayıcı arayüzü.** Yapay zeka geçidindeki gibi: `src/core/voice/` tek giriş noktasıdır. İlk sağlayıcı cihazın kendi konuşma sentezidir (ücretsiz, çevrimdışı). Ücretli, doğal sesli bir sağlayıcı sonradan aynı arayüze eklenebilir; modüller değişmez.
+2. **Sıra ve kesme.** Art arda gelen metinler sıraya girer; `interrupt` sıradakileri atar. Uzun metin cümlelere bölünür (bazı tarayıcılar uzun konuşmayı keser).
+3. **Hangi cihaz konuşur.** Varsayılan: dokunuşun yapıldığı cihaz. Ayarlarda cihaz başına: sesli anlatım açık ya da kapalı, ses, hız; "bu cihaz dokunuş olmadan da konuşsun" (pano için). İki cihazın aynı anda konuşmaması için kendiliğinden konuşma yalnızca bu ayarın açık olduğu cihazda olur.
+4. **Tarayıcı kısıtları.** Telefonda ses bir dokunuşun içinden başlamalıdır; uygulama kendiliğinden konuşmaya başlayamaz. Panoda, uygulama olarak kurulmuş pencerede kendiliğinden konuşabildiği belgelenmiş, bu kurulumda denenmemiştir: Ç3c'de gerçek cihazlarda denenir ve sonuç yazılır.
+5. **Sessizlik saygısı.** Anlatım kapalıysa ya da cihaz sessizdeyse `say` hiçbir şey yapmaz ve hata vermez; sahne anlatıma bağımlı kurulmaz (her söylenen ekranda da yazar).
+6. **Ton.** Anlatılan metinler ürün kurallarına uyar: suçlama ve geçmişi sayma yok.
+7. **Kapsam dışı:** sesle komut (dinleme), uygulama kapalıyken konuşma.
+
+**Görüşün gerek:** cihazın kendi sesiyle başlamak; konuşan cihazın varsayılanı.
+
+## D. Günün çerçevesi
+
+Gün iki gerçek olaya bağlanır: uyanış ve yatış.
+
+```
+uyku │ uyanışa bağlı işler │ çalışma penceresi │ akşam │ yatışa bağlı işler │ uyku
+     ▲ uyanış (kayıt)                          ▲ bitiş çizgisi (saat)       ▲ yatış (kayıt)
+```
+
+**Veri.**
+
+```
+days
+  woke_at timestamptz null          -- uyanış
+  woke_estimated boolean default false   -- "Uyandım" denmedi; ilk etkileşimden alındı
+  bed_at timestamptz null           -- yatış ("Yatıyorum")
+  expected_wake time null           -- yalnızca bu gün için beklenen uyanış ("yarın erken kalkacağım")
+  expected_bed time null            -- yalnızca bu gece için beklenen yatış ("bu gece geç yatacağım")
+
+settings
+  day_frame jsonb                   -- gün tipi başına hedef aralıklar:
+                                    -- { home: { wake: ["07:30","09:00"], bed: ["23:30","00:30"] }, office: {…}, campus: {…} }
+```
+
+Hedef aralıklar ayardır; başlangıç değerleri kurulumda varsayılanla gelir ve kullanıcı Ayarlar'dan değiştirir. Bitiş çizgisi mevcut ayarıyla kalır.
+
+**Kayıt.**
+
+- Sabah ilk açılışta ekran "Günaydın" durumundadır (`now = morning`): tek düğme, "Uyandım". Dokunuş `woke_at`'i şimdi olarak yazar; yanında "biraz önce" seçeneği (15, 30, 60 dk önce).
+- "Uyandım" denmeden başka bir şeye dokunulursa uyanış o an sayılır ve `woke_estimated` işaretlenir.
+- Gece: akşam ekranında ve akşam kapanışının sonunda "Yatıyorum". `bed_at` yazılır, ekran geceye geçer. Denmezse yatış kaydedilmez; uygulama uydurmaz.
+- Uyku süresi = sonraki günün `woke_at`'i − `bed_at`; ikisi de kayıtlıysa hesaplanır. Tahmini uyanışla hesaplanan süre tahmini diye işaretlenir.
+- Her ikisi de olay yayınlar (bölüm B) ve dışarıdan da kaydedilebilir (bölüm E: telefonun alarm ya da uyku otomasyonu).
+
+**Planlayıcı.**
+
+1. **Günün başı.** Çalışma penceresi `uyanış + uyanışa bağlı işlerin ayak izi`nde başlar. Uyanış henüz yoksa (yarının planı, sabah uyanmadan önce) beklenen uyanış kullanılır: `days.expected_wake`; yoksa o gün tipinin son 14 kaydının ortancası; o da yoksa hedef aralığın ortası.
+2. **Çapa.** `timing` bir alan daha taşır: `anchor: 'wake' | 'bed'`. Uyanışa bağlı işler uyanıştan başlayarak art arda dizilir; yatışa bağlı işler beklenen yatışta bitecek biçimde geriye doğru dizilir. Çapa kesindir: bu işler yuvalara dağıtılmaz. Birden çok iş aynı çapaya bağlıysa sıra modülün verdiği `order` ile, eşitse skorla belirlenir. Çapa `windows` ile birlikte kullanılmaz.
+3. **Akşam.** Bitiş çizgisi ile yatışa bağlı işler arası akşamdır. Planlayıcı akşama yalnızca `timing.after_finish = true` taşıyan işleri koyar ("bitiş çizgisinden sonra da olur"); `windows` ve öbür kısıtlar yine geçerlidir. Başka hiçbir iş bitiş çizgisinden sonraya konmaz. Akşam süresi kapasite çarpanına girmez. Bu, `docs/09-kararlar.md` içindeki "penceresi bitiş çizgisinden sonraya düşen iş" açık sorusunu kapatır.
+4. **Gün kısalınca.** Geç uyanılan günde çalışma penceresi kısalır; plan yeniden kurulur, sığmayanlar olağan kurallarla "vakit kalırsa"ya ya da sonraki günlere gider. Uyarı metinleri bunu kusur gibi anlatmaz.
+5. **Kaydırma.** "Bu gece geç yatacağım" ve "yarın erken kalkacağım" tek dokunuşla o günün beklenen saatini değiştirir; kalıcı ayar değişmez.
+
+**Ekran durumları.** `plan.now`'a iki durum eklenir, biri değişir:
+
+| Durum | Koşul | Ekran |
+| --- | --- | --- |
+| `morning` | Gün başladı, uyanış kaydı yok | "Günaydın", "Uyandım" düğmesi, bugünün kısa özeti |
+| `evening` | Bitiş çizgisi geçti, yatış kaydı yok | Akşam: varsa akşama konan işler, "Günü kapat", "Yatıyorum". Sakin ekran |
+| `night` | Yatış kaydedildi, ya da beklenen yatış aralığının sonu geçti | Gece ekranı (mevcut) |
+
+Uyanışa bağlı ilk iş "Uyandım"dan sonra kendiliğinden önerilir; ayar açıksa kendiliğinden başlar (tek dokunuşla uyanış + rutin).
+
+**Görünürlük.** Bugün ekranının üst şeridinde uyanış saati ve bu gecenin yatış aralığı; zaman çizelgesi uyanıştan beklenen yatışa uzanır, bölümler (uyanışa bağlı, çalışma, akşam, yatışa bağlı) ayırt edilir. Uyanış, yatış ve uyku süresinin haftalara yayılan görünümü çekirdeğin Hafta ekranında tek satırlık özet olarak, ayrıntısı rutin modülünün sayfasında yer alır (modül bu veriyi `ctx` üzerinden okur). Seri, puan, rozet yok.
+
+**Görüşün gerek:** uyanışın dokunuşla kaydı ve dokunulmazsa ilk etkileşimden tahmin; "Uyandım"dan sonra rutinin kendiliğinden başlaması; hedef aralıkların başlangıç değerleri; akşam ekranının içeriği.
+
+---
+
+## E. Sunucu zemini (Ç3d)
+
+Bugün modülün bütün mantığı tarayıcıda, uygulama açıkken çalışır. Veri bağlantıları ve otomasyonlar için üç parça gerekir.
+
+**1. Cihaz anahtarları.** Dış kaynakların (telefonun otomasyonu, bilgisayardaki toplayıcı) Sherpa'ya yazabilmesi için iptal edilebilir anahtarlar.
+
+```
+device_tokens
+  name text                    -- "iPhone Kestirmeler", "Ninova toplayıcısı"
+  token_hash text unique       -- anahtarın kendisi saklanmaz
+  scopes text[]                -- izinli uçlar: 'core.wake', 'okul.ninova' …
+  last_used_at timestamptz null
+  revoked_at timestamptz null
+```
+
+Ayarlar → Bağlantılar: anahtar üretme (yalnızca bir kez gösterilir), kapsam seçme, son kullanım, iptal. Anahtar yalnızca kapsamındaki uca yazar; okuyamaz.
+
+**2. Giriş ucu.** `POST /api/ingest/<kaynak>/<tür>`, anahtar başlıkta. Çekirdek anahtarı ve kapsamı denetler, gövdeyi türün şemasıyla doğrular, işleyiciyi sunucuda modülün bağlamıyla çalıştırır. Aynı isteğin yinelenmesi (`Idempotency-Key`) ikinci kez işlenmez. Hız sınırı vardır.
+
+```ts
+type ModuleDefinition = {
+  // …
+  ingest?: {
+    kind: string                                   // 'ninova', 'tarti'
+    schema: ZodType
+    handle: (payload: unknown, ctx: ModuleContext) => Promise<void>
+  }[]
+}
+```
+
+Çekirdeğin kendi türleri: `core/wake`, `core/bed` (bölüm D; telefonun alarm ya da uyku otomasyonundan), `core/context` (bağlam; konum otomasyonu fikri için hazır uç, arayüzü sonra).
+
+**3. Zamanlanmış işler.** Modül, uygulama kapalıyken dönen işler bildirebilir.
+
+```ts
+  jobs?: {
+    key: string
+    every: 'hour' | 'day' | 'week'
+    at?: string                                    // 'HH:mm', İstanbul; gün ve hafta için
+    run: (ctx: ModuleContext) => Promise<void>     // idempotent olmalı
+  }[]
+```
+
+Çekirdek tek bir zamanlayıcı ucundan sırası gelen işleri çalıştırır ve her çalışmayı kaydeder (`job_runs`: ne zaman, sonuç, hata). `docs/02-mimari.md` içindeki çekirdek işleri (yarının bloklarını üretme, ritim dönemlerini kapatma) de aynı düzenle çalışır. Tetikleyicinin ne olacağı (barındırıcının zamanlayıcısı ya da veritabanının zamanlayıcısı) kurulumda güncel plan koşullarına bakılarak seçilir: ücretsiz katmanda sıklık sınırı olabilir.
+
+**Sunucuda modül bağlamı.** `ingest` ve `jobs` işleyicileri tarayıcı olmadan çalışır: `ModuleContext`'in sunucu sürümü kullanıcının verisine sunucu anahtarıyla, yalnızca o kullanıcının satırlarıyla sınırlı erişir. Modülün `rules.ts`, `ingest` ve `jobs` kodu tarayıcıya özgü hiçbir şey içe aktarmaz (lint kuralı). Sunucuda yayınlanan olaylar da dinleyen modüllerin işleyicilerine sunucuda verilir.
+
+**Dışarı doğru eylem yok.** Sherpa dış sistemlere (ışık, bildirim servisi) kendisi komut göndermez; ev otomasyonu telefonun kendi otomasyonunda kalır ve Sherpa'ya yalnızca olay bildirir. Gerekirse sonra eklenir.
+
+---
+
+## Kabul ölçütleri
+
+**Ç3c**
+
+- [ ] `deneme` modülü bir sahne tanımlıyor: işi başlatınca Bugün ekranı sahneye geçiyor, bitince geri dönüyor; panoda ve telefonda
+- [ ] Sahnedeyken üst şerit duruyor; "Çık" standart ekrana döndürüyor, oturum sürüyor, "Sahneye dön" çalışıyor
+- [ ] Sahne hata verince standart kart geliyor, oturum etkilenmiyor
+- [ ] Sahnesi olmayan modülde ve `scene.when` yanlış dönen işte ekran Ç3'teki gibi
+- [ ] `StepRunner` ile adımlı bir örnek sahne: geri sayım, sonraki, atla
+- [ ] Modül `core.session_started` ve `core.session_ended` olaylarını yalnızca kendi işleri için alıyor; `core.day_started` ve `core.day_closed` etkin bütün modüllere gidiyor
+- [ ] `say`: cihazın sesiyle Türkçe konuşuyor, sıra ve kesme çalışıyor, kapalıyken sessiz ve hatasız; cihaz başına ayar
+- [ ] Sesli anlatım gerçek telefonda (dokunuştan sonra) ve gerçek panoda denendi; sonuç `docs/ILERLEME.md` içinde (elle doğrulanacak)
+- [ ] "Uyandım" ve "Yatıyorum" kaydediliyor; "Uyandım" denmeden dokunulunca uyanış tahmini olarak işaretleniyor
+- [ ] Çalışma penceresi uyanışa göre başlıyor: geç uyanılan günde plan kısalıyor; uyanış yokken beklenen uyanış kullanılıyor
+- [ ] `anchor: 'wake'` taşıyan iş uyanıştan hemen sonra, `anchor: 'bed'` taşıyan iş yatıştan önce duruyor; yuvalara dağıtılmıyor
+- [ ] `after_finish` taşımayan hiçbir iş bitiş çizgisinden sonraya konmuyor; taşıyan iş akşama konabiliyor
+- [ ] `morning` ve `evening` durumları doğru koşullarda geliyor; "bu gece geç yatacağım" ve "yarın erken kalkacağım" yalnızca o günü etkiliyor
+- [ ] Ayarlar'da hedef aralıklar gün tipine göre değişiyor
+- [ ] Günün çerçevesi kullanılmayan veride (uyanış kaydı yok, çapa yok, `after_finish` yok) çalışma penceresinin içindeki plan Ç3b'dekiyle aynı; Ç3 ve Ç3b testleri değiştirilmeden geçiyor ya da değişen her test gerekçesiyle kayıtlı
+
+**Ç3d**
+
+- [ ] Ayarlar → Bağlantılar'da anahtar üretiliyor (bir kez gösteriliyor), kapsamı seçiliyor, iptal ediliyor; iptal edilen anahtar reddediliyor
+- [ ] Anahtar yalnızca kapsamındaki uca yazabiliyor; okuma yapamıyor; yanlış ya da eksik anahtar 401, kapsam dışı 403
+- [ ] `core/wake` ve `core/bed` uçları uyanışı ve yatışı kaydediyor; açık ekranlar canlı güncelleniyor
+- [ ] `deneme` modülünün bir `ingest` türü: geçerli gövde işleniyor, geçersiz gövde adıyla reddediliyor, yinelenen istek ikinci kez işlenmiyor
+- [ ] `deneme` modülünün bir zamanlanmış işi uygulama kapalıyken çalışıyor; `job_runs` kaydı düşüyor; aynı iş iki kez tetiklenince veri bozulmuyor
+- [ ] Sunucuda çalışan işleyici yalnızca anahtarın sahibinin verisine erişiyor (başka hesabın verisine erişemediği testle)
+- [ ] Modülün sunucu kodu tarayıcıya özgü bir şey içe aktarınca lint hata veriyor
+- [ ] iPhone Kestirmeler ile `core/wake` gerçek telefonda denendi (elle doğrulanacak; adımları `docs/ILERLEME.md` içinde)
+
+## Kapsam dışı
+
+- Gerçek modüller (sabah ve akşam rutini dahil); her biri kendi tasarım oturumunda
+- Sesle komut; ücretli ses sağlayıcısı
+- Sherpa'nın dış sistemlere komut göndermesi (ışık, akıllı ev)
+- Konumdan bağlam seçiminin arayüzü (uç hazır olur, akış sonra)
+- Görsel cila: sahne geçişlerinin ve akşam ekranının son hali Ç4'te

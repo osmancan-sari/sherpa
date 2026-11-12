@@ -1,3 +1,4 @@
+import type { Timing } from "@/core/contract/timing";
 import type {
   Block,
   Context,
@@ -111,6 +112,11 @@ export type Candidate = {
   task?: Task;
   item?: WorkItem;
   rhythm?: Rhythm;
+  /** Its time constraints (a sitting's own, else its item's); absent when it has none. */
+  timing?: Timing;
+  /** Travel on this device, in minutes; absent without timing, 0 in the work's own context. */
+  travelBefore?: number;
+  travelAfter?: number;
 };
 
 export type MandatoryReason = "due_today" | "urgent" | "floor";
@@ -119,7 +125,11 @@ export type SlotKind = "deep" | "light" | "break";
 
 export type Assignment = {
   candidate: Candidate;
+  /** Minutes of work; the slot is the work, travel lies before and after it. */
   minutes: number;
+  /** Travel around the work, when it has any (not counted against capacity, not measured). */
+  travelBefore?: number;
+  travelAfter?: number;
   /** Short notes behind "neden?": the engine's and the AI's. */
   reasons: string[];
 };
@@ -132,7 +142,14 @@ export type Slot = {
   assignment: Assignment | null;
 };
 
-export type WarningKind = "deadline" | "floor" | "next_step" | "deferred_often" | "advice_rejected";
+export type WarningKind =
+  | "deadline"
+  | "no_time_today"
+  | "no_time_week"
+  | "floor"
+  | "next_step"
+  | "deferred_often"
+  | "advice_rejected";
 
 export type Warning = {
   kind: WarningKind;
@@ -146,7 +163,8 @@ export type NowState =
   | { kind: "running"; session: Session; task: Task | null; rhythm: Rhythm | null }
   | { kind: "block"; block: Block }
   | { kind: "prompt"; prompt: Prompt }
-  | { kind: "suggest"; assignment: Assignment }
+  /** `at`: the work is bound to its time and its footprint starts later (the card says when). */
+  | { kind: "suggest"; assignment: Assignment; at?: Date }
   | { kind: "done"; finished: number; minutes: number }
   | { kind: "night" }
   | { kind: "return"; top3: Candidate[] }

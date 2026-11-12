@@ -2,7 +2,9 @@ import { nextSessionMinutes } from "@/core/contract/envelope";
 import type { LifeMode, ModuleRow, Rhythm, RhythmLog } from "@/core/types";
 import { effortUsedUp, isBlocked } from "@/core/today/select";
 import { dayKey, istanbulInstant, monthStart, shiftDay, weekStart, weekdayOf } from "@/lib/date";
+import type { Timing } from "@/core/contract/timing";
 import { dayCapacity, learned } from "./slots";
+import { allowedOn, effectiveTiming, reachableCount, rhythmTiming, travelOf } from "./timing";
 import type { Candidate, MandatoryReason, PlanInput } from "./types";
 
 // Who could be worked on today, and how much each is worth (docs/04-planlayici.md, "Skor",
@@ -90,6 +92,10 @@ export function rhythmState(
   const daysLeft = dayCount(day, to);
   const floor = mode === "holiday" ? 0 : Math.min(rhythm.floor_count, target);
   const floorNeeded = Math.max(0, floor - done);
+  // The doings still reachable in the period: the days left, fewer with windows on some days
+  // only or rest days between doings (docs/04-planlayici.md, "Zaman kısıtları", rule 7).
+  const timing = rhythmTiming(rhythm);
+  const reachable = timing ? reachableCount(timing, day, to, lastDoneOf(mine, day)) : daysLeft;
   return {
     done,
     target,
@@ -97,8 +103,17 @@ export function rhythmState(
     doneToday,
     daysLeft,
     progress: (total - daysLeft + 1) / total,
-    floorInDanger: floorNeeded > 0 && daysLeft <= floorNeeded,
+    floorInDanger: floorNeeded > 0 && reachable <= floorNeeded,
   };
+}
+
+/** The last day a rhythm was done, up to and including the day; null if never (in the logs). */
+export function lastDoneOf(logs: RhythmLog[], day: string): string | null {
+  let last: string | null = null;
+  for (const log of logs) {
+    if (log.done_on <= day && (last === null || log.done_on > last)) last = log.done_on;
+  }
+  return last;
 }
 
 function dayCount(from: string, to: string): number {
@@ -116,13 +131,24 @@ export function daysFrom(from: string, to: string): number {
 }
 
 /** Minutes of work the days from the plan's window to a deadline can hold. */
-export function availableUntil(input: PlanInput, due: Date): number {
+export function availableUntil(input: PlanInput, due: Date, timing: Timing | null = null): number {
   const last = dayKey(due);
   let total = 0;
   for (let day = input.date; day <= last; day = shiftDay(day, 1)) {
+    // Work with windows counts only the slot time inside them (rule 6).
+    const allowed = timing?.windows ? (allowedOn(timing, day) ?? []) : null;
+    const from = day === input.date ? windowStartOf(input) : undefined;
     if (day === last) {
-      const from = day === input.date ? windowStartOf(input) : undefined;
-      total += dayCapacity(day, input.blocks, input.settings, input.stats, { from, until: due });
+      total += dayCapacity(
+        day,
+        input.blocks,
+        input.settings,
+        input.stats,
+        { from, until: due },
+        allowed,
+      );
+    } else if (allowed) {
+      total += dayCapacity(day, input.blocks, input.settings, input.stats, { from }, allowed);
     } else total += wholeDay(input, day);
   }
   return total;
@@ -159,6 +185,39 @@ type Raw = Omit<Candidate, "score" | "mandatory"> & { remaining: number };
 
 /** Everything that could be worked on today, scored, the mandatory ones marked. */
 export function buildCandidates(input: PlanInput): Candidate[] {
+  return candidatesOf(input).candidates;
+}
+
+/** The time constraints of a candidate, and its travel on this device. */
+function withTiming(
+  timing: Timing | null,
+  context: Candidate["context"],
+  input: PlanInput,
+): Pick<Candidate, "timing" | "travelBefore" | "travelAfter"> {
+  if (!timing) return {};
+  const travel = travelOf(timing, context, input.context);
+  return { timing, travelBefore: travel.before, travelAfter: travel.after };
+}
+
+/**
+ * Whether today still holds a stretch of the work's windows as long as the work, between the
+ * window's start and the finish line. Work without windows always does.
+ */
+function openToday(candidate: Candidate, input: PlanInput): boolean {
+  if (!candidate.timing?.windows) return true;
+  const from = windowStartOf(input).getTime();
+  const to = input.finishLine.getTime();
+  return (allowedOn(candidate.timing, input.date) ?? []).some(
+    (range) =>
+      (Math.min(range.end, to) - Math.max(range.start, from)) / 60_000 >= candidate.minutes,
+  );
+}
+
+/**
+ * The day's candidates, and the work kept out by its windows: what is left of them today is
+ * too short, or they do not cover today. The warnings tell what could not be planned.
+ */
+export function candidatesOf(input: PlanInput): { candidates: Candidate[]; closed: Candidate[] } {
   const { date, lifeMode } = input;
   const modules = new Map(
     input.modules.filter((mod) => mod.status === "active").map((mod) => [mod.id, mod]),
@@ -219,6 +278,7 @@ export function buildCandidates(input: PlanInput): Candidate[] {
       remaining: itemLeft,
       task,
       item,
+      ...withTiming(effectiveTiming(task, item), task.context, input),
     });
   }
 
@@ -282,6 +342,7 @@ export function buildCandidates(input: PlanInput): Candidate[] {
           ? minutes
           : Math.max(minutes, item.effort_total_minutes - item.effort_done_minutes),
       item,
+      ...withTiming(effectiveTiming(undefined, item), item.context ?? "any", input),
     });
   }
 
@@ -293,6 +354,13 @@ export function buildCandidates(input: PlanInput): Candidate[] {
     rhythmStates.set(rhythm.id, state);
     if (state.debt === 0) continue;
     if (rhythm.period !== "day" && state.doneToday > 0) continue;
+    // Rest days: not a candidate on the days right after its last doing (rule 5).
+    const timing = rhythmTiming(rhythm);
+    if (timing?.rest_days) {
+      const mine = input.rhythmLogs.filter((log) => log.rhythm_id === rhythm.id);
+      const lastDone = lastDoneOf(mine, date);
+      if (lastDone && daysFrom(lastDone, date) <= timing.rest_days) continue;
+    }
     raws.push({
       type: "rhythm",
       id: rhythm.id,
@@ -307,6 +375,7 @@ export function buildCandidates(input: PlanInput): Candidate[] {
       progress: `${state.done}/${state.target}`,
       remaining: rhythm.est_minutes,
       rhythm,
+      ...withTiming(timing, rhythm.context, input),
     });
   }
 
@@ -324,7 +393,7 @@ export function buildCandidates(input: PlanInput): Candidate[] {
       // pool with a moderate urgency and is planned like the rest.
       if (due < Math.max(dayStart, input.now.getTime())) urgency = 0.5;
       else {
-        const available = availableUntil(input, new Date(due));
+        const available = availableUntil(input, new Date(due), raw.timing ?? null);
         urgency = available <= 0 ? 2 : Math.min(2, raw.remaining / available);
         if (due < dayEnd) mandatory = "due_today";
         else if (urgency >= URGENT) mandatory = "urgent";
@@ -366,14 +435,19 @@ export function buildCandidates(input: PlanInput): Candidate[] {
       return true;
     });
   scored.length = 0;
-  scored.push(...nextOnly);
+  // Work whose windows leave nothing today is kept out (docs/04-planlayici.md, rule 1).
+  const closed = nextOnly.filter((candidate) => !openToday(candidate, input));
+  scored.push(...nextOnly.filter((candidate) => openToday(candidate, input)));
 
   markFloorWork(input, scored, modules);
   // The AI may put work off, but never mandatory work (the engine has the last word). This runs
   // after every mandatory mark, the weekly floors included.
-  return scored
-    .filter((candidate) => !deferred.has(candidate.id) || candidate.mandatory !== null)
-    .sort(compareScored);
+  return {
+    candidates: scored
+      .filter((candidate) => !deferred.has(candidate.id) || candidate.mandatory !== null)
+      .sort(compareScored),
+    closed,
+  };
 }
 
 /**

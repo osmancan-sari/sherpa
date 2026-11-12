@@ -239,6 +239,21 @@ Kod `src/core/planner/` içindedir; dokümanın açık bıraktığı yerler şö
 - **Eksik oturum işleri.** Taahhüt edilmiş, haftalık payından kalanı olan ama açık oturum işi olmayan kalemin (hafta kaydı ile oturum işleri iki ayrı yazmadır, ikincisi yarıda kalabilir; ya da hepsi bırakılmıştır) payının kalanı yeniden oturumlara bölünür (`missingSittings`, `weekAction` → `repair`).
 - **Yeni kalem.** Taahhütten sonra açılan kalem, haftada yer varsa taahhüde eklenir (`weekAction`, `appendable`); taahhüt edilmiş kalemlerin payı değişmez. Kullanıcının elle eklediği kalem (modül anahtarı yok) yer olmasa da eklenir: eklemek kullanıcının isteğidir.
 
+## Uygulama notları (Ç3b)
+
+Kod `src/core/planner/timing.ts` (yardımcılar), `candidates.ts` ve `plan.ts` içindedir. Dokümanın açık bıraktığı yerler:
+
+- **Yalnızca `timing` taşıyan aday yeni yoldan geçer.** `timing` boşsa (ya da veritabanındaki değer şemadan geçmiyorsa) aday eskisi gibi yerleşir; Ç3'ün testleri değişmeden geçer.
+- **Bugün kapalı iş.** Penceresi bugünü kapsamayan ya da bugünün kalan penceresinde (günün başı ya da şimdiden bitiş çizgisine kadar) kendi süresi kadar kesintisiz aralık bırakmayan iş aday değildir; "vakit kalırsa"da da görünmez. Zorunluysa "Bugün uygun saat kalmadı" uyarısını üretir.
+- **Ayak izinin taşması.** Ayak izi yalnızca başladığı yuvanın ardından kesintisiz gelen boş yuva ve molalara taşar. Yuvalar kesilirken atılan kısa artıklar (15 dakikadan kısa) yuva olmadığı için kullanılamaz.
+- **Atama.** Atamanın yuvası çalışma aralığıdır; yol süreleri atamada (`travelBefore`, `travelAfter`) taşınır ve hiçbir yuvada yer almaz. Yol, cihaz işin bağlamındayken 0'dır ve atamada hiç yazılmaz.
+- **Zorunlu iş.** Enerjisi uymayan zorunlu iş, zaman kuralları içinde kalmak şartıyla enerji süzgeci olmadan yerleşir. "En uzun derin yuvaya kırparak koyma" kuralı zaman kısıtlı işe uygulanmaz: pencere kesindir.
+- **Kart.** Pencereye ya da yola bağlı iş, ayak izi başlayınca önerilir; o zamana kadar kart sıradaki serbest işi önerir. Başka iş yoksa kart bağlı işi `at` (ayak izinin başladığı an) ile önerir; ekran saati söyler. **Görüşün gerek.**
+- **Doldurma.** Zaman kısıtlı işin skoru yuvadaki zaman çarpanıyla çarpılır; sıralama `compareScored` ile yapılır (zorunlu önde). Bekletme yalnızca `prefer` ya da `avoid` taşıyan işe uygulanır.
+- **Ulaşılabilir sayı.** Dinlenme günü, dönemin içindeki değil son gerçek yapılıştan sayılır (önceki dönemin son yapılışı da): kural 5 ile aynı.
+- **Reddedilen öneri.** Yapay zekanın `top3` ya da `prefer` önerisindeki iş bugün kapalıysa ya da penceresi içinde hiçbir boş yuvaya sığmıyorsa öneri uygulanmaz ve uyarı çıkar: "…: bu saatlerde yapılamaz, öneri plana alınmadı."
+- **"X dk'm var".** Zaman kısıtlı iş, verilen dakikalar mola uzunluğundaysa (15 dakikanın altı) önerilmez.
+
 ## Test kapsamı (en az)
 
 - Blok ve yol süresi çıkarıldıktan sonra yuvaların doğru üretimi

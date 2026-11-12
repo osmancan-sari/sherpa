@@ -1,5 +1,6 @@
 import type { Block, DayType, Settings } from "@/core/types";
 import { istanbulInstant, shiftDay } from "@/lib/date";
+import { overlapMinutes, type Range } from "./timing";
 import type { PlannerSettings, PlannerStat, Slot, SlotKind } from "./types";
 
 // Slots: the free time of a day cut into pieces of work (docs/04-planlayici.md, "Gün nasıl
@@ -195,6 +196,8 @@ export function dayCapacity(
   settings: PlannerSettings,
   stats: PlannerStat[],
   bounds: { from?: Date; until?: Date } = {},
+  /** Only the slot time inside these ranges (a work's windows); null for all of it. */
+  allowed: Range[] | null = null,
 ): number {
   const start = istanbulInstant(day, settings.dayStart);
   const end = istanbulInstant(day, settings.finishLine);
@@ -204,5 +207,12 @@ export function dayCapacity(
   };
   const slots = buildSlots(window, blocks, settings);
   const type = dayTypeOf(day, blocks, settings);
-  return slotMinutes(slots) * capacityFactor(type, settings, stats);
+  const minutes = allowed
+    ? slots.reduce(
+        (sum, slot) =>
+          sum + overlapMinutes(allowed, { start: slot.start.getTime(), end: slot.end.getTime() }),
+        0,
+      )
+    : slotMinutes(slots);
+  return minutes * capacityFactor(type, settings, stats);
 }
