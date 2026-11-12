@@ -1,4 +1,4 @@
-import { deviceToken, postIngest, rows, update } from "./data";
+import { deviceToken, insert, postIngest, rows, update } from "./data";
 import { expect, test } from "./fixtures";
 
 // The ingest endpoint through the app (Ç3d; docs/02-mimari.md "Cihaz anahtarları ve giriş
@@ -47,4 +47,31 @@ test("the endpoint answers by its rules, with no session, and never returns data
   expect((await postIngest(base, "core/wake", token)).status).toBe(401);
   const log = await rows("ingest_requests");
   expect(JSON.stringify(log)).not.toContain(token.slice(4));
+});
+
+test("the test module's kind: a record is made once, a broken body is refused by its field", async ({
+  baseURL,
+}) => {
+  const base = baseURL!;
+  await insert("modules", { slug: "deneme", name: "Deneme", color: "#6250d6" });
+  const { token } = await deviceToken(["deneme/kayit"]);
+
+  const broken = await postIngest(base, "deneme/kayit", token, { title: "", minutes: "kırk" });
+  expect(broken.status).toBe(400);
+  const issues = ((await broken.json()) as { issues: { path: string }[] }).issues;
+  expect(issues.map((issue) => issue.path).sort()).toEqual(["minutes", "title"]);
+  expect(await rows("deneme_items")).toEqual([]);
+
+  const body = { title: "Ninova duyurusu", minutes: 40, due_on: "2026-12-01" };
+  const first = await postIngest(base, "deneme/kayit", token, body, "ninova-42");
+  expect(await first.json()).toEqual({ ok: true });
+  const second = await postIngest(base, "deneme/kayit", token, body, "ninova-42");
+  expect(await second.json()).toEqual({ ok: true, duplicate: true });
+  const items = await rows("deneme_items");
+  expect(items).toHaveLength(1);
+  expect(items[0]).toMatchObject({ title: "Ninova duyurusu", minutes: 40, due_on: "2026-12-01" });
+  // Its work was proposed, and the module heard its own event, on the server.
+  expect((await rows("work_items")).map((item) => item.title)).toEqual(["Ninova duyurusu"]);
+  const [mod] = await rows("modules");
+  expect(mod.settings).toMatchObject({ added_count: 1 });
 });

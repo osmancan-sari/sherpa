@@ -500,6 +500,23 @@ for (const theme of ["dark", "light"] as const) {
     await page.goto("/ayarlar");
     await expect(page.getByRole("form", { name: "Günün çerçevesi" })).toBeVisible();
     await shot("ayarlar-cerceve");
+
+    // Ç3d: Settings → Bağlantılar, with a token in use and one just made (shown once).
+    await insert("device_tokens", {
+      name: "iPhone Kestirmeler",
+      token_hash: "f".repeat(64),
+      hint: "shp_Q7xK",
+      scopes: ["core/wake", "core/bed"],
+      last_used_at: new Date(shotNow.getTime() - 11 * 3_600_000).toISOString(),
+    });
+    await page.goto("/ayarlar");
+    const form = page.getByRole("form", { name: "Yeni anahtar" });
+    await form.getByLabel("Ad").fill("Ninova toplayıcısı");
+    await form.getByRole("checkbox", { name: /Deneme: Kayıt/ }).check();
+    await form.getByRole("button", { name: "Anahtar üret" }).click();
+    await expect(page.getByTestId("new-token")).toBeVisible();
+    await page.getByRole("heading", { name: "Bağlantılar" }).scrollIntoViewIfNeeded();
+    await shot("ayarlar-baglantilar");
   });
 }
 
