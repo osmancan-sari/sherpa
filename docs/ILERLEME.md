@@ -20,7 +20,7 @@ Her adımın sonunda `npm run check` ve commit; 1., 2. ve 4. adımdan sonra dene
 | 4 | Yapay zeka: `enrich` şeması ve istemi (yalnızca açıkça yazılan), planlama girdisinde kısıt özeti, sahte sağlayıcı, `ai:eval` örnekleri | bitti: `enrich-2` (`timing`; kayıt `aiTiming` ile zarfın şemasından geçer, kalemde kaynak alt alan başına), `plan-3`, `replan-3`, `week-3` (adayda ve kalemde `time` özeti, `timingSummary`), sahte sağlayıcı açık yazılan pencere, kaçınma ve yolu okur, `ai:eval` +5 örnek ve zaman kısıtı puanı. Gerçek modelle `ai:eval` (12 Kas): zaman kısıtı 5/5, ton 4/4 temiz, yönlendirme %94, iş/kalem %91, son tarih %97, süre sapması %19; maliyet yaklaşık 0,05 $. Testler: `src/core/ai/flows/timing.test.ts` 5, `planning.test.ts` +1, `eval.test.ts` +1, `tests/db/ai-flows.test.ts` +2 (biri denetim düzeltmesinde) |
 | 5 | Arayüz: formlarda "Zaman" bölümü, zaman çizelgesinde yol, kartta ve Sıradakiler'de yol, uyarılar; `deneme` modülünde `timing`'in her alanını kullanan kayıt türü; örnek veride kısıtlı işler | bitti: `src/core/ui/work/TimingSection.tsx` (iş, kalem ve ritim formlarında; `EditDialog` `section`), şeritte yol taralı, kartta ve listede "yol 20+20 dk", kartta "Yola çıkış / Başlangıç SS:dd", Hafta'da "Bu hafta uygun saat yok"; yeni uyarı "Saatleri bitiş çizgisinden sonra: …" (motor, testli). `deneme`: `antrenman` türü (`20261112102537_deneme_workout.sql`, `WORKOUT_TIMING`). Örnek veri: üç kısıtlı iş |
 | 6 | Kapanış: uçtan uca testler, ekran görüntüleri (`docs/ekran-goruntuleri/c3b/`), `check:full`, faz denetimi, faz raporu, `c3b-tamam` | bitti, etiket hariç (yayın ölçütüne bağlı): `tests/e2e/timing.spec.ts` 8, `timing.ai.spec.ts` 1; görüntüler (yeni: `zaman-form`, `bugun-zaman`, `hafta-zaman`); `check:full` yeşil (362 / 184 / 148). Faz denetimi iki tur (aşağıda faz raporu) |
-| 7 | Yayın: migration `sherpa-dev`, sonra `sherpa-prod`; sonra kod | `sherpa-dev`: bitti (iki migration, `migration list` ile doğrulandı). `sherpa-prod`: izin reddedildi (otomatik kip "Production Deploy"); kullanıcıda. Kod (`git push`) ve etiket ondan sonra |
+| 7 | Yayın: migration `sherpa-dev`, sonra `sherpa-prod`; sonra kod | `sherpa-dev`: bitti (iki migration, `migration list` ile doğrulandı). `sherpa-prod`: bitti (12 Kas 2026, kullanıcının izniyle; deneme çalıştırmasında yalnızca bu iki migration). Kod (`git push`) ve etiket ondan sonra |
 
 ### Ç3 planı
 
@@ -326,7 +326,7 @@ Faz denetimi:
 | Formdaki "Zaman" bölümü kaydediyor, geçersizi kaydetmiyor, özet doğru | Sağlandı | Uçtan uca (iş ve ritim formu) |
 | Serbest girişte açıkça yazılan kısıt işleniyor (sahte sağlayıcıyla uçtan uca; gerçek modelle `ai:eval`) | Sağlandı | `tests/e2e/timing.ai.spec.ts`; gerçek modelle `ai:eval` 12 Kas'ta koşuldu: zaman kısıtı 5/5 (açık pencere, açık kaçınma, açık yol, kısıtsız iki satır boş), ton 4/4. Kayıt yerel `ai_calls`'taydı ve sonraki test koşuları yerel veriyi sildi; denetçi bu sonucu depodan doğrulayamadı. Yeniden görmek için `npm run ai:eval` (yanıtlar yeniden kullanılmaz çünkü yerel kayıt silindi; birkaç sent) |
 | `docs/04` Ç3b test listesinin tamamı yazılı ve geçiyor | Sağlandı | 18 maddenin her biri (denetçi tek tek eşledi) |
-| Migration önce `dev`, sonra `prod`; kod ondan sonra yayında | **Kısmen**: `dev` bitti, `prod` ve kod kullanıcıda | Otomatik kip prod'a gönderimi reddetti; adımlar "Senden bekleyenler"de |
+| Migration önce `dev`, sonra `prod`; kod ondan sonra yayında | Sağlandı | `dev` (`migration list --linked`), sonra `prod` (kullanıcının izniyle, deneme çalıştırmasıyla doğrulanıp); kod `main` ile GitHub'a, Vercel üretime yayınlar |
 
 **Denetim**
 
@@ -376,7 +376,11 @@ Sonra Ç4 (Pano ve telefon cilası): yeni oturumda `docs/05-arayuz.md` ve `docs/
 
 ## Senden bekleyenler
 
-### Ç3b yayını: bekliyor (12 Kas 2026)
+### Ç3b yayını: tamamlandı (12 Kas 2026)
+
+Migration'lar `prod`'da (kullanıcının izniyle), `main` ve `c3b-tamam` GitHub'da. Kalan: üretimde bir işin "Zaman" bölümünden bir aralık kaydedip denemek (giriş gerektirir).
+
+Kayıt için, önceki açıklama:
 
 Kod, testler ve faz raporu hazır; `check:full` yeşil. Migration'lar (`20261112091939_timing.sql`: üç tabloya `timing` sütunu; `20261112102537_deneme_workout.sql`: `deneme_items` tür denetiminin genişletilmesi) `sherpa-dev`'de. İkisi de yalnızca ekleme yapar, bu yüzden koddan önce gitmeleri güvenli. `prod`'a gönderimi otomatik kip reddetti ("Production Deploy").
 
