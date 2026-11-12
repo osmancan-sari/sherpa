@@ -4,9 +4,9 @@ Bu dosyayı Claude Code günceller. Yeni bir oturum yalnızca bu dosyayı ve `pr
 
 ## Durum
 
-- Faz: **Ç3c (Sahne ve günün çerçevesi) sürüyor** (12 Kas 2026). Ç0–Ç3b bitti (`c3b-tamam`); D1–D4 tamamlandı
-- Adım: 8 (kapanış: faz denetimi), 9 (yayın: `dev` bitti)
-- Son commit: C3c phase audit round 2 fixes
+- Faz: **Ç3c (Sahne ve günün çerçevesi) bitti** (12 Kas 2026, `c3c-tamam`; faz denetimi üç tur). Migration'lar `sherpa-dev`'de ve `sherpa-prod`'da; kod `git push` ile gider (kullanıcının onayıyla). Ç0–Ç3c bitti; D1–D4 tamamlandı
+- Adım: 9 (yayın: migration'lar `dev` ve `prod`'da; `git push` bekliyor)
+- Son commit: C3c phase audit round 3 (passed)
 
 ### Ç3c planı
 
@@ -22,7 +22,7 @@ Bu dosyayı Claude Code günceller. Yeni bir oturum yalnızca bu dosyayı ve `pr
 | 5 | Sahne: `ui.scene`, şerit, çıkış ve dönüş, hata sınırı, `StepRunner`; `deneme`'de iki sahne | bitti: sözleşmede `ModuleScene`, `SceneSubject`, `SceneProps`, `TodayBrief`, `Say`; `src/core/ui/today/Scene.tsx` (`sceneFor`, `SceneFrame`: şerit, hata sınırı, solma, ton, saniyelik saat; "Çık" cihazda oturum başına hatırlanır), Bugün'de devralma ve kartta "Sahneye dön", sahneden "Takıldım"; `StepRunner` (`src/core/ui/kit/`); `deneme`: `scene.ts` (`when` sunucuda da çalışsın diye istemci dosyasının dışında), `components/Scenes.tsx` (hedef: serbest odak sahnesi, "[hata]" adlı kayıt atar; antrenman: `StepRunner`, adım `deneme_items.scene_step`'te, `20261112134336_deneme_scene_step.sql`); `deneme` ritim teklifleri `meta.kind` taşır. Testler: `tests/e2e/scene.both.spec.ts` 1 (pano ve telefon), `scene.spec.ts` 6, `registry.test.ts` +1 |
 | 6 | Sesli anlatım: `src/core/voice/`, cihaz başına ayar, `say`, `today` | bitti: `types.ts` (sağlayıcı arayüzü), `device.ts` (Web Speech, `tr-TR`, reddi sessiz), `sentences.ts`, `speaker.ts` (sıra, kesme, cihaz kuralı), `settings.ts` (`localStorage`), `VoiceProvider.tsx` (ilk dokunuşta kilidi açma, `useSay`); `ModuleUiContext.say`; Ayarlar → Sesli anlatım (bu cihaz). Testler: `src/core/voice/voice.test.ts` 5 (sahte sağlayıcı), uçtan uca konuşma sentezi yerine kaydedici (`scene-helpers.ts`). Gerçek cihaz denemesi "Senden bekleyenler"de |
 | 7 | Ekranlar: Günaydın, akşam, üst şerit, zaman çizelgesi, Hafta satırı | bitti: `src/core/ui/today/FrameCards.tsx` (Günaydın: "Uyandım", "Biraz önce" 15/30/60, kısa özet, ayar açıksa rutin başlar; Akşam: sıradaki akşam ya da yatış işi ve Başla, uyku satırı, kısa gece notu, "Yatıyorum", "Günü kapat", "geç yatacağım" ve "erken kalkacağım" 30/60/90), `frame-text.ts` (cümleler, Hafta satırı), gece kartında "Yarın uyanış", üst şeritte uyanış ve yatış aralığı, şeritte bölümler ve bitiş çizgisi, akşam sakin (liste, uyarı yok), kapanışta "Onayla ve yat", Hafta'da tek satır. Testler: `frame-text.test.ts` 4, `tests/e2e/day-screens.spec.ts` 5 |
-| 8 | Kapanış: uçtan uca testler, ekran görüntüleri, `check:full`, faz denetimi, rapor, `c3c-tamam` | uçtan uca testler, görüntüler (`docs/ekran-goruntuleri/c3c/`), `check:full` yeşil (413 / 206 / 166), faz raporu yazıldı; yerel veritabanı migration dosyalarından sıfırdan kuruldu ve testler yeşil. Faz denetimi sürüyor |
+| 8 | Kapanış: uçtan uca testler, ekran görüntüleri, `check:full`, faz denetimi, rapor, `c3c-tamam` | uçtan uca testler, görüntüler (`docs/ekran-goruntuleri/c3c/`), `check:full` yeşil (413 / 207 / 166), faz raporu yazıldı; yerel veritabanı migration dosyalarından sıfırdan kuruldu ve testler yeşil. Faz denetimi üç tur (son tur GEÇTİ) |
 | 9 | Yayın: migration `dev`, sonra `prod`; kod sonra | `sherpa-dev`: bitti. `sherpa-prod`: bitti (kullanıcının onayıyla; deneme çalıştırmasında yalnızca iki migration; `migration list` ile doğrulandı). `git push` etiketten sonra, kullanıcının onayıyla |
 
 ### Ç3b planı
@@ -379,6 +379,15 @@ Testler: 413 birim, 207 veritabanı, 166 uçtan uca (`npm run check:full` yeşil
 - Adım denetimi 3–4: 1. tur GEÇMEDİ (engelleyici: Ayarlar'daki ikinci "Kaydet" Ç2'nin testini kırdı), 2. tur GEÇTİ (4 önemli); hepsi düzeltildi. Ayrıntı "Verdiğim kararlar"da.
 - Faz denetimi, 1. tur (`c90a437`) GEÇMEDİ: kodda ve testlerde engelleyici yok. İki engelleyici kullanıcının elindeki ölçütler: `prod` migration'ı ve sesin gerçek cihazda denenmesi. Önemli: `deneme` yeni çekirdek olaylarını ve `ctx.days`'i örneklemiyordu. Düzeltme: `core.session_started` antrenmanın adımını sıfırlar, `core.session_ended` son oturumu ayara yazar, `core.day_started` günleri sayar, geçmiş bölgesi `ctx.days`'ten son 7 günün uyanış kaydını yazar (`tests/db/events.test.ts` +1). Notlar: sözleşme testi sahneyi ve olay dinleyicilerini bekler; `deneme`'nin döngüsel içe aktarımı kaldırıldı (`subject.ts`); yorum düzeltildi; çerçeve açıkken gecede de "Sıradakiler" gizli; akşamda alt satırdaki ikinci "Günü kapat" gizli (**görüşün gerek**); cihaz sesine süre bekçisi (`onend` gelmezse kuyruk takılmaz). `check:full` yeşil (413 / 207 / 166), görüntüler yeniden çekildi.
 
+- Faz denetimi, 2. tur (`3766618`) GEÇMEDİ: tek engelleyici Ç1'in gerçek saatle koşan taşma testiydi (21:00'den sonra kırmızı; Ç3c'nin gerilemesi değil). Test dünün 10:00'una sabitlendi; notlar düzeltildi (`deneme` yatış olayını da dinler, sesin süre bekçisi hıza bölünür, "son 7 gün", `docs/05` metinleri, örnek verinin sabah rutini). Ayrıntı "Verdiğim kararlar"da.
+- Faz denetimi, 3. tur (`b3bfd3d`) GEÇTİ: `check:full` yeşil (denetçi 21:26'da, 2. turun kırmızıya düştüğü saatlerde koştu). Engelleyici ve önemli bulgu yok. Notlar (açık; son denetimden sonra koda dokunulmadı, etiketlenen kod denetlenen kodla aynı): gerçek yatıştan sonra bekçinin haftayı yeniden kurmasının veritabanı testi yok (saf fonksiyon sınanıyor); Günaydın'daki "Önce: …" satırı uyanış kaydı yokken, beklenen uyanıştan bir saat geçince düşüyor ("Uyandım" deyince geri gelir; **görüşün gerek**); çerçeve açıkken gece ekranında alt satırdaki "Günü kapat", "Yeniden planla", "X dk'm var" duruyor (Ç4'te gecenin sakinliğiyle); `deneme`'nin adımı `core.session_started`'da sıfırlaması olay oturumdan sonra geldiği için sahne bir an eski adımı gösterebilir (gerçek modüller için not). Kayıt tutarsızlıkları bu raporda düzeltildi.
+
+**Sonraki faz (Ç3d) için notlar**
+
+- Dışarıdan yazılan uyanış ve yatış (`core/wake`, `core/bed`) `lastActivityBefore`'a girmiyor: uygulamaya hiç dokunmadan yalnızca uyanış yazılırsa "geri dönüş" yine açılabilir. Giriş ucu `recordWake`/`recordBed` ve `tellDayStarted`/`tellDayClosed`'u kullanmalı (olaylar şimdi tarayıcıda yayınlanıyor; sunucuda modül bağlamı gelince sunucuda da).
+- `ctx.days` sunucu bağlamında da olmalı.
+- Gece yarısına yakın saatlerde `Date.now()` kullanan uçtan uca testler ("Bilinen sorunlar").
+
 ### Ç3b: Zaman kısıtları (12 Kas 2026)
 
 İş zarfına `timing` bölümü geldi (kesin pencere, tercih edilen ve kaçınılan saatler, yol, dinlenme günü) ve planlayıcı bunlara uyar. Etiket `c3b-tamam`.
@@ -443,6 +452,8 @@ Testler: 413 birim, 207 veritabanı, 166 uçtan uca (`npm run check:full` yeşil
 - "Görüşün gerek" satırları: kart saati, Zaman bölümünün yerleşimi ve özet satırı, şeritte yolun görünüşü, uyarı metinleri, zaman çarpanları, yolun yalnızca tam bağlam eşitliğinde sıfırlanması.
 
 ## Sıradaki adım
+
+Ç3c bitti; kod `git push` bekliyor ("Senden bekleyenler" → Ç3c). Sıradaki faz **Ç3d (Sunucu zemini)**, yeni oturumda: istem `prompts/c3d-sunucu-zemini.md`, etiket `c3d-tamam`.
 
 **Sıra (kullanıcının kararı, 12 Kas 2026): Ç3c → Ç3d → Ç4.** Modüller tasarlanmadan önce altyapı üç katmana hazır olmalı (`docs/12-sahne-ve-otomasyon.md`, "Neden").
 
