@@ -21,6 +21,17 @@ export function definitionProblems(def: ModuleDefinition): string[] {
   if (def.ui.scene && (typeof def.ui.scene.when !== "function" || !def.ui.scene.component)) {
     say("a scene needs `when` and a component");
   }
+  // Ç3e: named scenes for the facets. The facet list itself is computed with the module's
+  // context, so it is checked every time it is computed (src/core/contract/facets.ts).
+  for (const [key, scene] of Object.entries(def.ui.scenes ?? {})) {
+    if (!KEY.test(key)) say(`scene key "${key}" is not valid`);
+    if (typeof scene?.when !== "function" || !scene.component) {
+      say(`scene "${key}" needs \`when\` and a component`);
+    }
+  }
+  if (def.facets !== undefined && typeof def.facets !== "function") {
+    say("facets must be a function of the module's context");
+  }
   const segments = new Set<string>();
   for (const tab of def.ui.tabs) {
     if (!KEY.test(tab.key)) say(`tab key "${tab.key}" is not a valid path segment`);

@@ -202,6 +202,44 @@ describe("the scene (Ç3c)", () => {
   });
 });
 
+describe("facets and named scenes (Ç3e)", () => {
+  const view = () => null;
+  const gunes = { when: () => true, component: view };
+
+  it("accepts named scenes and a facet function", () => {
+    expect(() =>
+      createRegistry([
+        definition({
+          ui: { ...definition().ui, scenes: { gunes, "gece-1": gunes } },
+          facets: async () => [{ key: "sabah", name: "Sabah", color: "#d97706", scene: "gunes" }],
+        }),
+      ]),
+    ).not.toThrow();
+  });
+
+  it("names a named scene without `when` or a component, a bad key, a facets that is not a function", () => {
+    const problems = definitionProblems(
+      definition({
+        ui: {
+          ...definition().ui,
+          scenes: {
+            gunes: { when: undefined as never, component: view },
+            Gece: gunes,
+            bos: { when: () => true, component: undefined as never },
+          },
+        },
+        facets: [{ key: "sabah" }] as never,
+      }),
+    );
+    expect(problems).toEqual([
+      'ornek: scene "gunes" needs `when` and a component',
+      'ornek: scene key "Gece" is not valid',
+      'ornek: scene "bos" needs `when` and a component',
+      "ornek: facets must be a function of the module's context",
+    ]);
+  });
+});
+
 describe("module paths", () => {
   const def = definition();
 
