@@ -4,9 +4,9 @@ Bu dosyayı Claude Code günceller. Yeni bir oturum yalnızca bu dosyayı ve `pr
 
 ## Durum
 
-- Faz: **Ç3e (Modülün bölümleri) sürüyor** (13 Kas 2026). Ç3d bitti ve yayında (`c3d-tamam`); zamanlayıcının iki gizli değeri seni bekliyor ("Senden bekleyenler" → Ç3d)
-- Adım: 6 (kapanış): `check:full` yeşil, rapor yazıldı; faz denetimi iki tur, ikisi de GEÇTİ
-- Son commit: C3e phase audit round 2 fixes
+- Faz: **Ç3e (Modülün bölümleri) bitti** (13 Kas 2026, `c3e-tamam`; faz denetimi iki tur, ikisi de GEÇTİ). Yayın senin onayını bekliyor ("Senden bekleyenler" → Ç3e). Ç3d yayında; zamanlayıcının iki gizli değeri seni bekliyor ("Senden bekleyenler" → Ç3d)
+- Adım: 6 (kapanış) bitti; `sherpa-dev`'e migration'lar ve yayın senin onayınla
+- Son commit: C3e: phase report, tag
 
 ### Ç3e planı
 
@@ -20,7 +20,7 @@ Bu dosyayı Claude Code günceller. Yeni bir oturum yalnızca bu dosyayı ve `pr
 | 3 | Renk ve sahne: tek renk çözümleyici ve her yerde kullanılması (testle tutulur), bölüme göre sahne ve ton, `SceneProps.facet` | bitti: `useColors` (`of`, `facetOf`, `module`) zaman çizelgesinde (şerit ve yol), Şimdi kartında (modül satırında bölümün adı da), Sıradakiler'de ve "Vakit kalırsa"da, geri dönüş listesinde, Günaydın ve akşam kartında, sahnenin şeridinde ve `energy` tonunda, Hafta'nın kalemlerinde, kapanışın taslağında, modül sayfasının Yaklaşanlar'ında (nokta ve bölüm adı yeni); modül düzeyi `moduleColor` (çipler, kapasite ve paylar, modül listeleri, sayfa başlığı, hızlı giriş, gelen kutusu, modülün haftalık grafiği). `sceneFor` bölümün sahnesini seçer (`chooseScene`), ton `sceneTone`, `SceneProps.facet` çözülmüş renkle. Testler: `tests/unit/colors-in-one-place.test.ts` 2 (çekirdekte ve `src/app`'te çözümleyici dışında `row.color` okuyan satır yok), `src/core/planner/facets.test.ts` 1 (bölümlü ve bölümsüz aynı girdi aynı plan). Yapay zeka girdileri alan alan kurulur, `facet` gitmez (bakıldı) |
 | 4 | Ayarlar ve form: modül ve bölüm renkleri (palet, özel, "varsayılana dön", okunurluk uyarısı), formda bölüm seçimi | bitti: `src/core/ui/settings/ModuleColors.tsx` (Ayarlar → Modüller → <modül>'ün en üstünde "Renkler": modül ve her bölüm bir satır, "Değiştir" → 12 renk tek dokunuşla, "Özel" sistem seçicisi ya da `#rrggbb` ve "Kaydet", farklıysa "Varsayılana dön", 3:1'in altındaki özel renkte tek satır uyarı; iyimser), `setFacetColor` (okur, birleştirir, yazar); `EditWork.tsx` iş, kalem ve ritim formlarında başlığın altında "Bölüm" (Bölümsüz / modülün bölümleri / "(artık yok)"; oturum işinde "Kalemin bölümü: …"). Testleri 5. ve 6. adımın uçtan uca testlerinde |
 | 5 | `deneme`: iki sabit bölüm (ayrı renk, sahne, ton) ve verisinden dinamik bölümler; örnek veride bölümlü işler | bitti (`20261113132641_deneme_facets.sql`: `deneme_items.facet`, yeni tür `konu`): `facets` → Sabah (`#d97706`, sahne `gunes`, ton `energy`), Akşam (`#4361d8`, `gece`, `calm`) ve her açık "konu" kaydı için bir bölüm (`konu-<id'nin ilk 8'i>`, sahnesi yok, renkleri sırayla); kayıt girişinde "Bölüm" seçimi; konu iş teklif etmez; `SunScene`, `NightScene`. Örnek veri: `scripts/demo-facets.ts` (`db:seed`, modül açıkken). Testler: `modules.test.ts` +1, `tests/db/facets.test.ts` +1, `tests/e2e/facets.spec.ts` 5 (renkler her yerde, sahne ve ton, canlı tazelenen liste ve form, Ayarlar'da renkler iki cihazda, dışa aktarım), ekran görüntüleri `facet screens` (iki tema) |
-| 6 | Kapanış: uçtan uca testler, ekran görüntüleri (`docs/ekran-goruntuleri/c3e/`), `check:full`, faz denetimi, rapor, `c3e-tamam`, yayın; yayından önce `prod`'da bozuk modül rengi var mı (`color !~ '^#[0-9a-fA-F]{6}$'`), yayından sonra fonksiyonların `fra1`'de çalıştığı yayın özetinden | bekliyor |
+| 6 | Kapanış: uçtan uca testler, ekran görüntüleri (`docs/ekran-goruntuleri/c3e/`), `check:full`, faz denetimi, rapor, `c3e-tamam`, yayın; yayından önce `prod`'da bozuk modül rengi var mı (`color !~ '^#[0-9a-fA-F]{6}$'`), yayından sonra fonksiyonların `fra1`'de çalıştığı yayın özetinden | bitti: `tests/e2e/facets.spec.ts` 5, `sync.spec.ts` +1, görüntüler (`docs/ekran-goruntuleri/c3e/`, 135 dosya), `check:full` yeşil (463 / 269 / 189), faz denetimi iki tur (ikisi de GEÇTİ), rapor, `c3e-tamam`. Yayın senin onayınla ("Senden bekleyenler" → Ç3e) |
 
 ### Ç3d planı
 
@@ -367,7 +367,7 @@ Bir modül kendini bölümlere ayırabilir: aynı veri ve sayfa, ana ekranda ayr
 | Oturum olayları `facet`'i taşıyor; dışa aktarım yeni sütunları ve renkleri içeriyor | Sağlandı | `tests/db/facets.test.ts` (başladı ve bitti yüklerinde, oturum işi, ritim, bölümsüz `null`), `facets.spec.ts` (dışa aktarımda `facet`, `facet_colors`, `deneme_items.facet`) |
 | Planlayıcının çıktısı bölümden bağımsız | Sağlandı | `src/core/planner/facets.test.ts` (aynı girdi bölümlerle ve bölümsüz: aynı yuvalar, üçlü, durum, puanlar, uyarılar) |
 
-Testler: 462 birim, 269 veritabanı, 189 uçtan uca (ekran görüntüleriyle; görüntüsüz koşu 179) (`npm run check:full` yeşil, 13 Kas 17:15, `SHERPA_SHOTS=c3e`; yerel veritabanı migration'lardan sıfırdan kuruldu). Ekran görüntüleri `docs/ekran-goruntuleri/c3e/` (yeni: `bugun-bolumler`, `modul-deneme-bolumler`, `ayarlar-renkler`, `bugun-sahne-sabah`, `bugun-sahne-aksam`; pano ve telefon, koyu ve açık). Baktıklarım: dört yeni ekran iki temada; palet açık temada da seçiliyor; modül sayfasında bölümlü ritmin modül renginde göründüğünü görüp düzelttim (satır yalnızca kimliği taşıyordu; `facetKeyOf` ritmi kimliğinden bulur, testli).
+Testler: 463 birim, 269 veritabanı, 189 uçtan uca (ekran görüntüleriyle; görüntüsüz koşu 179) (`npm run check:full` yeşil, 13 Kas 17:27, `SHERPA_SHOTS=c3e`, 2. turun düzeltmelerinden sonra; yerel veritabanı migration'lardan sıfırdan kuruldu). Ekran görüntüleri `docs/ekran-goruntuleri/c3e/` (yeni: `bugun-bolumler`, `modul-deneme-bolumler`, `ayarlar-renkler`, `bugun-sahne-sabah`, `bugun-sahne-aksam`; pano ve telefon, koyu ve açık). Baktıklarım: dört yeni ekran iki temada; palet açık temada da seçiliyor; modül sayfasında bölümlü ritmin modül renginde göründüğünü görüp düzelttim (satır yalnızca kimliği taşıyordu; `facetKeyOf` ritmi kimliğinden bulur, testli).
 
 **Sonraki adımlar ve ilk gerçek modül (rutin) için: bölüm sözleşmesinde eksik ya da zor bulduklarım**
 
@@ -584,7 +584,7 @@ Testler: 413 birim, 207 veritabanı, 166 uçtan uca (`npm run check:full` yeşil
 
 ## Sıradaki adım
 
-Ç3d bitti (`c3d-tamam`); üretime çıkışı senin onayını bekliyor ("Senden bekleyenler" → Ç3d). Sıradaki faz **Ç3e (Modülün bölümleri)**, yeni oturumda: istem `prompts/c3e-modul-bolumleri.md`, etiket `c3e-tamam`.
+Ç3e bitti (`c3e-tamam`); üretime çıkışı senin onayını bekliyor ("Senden bekleyenler" → Ç3e). Sıradaki faz **Ç4 (Pano ve telefon cilası)**, yeni oturumda; ya da önce ilk gerçek modül (rutin), tasarımı onaylanınca.
 
 **Sıra (kullanıcının kararı, 12 Kas 2026): Ç3c → Ç3d → Ç3e → Ç4.** Modüller tasarlanmadan önce altyapı üç katmana hazır olmalı (`docs/12-sahne-ve-otomasyon.md`, "Neden").
 
@@ -598,6 +598,24 @@ Testler: 413 birim, 207 veritabanı, 166 uçtan uca (`npm run check:full` yeşil
 Sonra Ç4 (Pano ve telefon cilası): yeni oturumda `docs/05-arayuz.md` ve `docs/11-yayin-ve-cihazlar.md` okunarak başlanır. Önce Ç3'ün ve Ç3b'nin "Görüşün gerek" satırları. Ç2'nin "Sunum slaytları cuma" ölçütü açık: Okul modülü kurulunca yeniden denenecek (D3, karar 5).
 
 ## Senden bekleyenler
+
+### Ç3e yayını
+
+İki migration var, ikisi de yalnızca ekleme yapar ve kod onları ister: **migration koddan önce** gider.
+
+- `20261113130137_facets.sql`: dört tabloda `facet`, `modules.facet_colors`, `modules.color` biçim denetimi (`not valid`).
+- `20261113132641_deneme_facets.sql`: `deneme_items.facet`, yeni tür `konu` (üretimde `deneme` kapalı; tablo yine de vardır).
+
+Sıra:
+
+1. `sherpa-dev`: `npm run db:push` (bağlı proje `sherpa-dev`; izinle ben yaparım).
+2. `sherpa-prod`'da bozuk modül rengi var mı (yeni denetim `not valid`, ama böyle bir satırın sonraki her güncellemesi reddedilir): Dashboard → SQL Editor'da `select slug, color from modules where color !~ '^#[0-9a-fA-F]{6}$';` boş dönmeli. Dönen satır varsa rengini Ayarlar'dan değiştirmeden önce bana söyle.
+3. `npx supabase db push --remote=jqqvfdjrkpxbklocsqvq --dry-run`: yalnızca bu iki migration görünmeli; sonra `--yes` (ya da bana izin ver).
+4. `git push origin main`, sonra `git push origin c3e-tamam`.
+5. Yayından sonra: `npx vercel inspect <yayın adresi>` ya da Vercel'deki yayın özetinde fonksiyonların bölgesi `fra1` olmalı (`vercel.json`, `regions`). Bunu ben yaparım ve sonucu buraya yazarım.
+6. Üretimde Ayarlar → Modüller → <modül>'de "Renkler" bölümüne bak: modülün rengi ve "Varsayılana dön". Gerçek modüllerde henüz bölüm yok.
+
+**Görüşün gerek** satırları: palet ve adları, renk seçicinin yeri ve satırları, formdaki "Bölüm"ün yeri, modül düzeyinde kalan yerler, okunurluk uyarısının eşiği ve metni, satırlara eklenen bölüm adı ve modül sayfasındaki renk noktaları. Hepsi "Verdiğim kararlar"da (13 Kas, Ç3e).
 
 ### Ç3d yayını ve elle denemeler
 
