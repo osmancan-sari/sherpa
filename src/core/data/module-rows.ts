@@ -107,3 +107,33 @@ export type ModuleEdit = Partial<
 export async function updateModule(db: Db, id: string, edit: ModuleEdit): Promise<ModuleRow> {
   return unwrap(await db.from("modules").update(edit).eq("id", id).select().single());
 }
+
+/**
+ * Ç3e: the user's colour of one of the module's facets; null takes it back to the facet's
+ * default. The other facets' colours stay as they are (read, merged, written).
+ */
+export async function setFacetColor(
+  db: Db,
+  id: string,
+  key: string,
+  color: string | null,
+): Promise<ModuleRow> {
+  const current = unwrap(await db.from("modules").select("facet_colors").eq("id", id).single());
+  const colors = { ...userFacetColorsOf(current.facet_colors) };
+  if (color === null) delete colors[key];
+  else colors[key] = color;
+  return unwrap(
+    await db
+      .from("modules")
+      .update({ facet_colors: toJson(colors) })
+      .eq("id", id)
+      .select()
+      .single(),
+  );
+}
+
+function userFacetColorsOf(stored: unknown): Record<string, string> {
+  return stored && typeof stored === "object" && !Array.isArray(stored)
+    ? (stored as Record<string, string>)
+    : {};
+}

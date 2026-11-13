@@ -14,6 +14,7 @@ import { ClientOnly } from "../ClientOnly";
 import { ModuleProvider } from "../module/ModuleProvider";
 import { SAVE_FAILED, useNotify } from "../Notices";
 import { PageShell } from "../PageShell";
+import { ModuleColors } from "./ModuleColors";
 
 // Settings → Modules: switch a module on, pause it, archive it; and each module's own settings.
 
@@ -237,6 +238,9 @@ function ModuleSettingsBody({ mod }: { mod: KnownModule }) {
       >
         Modüller
       </Link>
+
+      {/* Ç3e: the module's colour and its facets' (docs/05, "Renkler ve bölümler"). */}
+      <ModuleColors mod={mod} />
 
       <section
         aria-label="Modülün ayarları"

@@ -10,6 +10,7 @@ import {
   useEditTask,
   useEditWorkItem,
 } from "@/core/app/actions";
+import { useFacets } from "@/core/app/facets";
 import { useRhythms, useSettings, useWorkItems } from "@/core/app/hooks";
 import { readTiming, type TimingForm } from "@/core/contract/timing";
 import { plannerSettings } from "@/core/planner";
@@ -116,6 +117,48 @@ const RHYTHM_FIELDS: EditField[] = [
 
 const dayOf = (instant: string | null) => (instant ? dayKey(new Date(instant)) : "");
 
+/** The "no facet" choice of the "Bölüm" select (a select needs a value). */
+const NO_FACET = "-";
+
+/**
+ * Ç3e: the "Bölüm" field, right under the title, for work of a module that has facets (docs/05,
+ * "Renkler ve bölümler"). Null for a module without facets (or whose list failed). A facet that
+ * left the list stays a choice, marked; a sitting without its own says it follows its item's.
+ */
+function useFacetField(
+  moduleId: string,
+  current: string | null,
+  inherited?: string | null,
+): EditField | null {
+  const facets = useFacets().get(moduleId);
+  if (!facets) return null;
+  const nameOf = (key: string) => facets.find((facet) => facet.key === key)?.name ?? key;
+  const options = facets.map((facet) => ({ value: facet.key, label: facet.name }));
+  if (current && !facets.some((facet) => facet.key === current)) {
+    options.push({ value: current, label: `${current} (artık yok)` });
+  }
+  return {
+    name: "facet",
+    label: "Bölüm",
+    type: "select",
+    required: true,
+    options: [
+      {
+        value: NO_FACET,
+        label: inherited ? `Kalemin bölümü: ${nameOf(inherited)}` : "Bölümsüz",
+      },
+      ...options,
+    ],
+  };
+}
+
+/** The fields with "Bölüm" right after the title, when there is one. */
+const withFacet = (fields: EditField[], facet: EditField | null) =>
+  facet ? [fields[0], facet, ...fields.slice(1)] : fields;
+
+const facetValue = (facet: string | null) => facet ?? NO_FACET;
+const facetFrom = (value: string) => (value === NO_FACET ? null : value);
+
 /**
  * The form's "Zaman" section for a stored timing value: returns the section for EditDialog and
  * the value to save when it changed.
@@ -220,12 +263,14 @@ function TaskEditor({ task, onClose }: { task: Task; onClose: () => void }) {
     importance: String(task.importance),
     status: task.status === "waiting" ? "waiting" : "open",
     waiting_on: task.waiting_on ?? "",
+    facet: facetValue(task.facet),
   };
+  const facetField = useFacetField(task.module_id, task.facet, item?.facet ?? null);
 
   return (
     <EditDialog
       title="İşi düzenle"
-      fields={TASK_FIELDS}
+      fields={withFacet(TASK_FIELDS, facetField)}
       initial={initial}
       hints={aiHints(task, { due_at: "due", est_minutes: "est_minutes", importance: "importance" })}
       section={timing.section}
@@ -240,6 +285,7 @@ function TaskEditor({ task, onClose }: { task: Task; onClose: () => void }) {
         if ("importance" in changed) patch.importance = Number(changed.importance);
         if ("status" in changed) patch.status = changed.status === "waiting" ? "waiting" : "todo";
         if ("waiting_on" in changed) patch.waiting_on = changed.waiting_on.trim() || null;
+        if ("facet" in changed) patch.facet = facetFrom(changed.facet);
         edit.mutate({ id: task.id, patch });
       }}
       extra={
@@ -272,12 +318,14 @@ function ItemEditor({ item, onClose }: { item: WorkItem; onClose: () => void }) 
       item.effort_total_minutes === null ? "" : String(item.effort_total_minutes),
     session_minutes: item.session_minutes === null ? "" : String(item.session_minutes),
     importance: String(item.importance),
+    facet: facetValue(item.facet),
   };
+  const facetField = useFacetField(item.module_id, item.facet);
 
   return (
     <EditDialog
       title="İş kalemini düzenle"
-      fields={ITEM_FIELDS}
+      fields={withFacet(ITEM_FIELDS, facetField)}
       initial={initial}
       hints={aiHints(item, {
         due_at: "due",
@@ -301,6 +349,7 @@ function ItemEditor({ item, onClose }: { item: WorkItem; onClose: () => void }) 
           patch.session_minutes = numberOrNull(changed.session_minutes);
         }
         if ("importance" in changed) patch.importance = Number(changed.importance);
+        if ("facet" in changed) patch.facet = facetFrom(changed.facet);
         edit.mutate({ id: item.id, patch });
       }}
     />
@@ -313,6 +362,7 @@ function rhythmPatch(changed: EditValues): RhythmEdit {
   if ("target_count" in changed) patch.target_count = Number(changed.target_count);
   if ("period" in changed) patch.period = changed.period as Period;
   if ("est_minutes" in changed) patch.est_minutes = Number(changed.est_minutes);
+  if ("facet" in changed) patch.facet = facetFrom(changed.facet);
   return patch;
 }
 
@@ -332,12 +382,14 @@ function RhythmEditor({ rhythm, onClose }: { rhythm: Rhythm; onClose: () => void
     target_count: String(rhythm.target_count),
     period: rhythm.period,
     est_minutes: String(rhythm.est_minutes),
+    facet: facetValue(rhythm.facet),
   };
+  const facetField = useFacetField(rhythm.module_id, rhythm.facet);
 
   return (
     <EditDialog
       title="Ritmi düzenle"
-      fields={RHYTHM_FIELDS}
+      fields={withFacet(RHYTHM_FIELDS, facetField)}
       initial={initial}
       onClose={onClose}
       section={timing.section}
