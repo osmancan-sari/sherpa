@@ -228,9 +228,9 @@ test("the module's and a facet's colour change in Settings, go back to the defau
   await expect(dotOf(upcoming(other.page, "Sabah yürüyüşü"))).toHaveCSS("background-color", ROSE);
 
   // The module's own colour: work without a facet follows it.
-  const module = page.getByTestId("color-row-module");
-  await module.getByRole("button", { name: "Deneme: rengi değiştir" }).click();
-  await module
+  const own = page.getByTestId("color-row-module");
+  await own.getByRole("button", { name: "Deneme: rengi değiştir" }).click();
+  await own
     .getByRole("group", { name: "Deneme: hazır renkler" })
     .getByRole("button", { name: "Yeşil", exact: true })
     .click();
@@ -250,8 +250,8 @@ test("the module's and a facet's colour change in Settings, go back to the defau
 
   // Back to the defaults.
   await sabah.getByRole("button", { name: "Varsayılana dön" }).click();
-  await module.getByRole("button", { name: "Deneme: rengi değiştir" }).click();
-  await module.getByRole("button", { name: "Varsayılana dön" }).click();
+  await own.getByRole("button", { name: "Deneme: rengi değiştir" }).click();
+  await own.getByRole("button", { name: "Varsayılana dön" }).click();
   await expect(dotOf(upcoming(other.page, "Sabah yürüyüşü"))).toHaveCSS("background-color", AMBER);
   await expect(dotOf(upcoming(other.page, "Bölümsüz iş"))).toHaveCSS("background-color", MODULE);
   const [row] = await rows<{ color: string; facet_colors: Record<string, string> }>("modules");
