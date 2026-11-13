@@ -93,6 +93,7 @@
 | Zamanlayıcı Supabase'in `pg_cron` + `pg_net`'idir (15 dakikada bir `/api/jobs/tick`); Vercel Cron günde bir yedek (Ç3d) | Vercel'in ücretsiz katmanı günde bir çalışma ve ±59 dakika hassasiyet verir (Kasım 2026); saatlik işler için yetmez. Supabase'inki ücretsiz projede de vardır. Sır Vault'ta, kurulmamış projede zamanlayıcı hiçbir şey yapmaz | `docs/02` "Zamanlanmış işler", migration |
 | Cihaz anahtarının kapsamı adresle aynı yazılır (`core/wake`, `<modül>/<tür>`); `docs/12`'deki `core.wake` biçimi yerine (Ç3d) | Kapsam ile adres arasında çeviri olmasın | `device_tokens.scopes`, Ayarlar → Bağlantılar |
 | Planlama çağrılarının tetikleyicisi zamanlanmış iş değil, ekranın açılışıdır: `plan` günde bir kez (kapanışta ya da günün ilk açılışında; deneme gün kaydına yazılır, başka ekran yeniden sormaz), `week` haftanın ilk açılışında ve tetikleyicide, `month` ayın ilk açılışında ve yalnızca sıkışan hafta varsa, `review` Cumartesiden itibaren haftada bir. Yapay zeka ancak kendi tahmin ettiği süreyi düzeltebilir (Ç3) | Ücretsiz katmanda zamanlanmış iş yok; uygulama açık değilken plan da gerekmiyor. Maliyet yalnızca gerektiğinde. Kural 4: kullanıcının değeri ezilmez | Planlayıcı, `docs/10-yapay-zeka.md` |
+| Vercel fonksiyonları `fra1`'de (Frankfurt) çalışır: `vercel.json` içinde `"regions": ["fra1"]` (13 Kas 2026) | Veritabanı Frankfurt'ta; varsayılan bölge Washington (`iad1`) her sorguyu Atlantik'in iki yakası arasında gidip getiriyordu | `vercel.json`, `docs/11` |
 
 ## Açık sorular
 
