@@ -390,6 +390,7 @@ export type Database = {
           created_at: string;
           done: boolean;
           due_on: string | null;
+          facet: string | null;
           feedback: string | null;
           id: string;
           kind: string;
@@ -405,6 +406,7 @@ export type Database = {
           created_at?: string;
           done?: boolean;
           due_on?: string | null;
+          facet?: string | null;
           feedback?: string | null;
           id?: string;
           kind?: string;
@@ -419,6 +421,7 @@ export type Database = {
           created_at?: string;
           done?: boolean;
           due_on?: string | null;
+          facet?: string | null;
           feedback?: string | null;
           id?: string;
           kind?: string;

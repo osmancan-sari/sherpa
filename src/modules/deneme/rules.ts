@@ -60,6 +60,8 @@ export function proposalFor(item: DenemeItem, settings: Settings, now: Date): Wo
     title: item.title,
   };
   const kind = item.kind as DenemeKind;
+  // Ç3e: the record's facet; the module has facets, so it is always said (empty clears it).
+  const facet = { facet: item.facet ?? null };
 
   if (kind === "aliskanlik") {
     return {
@@ -70,6 +72,7 @@ export function proposalFor(item: DenemeItem, settings: Settings, now: Date): Wo
       },
       fit: { energy: "light" },
       meta: { kind },
+      ...facet,
     };
   }
 
@@ -85,6 +88,7 @@ export function proposalFor(item: DenemeItem, settings: Settings, now: Date): Wo
       timing: WORKOUT_TIMING,
       // The step scene knows a workout by it (src/modules/deneme/components/Scenes.tsx).
       meta: { kind },
+      ...facet,
     };
   }
 
@@ -96,6 +100,7 @@ export function proposalFor(item: DenemeItem, settings: Settings, now: Date): Wo
     return {
       ...base,
       when: { fixed: { starts_at: start.toISOString(), ends_at: end.toISOString() } },
+      ...facet,
     };
   }
 
@@ -109,13 +114,17 @@ export function proposalFor(item: DenemeItem, settings: Settings, now: Date): Wo
     fit: { energy: "deep", context: "desk" },
     importance: 2,
     meta: { kind },
+    ...facet,
   };
 }
+
+/** Ç3e: a topic is one of the module's facets; it has no work of its own. */
+export const proposes = (item: Pick<DenemeItem, "kind">) => item.kind !== "konu";
 
 /** Adds a record, proposes its work and tells whoever listens. */
 export async function addItem(ctx: ModuleContext, input: NewItem): Promise<DenemeItem> {
   const item = await insertItem(ctx, input);
-  await ctx.propose(proposalFor(item, settingsOf(ctx), ctx.now()));
+  if (proposes(item)) await ctx.propose(proposalFor(item, settingsOf(ctx), ctx.now()));
   await ctx.emit(EVENTS.itemAdded, { id: item.id, title: item.title });
   return item;
 }
@@ -127,7 +136,7 @@ export async function changeItem(
   patch: Partial<Pick<DenemeItem, "title" | "due_on" | "minutes">>,
 ): Promise<DenemeItem> {
   const item = await updateItem(ctx, id, patch);
-  await ctx.propose(proposalFor(item, settingsOf(ctx), ctx.now()));
+  if (proposes(item)) await ctx.propose(proposalFor(item, settingsOf(ctx), ctx.now()));
   return item;
 }
 

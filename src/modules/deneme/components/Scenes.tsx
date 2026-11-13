@@ -120,3 +120,75 @@ function WorkoutScene({ subject, controls, say, ctx }: SceneProps) {
     </div>
   );
 }
+
+/**
+ * Ç3e: the morning facet's scene, sunny, and the evening facet's, a night sky. One component
+ * each, drawn with the facet the core hands over (`facet`: its name and the user's colour).
+ */
+function FacetScene({
+  subject,
+  session,
+  controls,
+  facet,
+  testId,
+  greeting,
+  sky,
+}: SceneProps & { testId: string; greeting: string; sky: string }) {
+  const title = subject.kind === "task" ? subject.task.title : subject.rhythm.title;
+  const color = facet?.color ?? "currentColor";
+  return (
+    <div
+      className="flex flex-1 flex-col justify-between gap-8"
+      data-testid={testId}
+      data-facet={facet?.key}
+    >
+      <div className="flex flex-col gap-3">
+        <div className="flex items-center gap-3">
+          <span
+            aria-hidden
+            data-testid="facet-sky"
+            className="size-14 rounded-full md:size-20"
+            style={{ background: sky.replaceAll("$color", color) }}
+          />
+          <p className="text-muted-foreground text-sm md:text-base">
+            {facet?.name ?? ""} · {greeting}
+          </p>
+        </div>
+        <h2 className="text-3xl leading-tight font-semibold md:text-6xl">{title}</h2>
+        <p className="text-5xl font-semibold tabular-nums md:text-8xl" aria-label="Geçen süre">
+          {clock(session.elapsedSeconds)}
+        </p>
+      </div>
+      <div className="flex flex-wrap gap-2">
+        <Button className="h-12 px-6 text-base" onClick={() => void controls.finish()}>
+          Bitti
+        </Button>
+        <Button variant="outline" className="h-12 px-5 text-base" onClick={controls.stuck}>
+          Takıldım
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+export function SunScene(props: SceneProps) {
+  return (
+    <FacetScene
+      {...props}
+      testId="deneme-gunes"
+      greeting="güne başlarken"
+      sky="radial-gradient(circle at 35% 35%, #fde68a, $color)"
+    />
+  );
+}
+
+export function NightScene(props: SceneProps) {
+  return (
+    <FacetScene
+      {...props}
+      testId="deneme-gece"
+      greeting="gün biterken"
+      sky="radial-gradient(circle at 70% 30%, #e2e8f0 0 18%, $color 20%)"
+    />
+  );
+}

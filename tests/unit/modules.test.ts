@@ -1,6 +1,7 @@
 import { readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { checkedFacets } from "@/core/contract/facets";
 import { createRegistry, definitionProblems } from "@/core/contract/registry";
 import { sablon } from "@/modules/_sablon/module";
 import { deneme } from "@/modules/deneme/module";
@@ -71,6 +72,27 @@ describe("the deneme module", () => {
         "core.day_closed",
       ]),
     );
+  });
+
+  it("Ç3e: two fixed facets with their own scenes, and one facet per open topic", async () => {
+    const items = [
+      { id: "aaaaaaaa-0000-4000-8000-000000000001", kind: "konu", title: "Ders A", done: false },
+      { id: "bbbbbbbb-0000-4000-8000-000000000002", kind: "hedef", title: "Rapor", done: false },
+      { id: "cccccccc-0000-4000-8000-000000000003", kind: "konu", title: "Bitti", done: true },
+    ];
+    const ctx = {
+      db: {
+        from: () => ({ select: () => ({ order: async () => ({ data: items, error: null }) }) }),
+      },
+    } as never;
+    const facets = checkedFacets(deneme, await deneme.facets!(ctx));
+    expect(facets.map((facet) => [facet.key, facet.scene ?? null, facet.tone ?? null])).toEqual([
+      ["sabah", "gunes", "energy"],
+      ["aksam", "gece", "calm"],
+      ["konu-aaaaaaaa", null, null],
+    ]);
+    expect(facets[2].name).toBe("Ders A");
+    expect(Object.keys(deneme.ui.scenes ?? {})).toEqual(["gunes", "gece"]);
   });
 
   afterEach(() => {

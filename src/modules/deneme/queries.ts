@@ -4,7 +4,8 @@ import type { Tables } from "@/lib/supabase/database.types";
 // The module's own table. Nobody else reads or writes it (docs/06-modul-sozlesmesi.md).
 
 export type DenemeItem = Tables<"deneme_items">;
-export type DenemeKind = "hedef" | "aliskanlik" | "etkinlik" | "antrenman" | "odak";
+/** "konu" (Ç3e): a topic; it proposes no work, it is one of the module's facets. */
+export type DenemeKind = "hedef" | "aliskanlik" | "etkinlik" | "antrenman" | "odak" | "konu";
 
 export const SOURCE_TYPE = "deneme.item";
 
@@ -14,6 +15,7 @@ export const KIND_LABEL: Record<DenemeKind, string> = {
   etkinlik: "Etkinlik",
   antrenman: "Antrenman",
   odak: "Odak",
+  konu: "Konu",
 };
 
 function unwrap<T>(result: { data: T; error: { message: string } | null }): NonNullable<T> {
@@ -37,6 +39,8 @@ export type NewItem = {
   kind?: DenemeKind;
   due_on?: string | null;
   minutes?: number | null;
+  /** Ç3e: one of the fixed facets ("sabah", "aksam"). */
+  facet?: string | null;
 };
 
 export async function insertItem(ctx: ModuleContext, item: NewItem): Promise<DenemeItem> {
@@ -48,6 +52,7 @@ export async function insertItem(ctx: ModuleContext, item: NewItem): Promise<Den
         kind: item.kind ?? "hedef",
         due_on: item.due_on ?? null,
         minutes: item.minutes ?? null,
+        facet: item.facet ?? null,
       })
       .select()
       .single(),

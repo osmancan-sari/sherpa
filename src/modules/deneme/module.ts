@@ -1,22 +1,36 @@
-import type { ModuleDefinition } from "@/core/contract/types";
+import type { ModuleDefinition, ModuleFacet } from "@/core/contract/types";
 import { dayKey, shiftDay } from "@/lib/date";
 import { ExtractPage } from "./components/ExtractPage";
 import { ItemsTab } from "./components/ItemsTab";
 import { KitTab } from "./components/KitTab";
-import { denemeScene } from "./scene";
+import { denemeScene, nightScene, sunScene } from "./scene";
 import { FocusView, HistoryView, ItemPage, SettingsForm } from "./components/Views";
 import { kayitReader } from "./extract";
 import { ingest } from "./ingest";
 import { jobs } from "./jobs";
 import { type DenemeKind, listItems, SOURCE_TYPE } from "./queries";
-import { addItem, EVENTS, listeners, onOutcome, proposalFor, settingsOf } from "./rules";
+import { addItem, EVENTS, listeners, onOutcome, proposalFor, proposes, settingsOf } from "./rules";
 
 // "Deneme": the small module the core is tried against until real modules arrive. It uses
 // every connection point of the contract (docs/06-modul-sozlesmesi.md) once, with the simplest
 // thing that makes the point. It is switched on only where NEXT_PUBLIC_SHERPA_DEMO_MODULE=1
 // (src/modules/registry.ts); it never runs against production data.
 
-const KINDS: DenemeKind[] = ["hedef", "aliskanlik", "etkinlik", "antrenman", "odak"];
+const KINDS: DenemeKind[] = ["hedef", "aliskanlik", "etkinlik", "antrenman", "odak", "konu"];
+
+/**
+ * Ç3e: the module's facets. Two fixed ones, each with a scene and a tone of its own, as a
+ * routine module's morning and evening would have; and one per open topic ("konu"), from the
+ * module's data, as a school module's courses would be. Topics share the module's default scene.
+ */
+export const FIXED_FACETS: ModuleFacet[] = [
+  { key: "sabah", name: "Sabah", color: "#d97706", scene: "gunes", tone: "energy" },
+  { key: "aksam", name: "Akşam", color: "#4361d8", scene: "gece", tone: "calm" },
+];
+const TOPIC_COLORS = ["#0d9488", "#db2777", "#16a34a", "#0891b2", "#ea580c", "#c026d3"];
+
+/** A topic's facet key: stable as long as the record lives. */
+export const topicFacet = (id: string) => `konu-${id.slice(0, 8)}`;
 
 export const deneme: ModuleDefinition = {
   slug: "deneme",
@@ -24,6 +38,18 @@ export const deneme: ModuleDefinition = {
   kind: "lifelong",
   area: { slug: "sinama", name: "Sınama" },
   color: "#6250d6",
+
+  async facets(ctx) {
+    const topics = (await listItems(ctx)).filter((item) => item.kind === "konu" && !item.done);
+    return [
+      ...FIXED_FACETS,
+      ...topics.map((item, index) => ({
+        key: topicFacet(item.id),
+        name: item.title,
+        color: TOPIC_COLORS[index % TOPIC_COLORS.length],
+      })),
+    ];
+  },
 
   // 1. What it gives the main screen
   async chip(ctx) {
@@ -78,6 +104,18 @@ export const deneme: ModuleDefinition = {
             { value: "etkinlik", label: "Etkinlik" },
             { value: "antrenman", label: "Antrenman" },
             { value: "odak", label: "Odak" },
+            { value: "konu", label: "Konu" },
+          ],
+        },
+        {
+          name: "facet",
+          label: "Bölüm",
+          type: "select",
+          default: "",
+          options: [
+            { value: "", label: "Bölümsüz" },
+            { value: "sabah", label: "Sabah" },
+            { value: "aksam", label: "Akşam" },
           ],
         },
         { name: "due_on", label: "Tarih", type: "date" },
@@ -95,6 +133,7 @@ export const deneme: ModuleDefinition = {
           // Shorter than the shortest sitting is not a length the core takes: left open instead.
           minutes:
             typeof values.minutes === "number" && values.minutes >= 5 ? values.minutes : null,
+          facet: values.facet === "sabah" || values.facet === "aksam" ? values.facet : null,
         });
       },
     },
@@ -161,7 +200,8 @@ export const deneme: ModuleDefinition = {
     // Proposing again on activation brings back the work of records that are still open:
     // archiving left the module's mark on what it dropped, and a new proposal undoes that.
     for (const item of await listItems(ctx)) {
-      if (!item.done) await ctx.propose(proposalFor(item, settingsOf(ctx), ctx.now()));
+      if (!item.done && proposes(item))
+        await ctx.propose(proposalFor(item, settingsOf(ctx), ctx.now()));
     }
   },
 
@@ -210,5 +250,7 @@ export const deneme: ModuleDefinition = {
     history: HistoryView,
     // While a focused sitting ("odak") or a workout runs, the Today screen is the module's (Ç3c).
     scene: denemeScene,
+    // Ç3e: the fixed facets' scenes: a sunny one for the morning, a night one for the evening.
+    scenes: { gunes: sunScene, gece: nightScene },
   },
 };

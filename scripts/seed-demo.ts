@@ -7,6 +7,7 @@
 // Local Supabase only: the script refuses any other address, so it can never write to
 // production data. The account is ALLOWED_EMAIL (create it with `npm run db:user`).
 
+import { seedFacets } from "./demo-facets";
 import { seedDemo } from "./demo-data";
 import { adminClient, localSetup, localUserId, signInAs } from "./local-user";
 
@@ -61,7 +62,12 @@ async function main() {
 
   // The data is written as the user, with the user's own rights: the same path the app takes.
   const db = await signInAs(url, email);
-  const summary = await seedDemo(db, new Date());
+  const now = new Date();
+  const summary: Record<string, number> = await seedDemo(db, now);
+  // Ç3e: work in facets, through the test module, where it is switched on.
+  if (process.env.NEXT_PUBLIC_SHERPA_DEMO_MODULE === "1") {
+    Object.assign(summary, await seedFacets(db, now));
+  }
   console.log(`Sample data written for ${email} on ${url}:`);
   for (const [name, total] of Object.entries(summary)) console.log(`  ${name}: ${total}`);
 }

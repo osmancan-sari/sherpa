@@ -8,6 +8,8 @@ import { endSessionTold, startSessionTold } from "@/core/data/session-events";
 import { startSession } from "@/core/data/sessions";
 import { updateRhythm, updateTask, updateWorkItem } from "@/core/data/work";
 import type { AppEvent, ModuleRow } from "@/core/types";
+import { topicFacet } from "@/modules/deneme/module";
+import { seedFacets } from "../../scripts/demo-facets";
 import { makeModule, ok, ownerDb, wipe } from "./helpers";
 
 // A module's facets in the data (docs/06-modul-sozlesmesi.md, "Bölümler"; docs/03; Ç3e): the
@@ -293,5 +295,22 @@ describe("the database", () => {
     expect(ok(await db.from("modules").select("facet_colors").eq("id", row.id).single())).toEqual({
       facet_colors: { sabah: "#e8a33d", "ders-1": "#000000" },
     });
+  });
+});
+
+describe("the sample work in facets (scripts/demo-facets.ts)", () => {
+  it("switches the test module on and adds work in its fixed facets and in a topic", async () => {
+    const summary = await seedFacets(db, new Date());
+    expect(summary.deneme_items).toBe(4);
+    const topic = ok(await db.from("deneme_items").select("id").eq("kind", "konu").single());
+    const items = ok(await db.from("work_items").select("title, facet, provenance"));
+    const byTitle = Object.fromEntries(items.map((row) => [row.title, row]));
+    expect(byTitle["Günlük yaz"].facet).toBe("aksam");
+    expect(byTitle["İstatistik ödevi"].facet).toBe(topicFacet(topic.id));
+    expect(byTitle["İstatistik ödevi"].provenance).toMatchObject({ facet: "user" });
+    const rhythm = ok(await db.from("rhythms").select("title, facet").single());
+    expect(rhythm).toEqual({ title: "Sabah esnemesi", facet: "sabah" });
+    // A topic has no work of its own.
+    expect(items.map((row) => row.title)).not.toContain("İstatistik");
   });
 });
