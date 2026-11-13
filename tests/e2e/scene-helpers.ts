@@ -17,7 +17,7 @@ export async function activateDeneme(page: Page) {
 export async function addRecord(
   page: Page,
   title: string,
-  extra: { minutes?: string; kind?: string } = {},
+  extra: { minutes?: string; kind?: string; facet?: string } = {},
 ) {
   await page.goto("/");
   await page.keyboard.press("n");
@@ -30,6 +30,8 @@ export async function addRecord(
     .click();
   if (extra.kind) await dialog.getByLabel("Tür", { exact: true }).selectOption(extra.kind);
   if (extra.minutes) await dialog.getByLabel(/Süre \(dk\)/).fill(extra.minutes);
+  // Ç3e: one of the module's fixed facets ("sabah", "aksam").
+  if (extra.facet) await dialog.getByLabel(/^Bölüm/).selectOption(extra.facet);
   await dialog.getByRole("button", { name: "Kaydet" }).click();
   await expect(dialog).toBeHidden();
 }

@@ -4,6 +4,7 @@ import { expect, type Page, test as base } from "@playwright/test";
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/database.types";
 import { seedDemo } from "../../scripts/demo-data";
+import { seedFacets } from "../../scripts/demo-facets";
 import { insert, rows, update, waitFor } from "./data";
 import { test } from "./fixtures";
 import { ALLOWED_EMAIL, requestCode } from "./helpers";
@@ -517,6 +518,66 @@ for (const theme of ["dark", "light"] as const) {
     await expect(page.getByTestId("new-token")).toBeVisible();
     await page.getByRole("heading", { name: "Bağlantılar" }).scrollIntoViewIfNeeded();
     await shot("ayarlar-baglantilar");
+  });
+}
+
+// Ç3e: a module's facets, in both themes (the palette must read on both): the day with work in
+// the morning, evening and topic facets, the module page, the colour picker, and the two
+// facets' scenes. The test module's records come through its own rules (scripts/demo-facets.ts).
+for (const theme of ["dark", "light"] as const) {
+  test(`facet screens, ${theme}`, async ({ page }, testInfo) => {
+    test.setTimeout(120_000);
+    await page.addInitScript((value) => localStorage.setItem("theme", value), theme);
+    const shotDay = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Istanbul" }).format(
+      new Date(Date.now() - 86_400_000),
+    );
+    const shotNow = new Date(`${shotDay}T10:00:00+03:00`);
+    await page.clock.setFixedTime(shotNow);
+    await seedFacets(await userDb(), shotNow);
+    const phone = testInfo.project.use.isMobile === true;
+    const shot = async (name: string) => {
+      await page.mouse.move(0, 0);
+      await page.screenshot({
+        path: path.join(folder, `${testInfo.project.name}-${name}-${theme}.png`),
+        fullPage: !phone,
+        animations: "disabled",
+      });
+    };
+
+    await page.goto("/");
+    await expect(page.locator('[data-testid="strip-work"][title*="Günlük yaz"]')).toBeVisible();
+    await shot("bugun-bolumler");
+
+    await page.goto("/m/deneme");
+    await expect(
+      page.getByRole("region", { name: "Yaklaşanlar" }).getByText("İstatistik ödevi"),
+    ).toBeVisible();
+    await shot("modul-deneme-bolumler");
+
+    await page.goto("/ayarlar/moduller/deneme");
+    const sabah = page.getByTestId("color-row-sabah");
+    await sabah.getByRole("button", { name: "Sabah: rengi değiştir" }).click();
+    await expect(sabah.getByRole("group", { name: "Sabah: hazır renkler" })).toBeVisible();
+    await shot("ayarlar-renkler");
+
+    const start = async (title: string) => {
+      await page.goto("/m/deneme");
+      await page
+        .getByRole("region", { name: "Yaklaşanlar" })
+        .getByRole("button", { name: `Başla: ${title}` })
+        .click();
+      await waitFor(
+        () => rows("sessions"),
+        (list) => list.some((row) => row.ended_at === null),
+      );
+      await page.goto("/");
+    };
+    await start("Sabah esnemesi");
+    await expect(page.getByTestId("deneme-gunes")).toBeVisible();
+    await shot("bugun-sahne-sabah");
+    await start("Günlük yaz");
+    await expect(page.getByTestId("deneme-gece")).toBeVisible();
+    await shot("bugun-sahne-aksam");
   });
 }
 
