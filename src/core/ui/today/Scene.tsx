@@ -184,6 +184,7 @@ export function SceneFrame({
     say,
     today: brief,
     ctx,
+    facet: null,
   };
 
   return (

@@ -4,6 +4,7 @@ import type {
   ProposalResult,
   PromptRequest,
 } from "@/core/contract/types";
+import { computeFacets } from "@/core/contract/facets";
 import { emitEvent } from "@/core/events/bus";
 import { rhythmProgress } from "@/core/today/select";
 import { check, type Db, type ModuleRow, unwrap, toJson } from "@/core/types";
@@ -31,12 +32,14 @@ export function createModuleContext(input: {
   const now = input.now ?? (() => new Date());
   const definition = registry.get(mod.slug);
 
-  return {
+  const ctx: ModuleContext = {
     module: mod,
     db,
     now,
     async propose(proposal) {
-      const result = await propose(db, mod, proposal);
+      // Ç3e: a facet must be in the module's list as it is now, computed with this context.
+      const facets = await computeFacets(definition, ctx);
+      const result = await propose(db, mod, proposal, facets);
       if (onProposed) await onProposed(result);
       return result;
     },
@@ -118,4 +121,5 @@ export function createModuleContext(input: {
       );
     },
   };
+  return ctx;
 }

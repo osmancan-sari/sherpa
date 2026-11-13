@@ -1,3 +1,4 @@
+import { taskFacet } from "@/core/contract/facets";
 import type { ModuleRegistry, ProposalResult } from "@/core/contract/types";
 import { CORE_EVENTS, emitEvent } from "@/core/events/bus";
 import type { Db, Session } from "@/core/types";
@@ -46,38 +47,52 @@ async function ownerOf(db: Db, session: Session) {
         ?.slug ?? null)
     : null;
   let source: { type: string | null; id: string | null } = { type: null, id: null };
+  // Ç3e: the work's facet; a sitting without its own has its work item's.
+  let facet: string | null = null;
   if (session.task_id) {
     const { data } = await db
       .from("tasks")
-      .select("source_type, source_id")
+      .select("source_type, source_id, facet, work_item_id")
       .eq("id", session.task_id)
       .maybeSingle();
-    if (data) source = { type: data.source_type, id: data.source_id };
+    if (data) {
+      source = { type: data.source_type, id: data.source_id };
+      const item =
+        data.facet === null && data.work_item_id
+          ? (await db.from("work_items").select("facet").eq("id", data.work_item_id).maybeSingle())
+              .data
+          : null;
+      facet = taskFacet(data, item);
+    }
   } else if (session.rhythm_id) {
     const { data } = await db
       .from("rhythms")
-      .select("source_type, source_id")
+      .select("source_type, source_id, facet")
       .eq("id", session.rhythm_id)
       .maybeSingle();
-    if (data) source = { type: data.source_type, id: data.source_id };
+    if (data) {
+      source = { type: data.source_type, id: data.source_id };
+      facet = data.facet;
+    }
   }
-  return { slug, source };
+  return { slug, source, facet };
 }
 
-function basePayload(session: Session, slug: string | null, source: unknown) {
+function basePayload(session: Session, owner: Awaited<ReturnType<typeof ownerOf>>) {
   return {
-    module: slug,
+    module: owner.slug,
     session_id: session.id,
     task_id: session.task_id,
     rhythm_id: session.rhythm_id,
-    source,
+    source: owner.source,
+    facet: owner.facet,
     started_at: session.started_at,
   };
 }
 
 export async function tellStarted(told: Told, session: Session): Promise<void> {
-  const { slug, source } = await ownerOf(told.db, session);
-  await tell(told, CORE_EVENTS.sessionStarted, basePayload(session, slug, source), slug);
+  const owner = await ownerOf(told.db, session);
+  await tell(told, CORE_EVENTS.sessionStarted, basePayload(session, owner), owner.slug);
 }
 
 export async function tellEnded(
@@ -86,7 +101,7 @@ export async function tellEnded(
   result: SessionResult,
 ): Promise<void> {
   if (!session.ended_at) return;
-  const { slug, source } = await ownerOf(told.db, session);
+  const owner = await ownerOf(told.db, session);
   const minutes = Math.max(
     0,
     Math.round((Date.parse(session.ended_at) - Date.parse(session.started_at)) / 60_000),
@@ -95,13 +110,13 @@ export async function tellEnded(
     told,
     CORE_EVENTS.sessionEnded,
     {
-      ...basePayload(session, slug, source),
+      ...basePayload(session, owner),
       ended_at: session.ended_at,
       result,
       minutes,
       measured: session.measured,
     },
-    slug,
+    owner.slug,
   );
 }
 

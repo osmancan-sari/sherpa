@@ -4,7 +4,7 @@ import {
   parseProposal,
   proposalTarget,
 } from "@/core/contract/envelope";
-import type { ProposalResult, ProposalTarget } from "@/core/contract/types";
+import type { ModuleFacet, ProposalResult, ProposalTarget } from "@/core/contract/types";
 import { check, DataError, type Db, type ModuleRow, type Provenance, unwrap } from "@/core/types";
 import { stopSessionsOnItem } from "./sessions";
 
@@ -98,12 +98,18 @@ async function resolveDependents(db: Db, moduleId: string, key: string): Promise
 /**
  * Creates the work a proposal describes, or updates the record that already carries its key.
  * The same proposal sent twice leaves one record. A field the user changed is kept.
+ * `facets` (Ç3e): the module's facet list now; null or absent for a module without facets.
  */
-export async function propose(db: Db, mod: ModuleRow, input: unknown): Promise<ProposalResult> {
-  const proposal = parseProposal(input);
+export async function propose(
+  db: Db,
+  mod: ModuleRow,
+  input: unknown,
+  facets: readonly ModuleFacet[] | null = null,
+): Promise<ProposalResult> {
+  const proposal = parseProposal(input, facets);
   const target = proposalTarget(proposal);
   const table = TABLE[target];
-  const incoming = incomingFields(proposal);
+  const incoming = incomingFields(proposal, { withFacet: facets !== null });
 
   for (let attempt = 0; attempt < 2; attempt++) {
     const existing = await findByKey(db, table, mod.id, proposal.key);

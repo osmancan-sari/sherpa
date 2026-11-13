@@ -14,7 +14,8 @@ import {
   type Timing,
   timingSchema,
 } from "./timing";
-import type { ProposalTarget, WorkProposal } from "./types";
+import { FACET_KEY, facetIssue } from "./facets";
+import type { ModuleFacet, ProposalTarget, WorkProposal } from "./types";
 
 // The work envelope, as pure functions: validate a proposal, turn it into column values, and
 // merge those into what is already stored without touching anything the user changed.
@@ -77,6 +78,11 @@ const proposalSchema = z
     artifact: z.string().nullish(),
     meta: z.record(z.string(), z.unknown()).optional(),
     timing: timingSchema.nullish(),
+    // Ç3e: whether the key is in the module's list is checked where the list is known (propose).
+    facet: z
+      .string()
+      .regex(FACET_KEY, "lower-case letters, digits and dashes, at most 40")
+      .nullish(),
   })
   .superRefine((proposal, ctx) => {
     const when = proposal.when ?? {};
@@ -168,14 +174,22 @@ export class ProposalError extends Error {
   }
 }
 
-/** Checks a proposal against the envelope. Throws ProposalError listing every problem. */
-export function parseProposal(input: unknown): WorkProposal {
+/**
+ * Checks a proposal against the envelope. Throws ProposalError listing every problem.
+ * `facets` is the module's facet list now (Ç3e); null or absent for a module without facets.
+ */
+export function parseProposal(
+  input: unknown,
+  facets: readonly ModuleFacet[] | null = null,
+): WorkProposal {
   const result = proposalSchema.safeParse(input);
   if (!result.success) {
     throw new ProposalError(
       result.error.issues.map((issue) => `${issue.path.join(".") || "proposal"}: ${issue.message}`),
     );
   }
+  const issue = facetIssue(result.data.facet, facets);
+  if (issue) throw new ProposalError([`facet: ${issue}`]);
   return result.data as WorkProposal;
 }
 
@@ -220,14 +234,22 @@ function judgments(entries: [string, unknown][]): Record<string, Incoming> {
   return result;
 }
 
-/** Column values of a proposal for the table it lands in. */
-export function incomingFields(proposal: WorkProposal): IncomingFields {
+/**
+ * Column values of a proposal for the table it lands in. `withFacet` (Ç3e): the module has
+ * facets, so the facet is one of its facts (an empty one clears it); a module without facets
+ * never writes the column, and nothing about it shows in `changed`.
+ */
+export function incomingFields(
+  proposal: WorkProposal,
+  options: { withFacet?: boolean } = {},
+): IncomingFields {
   const when = proposal.when ?? {};
   const shared = {
     title: proposal.title.trim(),
     source_type: proposal.source.type,
     // The database spells uuids in lower case.
     source_id: proposal.source.id.toLowerCase(),
+    ...(options.withFacet ? { facet: proposal.facet ?? null } : {}),
   };
 
   if (when.recurrence) {

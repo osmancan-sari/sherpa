@@ -224,6 +224,7 @@ export type WorkItemEdit = Partial<
     | "energy"
     | "context"
     | "status"
+    | "facet"
   >
 > & { timing?: Timing | null };
 
@@ -294,7 +295,10 @@ export async function createRhythm(db: Db, rhythm: NewRhythm): Promise<Rhythm> {
 }
 
 export type RhythmEdit = Partial<
-  Pick<Rhythm, "title" | "target_count" | "period" | "floor_count" | "est_minutes" | "active">
+  Pick<
+    Rhythm,
+    "title" | "target_count" | "period" | "floor_count" | "est_minutes" | "active" | "facet"
+  >
 > & { timing?: Timing | null };
 
 export async function updateRhythm(db: Db, id: string, edit: RhythmEdit): Promise<Rhythm> {

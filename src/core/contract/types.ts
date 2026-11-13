@@ -59,6 +59,11 @@ export type WorkProposal = {
   meta?: Record<string, unknown>;
   /** When the work can be done (Ç3b): windows, preferred and avoided hours, travel, rest days. */
   timing?: Timing | null;
+  /**
+   * Ç3e: the key of the module's facet the work is in. Only a module with facets gives one, and
+   * it must be in the module's list when proposed. A fact: an empty one clears it.
+   */
+  facet?: string | null;
 };
 
 export type { Timing, TimeWindow } from "./timing";
@@ -208,6 +213,22 @@ export type SceneProps = {
   say: Say;
   today: TodayBrief;
   ctx: ModuleUiContext;
+  /** Ç3e: the running work's facet (its colour resolved); null when it has none. */
+  facet: { key: string; name: string; color: string } | null;
+};
+
+/** Ç3e: a part of a module with its own colour and scene on the main screen (docs/06, "Bölümler"). */
+export type ModuleFacet = {
+  /** Unique in the module; lower-case letters, digits and dashes, at most 40: 'sabah', 'yzv406e'. */
+  key: string;
+  /** 'Sabah', 'YZV406E Derin Öğrenme' */
+  name: string;
+  /** #rrggbb; the facet's default colour, the user may change it. */
+  color: string;
+  /** Key of a scene in `ui.scenes`. */
+  scene?: string;
+  /** The scene frame's tone; without it, the scene's own. */
+  tone?: "calm" | "focus" | "energy";
 };
 
 export type ModuleScene = {
@@ -365,6 +386,8 @@ export type ModuleUi = {
   history?: ComponentType;
   /** Ç3c: takes over the Today screen while the module's work runs. */
   scene?: ModuleScene;
+  /** Ç3e: named scenes the module's facets choose from (`ModuleFacet.scene`). */
+  scenes?: Record<string, ModuleScene>;
 };
 
 export type ModuleDefinition = {
@@ -373,7 +396,13 @@ export type ModuleDefinition = {
   kind: ModuleKind;
   /** Slug of the area the module belongs to, if any. */
   area?: { slug: string; name: string };
+  /** #rrggbb; the default. Copied into the module's row when it is set up; the user's after that. */
   color: string;
+  /**
+   * Ç3e: the module's facets, fixed or from its data (one per course). Computed with the module's
+   * context and refreshed when data changes, like the chip. Absent: the module has no facets.
+   */
+  facets?: (ctx: ModuleContext) => Promise<ModuleFacet[]>;
 
   // 1. What it gives the main screen
   chip: (ctx: ModuleContext) => Promise<ChipData>;

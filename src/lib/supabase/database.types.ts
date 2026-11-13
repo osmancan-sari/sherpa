@@ -226,6 +226,7 @@ export type Database = {
           created_at: string;
           day_type: Database["public"]["Enums"]["day_type"] | null;
           ends_at: string;
+          facet: string | null;
           id: string;
           key: string | null;
           kind: Database["public"]["Enums"]["block_kind"];
@@ -249,6 +250,7 @@ export type Database = {
           created_at?: string;
           day_type?: Database["public"]["Enums"]["day_type"] | null;
           ends_at: string;
+          facet?: string | null;
           id?: string;
           key?: string | null;
           kind?: Database["public"]["Enums"]["block_kind"];
@@ -271,6 +273,7 @@ export type Database = {
           created_at?: string;
           day_type?: Database["public"]["Enums"]["day_type"] | null;
           ends_at?: string;
+          facet?: string | null;
           id?: string;
           key?: string | null;
           kind?: Database["public"]["Enums"]["block_kind"];
@@ -711,6 +714,7 @@ export type Database = {
           created_at: string;
           end_condition: string | null;
           ends_on: string | null;
+          facet_colors: NonNullable<Json>;
           id: string;
           kind: Database["public"]["Enums"]["module_kind"];
           mode_behavior: NonNullable<Json>;
@@ -732,6 +736,7 @@ export type Database = {
           created_at?: string;
           end_condition?: string | null;
           ends_on?: string | null;
+          facet_colors?: NonNullable<Json>;
           id?: string;
           kind?: Database["public"]["Enums"]["module_kind"];
           mode_behavior?: NonNullable<Json>;
@@ -752,6 +757,7 @@ export type Database = {
           created_at?: string;
           end_condition?: string | null;
           ends_on?: string | null;
+          facet_colors?: NonNullable<Json>;
           id?: string;
           kind?: Database["public"]["Enums"]["module_kind"];
           mode_behavior?: NonNullable<Json>;
@@ -920,6 +926,7 @@ export type Database = {
           created_at: string;
           energy: Database["public"]["Enums"]["energy_kind"];
           est_minutes: number;
+          facet: string | null;
           floor_count: number;
           id: string;
           key: string | null;
@@ -943,6 +950,7 @@ export type Database = {
           created_at?: string;
           energy?: Database["public"]["Enums"]["energy_kind"];
           est_minutes?: number;
+          facet?: string | null;
           floor_count?: number;
           id?: string;
           key?: string | null;
@@ -965,6 +973,7 @@ export type Database = {
           created_at?: string;
           energy?: Database["public"]["Enums"]["energy_kind"];
           est_minutes?: number;
+          facet?: string | null;
           floor_count?: number;
           id?: string;
           key?: string | null;
@@ -1118,6 +1127,7 @@ export type Database = {
           due_at: string | null;
           energy: Database["public"]["Enums"]["energy_kind"];
           est_minutes: number;
+          facet: string | null;
           follow_up_on: string | null;
           id: string;
           importance: number;
@@ -1146,6 +1156,7 @@ export type Database = {
           due_at?: string | null;
           energy?: Database["public"]["Enums"]["energy_kind"];
           est_minutes?: number;
+          facet?: string | null;
           follow_up_on?: string | null;
           id?: string;
           importance?: number;
@@ -1173,6 +1184,7 @@ export type Database = {
           due_at?: string | null;
           energy?: Database["public"]["Enums"]["energy_kind"];
           est_minutes?: number;
+          facet?: string | null;
           follow_up_on?: string | null;
           id?: string;
           importance?: number;
@@ -1302,6 +1314,7 @@ export type Database = {
           effort_min_minutes: number | null;
           effort_total_minutes: number | null;
           energy: Database["public"]["Enums"]["energy_kind"] | null;
+          facet: string | null;
           id: string;
           importance: number;
           key: string | null;
@@ -1336,6 +1349,7 @@ export type Database = {
           effort_min_minutes?: number | null;
           effort_total_minutes?: number | null;
           energy?: Database["public"]["Enums"]["energy_kind"] | null;
+          facet?: string | null;
           id?: string;
           importance?: number;
           key?: string | null;
@@ -1369,6 +1383,7 @@ export type Database = {
           effort_min_minutes?: number | null;
           effort_total_minutes?: number | null;
           energy?: Database["public"]["Enums"]["energy_kind"] | null;
+          facet?: string | null;
           id?: string;
           importance?: number;
           key?: string | null;
@@ -1429,6 +1444,7 @@ export type Database = {
           created_at: string;
           end_condition: string | null;
           ends_on: string | null;
+          facet_colors: NonNullable<Json>;
           id: string;
           kind: Database["public"]["Enums"]["module_kind"];
           mode_behavior: NonNullable<Json>;
@@ -1484,6 +1500,7 @@ export type Database = {
           due_at: string | null;
           energy: Database["public"]["Enums"]["energy_kind"];
           est_minutes: number;
+          facet: string | null;
           follow_up_on: string | null;
           id: string;
           importance: number;
@@ -1541,6 +1558,7 @@ export type Database = {
           isSetofReturn: false;
         };
       };
+      is_facet_key: { Args: { p_key: string }; Returns: boolean };
       istanbul_today: { Args: Record<PropertyKey, never>; Returns: string };
       job_users: { Args: Record<PropertyKey, never>; Returns: string[] };
       save_week_sittings: { Args: { p_committed: Json; p_only?: string[] }; Returns: undefined };
@@ -1576,6 +1594,7 @@ export type Database = {
           isSetofReturn: false;
         };
       };
+      valid_facet_colors: { Args: { p_colors: Json }; Returns: boolean };
     };
     Enums: {
       block_kind: "work" | "class" | "appointment" | "protected";
