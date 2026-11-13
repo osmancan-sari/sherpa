@@ -48,7 +48,8 @@ export type ModuleDefinition = {
   name: string
   kind: 'lifelong' | 'term' | 'until_goal'
   area?: { slug: string; name: string }
-  color: string                      // #rrggbb
+  color: string                      // #rrggbb; varsayılan renk. Kurulumda modules.color'a kopyalanır, sonra kullanıcınındır (Ç3e)
+  facets?: (ctx: ModuleContext) => Promise<ModuleFacet[]>   // Ç3e: bölümler; aşağıda "Bölümler"
 
   // 1. Ana ekrana ne verir
   chip: (ctx: ModuleContext) => Promise<ChipData>          // tek satır durum + sağlık
@@ -171,6 +172,7 @@ type ModuleUi = {
   settings?: ComponentType
   history?: ComponentType            // 4. bölge; yoksa çekirdek haftalık harcanan süreyi gösterir
   scene?: ModuleScene                // Ç3c: iş çalışırken Bugün ekranını devralan görünüm (aşağıda)
+  scenes?: Record<string, ModuleScene>   // Ç3e: adı verilen sahneler; bölümler bunlara başvurur
 }
 
 type ModuleViewProps = { params: Record<string, string> }   // alt sayfalarda ':id' gibi parçalar
@@ -214,6 +216,7 @@ type SceneProps = {
   say: Say
   today: TodayBrief                  // günün kısa özeti (anlatım için; yalnızca okuma)
   ctx: ModuleUiContext
+  facet: { key: string; name: string; color: string } | null   // Ç3e: çalışan işin bölümü; color çözülmüş renk
 }
 ```
 
@@ -229,6 +232,28 @@ Kurallar:
 **Nerede tanımlanır.** `scene` nesnesi (`when` dahil) modülün sıradan bir dosyasında (`module.ts` ya da `scene.ts`) tanımlanır; yalnızca `component` `"use client"` dosyasından gelir. İstemci dosyasının dışa aktardığı nesne sunucuda yalnızca bir başvurudur: `when` orada fonksiyon olmaz ve kayıt denetimi uygulamayı açtırmaz.
 
 **Adım yürütücü (`StepRunner`, bileşen takımında).** Sıralı adımlı sahneler (rutin, pişirme, antrenman) için: adım listesi (ad, süre ya da tekrar sayısı, açıklama), geri sayım, "Sonraki", "Atla", her adım bitince ve liste bitince geri çağrı. Yalnızca arayüzdür; hangi adımda olunduğunu modül saklar (`step` ve `onStep` ile denetimli kullanılır).
+
+### Bölümler (Ç3e)
+
+Modül kendini **bölümlere** ayırabilir: veri, sayfa, ayarlar, planlama ve olaylar ortak; ana ekranda ayrı renk ve sahne (rutinde Sabah ve Akşam, Okul'da her ders, Beslenme'de prep ve alışveriş). Gerekçe `docs/12-sahne-ve-otomasyon.md`, bölüm F.
+
+```ts
+type ModuleFacet = {
+  key: string                  // modül içinde tekil; küçük harf, rakam, tire; en çok 40 ('sabah', 'yzv406e')
+  name: string                 // 'Sabah', 'YZV406E Derin Öğrenme'
+  color: string                // #rrggbb; bölümün varsayılan rengi, kullanıcı değiştirebilir
+  scene?: string               // ui.scenes içindeki sahnenin anahtarı
+  tone?: 'calm' | 'focus' | 'energy'   // sahne çerçevesinin tonu; yoksa sahnenin look.tone'u
+}
+```
+
+1. **Liste.** `facets(ctx)` modülün bağlamıyla hesaplanır: sabit bir liste ya da modülün verisinden (her etkin ders). Ekranlarda modülün çipi gibi tutulur ve her veri değişiminde tazelenir. Bölümü olmayan modülde bu alan yoktur ve her şey Ç3c'deki gibidir.
+2. **Denetim.** Kayıt `ui.scenes`'i denetler (anahtar biçimi, `when` ve bileşen). Listenin kendisi bağlamla hesaplandığı için kayıtta bilinemez; her hesaplandığında denetlenir: geçersiz ya da yinelenen anahtar, geçersiz renk, `ui.scenes`'te olmayan sahneye başvuru hata verir. Hata verince ekranlar bölümleri yok sayar (renk modülünkine döner) ve teklif reddedilir. Modülün testi listeyi hesaplayıp denetlemelidir.
+3. **İş bölümünü taşır.** Zarfta `facet` (aşağıda "İş zarfı ve `propose`"). Oturum işinin kendi bölümü yoksa kaleminin bölümü geçerlidir. Bölümü listeden çıkan iş (ders kalktı) anahtarını korur ve modülün rengiyle görünür; hata vermez.
+4. **Renk.** Çekirdeğin bir iş için kullandığı renk tek yardımcıdan gelir (`src/core/contract/colors.ts`, `workColor`): kullanıcının bölüm rengi (`modules.facet_colors`) → bölümün varsayılan rengi → kullanıcının modül rengi (`modules.color`) → modülün varsayılan rengi. Modül düzeyindeki yerler (çip, modül payları, modül listeleri) modülün rengini kullanır (`moduleColor`). Yerlerin listesi `docs/05-arayuz.md`, "Renkler ve bölümler".
+5. **Sahne.** Çalışan işin bölümü `scene` taşıyor ve o sahnenin `when`'i doğru dönüyorsa o sahne gelir; yoksa modülün varsayılan sahnesi (`ui.scene`, kendi `when`'iyle). Sahne bileşeni bölümü `SceneProps.facet` ile alır; aynı bileşen birden çok bölümde kullanılabilir (her ders aynı "ders" sahnesini kendi rengiyle).
+6. **Ton.** Bölümün `tone`'u → sahnenin `look.tone`'u → `calm`. `energy` tonu çözülmüş rengi kullanır.
+7. **Planlamaya etkisi yok.** Bölüm planlayıcının girdisi değildir ve yapay zekaya gitmez; yapay zeka bölüm seçmez (serbest girişten modüle yönlenen iş bölümsüz açılır, bölümü kullanıcı formdan ya da modül kendi giriş türünden verir).
 
 ### Sesli anlatım ve günün özeti (Ç3c)
 
@@ -294,6 +319,7 @@ type WorkProposal = {
   effort?: { total_minutes?: number; session_minutes?: number; bounds?: { min: number; max: number } }
   fit?: { energy?: Energy; context?: Context }
   timing?: Timing                      // zaman kısıtları (Ç3b); aşağıda
+  facet?: string | null                // Ç3e: bölümün anahtarı; yalnızca bölümü olan modülde (yukarıda "Bölümler")
   importance?: 1 | 2 | 3 | 4
   depends_on?: string[]
   flex?: { splittable?: boolean; droppable?: boolean }
@@ -342,6 +368,7 @@ Zarfın kuralları (`src/core/contract/envelope.ts`, saf fonksiyonlar; yazma `sr
 - **Olgu alanları** (başlık, son tarih, en erken, çıktı, bağımlılıklar, `meta`, tekrar ve sabit zaman değerleri) her teklifte yazılır; boş gelen olgu da yazılır (son tarih kalkabilir). **Yargı alanları** (efor, oturum süresi, önem, enerji, bağlam, bölünebilirlik) yalnızca dolu geldiğinde yazılır.
 - Kullanıcının değiştirdiği alan hiçbir teklifte ezilmez; teklif o alanı `kept` içinde geri bildirir.
 - **Zaman kısıtları (`timing`, Ç3b).** Modül, işlerinin ne zaman yapılabileceğini bildiği kadarıyla yazar: açılış saatleri, kaçınılan saatler, yol, dinlenme günü. Alanların tanımı, sınırları ve biçime göre hangilerinin kullanılabildiği `docs/03-veri-modeli.md` içinde "Zaman kısıtları" bölümündedir; planlayıcının davranışı `docs/04-planlayici.md` içinde. Beş alt alan da olgu alanıdır ve kaynağı alt alan başına tutulur (`timing.windows` …): kullanıcı bir işte kaçınılan saati değiştirirse modülün sonraki teklifi yalnızca onu ezmez. Modül bu değerleri genellikle kendi ayarından üretir (kullanıcı salon saatini bir kez girer, modül her işe yazar). Geçersiz `timing` (ters saat, boş liste, sığmayan `rest_days`, biçimin kullanmadığı alan) teklifi reddettirir.
+- **Bölüm (`facet`, Ç3e).** Üç biçimde de kullanılabilir (kalem, ritim, blok). Teklif anında modülün o anki bölüm listesinde olmalıdır; yoksa teklif alanın adıyla reddedilir (`facet: "x" is not one of the module's facets`). Bölümü olmayan modül `facet` gönderemez. Bölümü olan modülde `facet` olgu alanıdır: her teklifte yazılır, boş gelirse bölüm kalkar; kullanıcı formdan değiştirdiyse ezilmez (`kept`). Bölümü olmayan modülün tekliflerinde `facet` hiç yazılmaz ve `changed` içinde görünmez.
 - Efor boş ve `bounds` verilmişse sınırın ortası (5 dakikaya yuvarlanır) `default` kaynağıyla yazılır; var olan bir değerin üzerine yazılmaz. Sınır da yoksa efor boş kalır.
 - Teklif edilen kalem `active` açılır (`proposed` durumu yapay zekanın bölme önerileri içindir, Ç2).
 - `withdraw` hiçbir şeyi silmez: kalem ve açık oturum işleri `dropped`, ritim pasif, blok `cancelled` olur; kalemde çalışan oturum varsa durdurulur; bitmiş kayda dokunulmaz. Geri çekilen `key` yeniden teklif edilirse aynı kayıt geri gelir; kullanıcının kendi kapattığı kayıt (kalem, ritim, blok) geri gelmez. Kimin kapattığı `provenance` içinde durum alanının kaynağı olarak tutulur.
@@ -358,7 +385,7 @@ Akış:
 | Olay | Ne zaman | Yük | Kime |
 | --- | --- | --- | --- |
 | `core.prompt_answered` | Modülün sorusu cevaplandı | `{ module, kind, subject_type, subject_id, value }` | Dinleyen etkin modüllere |
-| `core.session_started` (Ç3c) | Oturum başladı | `{ module, session_id, task_id, rhythm_id, source: { type, id }, started_at }` | Yalnızca işin modülüne |
+| `core.session_started` (Ç3c) | Oturum başladı | `{ module, session_id, task_id, rhythm_id, source: { type, id }, facet, started_at }`; `facet` işin bölümü (oturum işinde kendisininki, yoksa kaleminki) ya da `null` (Ç3e) | Yalnızca işin modülüne |
 | `core.session_ended` (Ç3c) | Oturum kapandı | aynısı + `{ ended_at, result, minutes, measured }`; `result`: `done`, `stopped`, `deferred`, `stuck`, `unanswered` | Yalnızca işin modülüne |
 | `core.day_started` (Ç3c) | Uyanış kaydedildi | `{ date, woke_at, estimated }` | Etkin bütün modüllere |
 | `core.day_closed` (Ç3c) | Yatış kaydedildi | `{ date, bed_at }` | Etkin bütün modüllere |

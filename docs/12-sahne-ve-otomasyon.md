@@ -1,6 +1,6 @@
 # Modül sahnesi, günün çerçevesi ve otomasyon zemini
 
-**Durum: A–D numaralı dokümanlara işlendi ve Ç3c'de kuruldu (`c3c-tamam`); E numaralı dokümanlara işlendi (`docs/02`, `03`, `06`, `11`) ve Ç3d'de kuruluyor; F Ç3e'de kurulacak.** A–E'nin bağlayıcı hali numaralı dokümanlardadır; F kendi adımında oraya işlenir. Kurulurken netleşenler (E): kapsam adresle aynı yazılır (`core/wake`); sunucu kullanıcı adına veritabanına kullanıcı olarak gider; zamanlayıcı Supabase'in `pg_cron`'u. Bu dosya özet ve gerekçe olarak kalır.
+**Durum: A–D numaralı dokümanlara işlendi ve Ç3c'de kuruldu (`c3c-tamam`); E numaralı dokümanlara işlendi (`docs/02`, `03`, `06`, `11`) ve Ç3d'de kuruldu (`c3d-tamam`); F numaralı dokümanlara işlendi (`docs/03`, `05`, `06`) ve Ç3e'de kuruluyor.** A–F'nin bağlayıcı hali numaralı dokümanlardadır. Kurulurken netleşenler (E): kapsam adresle aynı yazılır (`core/wake`); sunucu kullanıcı adına veritabanına kullanıcı olarak gider; zamanlayıcı Supabase'in `pg_cron`'u. Bu dosya özet ve gerekçe olarak kalır.
 
 ## Neden
 

@@ -6,7 +6,7 @@
 - **Tek odak.** Bugün ekranında en büyük öğe her zaman "şimdi" kartıdır. Geri kalan her şey ikincildir.
 - **Yoğun ama okunur.** Modül sayfaları veri yoğundur (tablolar, zaman çizelgesi); Bugün ekranı seyrektir.
 - **Açık ve koyu tema.** İkinci ekranda koyu tema varsayılan; gece durumunda parlaklık daha da düşer.
-- **Renk anlam taşır.** Her modülün bir rengi vardır; Okul içinde her dersin kendi rengi. Durum renkleri yalnızca üç anlam için kullanılır: yolunda, dikkat, geride. Kırmızı "gecikti" etiketi yoktur.
+- **Renk anlam taşır.** Her modülün bir rengi vardır; bölümü olan modülde her bölümün (Okul içinde her dersin, rutinde sabahın ve akşamın) kendi rengi. Renkleri kullanıcı Ayarlar'dan değiştirir (Ç3e, aşağıda "Renkler ve bölümler"). Durum renkleri yalnızca üç anlam için kullanılır: yolunda, dikkat, geride. Kırmızı "gecikti" etiketi yoktur.
 - **Tipografi.** Şimdi kartının başlığı ekranın en büyük yazısıdır ve masadan bir bakışta okunur.
 
 ## Rotalar
@@ -22,7 +22,7 @@
 | `/gelen` | Gelen kutusu |
 | `/kapanis` | Akşam kapanışı |
 | `/ayarlar` | Ayarlar: tema, günün çerçevesi, sesli anlatım (bu cihaz), yapay zeka, bağlantılar (Ç3d), dışa aktarım, hesap |
-| `/ayarlar/moduller` | Modülleri etkinleştir, duraklat, arşivle; `/ayarlar/moduller/[slug]` modülün kendi ayarları |
+| `/ayarlar/moduller` | Modülleri etkinleştir, duraklat, arşivle; `/ayarlar/moduller/[slug]` modülün renkleri (Ç3e) ve kendi ayarları |
 | `/ayarlar/bloklar` | Haftalık seriler, tek seferlik bloklar, önümüzdeki 4 haftanın blokları |
 
 ## Bugün (ikinci ekran yerleşimi)
@@ -94,7 +94,7 @@ Geniş ekranda tek sayfa, kaydırma yok:
 - **Gece** büyük saat ve "Yarın ilk iş: …"; **geri dönüş** "Kaldığın yerden devam", günün üç işi ve Başla. İkisinde de ekran sakindir: sıradakiler, "vakit kalırsa", günün şeridi, sabit bloklar ve uyarılar gösterilmez.
 - Alt satırda **X dk'm var** (`X`) ve **Yeniden planla** (`R`); Yeniden planla günün üç işinin bitmiş olanlarını tutar, kalanını yeniden seçer (yapay zeka açıkken 7. adımda `replan`).
 - **TopBar:** tarih ve saat, "Bugün n/3", bitiş çizgisi, hayat modu (Hafta'ya bağlantı), telefonda bağlam seçici (cihazda saklanır).
-- **DayStrip:** günün başından bitiş çizgisine şerit; sabit bloklar gri, atanan işler modül rengiyle, şimdiki an çizgisi. Telefonda yana kayar.
+- **DayStrip:** günün başından bitiş çizgisine şerit; sabit bloklar gri, atanan işler işin rengiyle (Ç3e'den beri bölümün rengi; "Renkler ve bölümler"), şimdiki an çizgisi. Telefonda yana kayar.
 - **AlertBar:** en çok iki uyarı; son tarih ve taban uyarısında "Haftaya bak", öbürlerinde "Modüle git".
 
 **Görüşün gerek:** Durdur ve Bugün bitenler'in kalması; 30 dakikalık cevap süresi; uyarı eylemlerinin bağlantı olması; bağlam seçicinin gün değişince sorulmaması (yalnızca seçilir).
@@ -154,6 +154,17 @@ Cihaz anahtarları (`docs/02-mimari.md`, "Cihaz anahtarları ve giriş ucu"). B�
 - **Liste:** en yeni üstte; ad, anahtarın ilk 8 karakteri, uçların adları, "Son kullanım: …" ya da "Henüz kullanılmadı"; iptal edilmiş anahtar soluk ve "İptal edildi: …". "İptal et" iki dokunuştur ("Evet, iptal et" ya da "Vazgeç"). Son kullanım canlı güncellenir.
 - **Görüşün gerek:** bölümün yeri, metinler, iptaldeki onay adımı, adreslerin ekranda gösterilmesi.
 - **Görüşün gerek:** Günaydın ve akşam ekranlarının içeriği ve metinleri; "Biraz önce" ve "geç yatacağım" seçenekleri; üst şeritteki gösterim; zaman çizelgesindeki bölümlerin görünüşü; Hafta'daki satır.
+
+### Renkler ve bölümler (Ç3e)
+
+Bir iş ekranda modülünün değil, bölümünün rengiyle görünür (`docs/06-modul-sozlesmesi.md`, "Bölümler"). Renk tek yardımcıdan gelir: kullanıcının bölüm rengi → bölümün varsayılanı → kullanıcının modül rengi → modülün varsayılanı. Bölümü olmayan modülde her şey eskisi gibidir.
+
+- **İşin rengini (çözülmüş rengi) kullanan yerler:** zaman çizelgesi (şerit ve yol), Şimdi kartı (sahnenin şeridi dahil), Sıradakiler, "Vakit kalırsa", Günaydın ve akşam kartlarındaki iş, sahnenin çerçevesi ve `energy` tonu, Hafta'daki "Haftanın kalemleri", akşam kapanışındaki yarının taslağı, modül sayfasında Yaklaşanlar.
+- **Modülün rengini kullanan yerler** (modül düzeyi): modül çipleri, Hafta'daki kapasite çubuğu ve modül payları, modül listeleri (Modüller, Ayarlar → Modüller), modül sayfasının başlığı, hızlı girişteki ve gelen kutusundaki modül seçimi.
+- **Ayarlar → Modüller → <modül>:** sayfanın en üstünde "Renkler" bölümü. İlk satır modülün kendisi, altında her bölüm bir satır: renk noktası, ad, "Değiştir". "Değiştir" satırın altında seçiciyi açar: hazır paletin 12 rengi (dokununca kaydedilir), "Özel" (`#rrggbb` ya da sistemin renk seçicisi) ve renk varsayılanından farklıysa "Varsayılana dön". Hazır palet açık ve koyu temada zemine karşı en az 3:1 seçilir kalan renklerden oluşur; özel renk bunun altındaysa seçicide tek satır: "Bu renk açık ya da koyu temada zor seçilir." Kaydetmeye engel değildir. Değişiklik öbür cihaza canlı gider. Bölümü listeden çıkmış eski renkler saklanır ama gösterilmez.
+- **Palet:** kehribar `#d97706`, turuncu `#ea580c`, gül `#e11d48`, pembe `#db2777`, eflatun `#c026d3`, menekşe `#7c3aed`, lacivert `#4361d8`, mavi `#2563eb`, camgöbeği `#0891b2`, deniz yeşili `#0d9488`, yeşil `#16a34a`, kurşuni `#64748b`.
+- **Düzenleme formu:** bölümü olan modülün iş, kalem, oturum işi ve ritim formlarında başlığın hemen altında "Bölüm" seçimi: "Bölümsüz" ve modülün o anki bölümleri. İşin bölümü listeden çıkmışsa seçimde "<anahtar> (artık yok)" olarak durur. Oturum işinde "Bölümsüz" kalemin bölümünü devralır ("kalemin bölümü: Sabah"). Formdan seçilen bölüm kullanıcınındır; modülün sonraki teklifi ezmez.
+- **Görüşün gerek:** palet ve adları; seçicinin yeri (sayfanın üstü) ve satır yerleşimi; modül düzeyinde kalan yerler; formda bölüm seçiminin yeri (başlığın altı); uyarının eşiği (3:1) ve metni.
 
 ## Telefon
 

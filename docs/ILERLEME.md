@@ -4,9 +4,23 @@ Bu dosyayı Claude Code günceller. Yeni bir oturum yalnızca bu dosyayı ve `pr
 
 ## Durum
 
-- Faz: **Ç3d (Sunucu zemini) bitti** (13 Kas 2026, `c3d-tamam`; faz denetimi üç tur, üçü de GEÇTİ). Yayında (13 Kas): migration'lar `sherpa-dev` ve `sherpa-prod`'da, kod üretimde. Zamanlayıcının iki gizli değeri (Vercel `CRON_SECRET`, `sherpa-prod` Vault) seni bekliyor ("Senden bekleyenler" → Ç3d). Ç0–Ç3d yayında; D1–D4 tamamlandı
-- Adım: 5 (kapanış) bitti; yayın yapıldı, zamanlayıcının sırları bekliyor
-- Son commit: C3d: released (prod migrations, code); the scheduler's secrets wait for the user
+- Faz: **Ç3e (Modülün bölümleri) sürüyor** (13 Kas 2026). Ç3d bitti ve yayında (`c3d-tamam`); zamanlayıcının iki gizli değeri seni bekliyor ("Senden bekleyenler" → Ç3d)
+- Adım: 0 (tasarım dokümanlara işlendi) bitti; sırada 1 (veri ve zarf)
+- Son commit: C3e: section F in the numbered docs
+
+### Ç3e planı
+
+İstem `prompts/c3e-modul-bolumleri.md`, tasarım `docs/12` bölüm F; bağlayıcı hali `docs/06` ("Bölümler", zarfta `facet`, `SceneProps.facet`, oturum olaylarında `facet`), `docs/03` (zarf, dört tabloda `facet`, `modules.color` ve `facet_colors`), `docs/05` ("Renkler ve bölümler"). Her adımın sonunda `npm run check` (veri adımlarında `test:db`) ve commit; 1. ve 2. adımdan sonra denetçi (adım kipi). Geriye uyum: bölümü olmayan modülde hiçbir şey değişmez, önceki testler değişmeden geçer.
+
+| # | Adım | Durum |
+| --- | --- | --- |
+| 0 | Bölüm F numaralı dokümanlara işlendi (`docs/03`, `05`, `06`, `12`); `vercel.json` `fra1` ayrı commit'te (`docs/09`, `docs/11`) | bitti |
+| 1 | Veri ve zarf: migration (dört tabloda `facet`, `modules.facet_colors`), zarfın bölüm listesine karşı doğrulaması, oturum işinin kalemin bölümünü devralması, olgu alanı ve kullanıcı sahipliği; oturum olaylarında `facet` | bekliyor |
+| 2 | Sözleşme: `facets`, `ui.scenes`, kayıtta ve hesaplamada denetim, bölüm listesinin bağlamla hesaplanıp veri değişince tazelenmesi | bekliyor |
+| 3 | Renk ve sahne: tek renk çözümleyici ve her yerde kullanılması (testle tutulur), bölüme göre sahne ve ton, `SceneProps.facet` | bekliyor |
+| 4 | Ayarlar ve form: modül ve bölüm renkleri (palet, özel, "varsayılana dön", okunurluk uyarısı), formda bölüm seçimi | bekliyor |
+| 5 | `deneme`: iki sabit bölüm (ayrı renk, sahne, ton) ve verisinden dinamik bölümler; örnek veride bölümlü işler | bekliyor |
+| 6 | Kapanış: uçtan uca testler, ekran görüntüleri (`docs/ekran-goruntuleri/c3e/`), `check:full`, faz denetimi, rapor, `c3e-tamam`, yayın | bekliyor |
 
 ### Ç3d planı
 

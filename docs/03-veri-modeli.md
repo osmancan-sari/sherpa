@@ -33,6 +33,7 @@ Modüller çekirdek tablolara doğrudan yazmaz; çekirdeğe **iş zarfı** tekli
   "effort": { "total_minutes": null, "session_minutes": null, "bounds": { "min": 120, "max": 600 } },
   "fit": { "energy": "deep", "context": "desk" },
   "timing": null,
+  "facet": null,
   "importance": 4,
   "depends_on": [],
   "flex": { "splittable": true, "droppable": false },
@@ -50,6 +51,7 @@ Modüller çekirdek tablolara doğrudan yazmaz; çekirdeğe **iş zarfı** tekli
 - `source.id` modülün kendi kaydının kimliğidir (`uuid`).
 - `artifact` kalemin çıktısına bağlantıdır (dosya yolu ya da adres).
 - `timing` işin ne zaman yapılabileceğini kısıtlar (aşağıda "Zaman kısıtları"). Boşsa kısıt yoktur.
+- `facet` (Ç3e) modülün bölümünün anahtarıdır (rutinde `sabah`, Okul'da bir ders); yalnızca bölümü olan modül verir ve teklif anında modülün bölüm listesinde olmalıdır. Üç biçimde de yazılır (`work_items.facet`, `rhythms.facet`, `blocks.facet`). Olgu alanıdır; kullanıcının formdan değiştirdiği ezilmez. Planlayıcı okumaz; yalnızca rengi ve sahneyi belirler (`docs/06-modul-sozlesmesi.md`, "Bölümler").
 
 ### Zaman kısıtları (`timing`, Ç3b)
 
@@ -117,7 +119,8 @@ status enum(active, paused, archived)
 area_id uuid null -> areas
 weight numeric default 1      -- planlayıcıdaki önem çarpanı
 weekly_floor_minutes int default 0   -- haftalık taban; Yoğun modda küçülür ama sıfırlanmaz
-color text
+color text                    -- #rrggbb. Kurulumda tanımdan kopyalanır; sonra kullanıcınındır (Ayarlar → Modüller, Ç3e)
+facet_colors jsonb default '{}'   -- Ç3e: kullanıcının bölüm renkleri { "sabah": "#d97706" }; anahtarı olmayan bölüm kendi varsayılanıyla
 starts_on date null, ends_on date null, end_condition text null
 mode_behavior jsonb           -- { normal:{...}, busy:{...}, minimum:{...}, holiday:{...} }
 settings jsonb
@@ -144,6 +147,7 @@ depends_on uuid[] default '{}'
 depends_on_keys text[] default '{}'    -- zarftaki bağımlılık anahtarları; depends_on bunların kayda çözülmüş hali
 splittable boolean default true, droppable boolean default false
 timing jsonb null                      -- zaman kısıtları (yukarıda "Zaman kısıtları"); boşsa kısıt yok
+facet text null                        -- Ç3e: modülün bölümü (zarfın `facet`'i)
 artifact_url text null
 provenance jsonb default '{}'          -- { "effort_total_minutes": "ai", "due_at": "module", "importance": "user" }
 ai jsonb null                          -- yapay zekanın gerekçeleri ve güveni
@@ -181,6 +185,7 @@ ai jsonb null                 -- yapay zekanın koyduğu alanlar, güven ve gere
 done_at timestamptz null
 defer_count int default 0     -- "Ertele" ile kaç kez ertelendi; 3 olunca planlayıcı uyarır
 timing jsonb null             -- zaman kısıtları; boşsa bağlı olduğu kalemin değeri geçerlidir
+facet text null               -- Ç3e: bölüm; yalnızca kullanıcı formdan verir. Boşsa bağlı olduğu kalemin bölümü geçerlidir
 ```
 90 dakikadan uzun iş kaydedilemez; arayüz iş kalemine çevirmeyi önerir (toplam efor + oturumlar).
 
@@ -199,6 +204,7 @@ context enum(any, desk, home, campus, office, out, commute)
 active boolean default true
 mode_targets jsonb null       -- { busy: 1, minimum: 0, holiday: 0 } gibi mod başına hedef
 timing jsonb null             -- zaman kısıtları; `rest_days` yalnızca burada anlamlıdır
+facet text null               -- Ç3e: modülün bölümü
 provenance jsonb default '{}'
 source_type text null, source_id uuid null
 meta jsonb default '{}'
@@ -241,6 +247,7 @@ location text null
 travel_before_min int default 0, travel_after_min int default 0
 day_type enum(home, office, campus) null   -- seriden kopyalanır; günün tipini belirler
 status enum(planned, cancelled, done) default planned
+facet text null               -- Ç3e: modülün bölümü (zarfın `fixed` biçimi)
 provenance jsonb default '{}' -- kullanıcının elle değiştirdiği alanlar
 source_type text null, source_id uuid null
 unique (series_id, occurrence_on)

@@ -26,7 +26,7 @@ Neden: kullanıcı rutin modülünde sabah için güneşli, akşam için gece te
 
 ## İlk iş: tasarımı numaralı dokümanlara işle
 
-Bölüm F'yi ilgili dokümanlara işle ve tek commit'te kaydet: `docs/06` (`facets`, `ModuleFacet`, `ui.scenes`, `SceneProps.facet`, olay yüklerinde `facet`), `docs/03` (zarfta `facet`, dört tabloda sütun, `modules.facet_colors`, `modules.color`'ın artık kullanıcıya ait olması), `docs/05` (renk çözümleyicinin kullanıldığı yerler, Ayarlar'daki renk seçici, formda bölüm seçimi), `docs/12` (durum satırı). Çalışma ağacında commit edilmemiş doküman değişikliği varsa (kullanıcının ya da tasarım sohbetinin) onları da bu commit'e kat.
+Bölüm F'yi ilgili dokümanlara işle ve tek commit'te kaydet: `docs/06` (`facets`, `ModuleFacet`, `ui.scenes`, `SceneProps.facet`, olay yüklerinde `facet`), `docs/03` (zarfta `facet`, dört tabloda sütun, `modules.facet_colors`, `modules.color`'ın artık kullanıcıya ait olması), `docs/05` (renk çözümleyicinin kullanıldığı yerler, Ayarlar'daki renk seçici, formda bölüm seçimi), `docs/12` (durum satırı). Çalışma ağacında commit edilmemiş doküman değişikliği varsa (kullanıcının ya da tasarım sohbetinin) onları da bu commit'e kat. Ayrıca `vercel.json` içindeki `"regions": ["fra1"]` satırı tasarım sohbetinden gelir: Vercel fonksiyonları varsayılan olarak Washington'da (`iad1`) çalışıyordu, veritabanı ise Frankfurt'ta; her sorgu Atlantik'i iki kez geçiyordu. Bunu ayrı bir commit'te kaydet, `docs/11-yayin-ve-cihazlar.md` ve `docs/09-kararlar.md` içine tek satırla işle ve yayından sonra fonksiyonların `fra1`'de çalıştığını yayın özetinden doğrula.
 
 ## Önerilen sıra
 
