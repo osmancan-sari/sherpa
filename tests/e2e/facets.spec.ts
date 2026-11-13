@@ -279,5 +279,8 @@ test("export holds the facets and the colours", async ({ page }) => {
   expect(body.tables.tasks.find((row) => row.title === "Akşam notu")).toMatchObject({
     facet: "aksam",
   });
-  expect(body.tables.deneme_items[0]).toMatchObject({ facet: "sabah" });
+  const byTitle = (table: string, title: string) =>
+    body.tables[table].find((row) => row.title === title);
+  expect(byTitle("deneme_items", "Sabah yürüyüşü")).toMatchObject({ facet: "sabah" });
+  expect(byTitle("deneme_items", "Akşam esnemesi")).toMatchObject({ facet: "aksam" });
 });
