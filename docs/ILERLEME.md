@@ -5,7 +5,7 @@ Bu dosyayı Claude Code günceller. Yeni bir oturum yalnızca bu dosyayı ve `pr
 ## Durum
 
 - Faz: **Ç3e (Modülün bölümleri) sürüyor** (13 Kas 2026). Ç3d bitti ve yayında (`c3d-tamam`); zamanlayıcının iki gizli değeri seni bekliyor ("Senden bekleyenler" → Ç3d)
-- Adım: 6 (kapanış): `check:full` yeşil, rapor yazıldı; faz denetimi sürüyor
+- Adım: 6 (kapanış): `check:full` yeşil, rapor yazıldı; faz denetimi 1. tur GEÇTİ, 2. tur sürüyor
 - Son commit: C3e steps 1-2 audit fixes
 
 ### Ç3e planı
@@ -367,7 +367,7 @@ Bir modül kendini bölümlere ayırabilir: aynı veri ve sayfa, ana ekranda ayr
 | Oturum olayları `facet`'i taşıyor; dışa aktarım yeni sütunları ve renkleri içeriyor | Sağlandı | `tests/db/facets.test.ts` (başladı ve bitti yüklerinde, oturum işi, ritim, bölümsüz `null`), `facets.spec.ts` (dışa aktarımda `facet`, `facet_colors`, `deneme_items.facet`) |
 | Planlayıcının çıktısı bölümden bağımsız | Sağlandı | `src/core/planner/facets.test.ts` (aynı girdi bölümlerle ve bölümsüz: aynı yuvalar, üçlü, durum, puanlar, uyarılar) |
 
-Testler: 462 birim, 269 veritabanı, 189 uçtan uca (`npm run check:full` yeşil, 13 Kas 16:48; yerel veritabanı migration'lardan sıfırdan kuruldu). Ekran görüntüleri `docs/ekran-goruntuleri/c3e/` (yeni: `bugun-bolumler`, `modul-deneme-bolumler`, `ayarlar-renkler`, `bugun-sahne-sabah`, `bugun-sahne-aksam`; pano ve telefon, koyu ve açık). Baktıklarım: dört yeni ekran iki temada; palet açık temada da seçiliyor; modül sayfasında bölümlü ritmin modül renginde göründüğünü görüp düzelttim (satır yalnızca kimliği taşıyordu; `facetKeyOf` ritmi kimliğinden bulur, testli).
+Testler: 462 birim, 269 veritabanı, 189 uçtan uca (ekran görüntüleriyle; görüntüsüz koşu 179) (`npm run check:full` yeşil, 13 Kas 17:15, `SHERPA_SHOTS=c3e`; yerel veritabanı migration'lardan sıfırdan kuruldu). Ekran görüntüleri `docs/ekran-goruntuleri/c3e/` (yeni: `bugun-bolumler`, `modul-deneme-bolumler`, `ayarlar-renkler`, `bugun-sahne-sabah`, `bugun-sahne-aksam`; pano ve telefon, koyu ve açık). Baktıklarım: dört yeni ekran iki temada; palet açık temada da seçiliyor; modül sayfasında bölümlü ritmin modül renginde göründüğünü görüp düzelttim (satır yalnızca kimliği taşıyordu; `facetKeyOf` ritmi kimliğinden bulur, testli).
 
 **Sonraki adımlar ve ilk gerçek modül (rutin) için: bölüm sözleşmesinde eksik ya da zor bulduklarım**
 
@@ -381,7 +381,9 @@ Testler: 462 birim, 269 veritabanı, 189 uçtan uca (`npm run check:full` yeşil
 
 **Denetim**
 
-(faz denetimi aşağıda yazılacak)
+- Adım denetimi (1–2: veri, zarf, sözleşme): GEÇTİ, 2 önemli (hatalı yeniden hesaplamada eski liste kullanılıyordu; ekran tarafının testi yoktu), 7 not; hepsi düzeltildi ya da kayda geçti (yukarıda plan, 2. satır).
+- Faz denetimi, 1. tur (`2f0f698`): GEÇTİ, `check:full` denetçide de yeşil (462 / 269 / 179). Önemli: modül sayfasının ekran görüntüsü düzeltmeden önce çekilmişti (bölümlü ritim mor görünüyordu); görüntüler yeniden üretildi ve bakıldı. Notlar: (2) `setFacetColor` okuyup birleştirip yazar, iki cihazdan aynı anda iki bölümün rengi değişirse biri kaybolabilir: tek kullanıcı, olasılık düşük, açık bırakıldı ("Bilinen sorunlar"); (3) uçtan uca sayısının görüntülü koşudan geldiği yazıldı; (4) dışa aktarım testi `tasks`'ta kendi sahte nesnesini sınayabiliyordu: artık kullanıcının bölüme koyduğu bir işi başlığıyla arar; (5) bölümün sahnesi hayır deyince ton yine bölümünkidir: `docs/06` 6. kurala eklendi; (6) `deneme`'de konu renkleri sıradan verilir, bir konu kapanınca sonrakilerin rengi kayar: yalnızca sınama modülü, gerçek modül rengi anahtardan türetmeli (yukarıdaki notlara bakınız); (7) bölüm testleri pano genişliğinde koşar, telefon görüntülerle.
+
 
 ### Ç3d: Sunucu zemini (12–13 Kas 2026)
 
@@ -1013,6 +1015,8 @@ Süre sapmasındaki artış çoğunlukla `enrich`'in kendi tahminlerinin çalı�
 | 11 Kas 2026 | D1: giriş kodu bulutta Resend SMTP ile gider (gönderen `onboarding@resend.dev`, ad "Sherpa"); SMTP yalnızca `[remotes.*]` bloklarında, yerel Mailpit'te kalır; bulutta saatte en çok 10 kod e-postası. Alan adı doğrulanmadığı için Resend yalnızca hesabın kendi adresine gönderir; `ALLOWED_EMAIL` o adres olmalı | Ücretsiz katman hazır göndericiyle şablon değiştirmeye izin vermiyordu; hazır sınır (saatte 2) iki cihazda giriş için dar | `supabase/config.toml`, `docs/11-yayin-ve-cihazlar.md` |
 
 ## Bilinen sorunlar
+
+- Ç3e: `setFacetColor` (bölüm rengi) satırı okuyup birleştirip yazar; iki cihazda aynı anda iki ayrı bölümün rengi değiştirilirse biri kaybolabilir. Tek kullanıcıda olasılık düşük; gerekirse jsonb birleştiren tek bir veritabanı fonksiyonu.
 
 - Ç3d: uçtan uca testler İstanbul saatiyle 22:30–24:00 arasında başlamaz (`playwright.config.ts`). Test hesabının günü 23:59'da biter; testlerin çoğu veriyi gerçek saate göre yazar ve oturumların zamanını sunucu damgalar, bu yüzden günün son saatinde eklenen işler sığmaz. Kalıcı çözüm Ç4: her test kendi saatini tutsun ve veriyi o saate göre yazsın (`roomInTheDay` bir başlangıç). Faz betiği `check:full`'ü bu saatte koşarsa kırmızı görür ve etiketi siler; ileti nedenini söyler.
 
