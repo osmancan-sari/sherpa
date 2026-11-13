@@ -35,7 +35,6 @@ function fakeProvider(options: { available?: boolean; refuse?: boolean } = {}) {
         settle();
       }
     },
-    unlock() {},
   };
   return { provider, said, cut };
 }

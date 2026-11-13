@@ -16,8 +16,6 @@ export interface VoiceProvider {
   speak(text: string, options: SpeakOptions): Promise<void>;
   /** Stops what is being said. */
   cancel(): void;
-  /** Called inside a tap: lets a strict browser (iOS) speak later. */
-  unlock(): void;
 }
 
 /** Per device (docs/05-arayuz.md, "Ayarlar → Sesli anlatım"). */

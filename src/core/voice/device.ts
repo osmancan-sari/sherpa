@@ -3,6 +3,11 @@ import type { SpeakOptions, VoiceOption, VoiceProvider } from "./types";
 // The device's own speech (the Web Speech API): free and offline. Browsers refuse it until the
 // page has had a tap (Chrome, since M71) and iOS wants the first utterance inside a tap; a
 // refusal is silent here (docs/06-modul-sozlesmesi.md, "Sesli anlatım").
+//
+// Nothing here speaks on its own: no warm-up, no empty or silent utterance. The engine is only
+// ever given what a `say()` asked for. (Until 13 Nov 2026 the first tap spoke an empty utterance
+// at volume 0 to unlock iOS; Chrome's network voices ignore the volume, and a short sound came
+// out now and then, even with the voice switched off.)
 
 const TURKISH = /^tr\b|^tr-/i;
 
@@ -47,15 +52,8 @@ export const deviceVoice: VoiceProvider = {
   },
 
   cancel() {
-    synth()?.cancel();
-  },
-
-  unlock() {
     const speech = synth();
-    if (!speech) return;
-    // An empty utterance inside the tap: a strict browser lets later ones through.
-    const utterance = new SpeechSynthesisUtterance("");
-    utterance.volume = 0;
-    speech.speak(utterance);
+    // Only when there is something to stop: cancelling an idle engine is a call for nothing.
+    if (speech && (speech.speaking || speech.pending)) speech.cancel();
   },
 };

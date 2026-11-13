@@ -4,7 +4,7 @@ Bu dosyayı Claude Code günceller. Yeni bir oturum yalnızca bu dosyayı ve `pr
 
 ## Durum
 
-- Faz: **Ç3e (Modülün bölümleri) bitti** (13 Kas 2026, `c3e-tamam`; faz denetimi iki tur, ikisi de GEÇTİ). Yayın senin onayını bekliyor ("Senden bekleyenler" → Ç3e). Ç3d yayında ve zamanlayıcısı kurulu (13 Kas; `job_runs` kontrolü sende)
+- Faz: **Ç3e (Modülün bölümleri) bitti** (13 Kas 2026, `c3e-tamam`; faz denetimi iki tur, ikisi de GEÇTİ). Yayında (13 Kas: migration'lar `sherpa-dev` ve `sherpa-prod`'da, kod üretimde, fonksiyonlar `fra1`'de). Ç3d yayında ve zamanlayıcısı kurulu (13 Kas; `job_runs` kontrolü sende)
 - Adım: 6 (kapanış) bitti; `sherpa-dev`'e migration'lar ve yayın senin onayınla
 - Son commit: C3e: phase report, tag
 
@@ -611,8 +611,8 @@ Sıra:
 1. ~~`sherpa-dev`~~: **yapıldı** (13 Kas, senin izninle; yalnızca bu iki migration).
 2. ~~`sherpa-prod`'da bozuk modül rengi~~: **bakıldı** (13 Kas): `modules` tablosunda satır yok (gerçek modül kurulmadı), düzeltilecek bir şey yok.
 3. ~~`sherpa-prod` migration'ları~~: **yapıldı** (13 Kas; deneme çalıştırması yalnızca bu iki migration'ı gösterdi, gönderimi sen yaptın; sonra deneme çalıştırması "up to date").
-4. `git push origin main`, sonra `git push origin c3e-tamam`.
-5. Yayından sonra: `npx vercel inspect <yayın adresi>` ya da Vercel'deki yayın özetinde fonksiyonların bölgesi `fra1` olmalı (`vercel.json`, `regions`). Bunu ben yaparım ve sonucu buraya yazarım.
+4. ~~`git push origin main`, `git push origin c3e-tamam`~~: **yapıldı** (13 Kas, senin izninle).
+5. ~~Fonksiyonların bölgesi~~: **doğrulandı** (13 Kas): yayın özetinde (`vercel inspect`, `dpl_JA3d8GXZfhizWSQmsfxh5Do1r6ja`) bütün fonksiyonlar `[fra1]`; üretime canlı istek `X-Vercel-Id: fra1::fra1::…` (kenar ve fonksiyon Frankfurt'ta).
 6. Üretimde Ayarlar → Modüller → <modül>'de "Renkler" bölümüne bak: modülün rengi ve "Varsayılana dön". Gerçek modüllerde henüz bölüm yok.
 
 **Görüşün gerek** satırları: palet ve adları, renk seçicinin yeri ve satırları, formdaki "Bölüm"ün yeri, modül düzeyinde kalan yerler, okunurluk uyarısının eşiği ve metni, satırlara eklenen bölüm adı ve modül sayfasındaki renk noktaları. Hepsi "Verdiğim kararlar"da (13 Kas, Ç3e).
@@ -819,6 +819,7 @@ Süre sapmasındaki artış çoğunlukla `enrich`'in kendi tahminlerinin çalı�
 
 | Tarih | Karar | Gerekçe | Etkilediği dosyalar |
 | --- | --- | --- | --- |
+| 13 Kas 2026 | Yayından sonra hata: uygulama Chrome'da açıkken arada bir kısa "se" sesi. Neden: Ç3c'nin `VoiceProvider`'ı sayfanın ilk dokunuşunda ve ilk tuşunda iOS için boş, sesi 0 bir anlatım konuşturuyordu (`deviceVoice.unlock`); bu yol "Sesli anlatım açık" ayarına bakmıyordu (kapatmak işe yaramıyordu), Chrome'un ağ sesleri ("Google Türkçe") ses düzeyini yok sayar ve boş anlatım motorun kuyruğunda kalıp sonra kısa bir ses olarak çıkabilir. Düzeltme: ısındırma tamamen kaldırıldı (`VoiceProvider.unlock` arayüzden de); motor yalnızca `say` ile istenene dokunur; boşta `cancel` çağrılmaz; sayfa kapanınca (`pagehide`) kuyruk boşaltılır. Bedeli: iOS'ta dokunuşsuz ilk anlatım reddedilebilir (sessiz). Sesi kulakla doğrulayamadım; neden koddan. **Test değişikliği:** `voice.test.ts`'in sahte sağlayıcısından `unlock` çıktı (arayüzde yok); yeni `tests/e2e/voice.spec.ts`: dokunuş, tuş, sayfa değişimi ve 10 dakika açık kalma motora tek çağrı göndermez (boş olanlar dahil sayılır; sahne testlerinin kaydedicisi boş anlatımı saymadığı için hata görünmemişti), ayar kapalıyken "Dene" sessiz ve yeniden yüklemede kapalı kalır, açıkken iki cümle söyler | Kural: anlatım yalnızca bir modül `say()` çağırınca konuşur | `src/core/voice/`, `tests/e2e/voice.spec.ts`, `docs/06` |
 | 13 Kas 2026 | Ç3e: bölüm listesi kayıtta değil, her hesaplandığında denetlenir (`checkedFacets`: anahtar biçimi ve tekilliği, `#rrggbb`, `ui.scenes`'te olmayan sahne, ton). Kayıt `ui.scenes`'i ve `facets`'in işlev olmasını denetler. Liste teklif anında bağlamla yeniden hesaplanır; bozuk liste teklifi reddettirir, ekranda yok sayılır (renk modülünkine döner) | Liste modülün verisinden gelir (her ders), kayıt anında bilinemez; istem "kayıtta doğrulama" diyordu, yorumum `docs/06` "Bölümler" 2. kuralda | `src/core/contract/facets.ts`, `registry.ts`, `src/core/data/context.ts` |
 | 13 Kas 2026 | Ç3e: bölümü olmayan modülün tekliflerinde `facet` sütunu hiç yazılmaz, `changed`'de görünmez; bölümü olan modülde olgu alanıdır (boş gelince kalkar). Oturum işi bölümü saklamaz; okurken kendi değeri, yoksa kaleminki (`taskFacet`); modüller oturum işi teklif etmediği için `tasks.facet`'i yalnızca kullanıcı yazar | Geriye uyum: önceki testler `changed`'i birebir karşılaştırıyor; kalemin bölümü değişince açık oturum işleri kendiliğinden izler, tetikleyici gerekmez | `envelope.ts`, `propose.ts`, `session-events.ts` |
 | 13 Kas 2026 | Ç3e: `modules.color` biçim denetimi `not valid` (eski satırlar şimdi denetlenmez, güncellenince denetlenir); `facet_colors` anahtarları ve değerleri veritabanında denetlenir (`valid_facet_colors`). Bölüm rengi değişikliği satırı okuyup birleştirerek yazar | Üretimdeki eski satırlar tanımdan gelir; yayından önce `prod`'da bakılacak | `20261113130137_facets.sql`, `module-rows.ts` |
