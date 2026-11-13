@@ -51,8 +51,9 @@ alter table public.modules
   add column facet_colors jsonb not null default '{}'::jsonb
     check (public.valid_facet_colors(facet_colors));
 
--- The module's colour is the user's now: whatever is written must still be a colour. Rows made
--- before this are not re-checked (every one came from a definition or the sample data).
+-- The module's colour is the user's now: whatever is written must still be a colour. `not valid`:
+-- rows made before this are not checked now (every one came from a definition, which the
+-- registry checks, or the sample data), but any later update of such a row must pass it.
 alter table public.modules
   add constraint modules_color_hex check (color ~ '^#[0-9a-fA-F]{6}$') not valid;
 

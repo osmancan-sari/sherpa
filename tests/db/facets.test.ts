@@ -189,6 +189,8 @@ describe("the envelope's facet", () => {
     );
     // Proposing the old one again with the gone key is refused; without it, it clears.
     await expect(ctx.propose(item({ facet: "aksam" }))).rejects.toThrow(/aksam/);
+    expect((await ctx.propose(item())).changed).toEqual(["facet"]);
+    expect(ok(await db.from("work_items").select("facet").eq("id", id).single()).facet).toBeNull();
   });
 
   it("a broken facet list refuses the proposal and says what is wrong", async () => {

@@ -5,8 +5,8 @@ Bu dosyayı Claude Code günceller. Yeni bir oturum yalnızca bu dosyayı ve `pr
 ## Durum
 
 - Faz: **Ç3e (Modülün bölümleri) sürüyor** (13 Kas 2026). Ç3d bitti ve yayında (`c3d-tamam`); zamanlayıcının iki gizli değeri seni bekliyor ("Senden bekleyenler" → Ç3d)
-- Adım: 0 (tasarım dokümanlara işlendi) bitti; sırada 1 (veri ve zarf)
-- Son commit: C3e: section F in the numbered docs
+- Adım: 1 ve 2 bitti (adım denetimi GEÇTİ, düzeltmeler yapıldı); sırada 3 (renk ve sahne)
+- Son commit: C3e steps 1-2 audit fixes
 
 ### Ç3e planı
 
@@ -16,11 +16,11 @@ Bu dosyayı Claude Code günceller. Yeni bir oturum yalnızca bu dosyayı ve `pr
 | --- | --- | --- |
 | 0 | Bölüm F numaralı dokümanlara işlendi (`docs/03`, `05`, `06`, `12`); `vercel.json` `fra1` ayrı commit'te (`docs/09`, `docs/11`) | bitti |
 | 1 | Veri ve zarf: migration (dört tabloda `facet`, `modules.facet_colors`), zarfın bölüm listesine karşı doğrulaması, oturum işinin kalemin bölümünü devralması, olgu alanı ve kullanıcı sahipliği; oturum olaylarında `facet` | bitti (`20261113130137_facets.sql`: `is_facet_key`, `valid_facet_colors`, `modules.color` biçim denetimi `not valid`): `src/core/contract/facets.ts` (`facetProblems`, `computeFacets`, `facetIssue`, `taskFacet`), zarfta `facet` (`parseProposal(input, facets)`, `incomingFields(…, { withFacet })`), `propose(db, mod, input, facets)`, bağlam teklif anında listeyi kendisiyle hesaplar, `session-events.ts` yükte `facet`, `updateWorkItem`/`updateRhythm` `facet`'i kullanıcının yapar. Oturum işi bölümü saklamaz, okurken kalemden alır. Testler: `facets.test.ts` (birim) 9, `tests/db/facets.test.ts` 11 |
-| 2 | Sözleşme: `facets`, `ui.scenes`, kayıtta ve hesaplamada denetim, bölüm listesinin bağlamla hesaplanıp veri değişince tazelenmesi | bitti: kayıt `ui.scenes`'i ve `facets`'in işlev olmasını denetler; liste her hesaplandığında `checkedFacets`; `src/core/app/facets.ts` (`useFacets`: modül başına `["module", slug, "facets", updated_at]`, her veri değişiminde tazelenir; hata verirse liste yok sayılır), `src/core/contract/colors.ts` (`workColor`, `moduleColor`, palet, `readable`). Testler: `registry.test.ts` +2, `colors.test.ts` 7 |
+| 2 | Sözleşme: `facets`, `ui.scenes`, kayıtta ve hesaplamada denetim, bölüm listesinin bağlamla hesaplanıp veri değişince tazelenmesi | bitti: kayıt `ui.scenes`'i ve `facets`'in işlev olmasını denetler; liste her hesaplandığında `checkedFacets`; `src/core/app/facets.ts` (`useFacets`: modül başına `["module", slug, "facets", updated_at]`, her veri değişiminde tazelenir; hata verirse liste yok sayılır), `src/core/contract/colors.ts` (`workColor`, `moduleColor`, palet, `readable`). Testler: `registry.test.ts` +2, `colors.test.ts` 7. Adım denetimi (1–2): GEÇTİ, 2 önemli: (1) yeniden hesaplaması hata veren liste eski verisiyle kullanılıyordu (TanStack hatalı yeniden çekmede eski veriyi tutar): artık hata varken liste yok (`facetListOf`); (2) ekran tarafının testi yoktu: `src/core/app/facets.test.ts` 4 (liste, işin bölümü, renkler); ekranlarda canlı tazelenme 5. adımın uçtan uca testinde. Notlar: Durum satırı, bölümsüz yeniden teklifin bölümü kaldırmasının testi, migration yorumu (`not valid` sonraki güncellemede uygulanır), `docs/06`'da `facets`'in ucuz ve salt okuyan olması (her teklifte hesaplanır), renk değişince yeni anahtarda eski liste (`keepPreviousData`); "renk tek yerden" testi 3. adımda |
 | 3 | Renk ve sahne: tek renk çözümleyici ve her yerde kullanılması (testle tutulur), bölüme göre sahne ve ton, `SceneProps.facet` | bekliyor |
 | 4 | Ayarlar ve form: modül ve bölüm renkleri (palet, özel, "varsayılana dön", okunurluk uyarısı), formda bölüm seçimi | bekliyor |
 | 5 | `deneme`: iki sabit bölüm (ayrı renk, sahne, ton) ve verisinden dinamik bölümler; örnek veride bölümlü işler | bekliyor |
-| 6 | Kapanış: uçtan uca testler, ekran görüntüleri (`docs/ekran-goruntuleri/c3e/`), `check:full`, faz denetimi, rapor, `c3e-tamam`, yayın | bekliyor |
+| 6 | Kapanış: uçtan uca testler, ekran görüntüleri (`docs/ekran-goruntuleri/c3e/`), `check:full`, faz denetimi, rapor, `c3e-tamam`, yayın; yayından önce `prod`'da bozuk modül rengi var mı (`color !~ '^#[0-9a-fA-F]{6}$'`), yayından sonra fonksiyonların `fra1`'de çalıştığı yayın özetinden | bekliyor |
 
 ### Ç3d planı
 

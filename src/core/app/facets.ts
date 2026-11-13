@@ -1,6 +1,6 @@
 "use client";
 
-import { useQueries } from "@tanstack/react-query";
+import { keepPreviousData, useQueries } from "@tanstack/react-query";
 import { useMemo } from "react";
 import { facetColor, moduleColor, workColor } from "@/core/contract/colors";
 import { computeFacets, findFacet, taskFacet } from "@/core/contract/facets";
@@ -42,16 +42,29 @@ export function useFacets(): FacetLists {
         }
       },
       retry: false,
+      // A changed row (its colours) is a new key: keep the last list meanwhile, so work does
+      // not flash back to the module's colour.
+      placeholderData: keepPreviousData,
     })),
   });
-  // The same lists give the same map: screens memoise on it.
   const signature = JSON.stringify(
-    withFacets.map(({ row }, index) => [row.id, results[index]?.data ?? null]),
+    withFacets.map(({ row }, index) => [row.id, facetListOf(results[index])]),
   );
   return useMemo(() => {
     const entries = JSON.parse(signature) as [string, ModuleFacet[] | null][];
     return new Map(entries.filter((entry): entry is [string, ModuleFacet[]] => entry[1] !== null));
   }, [signature]);
+}
+
+/**
+ * The list a facet query gives the screens: none while it fails, even when an earlier
+ * computation succeeded (a failed refetch keeps its old data; docs/06 "Bölümler" rule 2).
+ */
+export function facetListOf(
+  result: { data?: ModuleFacet[] | null; isError: boolean } | undefined,
+): ModuleFacet[] | null {
+  if (!result || result.isError) return null;
+  return result.data ?? null;
 }
 
 /** The facet key of a piece of work: a sitting's own, else its work item's; a rhythm's own. */
