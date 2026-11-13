@@ -45,6 +45,10 @@ test("work in a facet has the facet's colour on the module page, the strip, the 
   await expect(dotOf(upcoming(page, "Akşam okuması"))).toHaveCSS("background-color", NAVY);
   await expect(dotOf(upcoming(page, "Bölümsüz iş"))).toHaveCSS("background-color", MODULE);
   await expect(upcoming(page, "Sabah yürüyüşü")).toContainText("Sabah");
+  // A rhythm in a facet too (the module page's rows carry only its id).
+  await addRecord(page, "Akşam esnemesi", { kind: "aliskanlik", facet: "aksam" });
+  await page.goto("/m/deneme");
+  await expect(dotOf(upcoming(page, "Akşam esnemesi"))).toHaveCSS("background-color", NAVY);
 
   // Today: the strip, and the card or the list, whichever each work is in.
   await page.goto("/");

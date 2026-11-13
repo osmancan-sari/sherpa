@@ -5,7 +5,7 @@ Bu dosyayı Claude Code günceller. Yeni bir oturum yalnızca bu dosyayı ve `pr
 ## Durum
 
 - Faz: **Ç3e (Modülün bölümleri) sürüyor** (13 Kas 2026). Ç3d bitti ve yayında (`c3d-tamam`); zamanlayıcının iki gizli değeri seni bekliyor ("Senden bekleyenler" → Ç3d)
-- Adım: 1 ve 2 bitti (adım denetimi GEÇTİ, düzeltmeler yapıldı); sırada 3 (renk ve sahne)
+- Adım: 6 (kapanış): `check:full` yeşil, rapor yazıldı; faz denetimi sürüyor
 - Son commit: C3e steps 1-2 audit fixes
 
 ### Ç3e planı
@@ -349,6 +349,39 @@ Faz denetimi:
 - **Tarih kutuları** test tarayıcısında İngilizce görünüyor (Hafta'daki hayat modu).
 - **Uçtan uca testler** gece de çalışabilsin diye hesabın günü 00:00–23:59 (`tests/e2e/data.ts`); bitiş çizgisi ya da gece sınayan test kendi saatini yazar. Bir önceki testin sunucudaki yapay zeka isteği sonraki testin hesabına düşebiliyor; giriş çağrılarını sayan testler yalnızca kendi türlerine bakıyor.
 - **Kapı süresi:** `check:full` yaklaşık 7 dakika (ekran görüntüleriyle 9).
+
+### Ç3e: Modülün bölümleri (13 Kas 2026)
+
+Bir modül kendini bölümlere ayırabilir: aynı veri ve sayfa, ana ekranda ayrı renk ve sahne. Modülün ve bölümlerin rengi kullanıcının. Tasarım `docs/12` bölüm F; bağlayıcı hali `docs/06` ("Bölümler", zarfta `facet`, `SceneProps.facet`, oturum olaylarında `facet`), `docs/03`, `docs/05` ("Renkler ve bölümler").
+
+**Kabul ölçütleri**
+
+| Ölçüt | Durum | Nasıl doğrulandı |
+| --- | --- | --- |
+| Bölümü olmayan modülde her şey Ç3c'deki gibi; önceki fazların testleri değiştirilmeden geçiyor | Sağlandı | Önceki test dosyalarına yalnızca ekleme yapıldı (`registry.test.ts`, `modules.test.ts`, `sync.spec.ts` yeni testler; `scene-helpers.ts`'e isteğe bağlı `facet`); hiçbir beklenti değişmedi. Bölümü olmayan modül `facet` yazmaz ve `changed`'de görmez (`tests/db/facets.test.ts`), rengi satırın rengidir (`colors.test.ts`) |
+| `deneme` iki sabit bölüm tanımlıyor; bölümlü işler zaman çizelgesinde, kartta, Sıradakiler'de, Hafta ekranında ve sahnenin çerçevesinde bölümün renginde | Sağlandı | `tests/e2e/facets.spec.ts` (modül sayfası, şerit, kart ve Sıradakiler, Hafta'nın kalemleri, sahnenin şeridi; çip modülün renginde), görüntüler `bugun-bolumler`, `modul-deneme-bolumler` |
+| Çalışan işin bölümüne göre sahne ve ton seçiliyor; bölümün sahnesi yoksa modülün sahnesi geliyor | Sağlandı | `facets.spec.ts` (Sabah → güneş, `energy`; Akşam → gece, `calm`; bölümsüz odak → modülün sahnesi, `focus`; konu bölümü → modülün sahnesi, konunun renginde), `facets.test.ts` (`chooseScene`, `sceneTone`), görüntüler `bugun-sahne-sabah`, `bugun-sahne-aksam` |
+| Verisinden üretilen dinamik bölüm listesi: kayıt eklenince liste ve renkler canlı tazeleniyor | Sağlandı | `sync.spec.ts` (Ç3e testi: başka yerden yazılan konu açık Ayarlar sayfasında yeniden yüklemeden bölüm olur), `facets.spec.ts`, `modules.test.ts` |
+| Zarf: bilinmeyen `facet` adıyla reddediliyor; oturum işi kalemin bölümünü devralıyor; kullanıcının formdan değiştirdiği bölüm ezilmiyor; listeden çıkan bölümün işi modülün rengiyle | Sağlandı | `tests/db/facets.test.ts` (ret iletisi, devralma ve olay yükü, `kept`, listeden çıkan anahtar korunur), `facets.spec.ts` (formdan seçim kullanıcının; konu silinince modülün rengi ve "(artık yok)") |
+| Ayarlar'da modülün ve bölümlerin rengi değişiyor, "varsayılana dön" çalışıyor; öbür cihazda canlı | Sağlandı | `facets.spec.ts` (palet, özel renk ve uyarı, iki "Varsayılana dön"), `sync.spec.ts` (masaüstünde değişen bölüm rengi telefonda yeniden yüklemeden), görüntü `ayarlar-renkler` (iki tema) |
+| Oturum olayları `facet`'i taşıyor; dışa aktarım yeni sütunları ve renkleri içeriyor | Sağlandı | `tests/db/facets.test.ts` (başladı ve bitti yüklerinde, oturum işi, ritim, bölümsüz `null`), `facets.spec.ts` (dışa aktarımda `facet`, `facet_colors`, `deneme_items.facet`) |
+| Planlayıcının çıktısı bölümden bağımsız | Sağlandı | `src/core/planner/facets.test.ts` (aynı girdi bölümlerle ve bölümsüz: aynı yuvalar, üçlü, durum, puanlar, uyarılar) |
+
+Testler: 462 birim, 269 veritabanı, 189 uçtan uca (`npm run check:full` yeşil, 13 Kas 16:48; yerel veritabanı migration'lardan sıfırdan kuruldu). Ekran görüntüleri `docs/ekran-goruntuleri/c3e/` (yeni: `bugun-bolumler`, `modul-deneme-bolumler`, `ayarlar-renkler`, `bugun-sahne-sabah`, `bugun-sahne-aksam`; pano ve telefon, koyu ve açık). Baktıklarım: dört yeni ekran iki temada; palet açık temada da seçiliyor; modül sayfasında bölümlü ritmin modül renginde göründüğünü görüp düzelttim (satır yalnızca kimliği taşıyordu; `facetKeyOf` ritmi kimliğinden bulur, testli).
+
+**Sonraki adımlar ve ilk gerçek modül (rutin) için: bölüm sözleşmesinde eksik ya da zor bulduklarım**
+
+- Sabah ve Akşam'ı bölüm olarak vermek kolay (`facets` sabit liste, `ui.scenes`); ama rutin "ritim" ile kurulacaksa adımlar (sahnedeki `StepRunner`) modülün tablosunda tutulmalı: bölüm sahneyi seçer, adım listesini değil. Sahne `subject`'ten kaydı bulup adımları okur (`deneme`'nin antrenmanı gibi).
+- Bölüm planlamaya girmez: sabah rutininin uyanışa bağlanması `timing.anchor: 'wake'` ile, akşamınki `'bed'` ile yapılır; bölüm ile çapa ayrı alanlar. İkisini birlikte yazmayı unutmak kolay (bölüm Sabah ama çapa yok: renk sabah, yeri gün içi).
+- `facets` her teklifte yeniden hesaplanır; veriden üretilen listede (Okul'un dersleri) tek sorgu olmalı. Rutin için sorun değil.
+- Kayıt girişinde bölüm seçimi modülün kendi `intake` alanıdır; çekirdek `FieldSpec` seçenekleri sabittir, veriden gelen bölümleri (dersler) seçtirmek için modül alanı kendisi kurmalı ya da iş formdaki "Bölüm"e bırakılmalı.
+- Blokların formu (Ayarlar → Bloklar) bölüm seçmez; modülün bloğu bölümünü tekliften alır. Elle eklenen bloğu bir derse bağlamak gerekirse ayrı karar.
+- Bölümün sahnesi `when` yanlış dönerse modülün varsayılan sahnesine düşülür; "bu bölümde sahne olmasın" demek için bölüme `scene` vermemek yetmez (varsayılan sahne yine gelebilir), varsayılan sahnenin `when`'i bölüme bakmalı.
+- Renk değişince (satır güncellenir) bölüm listesinin sorgu anahtarı değişir; eski liste yer tutar (`keepPreviousData`), göz kırpma yok.
+
+**Denetim**
+
+(faz denetimi aşağıda yazılacak)
 
 ### Ç3d: Sunucu zemini (12–13 Kas 2026)
 

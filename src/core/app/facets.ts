@@ -9,7 +9,7 @@ import { createModuleContext } from "@/core/data/context";
 import type { Candidate } from "@/core/planner";
 import type { Rhythm, Task, WorkItem } from "@/core/types";
 import { MODULE, useDb, useRegistry } from "./CoreProvider";
-import { type KnownModule, useModules, useWorkItems } from "./hooks";
+import { type KnownModule, useModules, useRhythms, useWorkItems } from "./hooks";
 
 // A module's facets on the screens (docs/06-modul-sozlesmesi.md, "Bölümler"; Ç3e): each list
 // is computed with the module's context, like its chip, and keyed under ["module", …] so every
@@ -67,10 +67,14 @@ export function facetListOf(
   return result.data ?? null;
 }
 
-/** The facet key of a piece of work: a sitting's own, else its work item's; a rhythm's own. */
+/**
+ * The facet key of a piece of work: a sitting's own, else its work item's; a rhythm's own. A
+ * rhythm row that carries only its id (the module page's list) is looked up in `rhythms`.
+ */
 export function facetKeyOf(
-  work: { task?: Task | null; item?: WorkItem | null; rhythm?: Rhythm | null },
+  work: WorkLike,
   workItems: readonly WorkItem[] = [],
+  rhythms: readonly Rhythm[] = [],
 ): string | null {
   if (work.task) {
     const item =
@@ -80,12 +84,19 @@ export function facetKeyOf(
   }
   if (work.item) return work.item.facet;
   if (work.rhythm) return work.rhythm.facet;
+  if (work.type === "rhythm" && work.id) {
+    return rhythms.find((row) => row.id === work.id)?.facet ?? null;
+  }
   return null;
 }
 
 /** A planner candidate's facet key. */
-export function candidateFacet(candidate: Candidate, workItems: readonly WorkItem[]) {
-  return facetKeyOf(candidate, workItems);
+export function candidateFacet(
+  candidate: Candidate,
+  workItems: readonly WorkItem[],
+  rhythms: readonly Rhythm[] = [],
+) {
+  return facetKeyOf(candidate, workItems, rhythms);
 }
 
 export type Colors = {
@@ -105,14 +116,24 @@ export type Colors = {
   lists: FacetLists;
 };
 
-type WorkLike = { task?: Task | null; item?: WorkItem | null; rhythm?: Rhythm | null };
+type WorkLike = {
+  type?: string;
+  id?: string;
+  task?: Task | null;
+  item?: WorkItem | null;
+  rhythm?: Rhythm | null;
+};
 
 /** The colour resolver with the rows and the facet lists of this screen. */
 export function useColors(): Colors {
   const { modules } = useModules();
   const lists = useFacets();
   const { data: workItems } = useWorkItems();
-  return useMemo(() => colorsOf(modules, lists, workItems ?? []), [modules, lists, workItems]);
+  const { data: rhythms } = useRhythms();
+  return useMemo(
+    () => colorsOf(modules, lists, workItems ?? [], rhythms ?? []),
+    [modules, lists, workItems, rhythms],
+  );
 }
 
 /** The resolver over given modules and lists (also for screens that already hold both). */
@@ -120,11 +141,13 @@ export function colorsOf(
   modules: readonly KnownModule[],
   lists: FacetLists,
   workItems: readonly WorkItem[] = [],
+  rhythms: readonly Rhythm[] = [],
 ): Colors {
   const byId = new Map(modules.map((mod) => [mod.row.id, mod]));
+  const keyOf = (work: WorkLike) => facetKeyOf(work, workItems, rhythms);
   const colors: Colors = {
-    of: (moduleId, work) => colors.work(moduleId, facetKeyOf(work, workItems)),
-    facetOf: (moduleId, work) => colors.facet(moduleId, facetKeyOf(work, workItems)),
+    of: (moduleId, work) => colors.work(moduleId, keyOf(work)),
+    facetOf: (moduleId, work) => colors.facet(moduleId, keyOf(work)),
     module: (moduleId) => moduleColor(moduleId ? byId.get(moduleId) : null),
     work: (moduleId, facetKey) =>
       workColor(

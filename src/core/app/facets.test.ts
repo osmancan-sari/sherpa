@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { ModuleFacet } from "@/core/contract/types";
-import { moduleRow, task, workItem } from "@/core/testing/factories";
+import { moduleRow, rhythm, task, workItem } from "@/core/testing/factories";
 import { colorsOf, facetKeyOf, facetListOf } from "./facets";
 
 // The screens' side of facets (docs/06-modul-sozlesmesi.md, "Bölümler"; Ç3e): which list a
@@ -28,6 +28,11 @@ describe("the facet of a piece of work", () => {
     expect(facetKeyOf({ task: sitting }, [])).toBeNull();
     expect(facetKeyOf({ item })).toBe("sabah");
     expect(facetKeyOf({})).toBeNull();
+    // A rhythm row that carries only its id (the module page's list) is looked up.
+    const walk = rhythm({ facet: "aksam" });
+    expect(facetKeyOf({ rhythm: walk })).toBe("aksam");
+    expect(facetKeyOf({ type: "rhythm", id: walk.id }, [], [walk])).toBe("aksam");
+    expect(facetKeyOf({ type: "rhythm", id: walk.id })).toBeNull();
   });
 });
 
