@@ -612,7 +612,8 @@ Sıra:
 2. ~~`sherpa-prod`'da bozuk modül rengi~~: **bakıldı** (13 Kas): `modules` tablosunda satır yok (gerçek modül kurulmadı), düzeltilecek bir şey yok.
 3. ~~`sherpa-prod` migration'ları~~: **yapıldı** (13 Kas; deneme çalıştırması yalnızca bu iki migration'ı gösterdi, gönderimi sen yaptın; sonra deneme çalıştırması "up to date").
 4. ~~`git push origin main`, `git push origin c3e-tamam`~~: **yapıldı** (13 Kas, senin izninle).
-5. ~~Fonksiyonların bölgesi~~: **doğrulandı** (13 Kas): yayın özetinde (`vercel inspect`, `dpl_JA3d8GXZfhizWSQmsfxh5Do1r6ja`) bütün fonksiyonlar `[fra1]`; üretime canlı istek `X-Vercel-Id: fra1::fra1::…` (kenar ve fonksiyon Frankfurt'ta).
+5. ~~Fonksiyonların bölgesi~~: **doğrulandı** (13 Kas): yayın özetinde (`vercel inspect`, `dpl_JA3d8GXZfhizWSQmsfxh5Do1r6ja`) bütün fonksiyonlar `[fra1]`; üretime canlı istek `X-Vercel-Id: fra1::fra1::…` (kenar ve fonksiyon Frankfurt'ta). Ses düzeltmesinden (`b3ab1e3`) sonraki yayın da (`dpl_ogsV3p447pMJVZFPKVpT33fprc6d`) `fra1`'de, üretim cevap veriyor.
+7. Senin denemen: Chrome'da uygulamayı birkaç dakika açık bırak; "se" sesi gelmemeli. Ayarlar → Sesli anlatım (bu cihaz) → "Sesli anlatım açık" kapalıyken "Dene" sessiz kalmalı. Sonucu buraya yaz.
 6. Üretimde Ayarlar → Modüller → <modül>'de "Renkler" bölümüne bak: modülün rengi ve "Varsayılana dön". Gerçek modüllerde henüz bölüm yok.
 
 **Görüşün gerek** satırları: palet ve adları, renk seçicinin yeri ve satırları, formdaki "Bölüm"ün yeri, modül düzeyinde kalan yerler, okunurluk uyarısının eşiği ve metni, satırlara eklenen bölüm adı ve modül sayfasındaki renk noktaları. Hepsi "Verdiğim kararlar"da (13 Kas, Ç3e).
