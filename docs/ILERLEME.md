@@ -608,7 +608,7 @@ Sonra Ç4 (Pano ve telefon cilası): yeni oturumda `docs/05-arayuz.md` ve `docs/
 
 Sıra:
 
-1. `sherpa-dev`: `npm run db:push` (bağlı proje `sherpa-dev`; izinle ben yaparım).
+1. `sherpa-dev`: deneme çalıştırması yalnızca bu iki migration'ı gösterdi (13 Kas); gönderimi otomatik mod engelledi. Terminalde `npm run db:push -- --yes` çalıştır (ya da bana izin ver).
 2. `sherpa-prod`'da bozuk modül rengi var mı (yeni denetim `not valid`, ama böyle bir satırın sonraki her güncellemesi reddedilir): Dashboard → SQL Editor'da `select slug, color from modules where color !~ '^#[0-9a-fA-F]{6}$';` boş dönmeli. Dönen satır varsa rengini Ayarlar'dan değiştirmeden önce bana söyle.
 3. `npx supabase db push --remote=jqqvfdjrkpxbklocsqvq --dry-run`: yalnızca bu iki migration görünmeli; sonra `--yes` (ya da bana izin ver).
 4. `git push origin main`, sonra `git push origin c3e-tamam`.
