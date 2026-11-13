@@ -1,5 +1,6 @@
 "use client";
 
+import { moduleColor } from "@/core/contract/colors";
 import { Plus } from "lucide-react";
 import {
   createContext,
@@ -368,7 +369,7 @@ function QuickAddDialog({
                 <Chip
                   key={row.id}
                   pressed={row.slug === moduleSlug}
-                  color={row.color}
+                  color={moduleColor({ row })}
                   onClick={() => selectModule(row.slug === moduleSlug ? null : row.slug)}
                 >
                   {row.name}

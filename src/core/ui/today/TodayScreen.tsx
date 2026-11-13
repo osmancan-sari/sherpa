@@ -19,7 +19,9 @@ import {
   useModules,
   useTodayPlan,
 } from "@/core/app/hooks";
+import { useColors } from "@/core/app/facets";
 import { useAnswerFollowUp, useDefer, useReplan, useStopForStuck } from "@/core/app/plan-actions";
+import { moduleColor } from "@/core/contract/colors";
 import type { ChipData, Health } from "@/core/contract/types";
 import { buildPlan, type Candidate, tomorrowInput } from "@/core/planner";
 import { blocksOfDay } from "@/core/today/select";
@@ -53,6 +55,7 @@ export function TodayScreen() {
 
 function TodayBody() {
   const { modules } = useModules();
+  const colors = useColors();
   const { input, plan, rows, loading, failed, retry, now } = useTodayPlan();
   const start = useStartSession();
   const end = useEndSession();
@@ -135,7 +138,14 @@ function TodayBody() {
   const sceneMod = running?.session.module_id
     ? moduleMap.get(running.session.module_id)
     : undefined;
-  const scene = running ? sceneFor(sceneMod, running, input.workItems) : null;
+  const scene = running
+    ? sceneFor(
+        sceneMod,
+        running,
+        input.workItems,
+        sceneMod ? (colors.lists.get(sceneMod.row.id) ?? null) : null,
+      )
+    : null;
   const sessionId = running?.session.id ?? null;
   if (
     running &&
@@ -154,6 +164,7 @@ function TodayBody() {
           state={running}
           scene={scene.scene}
           subject={scene.subject}
+          facet={scene.facet}
           brief={briefOf(input, plan, moduleMap)}
           onExit={() => setExitedScene(running.session.id)}
           onStuck={() => {
@@ -350,9 +361,11 @@ function CandidateRow({
   const logRhythm = useLogRhythm();
   const closeItem = useCloseWorkItem();
   const followUp = useAnswerFollowUp();
+  const colors = useColors();
+  const facet = colors.facetOf(candidate.moduleId, candidate);
 
   const parts = [
-    mod?.row.name,
+    facet ? `${mod?.row.name ?? ""} · ${facet.name}` : mod?.row.name,
     formatMinutes(candidate.minutes),
     travelText(candidate.travelBefore, candidate.travelAfter),
     candidate.progress,
@@ -370,8 +383,9 @@ function CandidateRow({
     <li className="flex items-center gap-3 px-4 py-3">
       <span
         aria-hidden
+        data-testid="work-dot"
         className="size-2.5 shrink-0 rounded-full"
-        style={{ backgroundColor: mod?.row.color ?? "var(--muted-foreground)" }}
+        style={{ backgroundColor: colors.of(candidate.moduleId, candidate) }}
       />
       <div className="min-w-0 flex-1">
         <p className="truncate font-medium">{candidate.title}</p>
@@ -542,7 +556,7 @@ export function ModuleChip({ mod }: { mod: KnownModule }) {
       <span
         aria-hidden
         className="size-2 rounded-full"
-        style={{ backgroundColor: mod.row.color }}
+        style={{ backgroundColor: moduleColor(mod) }}
       />
       <span className="font-medium">{mod.row.name}</span>
       {data?.text ? <span className="text-muted-foreground">· {data.text}</span> : null}

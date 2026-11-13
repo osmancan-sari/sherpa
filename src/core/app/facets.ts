@@ -9,7 +9,7 @@ import { createModuleContext } from "@/core/data/context";
 import type { Candidate } from "@/core/planner";
 import type { Rhythm, Task, WorkItem } from "@/core/types";
 import { MODULE, useDb, useRegistry } from "./CoreProvider";
-import { type KnownModule, useModules } from "./hooks";
+import { type KnownModule, useModules, useWorkItems } from "./hooks";
 
 // A module's facets on the screens (docs/06-modul-sozlesmesi.md, "Bölümler"; Ç3e): each list
 // is computed with the module's context, like its chip, and keyed under ["module", …] so every
@@ -98,20 +98,33 @@ export type Colors = {
     moduleId: string | null | undefined,
     facetKey: string | null | undefined,
   ) => (SceneProps["facet"] & { entry: ModuleFacet }) | null;
+  /** A piece of work as the screens hold it: a task (its item looked up), an item, a rhythm. */
+  of: (moduleId: string | null | undefined, work: WorkLike) => string;
+  /** The facet of a piece of work as the screens hold it. */
+  facetOf: (moduleId: string | null | undefined, work: WorkLike) => ReturnType<Colors["facet"]>;
   lists: FacetLists;
 };
+
+type WorkLike = { task?: Task | null; item?: WorkItem | null; rhythm?: Rhythm | null };
 
 /** The colour resolver with the rows and the facet lists of this screen. */
 export function useColors(): Colors {
   const { modules } = useModules();
   const lists = useFacets();
-  return useMemo(() => colorsOf(modules, lists), [modules, lists]);
+  const { data: workItems } = useWorkItems();
+  return useMemo(() => colorsOf(modules, lists, workItems ?? []), [modules, lists, workItems]);
 }
 
 /** The resolver over given modules and lists (also for screens that already hold both). */
-export function colorsOf(modules: readonly KnownModule[], lists: FacetLists): Colors {
+export function colorsOf(
+  modules: readonly KnownModule[],
+  lists: FacetLists,
+  workItems: readonly WorkItem[] = [],
+): Colors {
   const byId = new Map(modules.map((mod) => [mod.row.id, mod]));
-  return {
+  const colors: Colors = {
+    of: (moduleId, work) => colors.work(moduleId, facetKeyOf(work, workItems)),
+    facetOf: (moduleId, work) => colors.facet(moduleId, facetKeyOf(work, workItems)),
     module: (moduleId) => moduleColor(moduleId ? byId.get(moduleId) : null),
     work: (moduleId, facetKey) =>
       workColor(
@@ -132,4 +145,5 @@ export function colorsOf(modules: readonly KnownModule[], lists: FacetLists): Co
     },
     lists,
   };
+  return colors;
 }

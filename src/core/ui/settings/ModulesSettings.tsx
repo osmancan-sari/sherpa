@@ -1,5 +1,6 @@
 "use client";
 
+import { moduleColor } from "@/core/contract/colors";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useState } from "react";
@@ -108,7 +109,7 @@ function ModuleSettingsRow({ entry }: { entry: Entry }) {
           <span
             aria-hidden
             className="size-2.5 rounded-full"
-            style={{ backgroundColor: row?.color ?? definition?.color }}
+            style={{ backgroundColor: moduleColor({ row, definition }) }}
           />
           <span className="font-medium">{entry.name}</span>
           <span className="text-muted-foreground text-sm">

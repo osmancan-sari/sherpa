@@ -1,5 +1,7 @@
 "use client";
 
+import { useColors } from "@/core/app/facets";
+import { moduleColor } from "@/core/contract/colors";
 import { Check, Play } from "lucide-react";
 import Link from "next/link";
 import { useMemo } from "react";
@@ -156,7 +158,7 @@ function StatusStrip({ mod }: { mod: KnownModule }) {
             <span
               aria-hidden
               className="size-3 rounded-full"
-              style={{ backgroundColor: row.color }}
+              style={{ backgroundColor: moduleColor(mod) }}
             />
             {row.name}
           </h1>
@@ -265,9 +267,13 @@ function UpcomingRow({ candidate, now }: { candidate: Candidate; now: Date }) {
   const complete = useCompleteTask();
   const logRhythm = useLogRhythm();
   const closeItem = useCloseWorkItem();
+  // Ç3e: the work's facet (name and colour) when the module has facets.
+  const colors = useColors();
+  const facet = colors.facetOf(candidate.moduleId, candidate);
 
   const item = candidate.item;
   const parts = [
+    facet?.name,
     candidate.type === "item" && item?.effort_total_minutes
       ? `${formatMinutes(item.effort_done_minutes)} / ${formatMinutes(item.effort_total_minutes)}`
       : formatMinutes(candidate.minutes),
@@ -278,6 +284,12 @@ function UpcomingRow({ candidate, now }: { candidate: Candidate; now: Date }) {
 
   return (
     <li className="flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-2.5">
+      <span
+        aria-hidden
+        data-testid="work-dot"
+        className="size-2.5 shrink-0 rounded-full"
+        style={{ backgroundColor: colors.of(candidate.moduleId, candidate) }}
+      />
       <div className="min-w-0 flex-1 basis-48">
         <p className="truncate font-medium">{candidate.title}</p>
         <p className="text-muted-foreground truncate text-sm tabular-nums">{parts.join(" · ")}</p>
@@ -363,7 +375,7 @@ function WeeklyMinutes({ mod }: { mod: KnownModule }) {
       title={`${mod.row.name}: haftalık harcanan süre`}
       data={data}
       unit="dk"
-      color={mod.row.color}
+      color={moduleColor(mod)}
     />
   );
 }

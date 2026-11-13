@@ -1,5 +1,7 @@
 "use client";
 
+import { useColors } from "@/core/app/facets";
+import { moduleColor } from "@/core/contract/colors";
 import Link from "next/link";
 import { type FormEvent, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -52,6 +54,7 @@ export function WeekScreen() {
 
 function WeekBody() {
   const { modules } = useModules();
+  const colors = useColors();
   const { input, rows, failed, retry, now } = useTodayPlan();
   const recommit = useRecommitWeek();
   const aiOn = useAiStatus().data?.state === "on";
@@ -169,7 +172,8 @@ function WeekBody() {
                   <span
                     aria-hidden
                     className="size-2.5 shrink-0 rounded-full"
-                    style={{ backgroundColor: mod?.row.color }}
+                    data-testid="work-dot"
+                    style={{ backgroundColor: colors.of(item.module_id, { item }) }}
                   />
                   <div className="min-w-0 flex-1">
                     <p className="truncate font-medium">{item.title}</p>
@@ -303,7 +307,7 @@ function CapacityBar({ load, modules }: { load: WeekLoad; modules: Map<string, K
               className="h-full"
               style={{
                 width: `${(minutes / Math.max(1, load.demandMinutes)) * 100}%`,
-                backgroundColor: modules.get(moduleId)?.row.color ?? "var(--muted-foreground)",
+                backgroundColor: moduleColor(modules.get(moduleId)),
               }}
             />
           ))}
@@ -320,7 +324,7 @@ function CapacityBar({ load, modules }: { load: WeekLoad; modules: Map<string, K
             <span
               aria-hidden
               className="size-2 rounded-full"
-              style={{ backgroundColor: modules.get(moduleId)?.row.color }}
+              style={{ backgroundColor: moduleColor(modules.get(moduleId)) }}
             />
             {modules.get(moduleId)?.row.name ?? "Modül"} {formatMinutes(minutes)}
           </li>

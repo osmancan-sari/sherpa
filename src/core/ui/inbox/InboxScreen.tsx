@@ -1,5 +1,6 @@
 "use client";
 
+import { moduleColor } from "@/core/contract/colors";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -184,7 +185,7 @@ function EntryRow({ entry, modules }: { entry: InboxEntry; modules: KnownModule[
                   <span
                     aria-hidden
                     className="size-2 rounded-full"
-                    style={{ backgroundColor: row.color }}
+                    style={{ backgroundColor: moduleColor({ row }) }}
                   />
                   {row.name}
                 </button>
@@ -321,7 +322,7 @@ function SuggestionCard({ entry, modules }: { entry: InboxEntry; modules: KnownM
               <span
                 aria-hidden
                 className="size-2 rounded-full"
-                style={{ backgroundColor: row.color }}
+                style={{ backgroundColor: moduleColor({ row }) }}
               />
               {row.name}
             </button>

@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { useStartSession } from "@/core/app/actions";
 import { type KnownModule, setDeviceContext } from "@/core/app/hooks";
 import type { Candidate, Plan, PlanInput, Warning } from "@/core/planner";
+import { useColors } from "@/core/app/facets";
 import { pickForMinutes } from "@/core/planner";
 import { blocksOfDay } from "@/core/today/select";
 import type { Context, LifeMode } from "@/core/types";
@@ -95,13 +96,14 @@ export function DayStrip({
   input,
   plan,
   now,
-  modules,
 }: {
   input: PlanInput;
   plan: Plan;
   now: Date;
   modules: Map<string, KnownModule>;
 }) {
+  // Ç3e: each piece of work in its facet's colour, else its module's.
+  const colors = useColors();
   // With the day's frame (Ç3c) the strip runs from the waking to the expected bedtime.
   const marks = plan.frame;
   const from = Math.min((marks?.wake ?? input.dayStart).getTime(), now.getTime());
@@ -155,8 +157,7 @@ export function DayStrip({
           {plan.slots.flatMap((slot) => {
             const assignment = slot.assignment;
             if (!assignment) return [];
-            const color =
-              modules.get(assignment.candidate.moduleId)?.row.color ?? "var(--muted-foreground)";
+            const color = colors.of(assignment.candidate.moduleId, assignment.candidate);
             const trip = (start: number, end: number, key: string, minutes: number) => (
               <span
                 key={key}
@@ -183,6 +184,7 @@ export function DayStrip({
               <span
                 key={`s-${slot.start.getTime()}`}
                 title={`${formatTime(slot.start)}–${formatTime(slot.end)} ${assignment.candidate.title}`}
+                data-testid="strip-work"
                 className="absolute inset-y-1 rounded-sm opacity-80"
                 style={{
                   left: left(slot.start.getTime()),

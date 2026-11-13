@@ -4,7 +4,15 @@ import { Component, type ReactNode, useEffect, useState, useSyncExternalStore } 
 import { Button } from "@/components/ui/button";
 import { useEndSession } from "@/core/app/actions";
 import type { KnownModule } from "@/core/app/hooks";
-import type { ModuleScene, SceneProps, SceneSubject, TodayBrief } from "@/core/contract/types";
+import { facetColor, moduleColor } from "@/core/contract/colors";
+import { chooseScene, findFacet, sceneTone, taskFacet } from "@/core/contract/facets";
+import type {
+  ModuleFacet,
+  ModuleScene,
+  SceneProps,
+  SceneSubject,
+  TodayBrief,
+} from "@/core/contract/types";
 import type { NowState, Plan, PlanInput } from "@/core/planner";
 import { blocksOfDay } from "@/core/today/select";
 import { useSay } from "@/core/voice";
@@ -19,30 +27,36 @@ import { useModuleScope } from "../module/ModuleProvider";
 
 type Running = Extract<NowState, { kind: "running" }>;
 
-/** The running work's scene, if its module has one and says yes to this work. */
+/**
+ * The running work's scene, if its module has one and says yes to this work. Ç3e: the work's
+ * facet may name a scene of its own (`ui.scenes`); without one, or when it says no, the
+ * module's default scene (docs/06-modul-sozlesmesi.md, "Bölümler" rule 5). A `when` that fails
+ * means no scene; the standard card is always there.
+ */
 export function sceneFor(
   mod: KnownModule | undefined,
   state: Running,
   workItems: PlanInput["workItems"],
-): { scene: ModuleScene; subject: SceneSubject } | null {
-  const scene = mod?.definition?.ui.scene;
-  if (!scene) return null;
+  facets: readonly ModuleFacet[] | null = null,
+): { scene: ModuleScene; subject: SceneSubject; facet: ModuleFacet | null } | null {
+  const ui = mod?.definition?.ui;
+  if (!ui || (!ui.scene && !ui.scenes)) return null;
   let subject: SceneSubject | null = null;
+  let facetKey: string | null = null;
   if (state.task) {
     const item = state.task.work_item_id
       ? (workItems.find((row) => row.id === state.task!.work_item_id) ?? null)
       : null;
     subject = { kind: "task", task: state.task, workItem: item };
+    facetKey = taskFacet(state.task, item);
   } else if (state.rhythm) {
     subject = { kind: "rhythm", rhythm: state.rhythm };
+    facetKey = state.rhythm.facet;
   }
   if (!subject) return null;
-  try {
-    return scene.when(subject) ? { scene, subject } : null;
-  } catch {
-    // A `when` that fails means no scene; the standard card is always there.
-    return null;
-  }
+  const facet = findFacet(facets, facetKey);
+  const scene = chooseScene(ui, facet, subject);
+  return scene ? { scene, subject, facet } : null;
 }
 
 // --- "Çık": remembered on this device, for this session ----------------------------------------
@@ -136,6 +150,7 @@ export function SceneFrame({
   state,
   scene,
   subject,
+  facet = null,
   brief,
   onExit,
   onStuck,
@@ -145,6 +160,8 @@ export function SceneFrame({
   state: Running;
   scene: ModuleScene;
   subject: SceneSubject;
+  /** Ç3e: the running work's facet in the module's current list. */
+  facet?: ModuleFacet | null;
   brief: TodayBrief;
   onExit: () => void;
   onStuck: () => void;
@@ -164,7 +181,9 @@ export function SceneFrame({
   }, []);
   const elapsedSeconds = Math.max(0, Math.floor((now - startedAt.getTime()) / 1000));
   const title = state.task?.title ?? state.rhythm?.title ?? session.title ?? "";
-  const tone = scene.look?.tone ?? "calm";
+  // Ç3e: the facet's tone and colour come before the scene's and the module's.
+  const tone = sceneTone(scene, facet);
+  const color = facet ? facetColor(mod.row, facet) : moduleColor(mod);
   const Scene = scene.component;
 
   const props: SceneProps = {
@@ -184,20 +203,21 @@ export function SceneFrame({
     say,
     today: brief,
     ctx,
-    facet: null,
+    facet: facet ? { key: facet.key, name: facet.name, color } : null,
   };
 
   return (
     <div
       data-testid="scene"
       data-tone={tone}
+      data-facet={facet?.key}
       className={cn(
         "animate-in fade-in flex min-h-[70vh] flex-1 flex-col overflow-hidden rounded-2xl border duration-300 motion-reduce:animate-none",
         TONE[tone],
       )}
       style={
         tone === "energy"
-          ? { backgroundColor: `color-mix(in oklab, ${mod.row.color} 12%, transparent)` }
+          ? { backgroundColor: `color-mix(in oklab, ${color} 12%, transparent)` }
           : undefined
       }
     >
@@ -208,8 +228,9 @@ export function SceneFrame({
         <span className="tabular-nums">{formatTime(new Date(now))}</span>
         <span
           aria-hidden
+          data-testid="work-dot"
           className="size-2 rounded-full"
-          style={{ backgroundColor: mod.row.color }}
+          style={{ backgroundColor: color }}
         />
         <span className="min-w-0 flex-1 truncate">
           <span className="font-medium">{title}</span>

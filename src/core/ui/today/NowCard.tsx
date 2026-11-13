@@ -23,7 +23,8 @@ import {
 import type { NowCardContent } from "@/core/contract/types";
 import { type Assignment, type Candidate, type NowState, overrun } from "@/core/planner";
 import { elapsedMinutes } from "@/core/today/select";
-import type { Session, Task } from "@/core/types";
+import type { Rhythm, Session, Task, WorkItem } from "@/core/types";
+import { useColors } from "@/core/app/facets";
 import { formatMinutes, formatTime } from "@/lib/date";
 import { EveningCard, MorningCard } from "./FrameCards";
 import type { DayFrame, TodayBriefLine } from "./frame-text";
@@ -196,16 +197,26 @@ function CardFor({
   return <Empty />;
 }
 
-function ModuleLine({ mod }: { mod: KnownModule | undefined }) {
+/** The work's module, and its facet when it has one (Ç3e), in the work's colour. */
+function ModuleLine({
+  mod,
+  work,
+}: {
+  mod: KnownModule | undefined;
+  work: { task?: Task | null; item?: WorkItem | null; rhythm?: Rhythm | null };
+}) {
+  const colors = useColors();
   if (!mod) return null;
+  const facet = colors.facetOf(mod.row.id, work);
   return (
     <p className="text-muted-foreground flex items-center gap-2 text-sm md:text-base">
       <span
         aria-hidden
+        data-testid="work-dot"
         className="size-2.5 rounded-full"
-        style={{ backgroundColor: mod.row.color }}
+        style={{ backgroundColor: colors.of(mod.row.id, work) }}
       />
-      {mod.row.name}
+      {facet ? `${mod.row.name} · ${facet.name}` : mod.row.name}
     </p>
   );
 }
@@ -284,7 +295,7 @@ function Suggest({
     return (
       <Frame>
         <div className="flex flex-col gap-2">
-          <ModuleLine mod={mod} />
+          <ModuleLine mod={mod} work={candidate} />
           <h2 className={TITLE}>{candidate.title}</h2>
           <p className="text-muted-foreground md:text-lg">
             {task.waiting_on ? `${task.waiting_on} bekleniyor. ` : "Bekleniyor. "}Takip et.
@@ -316,7 +327,7 @@ function Suggest({
     return (
       <Frame>
         <div className="flex flex-col gap-2">
-          <ModuleLine mod={mod} />
+          <ModuleLine mod={mod} work={candidate} />
           <h2 className={TITLE}>{candidate.title}</h2>
           <p className="text-muted-foreground md:text-lg">
             Ayrılan {formatMinutes(item.effort_total_minutes)} doldu. Bitti mi?
@@ -347,7 +358,7 @@ function Suggest({
   return (
     <Frame>
       <div className="flex flex-col gap-2">
-        <ModuleLine mod={mod} />
+        <ModuleLine mod={mod} work={candidate} />
         <h2 className={TITLE}>{candidate.title}</h2>
         <p className="text-muted-foreground tabular-nums md:text-lg">
           {[
@@ -397,7 +408,7 @@ function Running({
   onReturnToScene?: () => void;
   session: Session;
   task: Task | null;
-  rhythm: { id: string; title: string; est_minutes: number } | null;
+  rhythm: Rhythm | null;
   now: Date;
   date: string;
   modules: Map<string, KnownModule>;
@@ -425,7 +436,7 @@ function Running({
   return (
     <Frame>
       <div className="flex flex-col gap-2">
-        <ModuleLine mod={mod} />
+        <ModuleLine mod={mod} work={{ task, rhythm }} />
         <h2 className={TITLE}>{title}</h2>
         {extra?.detail ? <p className="text-muted-foreground md:text-lg">{extra.detail}</p> : null}
       </div>
@@ -616,8 +627,9 @@ function PromptState({
   );
 }
 
-function Return({ top3, modules }: { top3: Candidate[]; modules: Map<string, KnownModule> }) {
+function Return({ top3 }: { top3: Candidate[]; modules: Map<string, KnownModule> }) {
   const start = useStartSession();
+  const colors = useColors();
   return (
     <Frame>
       <div className="flex flex-col gap-3">
@@ -629,7 +641,7 @@ function Return({ top3, modules }: { top3: Candidate[]; modules: Map<string, Kno
                 <span
                   aria-hidden
                   className="size-2 rounded-full"
-                  style={{ backgroundColor: modules.get(candidate.moduleId)?.row.color }}
+                  style={{ backgroundColor: colors.of(candidate.moduleId, candidate) }}
                 />
                 {candidate.title}
               </li>

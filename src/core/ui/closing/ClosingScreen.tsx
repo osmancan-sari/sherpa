@@ -10,6 +10,7 @@ import {
   useCompleteTask,
   useLogRhythm,
 } from "@/core/app/actions";
+import { useColors } from "@/core/app/facets";
 import { type KnownModule, useAiStatus, useModules, useTodayPlan } from "@/core/app/hooks";
 import { useCloseDay } from "@/core/app/plan-actions";
 import { useRecordBed } from "@/core/app/frame-actions";
@@ -388,6 +389,7 @@ function DraftRow({
   /** The AI's reason, when it planned the draft. */
   reason?: string;
 }) {
+  const colors = useColors();
   return (
     <li className="flex items-center gap-3 px-4 py-3">
       <button
@@ -402,6 +404,12 @@ function DraftRow({
       >
         {chosen ? <Check aria-hidden className="size-3.5" /> : null}
       </button>
+      <span
+        aria-hidden
+        data-testid="work-dot"
+        className="size-2.5 shrink-0 rounded-full"
+        style={{ backgroundColor: colors.of(candidate.moduleId, candidate) }}
+      />
       <div className="min-w-0 flex-1">
         <p className="truncate">{candidate.title}</p>
         <p className="text-muted-foreground truncate text-sm tabular-nums">

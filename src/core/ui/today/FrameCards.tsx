@@ -5,6 +5,7 @@ import { type ReactNode, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useStartSession } from "@/core/app/actions";
 import { useRecordBed, useRecordWake, useSetExpected } from "@/core/app/frame-actions";
+import { useColors } from "@/core/app/facets";
 import type { KnownModule } from "@/core/app/hooks";
 import type { Assignment, DayFrame, SleepPlan, TodayBriefLine } from "./frame-text";
 import { sleepLine, shortLine } from "./frame-text";
@@ -13,6 +14,23 @@ import { sessionTargetOf } from "./NowCard";
 
 // The day's frame on the card (docs/05-arayuz.md, "Günün çerçevesi"; Ç3c): "Günaydın" with
 // "Uyandım", the evening with tonight's bed and tomorrow's waking, and the two one-day changes.
+
+/** The work's module (and facet), with a dot in the work's colour (Ç3e). */
+function WorkModule({ mod, candidate }: { mod: KnownModule; candidate: Assignment["candidate"] }) {
+  const colors = useColors();
+  const facet = colors.facetOf(mod.row.id, candidate);
+  return (
+    <span className="inline-flex items-center gap-1.5">
+      <span
+        aria-hidden
+        data-testid="work-dot"
+        className="size-2 rounded-full"
+        style={{ backgroundColor: colors.of(mod.row.id, candidate) }}
+      />
+      {facet ? `${mod.row.name} · ${facet.name}` : mod.row.name}
+    </span>
+  );
+}
 
 const TITLE = "text-3xl leading-tight font-semibold tracking-tight md:text-5xl";
 const BIG = "h-12 px-6 text-base";
@@ -73,9 +91,15 @@ export function MorningCard({
           {first ? (
             <li>
               Önce: {first.candidate.title}
-              {modules.get(first.candidate.moduleId)
-                ? ` · ${modules.get(first.candidate.moduleId)!.row.name}`
-                : ""}
+              {modules.get(first.candidate.moduleId) ? (
+                <>
+                  {" · "}
+                  <WorkModule
+                    mod={modules.get(first.candidate.moduleId)!}
+                    candidate={first.candidate}
+                  />
+                </>
+              ) : null}
             </li>
           ) : null}
         </ul>
@@ -142,7 +166,11 @@ export function EveningCard({
       <div className="flex flex-col gap-3">
         {next ? (
           <div className="flex flex-col gap-1">
-            {mod ? <p className="text-muted-foreground text-sm">{mod.row.name}</p> : null}
+            {mod ? (
+              <p className="text-muted-foreground text-sm">
+                <WorkModule mod={mod} candidate={next.candidate} />
+              </p>
+            ) : null}
             <h2 className={TITLE}>{next.candidate.title}</h2>
           </div>
         ) : (
