@@ -273,6 +273,9 @@ test("export holds the facets and the colours", async ({ page }) => {
   };
   expect(body.tables.work_items[0]).toMatchObject({ title: "Sabah yürüyüşü", facet: "sabah" });
   expect(body.tables.modules[0]).toHaveProperty("facet_colors");
-  expect(body.tables.tasks[0]).toMatchObject({ title: "Akşam notu", facet: "aksam" });
+  // (The work item may already have a sitting of the week: look the task up by its title.)
+  expect(body.tables.tasks.find((row) => row.title === "Akşam notu")).toMatchObject({
+    facet: "aksam",
+  });
   expect(body.tables.deneme_items[0]).toMatchObject({ facet: "sabah" });
 });
