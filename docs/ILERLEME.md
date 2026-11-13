@@ -610,7 +610,7 @@ Sıra:
 
 1. ~~`sherpa-dev`~~: **yapıldı** (13 Kas, senin izninle; yalnızca bu iki migration).
 2. ~~`sherpa-prod`'da bozuk modül rengi~~: **bakıldı** (13 Kas): `modules` tablosunda satır yok (gerçek modül kurulmadı), düzeltilecek bir şey yok.
-3. `sherpa-prod` migration'ları: deneme çalıştırması yalnızca bu iki migration'ı gösterdi (13 Kas); `--yes` ile gönderimi otomatik mod senin iznine rağmen engelledi. **Seni bekliyor:** terminalde `npx supabase db push --remote=jqqvfdjrkpxbklocsqvq --yes`.
+3. ~~`sherpa-prod` migration'ları~~: **yapıldı** (13 Kas; deneme çalıştırması yalnızca bu iki migration'ı gösterdi, gönderimi sen yaptın; sonra deneme çalıştırması "up to date").
 4. `git push origin main`, sonra `git push origin c3e-tamam`.
 5. Yayından sonra: `npx vercel inspect <yayın adresi>` ya da Vercel'deki yayın özetinde fonksiyonların bölgesi `fra1` olmalı (`vercel.json`, `regions`). Bunu ben yaparım ve sonucu buraya yazarım.
 6. Üretimde Ayarlar → Modüller → <modül>'de "Renkler" bölümüne bak: modülün rengi ve "Varsayılana dön". Gerçek modüllerde henüz bölüm yok.
