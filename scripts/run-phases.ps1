@@ -109,6 +109,15 @@ function Test-Gate([string]$gateLog) {
     Write-Host 'package.json has no check:full script yet; skipping the outside check.'
     return $true
   }
+  # End-to-end tests refuse to start between 22:30 and 24:00 Istanbul time (playwright.config.ts).
+  # Wait until just after midnight instead of reading that refusal as a failed phase.
+  $now = Get-Date
+  if ($now.TimeOfDay -ge [TimeSpan]::FromHours(22.5)) {
+    $resume = $now.Date.AddDays(1).AddMinutes(5)
+    $wait = [int][math]::Ceiling(($resume - $now).TotalMinutes)
+    Write-Host "End-to-end tests do not run between 22:30 and 24:00. Waiting $wait min before the outside check."
+    Start-Sleep -Seconds ($wait * 60)
+  }
   Write-Host "Running the outside check (npm run check:full). Log: $gateLog"
   npm run check:full 2>&1 | Out-File -FilePath $gateLog
   return ($LASTEXITCODE -eq 0)
