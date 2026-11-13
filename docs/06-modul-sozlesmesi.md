@@ -252,7 +252,7 @@ type ModuleFacet = {
 3. **İş bölümünü taşır.** Zarfta `facet` (aşağıda "İş zarfı ve `propose`"). Oturum işinin kendi bölümü yoksa kaleminin bölümü geçerlidir. Bölümü listeden çıkan iş (ders kalktı) anahtarını korur ve modülün rengiyle görünür; hata vermez.
 4. **Renk.** Çekirdeğin bir iş için kullandığı renk tek yardımcıdan gelir (`src/core/contract/colors.ts`, `workColor`): kullanıcının bölüm rengi (`modules.facet_colors`) → bölümün varsayılan rengi → kullanıcının modül rengi (`modules.color`) → modülün varsayılan rengi. Modül düzeyindeki yerler (çip, modül payları, modül listeleri) modülün rengini kullanır (`moduleColor`). Yerlerin listesi `docs/05-arayuz.md`, "Renkler ve bölümler".
 5. **Sahne.** Çalışan işin bölümü `scene` taşıyor ve o sahnenin `when`'i doğru dönüyorsa o sahne gelir; yoksa modülün varsayılan sahnesi (`ui.scene`, kendi `when`'iyle). Sahne bileşeni bölümü `SceneProps.facet` ile alır; aynı bileşen birden çok bölümde kullanılabilir (her ders aynı "ders" sahnesini kendi rengiyle).
-6. **Ton.** Bölümün `tone`'u → sahnenin `look.tone`'u → `calm`. `energy` tonu çözülmüş rengi kullanır.
+6. **Ton.** Bölümün `tone`'u → sahnenin `look.tone`'u → `calm`. `energy` tonu çözülmüş rengi kullanır. Bölümün sahnesi `when` ile hayır deyip modülün varsayılan sahnesine düşülse de ton bölümünkidir (ton bölüme aittir, sahneye değil).
 7. **Planlamaya etkisi yok.** Bölüm planlayıcının girdisi değildir ve yapay zekaya gitmez; yapay zeka bölüm seçmez (serbest girişten modüle yönlenen iş bölümsüz açılır, bölümü kullanıcı formdan ya da modül kendi giriş türünden verir).
 
 ### Sesli anlatım ve günün özeti (Ç3c)
