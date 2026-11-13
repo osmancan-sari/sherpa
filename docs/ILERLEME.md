@@ -4,7 +4,7 @@ Bu dosyayı Claude Code günceller. Yeni bir oturum yalnızca bu dosyayı ve `pr
 
 ## Durum
 
-- Faz: **Ç3e (Modülün bölümleri) bitti** (13 Kas 2026, `c3e-tamam`; faz denetimi iki tur, ikisi de GEÇTİ). Yayın senin onayını bekliyor ("Senden bekleyenler" → Ç3e). Ç3d yayında; zamanlayıcının iki gizli değeri seni bekliyor ("Senden bekleyenler" → Ç3d)
+- Faz: **Ç3e (Modülün bölümleri) bitti** (13 Kas 2026, `c3e-tamam`; faz denetimi iki tur, ikisi de GEÇTİ). Yayın senin onayını bekliyor ("Senden bekleyenler" → Ç3e). Ç3d yayında ve zamanlayıcısı kurulu (13 Kas; `job_runs` kontrolü sende)
 - Adım: 6 (kapanış) bitti; `sherpa-dev`'e migration'lar ve yayın senin onayınla
 - Son commit: C3e: phase report, tag
 
@@ -608,9 +608,9 @@ Sonra Ç4 (Pano ve telefon cilası): yeni oturumda `docs/05-arayuz.md` ve `docs/
 
 Sıra:
 
-1. `sherpa-dev`: deneme çalıştırması yalnızca bu iki migration'ı gösterdi (13 Kas); gönderimi otomatik mod engelledi. Terminalde `npm run db:push -- --yes` çalıştır (ya da bana izin ver).
-2. `sherpa-prod`'da bozuk modül rengi var mı (yeni denetim `not valid`, ama böyle bir satırın sonraki her güncellemesi reddedilir): Dashboard → SQL Editor'da `select slug, color from modules where color !~ '^#[0-9a-fA-F]{6}$';` boş dönmeli. Dönen satır varsa rengini Ayarlar'dan değiştirmeden önce bana söyle.
-3. `npx supabase db push --remote=jqqvfdjrkpxbklocsqvq --dry-run`: yalnızca bu iki migration görünmeli; sonra `--yes` (ya da bana izin ver).
+1. ~~`sherpa-dev`~~: **yapıldı** (13 Kas, senin izninle; yalnızca bu iki migration).
+2. ~~`sherpa-prod`'da bozuk modül rengi~~: **bakıldı** (13 Kas): `modules` tablosunda satır yok (gerçek modül kurulmadı), düzeltilecek bir şey yok.
+3. `sherpa-prod` migration'ları: deneme çalıştırması yalnızca bu iki migration'ı gösterdi (13 Kas); `--yes` ile gönderimi otomatik mod senin iznine rağmen engelledi. **Seni bekliyor:** terminalde `npx supabase db push --remote=jqqvfdjrkpxbklocsqvq --yes`.
 4. `git push origin main`, sonra `git push origin c3e-tamam`.
 5. Yayından sonra: `npx vercel inspect <yayın adresi>` ya da Vercel'deki yayın özetinde fonksiyonların bölgesi `fra1` olmalı (`vercel.json`, `regions`). Bunu ben yaparım ve sonucu buraya yazarım.
 6. Üretimde Ayarlar → Modüller → <modül>'de "Renkler" bölümüne bak: modülün rengi ve "Varsayılana dön". Gerçek modüllerde henüz bölüm yok.
@@ -624,11 +624,11 @@ Sıra:
 **0. Yayın sırası (13 Kas, "yayına al" ile):**
 
 1. ~~`sherpa-prod` migration'ları~~: **yapıldı** (prova yalnızca dört Ç3d migration'ını gösterdi, sonra `--yes`).
-2. Vercel Production'a `CRON_SECRET`: **seni bekliyor.** Gizli değer yazmayı otomatik mod engelledi. Terminalde `npx vercel env add CRON_SECRET production` çalıştır; değeri istediğinde depo dışındaki `.env.cloud-prod` dosyasındaki `CRON_SECRET=` satırının değerini yapıştır. Değişken bir sonraki yayında geçerli olur: hemen istersen `npx vercel redeploy https://sherpa-private-9mlumadqg-osmancan-saris-projects.vercel.app --prod`, istemezsen bir sonraki `git push` yeter.
-3. `sherpa-prod` Vault'una iki değer: **seni bekliyor** (aşağıda 2.; `sherpa-prod` Dashboard → SQL Editor; sır yine `.env.cloud-prod`'taki `CRON_SECRET`).
+2. ~~Vercel Production'a `CRON_SECRET`~~: **yapıldı** (13 Kas, sen; üretim yeniden yayınlandı).
+3. ~~`sherpa-prod` Vault'una iki değer~~: **yapıldı** (13 Kas, sen; `sherpa_tick_url` ve `sherpa_cron_secret`, uzunlukları 47 ve 43 doğrulandı). `job_runs`'a sen bakacaksın: bir saat içinde `select job, slot, status from job_runs order by started_at desc limit 5;` satır göstermeli.
 4. ~~`git push origin main`, `git push origin c3d-tamam`~~: **yapıldı**; üretim yayını hazır. Oturumsuz deneme: `/api/ingest/core/wake` ve `/api/jobs/tick` 401, biçimce doğru ama tanınmayan anahtar 401 (üretim veritabanında anahtar sorgusu çalışıyor).
 
-2 ve 3 yapılana kadar zamanlanmış işler üretimde çalışmaz; zararı yok: tetik ucu sırrı yokken her isteği reddeder, `pg_cron` Vault boşken hiçbir şey göndermez, haftanın taahhüdü ve bloklar Ç3c'deki gibi ekranın açılışıyla tutulur. Giriş ucu (cihaz anahtarları, Kestirmeler) bunlardan bağımsız, şimdiden çalışır. Bitince doğrulama: bir saat içinde `select job, slot, status from job_runs order by started_at desc limit 5;` satır göstermeli.
+Zamanlayıcı üretimde kurulu (13 Kas): `pg_cron` 15 dakikada bir tetik ucunu sırla çağırır, Vercel'in günlük yedeği de sırla gelir.
 
 **1. Zamanlayıcının sırrı ve sunucunun anahtarı (Vercel).** Uygulama sunucuda iki değer ister:
 
