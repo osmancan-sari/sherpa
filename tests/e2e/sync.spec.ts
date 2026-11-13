@@ -2,6 +2,7 @@ import type { Browser, BrowserContext, Page } from "@playwright/test";
 import { deviceToken, insert, postIngest, rows, seedModule, update, waitFor } from "./data";
 import { expect, test } from "./fixtures";
 import { roomInTheDay, STORAGE_STATE } from "./helpers";
+import { activateDeneme, addRecord } from "./scene-helpers";
 
 // Two devices, one account: what happens on the phone shows on the second screen without a
 // reload (docs/11-yayin-ve-cihazlar.md, "Eşitleme"). Both pages stay open the whole time;
@@ -207,4 +208,47 @@ test("what the ingest endpoint writes reaches open screens: the waking, a record
   await expect(settingsTab.getByTestId("device-token")).toContainText("Son kullanım:");
   expect(navigations.map((count) => count())).toEqual([0, 0, 0]);
   await other.close();
+});
+
+test("a topic added and colours changed reach open screens: the colour list, the other device (Ç3e)", async ({
+  page: desktop,
+  browser,
+  baseURL,
+}) => {
+  await activateDeneme(desktop);
+  await addRecord(desktop, "Sabah yürüyüşü", { minutes: "30", facet: "sabah" });
+  const { context, page: mobile } = await phone(browser, baseURL!);
+  await mobile.goto("/m/deneme");
+  const dot = mobile
+    .getByRole("region", { name: "Yaklaşanlar" })
+    .getByRole("listitem")
+    .filter({ hasText: "Sabah yürüyüşü" })
+    .getByTestId("work-dot");
+  await expect(dot).toHaveCSS("background-color", "rgb(217, 119, 6)");
+
+  await desktop.goto("/ayarlar/moduller/deneme");
+  const colours = desktop.getByRole("region", { name: "Renkler" });
+  await expect(colours.getByTestId(/^color-row-/)).toHaveCount(3);
+  const navigations = { desktop: forbidReloads(desktop), mobile: forbidReloads(mobile) };
+
+  // A topic is written elsewhere: it is a facet in the open colour list at once.
+  const [topic] = await insert<{ id: string }>("deneme_items", {
+    title: "İstatistik",
+    kind: "konu",
+  });
+  const row = colours.getByTestId(`color-row-konu-${topic.id.slice(0, 8)}`);
+  await expect(row).toContainText("İstatistik");
+  await expect(row.getByTestId("color-dot")).toHaveCSS("background-color", "rgb(13, 148, 136)");
+
+  // A facet's colour changed on the desktop shows on the phone.
+  const sabah = desktop.getByTestId("color-row-sabah");
+  await sabah.getByRole("button", { name: "Sabah: rengi değiştir" }).click();
+  await sabah
+    .getByRole("group", { name: "Sabah: hazır renkler" })
+    .getByRole("button", { name: "Gül" })
+    .click();
+  await expect(dot).toHaveCSS("background-color", "rgb(225, 29, 72)");
+  expect(navigations.desktop()).toBe(0);
+  expect(navigations.mobile()).toBe(0);
+  await context.close();
 });

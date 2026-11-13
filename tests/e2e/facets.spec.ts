@@ -1,7 +1,7 @@
-import type { Browser, Locator, Page } from "@playwright/test";
+import type { Locator, Page } from "@playwright/test";
 import { insert, rows, waitFor } from "./data";
 import { expect, test } from "./fixtures";
-import { roomInTheDay, STORAGE_STATE } from "./helpers";
+import { roomInTheDay } from "./helpers";
 import { activateDeneme, addRecord, startFromModule } from "./scene-helpers";
 
 // A module's facets end to end (Ç3e; docs/06-modul-sozlesmesi.md, "Bölümler"; docs/05,
@@ -23,19 +23,6 @@ function upcoming(page: Page, title: string) {
     .getByRole("region", { name: "Yaklaşanlar" })
     .getByRole("listitem")
     .filter({ hasText: title });
-}
-
-async function phone(browser: Browser, baseURL: string) {
-  const context = await browser.newContext({
-    baseURL,
-    storageState: STORAGE_STATE,
-    viewport: { width: 390, height: 844 },
-    isMobile: true,
-    hasTouch: true,
-    locale: "tr-TR",
-    timezoneId: "Europe/Istanbul",
-  });
-  return { context, page: await context.newPage() };
 }
 
 test("work in a facet has the facet's colour on the module page, the strip, the lists and the week", async ({
@@ -159,12 +146,14 @@ test("a topic added is a facet at once; the form puts work in it; a topic remove
   const colours = page.getByRole("region", { name: "Renkler" });
   await expect(colours.getByTestId(/^color-row-/)).toHaveCount(3);
 
-  // The module's data changes elsewhere: the list (and its colours) follows without a reload.
+  // The module's data changes: the list (and its colours) follows. Live, without a reload, is
+  // tried in sync.spec.ts, where Realtime is quiet (playwright.config.ts, "esitleme").
   const [topic] = await insert<{ id: string }>("deneme_items", {
     title: "İstatistik",
     kind: "konu",
   });
   const key = `konu-${topic.id.slice(0, 8)}`;
+  await page.reload();
   await expect(colours.getByTestId(`color-row-${key}`)).toContainText("İstatistik");
   await expect(colours.getByTestId(`color-row-${key}`).getByTestId("color-dot")).toHaveCSS(
     "background-color",
@@ -198,18 +187,21 @@ test("a topic added is a facet at once; the form puts work in it; a topic remove
   );
 });
 
-test("the module's and a facet's colour change in Settings, go back to the default, and reach the other device live", async ({
+test("the module's and a facet's colour change in Settings and go back to the default", async ({
   page,
-  browser,
-  baseURL,
 }) => {
   await activateDeneme(page);
   await addRecord(page, "Sabah yürüyüşü", { minutes: "30", facet: "sabah" });
   await addRecord(page, "Bölümsüz iş", { minutes: "30" });
-
-  const other = await phone(browser, baseURL!);
-  await other.page.goto("/m/deneme");
-  await expect(dotOf(upcoming(other.page, "Sabah yürüyüşü"))).toHaveCSS("background-color", AMBER);
+  // What the module page shows now (the other device, live, is tried in sync.spec.ts).
+  const moduleDots = async () => {
+    await page.goto("/m/deneme");
+    return {
+      sabah: dotOf(upcoming(page, "Sabah yürüyüşü")),
+      plain: dotOf(upcoming(page, "Bölümsüz iş")),
+    };
+  };
+  await expect((await moduleDots()).sabah).toHaveCSS("background-color", AMBER);
 
   await page.goto("/ayarlar/moduller/deneme");
   const sabah = page.getByTestId("color-row-sabah");
@@ -224,9 +216,6 @@ test("the module's and a facet's colour change in Settings, go back to the defau
     () => rows<{ facet_colors: Record<string, string> }>("modules"),
     (list) => list[0].facet_colors.sabah === "#e11d48",
   );
-  // The phone follows without a reload.
-  await expect(dotOf(upcoming(other.page, "Sabah yürüyüşü"))).toHaveCSS("background-color", ROSE);
-
   // The module's own colour: work without a facet follows it.
   const own = page.getByTestId("color-row-module");
   await own.getByRole("button", { name: "Deneme: rengi değiştir" }).click();
@@ -234,8 +223,14 @@ test("the module's and a facet's colour change in Settings, go back to the defau
     .getByRole("group", { name: "Deneme: hazır renkler" })
     .getByRole("button", { name: "Yeşil", exact: true })
     .click();
-  await expect(dotOf(upcoming(other.page, "Bölümsüz iş"))).toHaveCSS("background-color", GREEN);
-  await expect(dotOf(upcoming(other.page, "Sabah yürüyüşü"))).toHaveCSS("background-color", ROSE);
+  await waitFor(
+    () => rows<{ color: string }>("modules"),
+    (list) => list[0].color === "#16a34a",
+  );
+  const changed = await moduleDots();
+  await expect(changed.plain).toHaveCSS("background-color", GREEN);
+  await expect(changed.sabah).toHaveCSS("background-color", ROSE);
+  await page.goto("/ayarlar/moduller/deneme");
 
   // A colour of one's own that is hard to see in a theme: one line, and it still saves. (One
   // picker is open at a time.)
@@ -252,11 +247,13 @@ test("the module's and a facet's colour change in Settings, go back to the defau
   await sabah.getByRole("button", { name: "Varsayılana dön" }).click();
   await own.getByRole("button", { name: "Deneme: rengi değiştir" }).click();
   await own.getByRole("button", { name: "Varsayılana dön" }).click();
-  await expect(dotOf(upcoming(other.page, "Sabah yürüyüşü"))).toHaveCSS("background-color", AMBER);
-  await expect(dotOf(upcoming(other.page, "Bölümsüz iş"))).toHaveCSS("background-color", MODULE);
-  const [row] = await rows<{ color: string; facet_colors: Record<string, string> }>("modules");
-  expect(row).toMatchObject({ color: "#6250d6", facet_colors: {} });
-  await other.context.close();
+  await waitFor(
+    () => rows<{ color: string; facet_colors: Record<string, string> }>("modules"),
+    (list) => list[0].color === "#6250d6" && Object.keys(list[0].facet_colors).length === 0,
+  );
+  const back = await moduleDots();
+  await expect(back.sabah).toHaveCSS("background-color", AMBER);
+  await expect(back.plain).toHaveCSS("background-color", MODULE);
 });
 
 test("export holds the facets and the colours", async ({ page }) => {
