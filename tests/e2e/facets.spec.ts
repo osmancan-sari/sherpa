@@ -263,6 +263,7 @@ test("the module's and a facet's colour change in Settings and go back to the de
 test("export holds the facets and the colours", async ({ page }) => {
   await activateDeneme(page);
   await addRecord(page, "Sabah yürüyüşü", { minutes: "30", facet: "sabah" });
+  await addRecord(page, "Akşam esnemesi", { kind: "aliskanlik", facet: "aksam" });
   // A task the user put in a facet, so the tasks table has a row to look at.
   const [mod] = await rows<{ id: string }>("modules");
   await insert("tasks", { module_id: mod.id, title: "Akşam notu", facet: "aksam" });
@@ -273,6 +274,7 @@ test("export holds the facets and the colours", async ({ page }) => {
   };
   expect(body.tables.work_items[0]).toMatchObject({ title: "Sabah yürüyüşü", facet: "sabah" });
   expect(body.tables.modules[0]).toHaveProperty("facet_colors");
+  expect(body.tables.rhythms[0]).toMatchObject({ title: "Akşam esnemesi", facet: "aksam" });
   // (The work item may already have a sitting of the week: look the task up by its title.)
   expect(body.tables.tasks.find((row) => row.title === "Akşam notu")).toMatchObject({
     facet: "aksam",

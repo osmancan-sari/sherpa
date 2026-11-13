@@ -69,6 +69,8 @@ export function splitRows(parent: WorkItem, steps: SplitStep[], source: SplitSou
         importance: parent.importance,
         energy: parent.energy,
         context: parent.context,
+        // Ç3e: the pieces stay in the item's facet (its colour and scene).
+        facet: parent.facet,
         provenance: toJson(provenance),
         ai: toJson(mark),
         // One write makes every piece at the same instant; a millisecond apart, they read

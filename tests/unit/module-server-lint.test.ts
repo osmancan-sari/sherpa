@@ -49,7 +49,8 @@ describe("a module's server code", () => {
         ).toBe(true);
       }
     }
-  });
+    // 75 lint runs in a row: give it room when the whole suite shares the machine (Ç3e audit).
+  }, 30_000);
 
   it("may use the contract, the row types, date helpers and zod", async () => {
     const code = [

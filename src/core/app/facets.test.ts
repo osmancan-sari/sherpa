@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { ModuleFacet } from "@/core/contract/types";
 import { moduleRow, rhythm, task, workItem } from "@/core/testing/factories";
+import { splitRows } from "@/core/ai/flows/split";
 import { colorsOf, facetKeyOf, facetListOf } from "./facets";
 
 // The screens' side of facets (docs/06-modul-sozlesmesi.md, "Bölümler"; Ç3e): which list a
@@ -57,5 +58,20 @@ describe("the colours of a screen", () => {
     expect(colors.work(row.id, "sabah")).toBe("#0d9488");
     expect(colors.facet(row.id, "sabah")).toBeNull();
     expect(colors.work("yok", null)).toBe("#64748b");
+  });
+});
+
+describe("the AI's split keeps the item's facet (Ç3e)", () => {
+  it("every piece is in the facet of the item it came from", () => {
+    const parent = workItem({ facet: "sabah", due_at: null });
+    const pieces = splitRows(
+      parent,
+      [
+        { ref: "a", title: "Bir", minutes: 30, depends_on: [], due: null },
+        { ref: "b", title: "İki", minutes: 30, depends_on: ["a"], due: null },
+      ],
+      { kind: "decompose", callId: "c", model: "m", reason: "r", confidence: 0.8, now: new Date() },
+    );
+    expect(pieces.map((piece) => piece.row.facet)).toEqual(["sabah", "sabah"]);
   });
 });
