@@ -4,9 +4,9 @@ Bu dosyayı Claude Code günceller. Yeni bir oturum yalnızca bu dosyayı ve `pr
 
 ## Durum
 
-- Faz: **Ç3g. Sahnenin çekirdek eksikleri** (14 Kas 2026 başladı; istem `prompts/c3g-sahne-eksikleri.md`). Rutin 1 (`rutin-1-tamam`) ve Ç3f yayında
-- Adım: 4 bitti; adım denetimi (1–4), sonra 5 (planlayıcı)
-- Son commit: Ç3g plan
+- Faz: **Ç3g. Sahnenin çekirdek eksikleri** (14 Kas 2026; istem `prompts/c3g-sahne-eksikleri.md`). Rutin 1 (`rutin-1-tamam`) ve Ç3f yayında
+- Adım: 8 (kapanış): `check:full` yeşil, rapor yazıldı; faz denetimi
+- Son commit: Ç3g kapanış raporu
 
 ### Ç3g planı
 
@@ -19,9 +19,9 @@ Bu dosyayı Claude Code günceller. Yeni bir oturum yalnızca bu dosyayı ve `pr
 | 2 | Gün ve uyanış: `TodayBrief.date`, `SceneProps.session.day`, oturum olaylarında `day` (16); `TodayBrief.tomorrow` (20); uyanışın kaynağı (`days.woke_source`, `TodayBrief.wokeFrom`, olayda `source`) (21); Rutin `runDay`'i, "15 dakika" kuralını ve `plannedWake` okumasını bırakır | bitti (`20261114170000_wake_source.sql`): `ctx.day()`, `planningDayOf`, `briefOf` saf dosyada (`src/core/today/brief.ts`, testli); Rutin'in çipi de `ctx.day()`. Testler: `brief.test.ts` 4, `frame.test.ts` +3, `events.test.ts` +1 (ve önceki birinde beklentiye `source` eklendi), `ingest.test.ts` (+beklenti), `rutin.test.ts` ölçüt 7 çekirdeğin olayıyla |
 | 3 | Şerit ve tuşlar: sahnenin şeridi vermesi ve gizlemesi (17), sahnenin Bugün tuşlarını devralması (18); `deneme` örnekleri, Rutin bağlanır | bitti: `SceneProps.strip`, `ModuleScene.keys`, `SceneProps.keys`; `deneme` (odak ve antrenman sahnesi tuşları alır, güneş sahnesi şeridi "Sabah" yapar, gece sahnesinde "Şeridi gizle"). Testler: `registry.test.ts` +1, `scene-strip-keys.spec.ts` 3, `rutin.spec.ts` +1 ve beklentiler |
 | 4 | Modül sayfasında dizi (19): `useModuleChains`; Rutin'in Sabah sekmesinde başka modülün işi kendi grubu olarak | bitti: `src/core/ui/today/chains.ts` (`useDayChains`), `deneme` Kayıtlar sekmesinde "Bugünün … dizisi". Testler: `module-chains.spec.ts` 1, `rutin.spec.ts` +1 |
-| 5 | Planlayıcı: çerçeve kapalıyken çapalı işin saati (uyanışa bağlı iş günün başında, saati geçince düşer; yatışa bağlı iş bitiş çizgisinden hemen önce), yatışa bağlı işin "Şimdi"ye yatıştan kısa süre önce gelmesi (önce testler) | |
-| 6 | Aralığın çok dışında "Yatıyorum": kısa onay (çekirdeğin bütün "Yatıyorum" yollarında) | |
-| 7 | Uyanış ve yatış kaydının düzeltilmesi ve silinmesi (bugün ve dün) | |
+| 5 | Planlayıcı: çerçeve kapalıyken çapalı işin saati (uyanışa bağlı iş günün başında, saati geçince düşer; yatışa bağlı iş bitiş çizgisinden hemen önce), yatışa bağlı işin "Şimdi"ye yatıştan kısa süre önce gelmesi (önce testler) | bitti: `unframedLines`, `BED_LEAD`, `evening.later`, akşam kartında "Sırada"; `frame.test.ts` +4, `rutin.spec.ts` +1 |
+| 6 | Aralığın çok dışında "Yatıyorum": kısa onay (çekirdeğin bütün "Yatıyorum" yollarında) | bitti: `bedAsks`, `BedAsk.tsx`, `controls.bed(): Promise<boolean>`; `bedtime.test.ts` +2, `day-records.spec.ts` |
+| 7 | Uyanış ve yatış kaydının düzeltilmesi ve silinmesi (bugün ve dün) | bitti: `correctWake`, `correctBed`, `useCorrectDay`, `DayRecords.tsx`, gece kartında "Yatışı düzelt"; `frame.test.ts` +1, `day-records.spec.ts` |
 | 8 | Kapanış: uçtan uca testler, ekran görüntüleri (`docs/ekran-goruntuleri/c3g/`), `check:full`, faz denetimi, rapor, `rutin.md` notları 16–21, `c3g-tamam`; yayın ve üretimdeki 14 Kas kayıtlarının temizliği senin izninle | |
 
 **Üretim verisi, 14 Kas 2026 (yalnızca okundu, 19:00'da).** Saatler İstanbul.
@@ -154,6 +154,47 @@ Her adımın sonunda `npm run check` ve commit; şema, geçit ve zarf adımları
 | 7 | `check:full`, faz denetimi, düzeltmeler, faz raporu, etiket | bitti: faz denetimi 1. turda GEÇTİ (ayrıntı "Biten fazlar" → Ç2) |
 
 ## Biten fazlar
+
+### Ç3g: Sahnenin çekirdek eksikleri (14 Kas 2026)
+
+Rutin'in 1. kurulum adımında sözleşmede eksik bulunan altı nokta (`rutin.md` "Çekirdek için notlar" 16–21) çekirdekte genel olarak kuruldu, Rutin yeni yollara bağlandı ve geçici çözümlerini bıraktı; ilk gerçek kullanımda (14 Kas akşamı) görülen dört sorun kapandı; testler ve görüntü koşuları ses çıkarmıyor. İstem `prompts/c3g-sahne-eksikleri.md`.
+
+**Üretimde ne olmuştu (yalnızca okundu).** Ayrıntı "Ç3g planı"nda. Kısaca: Rutin 16:33'te etkinleştirildi (kullanıcının hatırladığı 18:50 değil); günün çerçevesi büyük olasılıkla kapalıydı (17:00:50'de açılmış); çerçeve kapalıyken planlayıcı çapayı yok sayıp üç ritmi sıradan iş gibi önerdi. Akşam kapanışı 16:48'de başladı, "Yatıyorum" 16:49:50'de basıldı (yatış aralığı o sırada yoktu), "Geri al"ın süresi 16:59:50'de doldu; Duş ve hazırlık yatıştan sonra 16:58'de yapıldı. Uyanış kaydı hiç yok.
+
+**Kabul ölçütleri**
+
+| Ölçüt | Durum | Nasıl doğrulandı |
+| --- | --- | --- |
+| 16 Planlama günü: `TodayBrief.date`, `SceneProps.session.day`, oturum olaylarında `day`, `ctx.day()`; Rutin `runDay`'i bıraktı | Sağlandı | `src/core/today/brief.test.ts`, `tests/db/events.test.ts` (00:20'de başlayan oturum önceki günün), `tests/db/frame.test.ts` (`planningDayOf`), `tests/db/rutin.test.ts` ölçüt 7 artık çekirdeğin `tellStarted`'ıyla; `deneme`: çip `ctx.day()`, son oturumun `day`'i, sahnede "Gün …" (`scene-strip-keys.spec.ts`) |
+| Rutin 1 ölçüt 7: gece yarısından sonraki "Yatıyorum" önceki günün yapılışına | Sağlandı | `tests/db/rutin.test.ts` (23:50 ve 00:20 → önceki gün) |
+| 17 Şerit: sahne adı ve sürenin başlangıcını verir, ekranda gizler; vermezse bugünkü gibi | Sağlandı (**görüşün gerek**) | `scene-strip-keys.spec.ts` (`deneme`: "Sabah", süresiz, "Şeridi gizle/göster"), `rutin.spec.ts` (Günaydın "Sabah" süresiz; Kalktım'dan sonra "· 2 dk" uyanıştan; tuş testinde "· 20 dk"; akşam "Akşam kapanışı · 5 dk"; "İyi günler"de şerit yok); eski sahne testleri değişmeden |
+| 18 Tuşlar: `ModuleScene.keys: 'scene'`; Boşluk Rutin'de "Sonraki", süre dolmadan geçirmez | Sağlandı (**görüşün gerek**) | `registry.test.ts`, `scene-strip-keys.spec.ts` (antrenmanda Boşluk sonraki adım, oturum sürer; yazarken tuş alana), `rutin.spec.ts` (Boşluk Sonraki, basılı tutulan alt adımda Boşluk ve Enter geçirmez, X pencere açmaz); `chains.spec.ts`'in Boşluk testi (tuş almayan sahne) değişmeden |
+| 19 Modül sayfasında dizi: `useModuleChains()`; Rutin'in Sabah sekmesinde başka modülün işi kendi grubu | Sağlandı | `module-chains.spec.ts` (`deneme` sayfası, başka modülün satırı bağlantı), `rutin.spec.ts` (SABAH, BOYUN HAREKETLERİ, DUŞ VE HAZIRLIK sırası; anahtar yok; numara 3; tıklayınca `/m/deneme`) |
+| 20 Yarının beklenen uyanışı: `TodayBrief.tomorrow`; yatış ve geri alma ile yenilenir | Sağlandı | `brief.test.ts` (21:00 → 09:00/480; 23:30 yatış → 07:30; geri alınınca 09:00), `rutin.spec.ts` "Yatıyorum" testi (Yarın kutusu), `deneme`'nin gece sahnesi |
+| 21 Uyanışın kaynağı: `days.woke_source`, `TodayBrief.wokeFrom`, olayda `source`; Günaydın yalnızca dışarıdan | Sağlandı | `frame.test.ts` (kaynaklar, check), `ingest.test.ts` (`core/wake` → `outside`), `events.test.ts`, `rutin.spec.ts` (dışarıdan → Günaydın; Uyandım → doğrudan Diş bakımı), `sync.spec.ts` |
+| İlk kullanım 1: akşam saatinde sabah işi önerilmez | Sağlandı | `frame.test.ts` (çerçeve kapalı, 16:33), `rutin.spec.ts` ("switched on in the afternoon") |
+| İlk kullanım 2: yatışa bağlı iş yatıştan kısa süre önce | Sağlandı (**görüşün gerek**: 15 dakika) | `frame.test.ts` (çerçeve kapalı ve açık, `later`), `rutin.spec.ts` (21:00'de "Sırada: Akşam kapanışı · …", "Şimdi başla") |
+| İlk kullanım 3: aralıktan 2 saatten çok önce "Yatıyorum" sorar | Sağlandı (**görüşün gerek**: eşik, metin) | `bedtime.test.ts`, `day-records.spec.ts` (19:30'da soru, Vazgeç, Evet; 21:00'de tek dokunuş) |
+| İlk kullanım 4: bugünün ve dünün uyanışı ve yatışı düzeltilir, silinir | Sağlandı (**görüşün gerek**: yeri) | `frame.test.ts` (`correctWake`, `correctBed`), `day-records.spec.ts` (gece kartından "Yatışı düzelt" → Ayarlar, 16:49 → 23:10, sil, akşam geri gelir) |
+| Sesli testler: sahte konuşmacı ortak kurulumdan; Türkçe ses yoksa sessiz, Ayarlar söyler | Sağlandı; gerçek cihazda **elle denenecek** | `tests/unit/quiet-tests.test.ts`, `fixtures.ts` (her bağlam), `--mute-audio`, `voice.spec.ts` (+1), `voice.test.ts` |
+| Geriye uyum; önceki testler gevşetilmeden | Sağlandı, değişen kurulumlar aşağıda | Önceki fazların değişen testleri: `events.test.ts` (yüke `source` beklentisi eklendi), `ingest.test.ts` (beklenti eklendi), `chains.spec.ts` üç test ve görüntü koşusu (yatışa bağlı işin 15 dakikalık kuralı yüzünden o geceye 21:30 yatış eklendi; beklentiler aynı), Rutin 1'in testleri dışarıdan uyanışı `woke_source: 'outside'` ile yazıyor, `runDay` testleri kuralla birlikte kalktı |
+
+Testler: 529 birim, 302 veritabanı, 246 uçtan uca, ekran görüntüleriyle (`npm run check:full` yeşil, 14 Kas, `SHERPA_SHOTS=c3g`). Ekran görüntüleri `docs/ekran-goruntuleri/c3g/` (yeni: `bugun-aksam-sirada`, `bugun-yatis-sorusu`, `ayarlar-kayitlar`, `rutin-modul-sabah-diger`; Rutin sahneleri şeritleriyle yeniden). Baktıklarım: yeni dört ekran ve Rutin sabah sahnesinin şeridi ("Sabah · 2 dk").
+
+**Kararlar** "Verdiğim kararlar" → Ç3g ve `docs/09` (14 Kas satırları). **Görüşün gerek:** şeridin gizlenmesi (gizli şeritte "Çık" yok), tuşları devralan sahnede işlenmeyen E/X/R'nin ölü kalması, başka modülün grubunun başlığı, yatışa bağlı işin 15 dakikası ve akşam kartındaki "Sırada" satırı, "Yatıyorum" sorusunun 2 saatlik eşiği ve metni, kayıt düzeltmenin Ayarlar'daki yeri.
+
+**Senden bekleyenler.** Yayın (migration `20261114170000_wake_source.sql` önce `sherpa-dev`, sonra `sherpa-prod`, sonra `git push`); ardından senin açık iznine bağlı olarak üretimde 14 Kas'ın yanlış yatış kaydının ve deneme yapılışlarının temizliği ("Senden bekleyenler" → Ç3g).
+
+**Sonraki faz (Ç4) için notlar**
+
+- Gerçek telefonda: Türkçe sesin seçilmesi (iOS'ta ses listesi boşsa ilk anlatım dokunuşun dışına düşer ve sessiz kalabilir), Günaydın'ın yalnızca alarm otomasyonundan sonra gelmesi, "Yatıyorum" sorusu.
+- Ç3f'in `wakeChainStart`'ı hâlâ "öne gelmeden önce yazılmış uyanış" türetmesini kullanıyor; artık `woke_source` var, Ç4'te birleştirilebilir (Fikirler).
+- Çerçeve kapalıyken çapalı iş günün ayarlı başından sayılıyor; çerçeveyi açmayan kullanıcı için uyanış saatinin anlamı bu.
+
+**Denetim**
+
+- Adım denetimi (1–4, `1ce5108..548e23e`): GEÇTİ, `check:full` denetçide yeşil (523 / 301 / 223). 3 önemli: (1) ses listesi henüz yüklenmemişken `say` susuyordu, `tr_TR` tanınmıyordu: liste boşsa 1,5 sn `voiceschanged` beklenir, `tr_TR` kabul, Ayarlar "Türkçe ses yok"u 1,5 sn sonra yazar (`voice.test.ts` +); (2) `ctx.day()`, olayın `day`'i ve uyanış kaynağı için `deneme`'de örnek yoktu: çip `ctx.day()`, `last_session.day`, `last_wake_source` (`events.test.ts` +); (3) `deneme`'nin sahnedeki gün satırı sınanmıyordu: `scene-strip-keys.spec.ts` +1 (00:20'de başlayan oturum önceki günün; dışarıdan uyanış). Notlar: odak sahnesinde bekleyen oturumda Boşluk (düzeltildi), `deneme` dizi durumları Türkçe (düzeltildi), `planningDayOf` tek yardımcı ve hata fırlatır (olaylarda varsayılana düşer), `quiet-tests` alt klasörleri de okur, ILERLEME'nin "Son commit"i; E/X/R'nin ölü kalması ve `deneme`'nin "Şeridi gizle" örneği görüş olarak kayıtta; Rutin'in dokunuşu not eden pasif `window` dinleyicisi Rutin 1'den kalma, eylem yapmıyor (açık).
+- Faz denetimi: FAZ_AUDIT
 
 ### Rutin 1: Temel (14 Kas 2026)
 
