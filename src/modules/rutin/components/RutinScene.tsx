@@ -252,7 +252,17 @@ function Scene(props: SceneProps) {
   const firstOfMorning =
     key === "sabah" &&
     !(chain?.items ?? []).slice(0, Math.max(0, runningAt)).some((row) => row.state === "done");
-  const greeting = !greeted && untouched.current && atStart && firstOfMorning;
+  // "Kalktım" on any screen stamps the step's start: the other screens leave Günaydın too.
+  const woken = view?.step_started_at != null;
+  const greeting = !greeted && untouched.current && atStart && firstOfMorning && !woken;
+  // A touched screen (the tap that started it, "Uyandım") is awake: it stamps the start.
+  const stampStart = Boolean(view && !woken && !untouched.current && !bedtime);
+  useEffect(() => {
+    if (!stampStart) return;
+    const timer = setTimeout(() => apply({ step_started_at: stamp() }), 0);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [stampStart]);
 
   // The day's summary: said on the touched screen, and always written.
   const tomorrow = day ? shiftDay(day, 1) : null;
@@ -312,9 +322,10 @@ function Scene(props: SceneProps) {
 
   /** The step's own record and its add-ons': done up to the line it stands on, the rest `result`. */
   function recordsOf(target: DayStep, result: "done" | "skipped", fromLine: number, bulk = false) {
-    const seconds = view?.step_started_at
-      ? Math.max(0, Math.round((Date.now() - Date.parse(view.step_started_at)) / 1000))
-      : null;
+    const since = view?.step_started_at
+      ? Date.parse(view.step_started_at)
+      : session.startedAt.getTime();
+    const seconds = view ? Math.max(0, Math.round((Date.now() - since) / 1000)) : null;
     const quick = bulk || (seconds !== null && seconds < BULK_SECONDS);
     const ownDone = result === "done" || target.lines[fromLine]?.kind === "addon";
     const records: Rec[] = [

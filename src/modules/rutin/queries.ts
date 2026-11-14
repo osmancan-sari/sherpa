@@ -129,7 +129,9 @@ export async function ensureRun(
         routine_id: args.routineId,
         day: args.day,
         session_id: args.sessionId,
-        step_started_at: args.at.toISOString(),
+        // Empty until the scene is on a touched screen ("Kalktım", or the tap that started it):
+        // a screen that sees it empty and was not touched shows Günaydın.
+        step_started_at: null,
       },
       { onConflict: "user_id,routine_id,day", ignoreDuplicates: true },
     ),

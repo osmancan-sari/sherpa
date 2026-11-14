@@ -252,3 +252,67 @@ test("a topic added and colours changed reach open screens: the colour list, the
   expect(navigations.mobile()).toBe(0);
   await context.close();
 });
+
+// --- Rutin 1: the routine's scene on two screens (criterion 9; simulation B5) --------------------
+
+test("Rutin: Sonraki on one screen brings the other to the same sub-step within a second; only the touched screen speaks", async ({
+  page: desktop,
+  browser,
+  baseURL,
+}) => {
+  const { context, page: hand } = await phone(browser, baseURL!);
+  for (const page of [desktop, hand]) {
+    await page.addInitScript(() => {
+      const said: string[] = [];
+      (window as unknown as { __spoken: string[] }).__spoken = said;
+      Object.defineProperty(window, "speechSynthesis", {
+        configurable: true,
+        value: {
+          speak(utterance: SpeechSynthesisUtterance) {
+            if (utterance.text) said.push(utterance.text);
+            setTimeout(() => utterance.onend?.(new Event("end") as SpeechSynthesisEvent), 10);
+          },
+          cancel() {},
+          getVoices: () => [{ voiceURI: "tr-fake", name: "Deneme sesi", lang: "tr-TR" }],
+          addEventListener() {},
+          removeEventListener() {},
+        },
+      });
+    });
+  }
+  await desktop.goto("/ayarlar/moduller");
+  await desktop.getByRole("button", { name: "Rutin: etkinleştir" }).click();
+  const [morning] = await waitFor(
+    () => rows("rhythms"),
+    (list) => list.length === 3,
+  ).then((list) => list.filter((row) => row.key === "rutin:sabah"));
+  const [mod] = await rows("modules");
+  // The waking came from outside: both screens open on Günaydın; the phone is the one touched.
+  const [settings] = await rows("settings");
+  await update("settings", settings.id as string, {
+    day_frame: { wake: ["06:00", "09:00"], bed: ["22:00", "01:00"], sleep_minutes: 480 },
+  });
+  await insert("sessions", { rhythm_id: morning.id, module_id: mod.id });
+  await Promise.all([desktop.goto("/"), hand.goto("/")]);
+  const desk = desktop.getByTestId("rutin-scene");
+  const phoneScene = hand.getByTestId("rutin-scene");
+  await expect(phoneScene).toHaveAttribute("data-screen", "gunaydin");
+  await expect(desk).toHaveAttribute("data-screen", "gunaydin");
+  await phoneScene.getByRole("button", { name: "Kalktım" }).click();
+  await expect(phoneScene).toHaveAttribute("data-screen", "adim");
+  const said = (page: Page) =>
+    page.evaluate(() => (window as unknown as { __spoken: string[] }).__spoken);
+  await expect.poll(async () => (await said(hand)).join(" ")).toContain("Günaydın.");
+
+  // The second screen leaves Günaydın by itself and says nothing: only the touched screen speaks.
+  await expect(desk).toHaveAttribute("data-screen", "adim");
+  await expect(desk).toHaveAttribute("data-part", "0");
+  // The phone moves the run; the second screen follows within a second.
+  await phoneScene.getByRole("button", { name: "Sonraki" }).click();
+  await expect(phoneScene).toHaveAttribute("data-part", "1");
+  await expect(desk).toHaveAttribute("data-part", "1", { timeout: 1000 });
+  await desktop.waitForTimeout(500);
+  expect(await said(desktop)).toEqual([]);
+  expect((await said(hand)).filter((text) => text.startsWith("Günaydın."))).toHaveLength(1);
+  await context.close();
+});

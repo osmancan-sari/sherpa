@@ -150,7 +150,7 @@ export async function openRun(ctx: ModuleContext, event: AppEvent): Promise<void
       finished_at: null,
       step_position: 0,
       part_position: 0,
-      step_started_at: at.toISOString(),
+      step_started_at: null,
       part_started_at: null,
       part_paused_at: null,
     });
