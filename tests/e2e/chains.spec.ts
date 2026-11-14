@@ -379,3 +379,61 @@ test("a screen that stays open does not start the chain; coming back to the fron
   await page.evaluate(() => document.dispatchEvent(new Event("visibilitychange")));
   await runningOn(teeth.id);
 });
+
+// --- The closing inside a scene --------------------------------------------------------------
+
+test("a scene opens the evening closing inside it, comes back to it, and ends the day with 'Yatıyorum'", async ({
+  page,
+}) => {
+  const { deneme } = await setUp();
+  await insert("days", { date: DAY, woke_at: dayAt("07:00").toISOString() });
+  const [face] = await insert<Row>("tasks", {
+    module_id: deneme.id,
+    title: "Yüz",
+    est_minutes: 10,
+    facet: "aksam",
+    timing: { anchor: "bed", order: 20 },
+  });
+  await page.clock.setFixedTime(dayAt("21:00"));
+  await page.goto("/");
+  await card(page).getByRole("button", { name: "Başla", exact: true }).click();
+  const scene = page.getByTestId("deneme-gece");
+  await expect(scene).toBeVisible();
+  await runningOn(face.id);
+
+  // Opened and given up: back to the scene, the session goes on.
+  await scene.getByRole("button", { name: "Günü kapat" }).click();
+  const closing = page.getByRole("region", { name: "Sahne" });
+  await expect(closing.getByRole("heading", { name: "Kapanış" })).toBeVisible();
+  await expect(page.getByLabel("Sahne şeridi")).toBeVisible();
+  await closing.getByRole("button", { name: "Vazgeç" }).click();
+  await expect(scene).toBeVisible();
+
+  // Opened and confirmed: no "Onayla ve yat" here; back to the scene, the day is closed.
+  await scene.getByRole("button", { name: "Günü kapat" }).click();
+  for (let step = 0; step < 4; step++) {
+    await closing.getByRole("button", { name: "İleri" }).click();
+  }
+  await expect(closing.getByRole("button", { name: "Onayla", exact: true })).toBeVisible();
+  await expect(closing.getByRole("button", { name: "Onayla ve yat" })).toHaveCount(0);
+  await closing.getByRole("button", { name: "Onayla", exact: true }).click();
+  await expect(scene).toBeVisible();
+  await expect(scene).toContainText("Günün kapanışı yapıldı.");
+  await expect(scene.getByRole("button", { name: "Günü kapat" })).toHaveCount(0);
+  await waitFor(
+    () => rows("days"),
+    (list) => list.some((row) => row.date === DAY && row.closed_at !== null),
+  );
+  expect(await open()).toHaveLength(1);
+
+  // The scene's last step: the bedtime is recorded, the work is done, night comes.
+  await scene.getByRole("button", { name: "Yatıyorum" }).click();
+  await expect(scene).toBeHidden();
+  const [day] = await waitFor(
+    () => rows("days"),
+    (list) => list.some((row) => row.date === DAY && row.bed_at !== null),
+  );
+  expect(day.bed_at).not.toBeNull();
+  await waitFor(open, (list) => list.length === 0);
+  expect((await rows("tasks")).find((row) => row.id === face.id)?.status).toBe("done");
+});

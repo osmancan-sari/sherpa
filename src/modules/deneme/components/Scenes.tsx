@@ -179,10 +179,12 @@ function FacetScene({
   controls,
   facet,
   chain,
+  today,
   testId,
   greeting,
   sky,
-}: SceneProps & { testId: string; greeting: string; sky: string }) {
+  evening = false,
+}: SceneProps & { testId: string; greeting: string; sky: string; evening?: boolean }) {
   const title = subject.kind === "task" ? subject.task.title : subject.rhythm.title;
   const color = facet?.color ?? "currentColor";
   return (
@@ -216,7 +218,25 @@ function FacetScene({
         <Button variant="outline" className="h-12 px-5 text-base" onClick={controls.stuck}>
           Takıldım
         </Button>
+        {/* Ç3f: the evening's closing inside the scene, and the day's end from it. */}
+        {evening && !today.closed ? (
+          <Button variant="outline" className="h-12 px-5 text-base" onClick={controls.closing}>
+            Günü kapat
+          </Button>
+        ) : null}
+        {evening ? (
+          <Button
+            variant="outline"
+            className="h-12 px-5 text-base"
+            onClick={() => void controls.bed()}
+          >
+            Yatıyorum
+          </Button>
+        ) : null}
       </div>
+      {evening && today.closed ? (
+        <p className="text-muted-foreground text-sm">Günün kapanışı yapıldı.</p>
+      ) : null}
     </div>
   );
 }
@@ -238,6 +258,7 @@ export function NightScene(props: SceneProps) {
       {...props}
       testId="deneme-gece"
       greeting="gün biterken"
+      evening
       sky="radial-gradient(circle at 70% 30%, #e2e8f0 0 18%, $color 20%)"
     />
   );

@@ -233,6 +233,10 @@ export type SceneProps = {
     stuck: () => void;
     /** Leaves the scene; the session goes on. */
     exit: () => void;
+    /** Ç3f: opens the evening closing inside the scene; back to the scene when it is done. */
+    closing: () => void;
+    /** Ç3f: "Yatıyorum": tonight's bedtime is now; the session ends as done. */
+    bed: () => Promise<void>;
   };
   say: Say;
   today: TodayBrief;

@@ -3,6 +3,8 @@
 import { Component, type ReactNode, useEffect, useState, useSyncExternalStore } from "react";
 import { Button } from "@/components/ui/button";
 import { useEndSession } from "@/core/app/actions";
+import { useRecordBed } from "@/core/app/frame-actions";
+import { ClosingInScene } from "../closing/ClosingScreen";
 import type { KnownModule } from "@/core/app/hooks";
 import { facetColor, moduleColor } from "@/core/contract/colors";
 import { chooseScene, findFacet, sceneTone, taskFacet } from "@/core/contract/facets";
@@ -173,6 +175,7 @@ export function SceneFrame({
   facet = null,
   chain = null,
   next = null,
+  date,
   brief,
   onExit,
   onStuck,
@@ -188,6 +191,8 @@ export function SceneFrame({
   chain?: SceneChain | null;
   /** Ç3f: the chain's next work, started when this one ends with Bitti (setting on). */
   next?: PlannedTarget | null;
+  /** The planning day (the bedtime is tonight's). */
+  date: string;
   brief: TodayBrief;
   onExit: () => void;
   onStuck: () => void;
@@ -196,6 +201,9 @@ export function SceneFrame({
   const { ctx } = useModuleScope(mod);
   const end = useEndSession();
   const say = useSay();
+  const recordBed = useRecordBed();
+  // Ç3f: the evening closing opened by the scene, in its place (this device only).
+  const [closing, setClosing] = useState(false);
   const device = useDevice();
   const session = state.session;
   const startedAt = new Date(session.started_at);
@@ -225,6 +233,12 @@ export function SceneFrame({
       },
       stuck: onStuck,
       exit: onExit,
+      closing: () => setClosing(true),
+      bed: async () => {
+        // "Yatıyorum" ends the day: the work is done, no chain goes on from it.
+        await end.mutateAsync({ session, outcome: "done" });
+        await recordBed.mutateAsync({ date, at: new Date() });
+      },
     },
     say,
     today: brief,
@@ -271,9 +285,15 @@ export function SceneFrame({
         </Button>
       </header>
       <section aria-label="Sahne" className="flex flex-1 flex-col p-5 md:p-10">
-        <SceneBoundary onError={onFailed}>
-          <Scene {...props} />
-        </SceneBoundary>
+        {closing ? (
+          <div data-scene-closing="">
+            <ClosingInScene onDone={() => setClosing(false)} />
+          </div>
+        ) : (
+          <SceneBoundary onError={onFailed}>
+            <Scene {...props} />
+          </SceneBoundary>
+        )}
       </section>
     </div>
   );

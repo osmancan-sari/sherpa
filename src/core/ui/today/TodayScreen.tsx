@@ -122,6 +122,8 @@ function TodayBody() {
     const onKey = (event: KeyboardEvent) => {
       if (event.ctrlKey || event.metaKey || event.altKey || isTyping(event.target)) return;
       if (document.querySelector('[role="dialog"]')) return;
+      // Ç3f: the closing opened inside a scene has its own keys (Enter, Escape).
+      if (document.querySelector("[data-scene-closing]")) return;
       if (!state || !input) return;
       const key = event.key.toLowerCase();
       if (event.key === " ") {
@@ -202,6 +204,7 @@ function TodayBody() {
           facet={scene.facet}
           chain={runningChain}
           next={nextOf(running.task?.id ?? running.rhythm?.id)}
+          date={input.date}
           brief={briefOf(input, plan, moduleMap)}
           onExit={() => setExitedScene(running.session.id)}
           onStuck={() => {

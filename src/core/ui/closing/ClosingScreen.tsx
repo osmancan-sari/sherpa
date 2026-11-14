@@ -42,7 +42,16 @@ export function ClosingScreen() {
   );
 }
 
-function ClosingBody() {
+/**
+ * Ç3f: the closing inside a scene (`controls.closing()`; docs/06-modul-sozlesmesi.md, "Diziler"
+ * rule 6): the same steps, no "Onayla ve yat" (the scene's own last step records the bedtime),
+ * a "Vazgeç", and back to the scene when it is confirmed or given up.
+ */
+export function ClosingInScene({ onDone }: { onDone: () => void }) {
+  return <ClosingBody inScene={{ onDone }} />;
+}
+
+function ClosingBody({ inScene }: { inScene?: { onDone: () => void } } = {}) {
   const router = useRouter();
   const { modules } = useModules();
   const { input, rows, failed, retry, now, context } = useTodayPlan();
@@ -151,7 +160,8 @@ function ClosingBody() {
         onSuccess: () => {
           for (const line of lines) addEntry.mutate({ id: crypto.randomUUID(), text: line });
           if (andBed) recordBed.mutate({ date: input.date, at: new Date() });
-          router.push("/");
+          if (inScene) inScene.onDone();
+          else router.push("/");
         },
       },
     );
@@ -160,7 +170,11 @@ function ClosingBody() {
     <div className="flex flex-col gap-6">
       <StepKeys onNext={step === STEPS.length - 1 ? () => confirm() : next} onBack={back} />
       <header className="flex flex-col gap-3">
-        <h1 className="text-xl font-semibold tracking-tight md:text-2xl">Kapanış</h1>
+        {inScene ? (
+          <h2 className="text-xl font-semibold tracking-tight md:text-2xl">Kapanış</h2>
+        ) : (
+          <h1 className="text-xl font-semibold tracking-tight md:text-2xl">Kapanış</h1>
+        )}
         <ol
           aria-label="Adımlar"
           className="text-muted-foreground flex flex-wrap gap-x-4 gap-y-1 text-sm"
@@ -321,7 +335,7 @@ function ClosingBody() {
             <Button className="h-11 md:h-9" disabled={close.isPending} onClick={() => confirm()}>
               Onayla
             </Button>
-            {input.frame ? (
+            {input.frame && !inScene ? (
               <Button
                 variant="outline"
                 className="h-11 md:h-9"
@@ -333,6 +347,11 @@ function ClosingBody() {
             ) : null}
           </>
         )}
+        {inScene ? (
+          <Button variant="ghost" className="h-11 md:h-9" onClick={inScene.onDone}>
+            Vazgeç
+          </Button>
+        ) : null}
       </div>
       <p className="text-muted-foreground text-sm">Enter ile ilerle, Escape ile geri dön.</p>
     </div>
