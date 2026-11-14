@@ -305,7 +305,7 @@ type TodayBrief = {
 
 - Tek giriş noktası `src/core/voice/`; ilk sağlayıcı cihazın kendi konuşma sentezidir (Türkçe ses). Art arda gelen metinler sıraya girer, `interrupt` sıradakileri atar; uzun metin cümlelere bölünür.
 - Ayarlar cihaz başınadır (Ayarlar → Sesli anlatım): açık ya da kapalı, ses, hız, "bu cihaz dokunuş olmadan da konuşsun". Kendiliğinden konuşma yalnızca bu ayarın açık olduğu cihazda olur; öbür cihaz yalnızca son 10 dakikada dokunulduysa konuşur.
-- Anlatım kapalıysa, cihazda ses yoksa ya da tarayıcı izin vermezse `say` hiçbir şey yapmaz ve hata vermez. Sahne anlatıma bağımlı kurulmaz: söylenen her şey ekranda da yazar.
+- Anlatım kapalıysa, cihazda ses yoksa ya da tarayıcı izin vermezse `say` hiçbir şey yapmaz ve hata vermez. Cihazda Türkçe ses yoksa da sessizdir: başka dilin sesi Türkçe metni okumaz (Ç3g); Ayarlar → Sesli anlatım bunu söyler. Uçtan uca testlerde konuşma motoru ortak kurulumda sahtedir (`tests/e2e/fixtures.ts`). Sahne anlatıma bağımlı kurulmaz: söylenen her şey ekranda da yazar.
 - **Yalnızca `say` konuşur.** Konuşma motoruna `say` ile istenenden başka hiçbir şey gitmez: ilk dokunuşta ısındırma, boş ya da sessiz anlatım yok; dokunuş yalnızca not edilir. Bu yüzden iOS'ta ilk anlatım bir dokunuşun içinde olmalıdır (sahnedeki "Anlat" gibi); dokunuşsuz ilk `say` reddedilirse sessiz kalır. Sayfa kapanınca kuyruk boşaltılır. Test: `tests/e2e/voice.spec.ts` (13 Kas 2026).
 - Anlatılan metin ürün kurallarına uyar: suçlama ve geçmişi sayma yok.
 

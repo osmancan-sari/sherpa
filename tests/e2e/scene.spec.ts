@@ -1,6 +1,6 @@
 import { insert, rows, seedModule, waitFor } from "./data";
 import { expect, test } from "./fixtures";
-import { activateDeneme, addRecord, recordSpeech, spoken, startFromModule } from "./scene-helpers";
+import { activateDeneme, addRecord, spoken, startFromModule } from "./scene-helpers";
 
 // The scene's rules end to end (Ç3c; docs/06-modul-sozlesmesi.md, "Sahne"): "Çık" and
 // "Sahneye dön", a failing scene, work without a scene, the step scene, and `say`.
@@ -113,7 +113,6 @@ test("the step scene: countdown, Sonraki, Atla; its step kept in the module's ro
 test("say: the scene's words are spoken on the device that was touched, and shown too", async ({
   page,
 }) => {
-  await recordSpeech(page);
   await activateDeneme(page);
   await addRecord(page, "Sunum", { minutes: "30", kind: "odak" });
   await startFromModule(page, "Sunum");
@@ -126,7 +125,6 @@ test("say: the scene's words are spoken on the device that was touched, and show
 test("the voice settings are this device's: off is silent, Dene speaks, the choice stays", async ({
   page,
 }) => {
-  await recordSpeech(page);
   await page.goto("/ayarlar");
   const voice = page.getByRole("group", { name: "Sesli anlatım" });
   await voice.getByRole("button", { name: "Dene" }).click();

@@ -261,25 +261,6 @@ test("Rutin: Sonraki on one screen brings the other to the same sub-step within 
   baseURL,
 }) => {
   const { context, page: hand } = await phone(browser, baseURL!);
-  for (const page of [desktop, hand]) {
-    await page.addInitScript(() => {
-      const said: string[] = [];
-      (window as unknown as { __spoken: string[] }).__spoken = said;
-      Object.defineProperty(window, "speechSynthesis", {
-        configurable: true,
-        value: {
-          speak(utterance: SpeechSynthesisUtterance) {
-            if (utterance.text) said.push(utterance.text);
-            setTimeout(() => utterance.onend?.(new Event("end") as SpeechSynthesisEvent), 10);
-          },
-          cancel() {},
-          getVoices: () => [{ voiceURI: "tr-fake", name: "Deneme sesi", lang: "tr-TR" }],
-          addEventListener() {},
-          removeEventListener() {},
-        },
-      });
-    });
-  }
   await desktop.goto("/ayarlar/moduller");
   await desktop.getByRole("button", { name: "Rutin: etkinleştir" }).click();
   const [morning] = await waitFor(

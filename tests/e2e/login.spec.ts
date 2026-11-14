@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, quietTest as test } from "./fixtures";
 import { ALLOWED_EMAIL, clearMail, countMail, requestCode, signIn } from "./helpers";
 
 // Acceptance: the allowed e-mail signs in with a code typed into the app; any other is rejected.

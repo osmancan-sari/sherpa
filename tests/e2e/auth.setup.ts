@@ -1,5 +1,5 @@
 import { execFileSync } from "node:child_process";
-import { test as setup } from "@playwright/test";
+import { quietTest as setup } from "./fixtures";
 import { signIn, STORAGE_STATE } from "./helpers";
 import { removeUser, SUPABASE_URL } from "./supabase";
 

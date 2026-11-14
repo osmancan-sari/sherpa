@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, quietTest as test } from "./fixtures";
 import { SESSION_COOKIE } from "./supabase";
 
 // Acceptance: without signing in, no page and no API route returns data.

@@ -66,6 +66,9 @@ export default defineConfig({
     locale: "tr-TR",
     timezoneId: "Europe/Istanbul",
     trace: "retain-on-failure",
+    // Ç3g: no sound from a test run. The speech is fake in every page (tests/e2e/fixtures.ts);
+    // the browser is muted as well.
+    launchOptions: { args: ["--mute-audio"] },
   },
   // Every *.spec.ts file runs somewhere without being listed here: "pano" takes whatever the
   // other projects do not claim, so a new spec file can never be silently left out.

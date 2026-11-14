@@ -10,8 +10,8 @@ import { expect, test } from "./fixtures";
 
 type Call = { kind: "speak"; text: string; volume: number } | { kind: "cancel" };
 
-async function recordEveryCall(page: Page) {
-  await page.addInitScript(() => {
+async function recordEveryCall(page: Page, lang = "tr-TR") {
+  await page.addInitScript((voiceLang) => {
     const calls: unknown[] = [];
     (window as unknown as { __speech: unknown[] }).__speech = calls;
     const fake = {
@@ -24,12 +24,12 @@ async function recordEveryCall(page: Page) {
       cancel() {
         calls.push({ kind: "cancel" });
       },
-      getVoices: () => [{ voiceURI: "tr-fake", name: "Deneme sesi", lang: "tr-TR" }],
+      getVoices: () => [{ voiceURI: "fake", name: "Deneme sesi", lang: voiceLang }],
       addEventListener() {},
       removeEventListener() {},
     };
     Object.defineProperty(window, "speechSynthesis", { value: fake, configurable: true });
-  });
+  }, lang);
 }
 
 const calls = (page: Page) =>
@@ -84,4 +84,16 @@ test("Ayarlar → Sesli anlatım: off keeps even Dene silent, and stays off afte
       { kind: "speak", text: "Sesli anlatım açık.", volume: 1 },
       { kind: "speak", text: "Böyle konuşacağım.", volume: 1 },
     ]);
+});
+
+test("a device without a Turkish voice says nothing (no other language reads Turkish) and Settings says so", async ({
+  page,
+}) => {
+  await recordEveryCall(page, "en-US");
+  await page.goto("/ayarlar");
+  const voice = page.getByRole("group", { name: "Sesli anlatım" });
+  await expect(voice.getByText("Bu cihazda Türkçe ses yok; anlatım sessiz kalır.")).toBeVisible();
+  await voice.getByRole("button", { name: "Dene" }).click();
+  await page.waitForTimeout(300);
+  expect((await calls(page)).filter((call) => call.kind === "speak")).toEqual([]);
 });

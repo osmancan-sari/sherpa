@@ -1,4 +1,5 @@
-import { expect, test, type BrowserContext } from "@playwright/test";
+import type { BrowserContext } from "@playwright/test";
+import { expect, quietTest as test } from "./fixtures";
 import { ALLOWED_EMAIL } from "./helpers";
 import {
   adminClient,

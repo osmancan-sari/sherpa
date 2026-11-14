@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { turkishVoice } from "./device";
 import { MAX_PIECE, splitSentences } from "./sentences";
 import { createSpeaker, TOUCH_WINDOW_MS } from "./speaker";
 import { DEFAULT_VOICE, type VoiceProvider, type VoiceSettings } from "./types";
@@ -120,5 +121,23 @@ describe("the queue", () => {
     auto.say("Pano konuşur.");
     await auto.idle();
     expect(pano.said).toEqual(["Pano konuşur."]);
+  });
+});
+
+describe("the device's voice (Ç3g)", () => {
+  const voices = [
+    { voiceURI: "en-1", lang: "en-US" },
+    { voiceURI: "tr-1", lang: "tr-TR" },
+    { voiceURI: "tr-2", lang: "tr" },
+  ];
+  it("takes the chosen Turkish voice, else the first Turkish one", () => {
+    expect(turkishVoice(voices, "tr-2")?.voiceURI).toBe("tr-2");
+    expect(turkishVoice(voices, null)?.voiceURI).toBe("tr-1");
+    // A chosen voice that is not Turkish is not used.
+    expect(turkishVoice(voices, "en-1")?.voiceURI).toBe("tr-1");
+  });
+  it("has none when the device has no Turkish voice: nothing is said in another language", () => {
+    expect(turkishVoice([{ voiceURI: "en-1", lang: "en-US" }], null)).toBeNull();
+    expect(turkishVoice([], "tr-1")).toBeNull();
   });
 });

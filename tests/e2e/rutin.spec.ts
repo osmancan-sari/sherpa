@@ -1,7 +1,7 @@
 import type { Page } from "@playwright/test";
 import { insert, rows, update, waitFor } from "./data";
 import { expect, test } from "./fixtures";
-import { recordSpeech, spoken } from "./scene-helpers";
+import { spoken } from "./scene-helpers";
 
 // Rutin, step 1 (docs/moduller/rutin.md, "Adım 1 · Temel", criteria 1–5 and 8, 10): the three
 // rhythms on switch-on, the morning as one chain, the step scene (sub-steps, the timed one, its
@@ -180,7 +180,6 @@ test("another module's wake-bound work counts in the morning and its own scene c
 test("the timed sub-step: held before its time, it runs out into the next one and says its name; a reload finds it", async ({
   page,
 }) => {
-  await recordSpeech(page);
   await setUp(page);
   await page.clock.install({ time: dayAt("07:02") });
   await page.goto("/");
@@ -261,7 +260,6 @@ test("the morning's last step says Bitti; then İyi günler, then the Today scre
 test("Uyandım on this screen skips Günaydın: the teeth and the day's summary come at once", async ({
   page,
 }) => {
-  await recordSpeech(page);
   await setUp(page, { start_on_wake: true }, null);
   await page.clock.setFixedTime(dayAt("07:00"));
   await page.goto("/");
@@ -274,7 +272,6 @@ test("Uyandım on this screen skips Günaydın: the teeth and the day's summary 
 test("a waking told from outside shows Günaydın; Kalktım brings the teeth and tells the day", async ({
   page,
 }) => {
-  await recordSpeech(page);
   // The phone's automation wrote the waking before the app came to the front (as core/wake does).
   await setUp(page, { start_on_wake: true }, "06:58");
   await page.clock.setFixedTime(dayAt("07:00"));

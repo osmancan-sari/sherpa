@@ -153,7 +153,7 @@ Uyanışa ve yatışa bağlı işler bir dizidir (`docs/06-modul-sozlesmesi.md`,
 - **Akşam kapanışının sonunda** "Onayla"nın yanında "Onayla ve yat" (kapanışı yazar ve yatışı kaydeder).
 - **Hafta:** en üstte tek satır: son 7 günün ortalama uyanışı, yatışı ve uykusu (kayıt olan günlerden; yoksa satır yok). Seri, puan, rozet yok.
 - **Ayarlar → Günün çerçevesi:** "Günün çerçevesi açık" (kapalıyken planlayıcı Ç3b'deki gibi), uyanış ve yatış aralığı, uyku hedefi (saat), gün tipine özel aralıklar (isteğe bağlı), "Uyandım'dan sonra ilk rutin kendiliğinden başlasın" (Ç3f: uyanış telefondan gelince uygulama açılınca da), "Dizide sıradaki iş kendiliğinden başlasın".
-- **Ayarlar → Sesli anlatım (bu cihaz):** açık ya da kapalı, ses (cihazın Türkçe sesleri), hız, "Bu cihaz dokunuş olmadan da konuşsun", "Dene".
+- **Ayarlar → Sesli anlatım (bu cihaz):** açık ya da kapalı, ses (cihazın Türkçe sesleri), hız, "Bu cihaz dokunuş olmadan da konuşsun", "Dene". Cihazda Türkçe ses yoksa "Bu cihazda Türkçe ses yok; anlatım sessiz kalır." yazar ve hiçbir şey söylenmez (Ç3g).
 
 ### Ayarlar → Bağlantılar (Ç3d)
 

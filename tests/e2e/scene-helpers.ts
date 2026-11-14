@@ -1,8 +1,8 @@
 import { expect, type Page } from "@playwright/test";
 import { rows, waitFor } from "./data";
 
-// Shared by the scene specs (Ç3c): the "deneme" module on, a record of a kind, and the device's
-// speech replaced by a recorder (the real one is tried by hand on real devices).
+// Shared by the scene specs (Ç3c): the "deneme" module on, a record of a kind, what was said
+// (the speech is fake in every test: tests/e2e/fixtures.ts).
 
 export async function activateDeneme(page: Page) {
   await page.goto("/ayarlar/moduller");
@@ -50,24 +50,6 @@ export async function startFromModule(page: Page, title: string) {
   await page.goto("/");
 }
 
-/** Replaces the device's speech with a recorder: `window.__spoken` holds what was said. */
-export async function recordSpeech(page: Page) {
-  await page.addInitScript(() => {
-    const said: string[] = [];
-    (window as unknown as { __spoken: string[] }).__spoken = said;
-    const fake = {
-      speak(utterance: SpeechSynthesisUtterance) {
-        if (utterance.text) said.push(utterance.text);
-        setTimeout(() => utterance.onend?.(new Event("end") as SpeechSynthesisEvent), 10);
-      },
-      cancel() {},
-      getVoices: () => [{ voiceURI: "tr-fake", name: "Deneme sesi", lang: "tr-TR" }],
-      addEventListener() {},
-      removeEventListener() {},
-    };
-    Object.defineProperty(window, "speechSynthesis", { value: fake, configurable: true });
-  });
-}
-
+/** What the page would have said: the shared fake speech keeps it (tests/e2e/fixtures.ts). */
 export const spoken = (page: Page) =>
   page.evaluate(() => (window as unknown as { __spoken: string[] }).__spoken);

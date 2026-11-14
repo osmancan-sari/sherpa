@@ -1,13 +1,13 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
-import { expect, type Page, test as base } from "@playwright/test";
+import type { Page } from "@playwright/test";
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/database.types";
 import { seedDemo } from "../../scripts/demo-data";
 import { seedChains } from "../../scripts/demo-chains";
 import { seedFacets } from "../../scripts/demo-facets";
 import { insert, rows, update, waitFor } from "./data";
-import { test } from "./fixtures";
+import { expect, quietTest as base, test } from "./fixtures";
 import { ALLOWED_EMAIL, requestCode } from "./helpers";
 import { type Cookie, PUBLISHABLE_KEY, readSession, SUPABASE_URL } from "./supabase";
 

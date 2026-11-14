@@ -17,8 +17,9 @@ export function VoiceSettings() {
   );
 }
 
-function useDeviceVoices(): VoiceOption[] {
-  const [voices, setVoices] = useState<VoiceOption[]>([]);
+/** The device's Turkish voices; null until the list was read once. */
+function useDeviceVoices(): VoiceOption[] | null {
+  const [voices, setVoices] = useState<VoiceOption[] | null>(null);
   useEffect(() => {
     const read = () => setVoices(deviceVoice.voices());
     const timer = setTimeout(read, 0);
@@ -46,6 +47,9 @@ function VoiceSettingsBody() {
         her şey ekranda da yazar.
       </p>
       {!available ? <p>Bu cihazda konuşma sentezi yok; anlatım sessiz kalır.</p> : null}
+      {available && voices !== null && voices.length === 0 ? (
+        <p role="status">Bu cihazda Türkçe ses yok; anlatım sessiz kalır.</p>
+      ) : null}
       <label className="flex min-h-11 items-center gap-2 md:min-h-9">
         <input
           type="checkbox"
@@ -63,7 +67,7 @@ function VoiceSettingsBody() {
           className="border-border bg-background h-11 rounded-md border px-2 md:h-9"
         >
           <option value="">Cihazın Türkçe sesi</option>
-          {voices.map((voice) => (
+          {(voices ?? []).map((voice) => (
             <option key={voice.id} value={voice.id}>
               {voice.name}
             </option>
