@@ -393,12 +393,12 @@ test("a scene opens the evening closing inside it, comes back to it, and ends th
   page,
 }) => {
   const { deneme } = await setUp();
-  // Ç3g: bed-bound work is offered from 15 minutes before its place; tonight's bed is 21:30
-  // (the user's own value), so at 21:00 the evening offers it.
+  // Ç3g: bed-bound work is offered from 15 minutes before its place; tonight's bed is 21:20
+  // (the user's own value), so at 21:00 the evening offers it (21:10–21:20).
   await insert("days", {
     date: DAY,
     woke_at: dayAt("07:00").toISOString(),
-    expected_bed: "21:30:00",
+    expected_bed: "21:20:00",
   });
   const [face] = await insert<Row>("tasks", {
     module_id: deneme.id,
