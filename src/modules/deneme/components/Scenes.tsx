@@ -147,8 +147,8 @@ function ChainList({ chain }: { chain: SceneChain }) {
           aria-current={item.state === "running" ? "step" : undefined}
           className={
             item.state === "done" || item.state === "passed"
-              ? "text-muted-foreground flex items-center gap-2"
-              : "flex items-center gap-2"
+              ? "text-muted-foreground flex flex-wrap items-center gap-x-2"
+              : "flex flex-wrap items-center gap-x-2"
           }
         >
           <span
@@ -157,7 +157,7 @@ function ChainList({ chain }: { chain: SceneChain }) {
             style={{ backgroundColor: item.color }}
           />
           <span className={item.state === "running" ? "font-medium" : undefined}>{item.title}</span>
-          <span className="text-muted-foreground tabular-nums">
+          <span className="text-muted-foreground basis-full pl-4 tabular-nums sm:basis-auto sm:pl-0">
             {[item.mine ? null : item.module.name, `${item.minutes} dk`, STATE_LABEL[item.state]]
               .filter(Boolean)
               .join(" · ")}

@@ -4,6 +4,7 @@ import { expect, type Page, test as base } from "@playwright/test";
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/database.types";
 import { seedDemo } from "../../scripts/demo-data";
+import { seedChains } from "../../scripts/demo-chains";
 import { seedFacets } from "../../scripts/demo-facets";
 import { insert, rows, update, waitFor } from "./data";
 import { test } from "./fixtures";
@@ -578,6 +579,75 @@ for (const theme of ["dark", "light"] as const) {
     await start("Günlük yaz");
     await expect(page.getByTestId("deneme-gece")).toBeVisible();
     await shot("bugun-sahne-aksam");
+  });
+}
+
+// Ç3f: the anchored chains, in both themes: the card's place in the morning, the scene with the
+// whole chain (another module's work in it), the next module's card after Bitti, the evening's
+// scene with the bed chain and the closing opened inside it. The sample chains come from
+// scripts/demo-chains.ts (two modules on each anchor); the frame is on, the clock yesterday's.
+for (const theme of ["dark", "light"] as const) {
+  test(`chain screens, ${theme}`, async ({ page }, testInfo) => {
+    test.setTimeout(120_000);
+    await page.addInitScript((value) => localStorage.setItem("theme", value), theme);
+    const shotDay = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Istanbul" }).format(
+      new Date(Date.now() - 86_400_000),
+    );
+    const at = (time: string, day = shotDay) => new Date(`${day}T${time}:00+03:00`);
+    // The morning on today's date when the real clock is past it (a routine's log is written
+    // on the database's day: on yesterday's screen it would still look open), else yesterday.
+    const realDay = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Istanbul" }).format(
+      new Date(),
+    );
+    const morningDay = Date.now() > at("07:30", realDay).getTime() ? realDay : shotDay;
+    const [settings] = await rows("settings");
+    await update("settings", settings.id as string, {
+      day_frame: { wake: ["06:00", "09:00"], bed: ["22:00", "01:00"], sleep_minutes: 480 },
+      day_start_default: "08:00",
+      finish_line_default: "19:00",
+    });
+    await insert("days", { date: shotDay, woke_at: at("07:00").toISOString() });
+    if (morningDay !== shotDay) {
+      await insert("days", { date: morningDay, woke_at: at("07:00", morningDay).toISOString() });
+    }
+    await seedChains(await userDb(), at("07:00"));
+    const phone = testInfo.project.use.isMobile === true;
+    const shot = async (name: string) => {
+      await page.mouse.move(0, 0);
+      await page.screenshot({
+        path: path.join(folder, `${testInfo.project.name}-${name}-${theme}.png`),
+        fullPage: !phone,
+        animations: "disabled",
+      });
+    };
+    const now = page.getByRole("region", { name: "Şimdi" });
+
+    await page.clock.setFixedTime(at("07:02", morningDay));
+    await page.goto("/");
+    await expect(now.getByTestId("chain-line")).toBeVisible();
+    await shot("bugun-dizi-oneri");
+    await now.getByRole("button", { name: "Başla", exact: true }).click();
+    await expect(page.getByTestId("scene-chain")).toBeVisible();
+    await shot("bugun-sahne-dizi");
+    await page.getByTestId("deneme-gunes").getByRole("button", { name: "Bitti" }).click();
+    await expect(now.getByRole("heading", { name: "Boyun hareketleri" })).toBeVisible();
+    await shot("bugun-dizi-kart");
+    await now.getByRole("button", { name: "Durdur" }).click();
+    await expect(now.getByRole("button", { name: "Başla", exact: true })).toBeVisible();
+
+    await page.clock.setFixedTime(at("21:00"));
+    await page.goto("/");
+    await expect(now.getByTestId("chain-line")).toBeVisible();
+    await shot("bugun-dizi-aksam");
+    await now.getByRole("button", { name: "Başla", exact: true }).click();
+    await now.getByRole("button", { name: "Bitti" }).click();
+    await expect(page.getByTestId("deneme-gece")).toBeVisible();
+    await shot("bugun-sahne-aksam-dizi");
+    await page.getByTestId("deneme-gece").getByRole("button", { name: "Günü kapat" }).click();
+    await expect(
+      page.getByRole("region", { name: "Sahne" }).getByRole("heading", { name: "Kapanış" }),
+    ).toBeVisible();
+    await shot("bugun-sahne-kapanis");
   });
 }
 

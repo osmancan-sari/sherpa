@@ -256,6 +256,10 @@ export function useEndSession() {
             },
           ]
         : []),
+      // A rhythm done: its log shows at once (the chain moves on; it must not look open).
+      ...(session.rhythm_id && outcome === "done"
+        ? [{ key: keys.rhythmLogs, update: list.add(draftLog(session.rhythm_id)) }]
+        : []),
       // Applied after the patch above: the ended task is no longer "doing", so it stays put.
       ...(next ? startedDraft(next, queryClient) : []),
     ],
@@ -263,23 +267,25 @@ export function useEndSession() {
   });
 }
 
+/** A rhythm's log as it will look once written; used optimistically. */
+function draftLog(rhythmId: string): RhythmLog {
+  const now = stamp();
+  return {
+    id: `pending-${rhythmId}`,
+    user_id: "",
+    rhythm_id: rhythmId,
+    done_on: dayKey(new Date()),
+    session_id: null,
+    created_at: now,
+    updated_at: now,
+  };
+}
+
 export function useLogRhythm() {
   const onError = useFailureNotice();
   return useCoreMutation({
     mutate: (db, rhythmId: string) => logRhythm(db, rhythmId, new Date()),
-    optimistic: (rhythmId) => {
-      const now = stamp();
-      const draft: RhythmLog = {
-        id: `pending-${rhythmId}`,
-        user_id: "",
-        rhythm_id: rhythmId,
-        done_on: dayKey(new Date()),
-        session_id: null,
-        created_at: now,
-        updated_at: now,
-      };
-      return [{ key: keys.rhythmLogs, update: list.add(draft) }];
-    },
+    optimistic: (rhythmId) => [{ key: keys.rhythmLogs, update: list.add(draftLog(rhythmId)) }],
     onError,
   });
 }
