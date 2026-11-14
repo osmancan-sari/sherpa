@@ -215,7 +215,7 @@ type SceneProps = {
     stuck: () => void                // "Takıldım" akışını açar (sahneden çıkar)
     exit: () => void                 // sahneden çık; oturum sürer
     closing: () => void              // Ç3f: akşam kapanışını sahnenin içinde açar (aşağıda "Diziler")
-    bed: () => Promise<void>         // Ç3f: "Yatıyorum": yatışı kaydeder, oturumu "Bitti" ile kapatır
+    bed: () => Promise<boolean>      // Ç3f: "Yatıyorum": yatışı kaydeder, oturumu "Bitti" ile kapatır. Ç3g: yatış aralığından 2 saatten çok önceyse önce sorar; "Vazgeç"te false döner, hiçbir şey değişmez
   }
   say: Say
   today: TodayBrief                  // günün kısa özeti (anlatım için; yalnızca okuma)
@@ -446,7 +446,7 @@ Akış:
 | `core.session_ended` (Ç3c) | Oturum kapandı | aynısı + `{ ended_at, result, minutes, measured }`; `result`: `done`, `stopped`, `deferred`, `stuck`, `unanswered` | Yalnızca işin modülüne |
 | `core.day_started` (Ç3c) | Uyanış kaydedildi | `{ date, woke_at, estimated, source }`; `source`: `screen`, `outside`, `estimate` (Ç3g) | Etkin bütün modüllere |
 | `core.day_closed` (Ç3c) | Yatış kaydedildi | `{ date, bed_at }` | Etkin bütün modüllere |
-| `core.bed_undone` (Rutin 1) | Sahnenin yazdığı yatış geri alındı ("Diziler", kural 6) | `{ date }` | Etkin bütün modüllere |
+| `core.bed_undone` (Rutin 1) | Sahnenin yazdığı yatış geri alındı ("Diziler", kural 6); Ç3g: yatış Ayarlar'dan silindi | `{ date }` | Etkin bütün modüllere |
 
 Olaylar yayınlandıkları yerde teslim edilir: tarayıcıdaki eylemin olayı tarayıcıda, giriş ucunun ve zamanlanmış işlerin olayı sunucuda (Ç3d). Dinleyici iki yerde de aynı bağlamı alır; sunucuda dinleyicinin `ctx`'i sunucu bağlamıdır (aşağıda).
 
