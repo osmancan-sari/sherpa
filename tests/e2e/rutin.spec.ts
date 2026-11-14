@@ -294,6 +294,12 @@ test("Yatıyorum writes the bedtime, İyi geceler stays after a reload, Geri al 
   await switchOn(page);
   const [settings] = await rows("settings");
   await update("settings", settings.id as string, { day_frame: FRAME });
+  // Tomorrow's waking, as the sleep plan writes it (whichever day the run falls on).
+  for (const date of [istanbulDay(0), istanbulDay(1)]) {
+    const row = (await rows("days")).find((day) => day.date === date);
+    if (row) await update("days", row.id as string, { planned_wake: "07:00" });
+    else await insert("days", { date, planned_wake: "07:00" });
+  }
   const evening = await rhythmOf("aksam");
   const [mod] = await rows("modules");
   await insert("sessions", {
@@ -319,6 +325,11 @@ test("Yatıyorum writes the bedtime, İyi geceler stays after a reload, Geri al 
 
   await expect(scene(page)).toHaveAttribute("data-screen", "iyi-geceler");
   await expect(scene(page).getByRole("heading", { name: "İyi geceler" })).toBeVisible();
+  const tomorrowBox = scene(page).getByRole("region", { name: "Yarın" });
+  await expect(tomorrowBox).toContainText("Uyanış");
+  // The sleep plan's waking (the day's keeper writes its own over the one put here).
+  await expect(tomorrowBox).toContainText(/Uyanış\d\d:\d\d/);
+  await expect(tomorrowBox).toContainText(/yaklaşık \d/);
   const [day] = await waitFor(
     () => rows("days"),
     (list) => list.some((row) => row.bed_at !== null),
@@ -413,6 +424,50 @@ test("the module page: a step is renamed, lengthened, made every other day and b
   await confirm.getByRole("button", { name: "Sil" }).click();
   await expect(page.getByTestId("rutin-aksam")).not.toContainText("Göz damlası");
   await expect.poll(async () => (await rhythmOf("aksam")).est_minutes).toBe(9);
+});
+
+test("the scene uses the list as edited: a renamed step, a new order dragged on the page", async ({
+  page,
+}) => {
+  await switchOn(page);
+  await page.goto("/m/rutin");
+  const morning = page.getByTestId("rutin-sabah").getByRole("region", { name: "SABAH" });
+  // "Bir bardak su" dragged above "Diş bakımı" by its handle.
+  const handle = morning.getByRole("button", { name: "Bir bardak su: sürükleyerek sırala" });
+  const box = (await handle.boundingBox())!;
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.down();
+  for (let step = 1; step <= 8; step++) {
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2 - step * 10);
+  }
+  await page.mouse.up();
+  await expect
+    .poll(async () =>
+      (await rows("rutin_steps"))
+        .filter((row) => row.title === "Bir bardak su" || row.title === "Diş bakımı")
+        .sort((a, b) => (a.position as number) - (b.position as number))
+        .map((row) => row.title)
+        .slice(0, 2),
+    )
+    .toEqual(["Bir bardak su", "Diş bakımı"]);
+  await expect(morning.getByTestId("rutin-step-row").first()).toContainText("Bir bardak su");
+  // Renamed in its sheet.
+  await morning.getByRole("button", { name: /^Diş bakımı temel/ }).click();
+  const sheet = page.getByRole("dialog", { name: "Adımı düzenle" });
+  await sheet.getByLabel("Adımın adı").fill("Dişler");
+  await sheet.getByRole("button", { name: "Kaydet" }).click();
+  await expect(sheet).toBeHidden();
+
+  // The morning's scene: the water first, then "Dişler".
+  const [mod] = await rows("modules");
+  await insert("sessions", { rhythm_id: (await rhythmOf("sabah")).id, module_id: mod.id });
+  await page.goto("/");
+  await expect.poll(() => scene(page).getAttribute("data-screen")).toMatch(/^(gunaydin|adim)$/);
+  if ((await scene(page).getAttribute("data-screen")) === "gunaydin") {
+    await scene(page).getByRole("button", { name: "Kalktım" }).click();
+  }
+  await expect(scene(page).getByRole("heading", { name: "Bir bardak su" })).toBeVisible();
+  await expect(page.getByTestId("rutin-chain")).toContainText("Dişler");
 });
 
 test("the scene keeps still with reduced motion", async ({ page }) => {

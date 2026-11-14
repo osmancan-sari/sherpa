@@ -1,5 +1,5 @@
 import type { ModuleDefinition, ModuleFacet } from "@/core/contract/types";
-import { dayKey } from "@/lib/date";
+import { dayKey, shiftDay } from "@/lib/date";
 import { EveningTab, MorningTab } from "./components/StepsTab";
 import { listRoutines, listRuns } from "./queries";
 import { listeners, proposeAll, writeStartList } from "./rules";
@@ -31,7 +31,7 @@ export const rutin: ModuleDefinition = {
   async chip(ctx) {
     // The core's day: after midnight the evening is still the night before's (B3).
     const now = ctx.now();
-    const morningDay = dayKey(now);
+    const morningDay = runDay(now, "sabah", await ctx.days(shiftDay(dayKey(now), -1)));
     const eveningDay = runDay(now, "aksam", []);
     const [routines, runs] = await Promise.all([
       listRoutines(ctx),

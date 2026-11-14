@@ -666,7 +666,7 @@ function Scene(props: SceneProps) {
           {lastUnit ? (evening ? "YARIN" : "SONRA") : "SIRADAKİ"}
         </span>
         <span className="min-w-0 flex-1 truncate" style={{ fontSize: 15, fontWeight: 600 }}>
-          {lastUnit ? lastText : nextUnit?.title}
+          {lastUnit ? (lastText ?? (evening ? "Uyanış saati henüz yok" : null)) : nextUnit?.title}
         </span>
         <span
           className="tabular-nums"
@@ -1279,7 +1279,7 @@ function GoodNight({
         {answer && answer !== "undone" ? (
           <p role="status" style={{ fontSize: 13, color: "#c6cde8" }}>
             {answer === "expired"
-              ? "Geri almak için geç kaldın; yatış kayıtlı kaldı."
+              ? "Geri alma süresi geçti; yatış kayıtlı."
               : answer === "changed"
                 ? "Yatış başka yerden değişti; bir şey değişmedi."
                 : "Geri alınamadı."}
