@@ -7,6 +7,7 @@
 // Local Supabase only: the script refuses any other address, so it can never write to
 // production data. The account is ALLOWED_EMAIL (create it with `npm run db:user`).
 
+import { seedChains } from "./demo-chains";
 import { seedFacets } from "./demo-facets";
 import { seedDemo } from "./demo-data";
 import { adminClient, localSetup, localUserId, signInAs } from "./local-user";
@@ -67,6 +68,8 @@ async function main() {
   // Ç3e: work in facets, through the test module, where it is switched on.
   if (process.env.NEXT_PUBLIC_SHERPA_DEMO_MODULE === "1") {
     Object.assign(summary, await seedFacets(db, now));
+    // Ç3f: the waking's and the bedtime's chains, two modules in each.
+    Object.assign(summary, await seedChains(db, now));
   }
   console.log(`Sample data written for ${email} on ${url}:`);
   for (const [name, total] of Object.entries(summary)) console.log(`  ${name}: ${total}`);

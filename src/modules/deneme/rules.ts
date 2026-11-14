@@ -92,6 +92,24 @@ export function proposalFor(item: DenemeItem, settings: Settings, now: Date): Wo
     };
   }
 
+  if (kind === "rutin") {
+    // Ç3f: a daily routine bound to the waking, or to the bedtime in the evening facet, at its
+    // place in the chain (docs/06-modul-sozlesmesi.md, "Diziler"). A real routine module (Rutin)
+    // proposes its blocks this way; another module's work may come between them by its order.
+    return {
+      ...base,
+      when: { recurrence: { count: 1, period: "day" } },
+      effort: { session_minutes: Math.max(5, Math.min(item.minutes ?? 10, 90)) },
+      fit: { energy: "light" },
+      timing: {
+        anchor: item.facet === "aksam" ? "bed" : "wake",
+        ...(item.chain_order ? { order: item.chain_order } : {}),
+      },
+      meta: { kind },
+      ...facet,
+    };
+  }
+
   if (kind === "etkinlik") {
     // A fixed hour on its day: 10:00, for as long as the record says (an hour by default).
     const day = item.due_on ?? dayKey(now);

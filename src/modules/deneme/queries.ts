@@ -4,8 +4,12 @@ import type { Tables } from "@/lib/supabase/database.types";
 // The module's own table. Nobody else reads or writes it (docs/06-modul-sozlesmesi.md).
 
 export type DenemeItem = Tables<"deneme_items">;
-/** "konu" (Ç3e): a topic; it proposes no work, it is one of the module's facets. */
-export type DenemeKind = "hedef" | "aliskanlik" | "etkinlik" | "antrenman" | "odak" | "konu";
+/**
+ * "konu" (Ç3e): a topic; it proposes no work, it is one of the module's facets. "rutin" (Ç3f): a
+ * daily routine in the waking's or the bedtime's chain.
+ */
+export type DenemeKind =
+  "hedef" | "aliskanlik" | "etkinlik" | "antrenman" | "odak" | "konu" | "rutin";
 
 export const SOURCE_TYPE = "deneme.item";
 
@@ -16,6 +20,7 @@ export const KIND_LABEL: Record<DenemeKind, string> = {
   antrenman: "Antrenman",
   odak: "Odak",
   konu: "Konu",
+  rutin: "Rutin",
 };
 
 function unwrap<T>(result: { data: T; error: { message: string } | null }): NonNullable<T> {
@@ -41,6 +46,8 @@ export type NewItem = {
   minutes?: number | null;
   /** Ç3e: one of the fixed facets ("sabah", "aksam"). */
   facet?: string | null;
+  /** Ç3f: a routine's place in its chain (1–99, on the order axis the modules share). */
+  chain_order?: number | null;
 };
 
 export async function insertItem(ctx: ModuleContext, item: NewItem): Promise<DenemeItem> {
@@ -53,6 +60,7 @@ export async function insertItem(ctx: ModuleContext, item: NewItem): Promise<Den
         due_on: item.due_on ?? null,
         minutes: item.minutes ?? null,
         facet: item.facet ?? null,
+        chain_order: item.chain_order ?? null,
       })
       .select()
       .single(),

@@ -13,5 +13,6 @@ Yalnızca `NEXT_PUBLIC_SHERPA_DEMO_MODULE=1` verilen ortamlarda kaydolur (`src/m
 | Olay yayını ve dinleme | `rules.ts` (`EVENTS`, `listeners`) |
 | Çip, şimdi kartı içeriği, uyarı, giriş türü, yapılı blok, mod davranışı, haftalık rapor, yaşam döngüsü | `module.ts` |
 | Sekmeler, alt sayfa, tam ekran görünüm, hızlı eylemler, ayar formu, geçmiş görünümü | `module.ts` içinde `ui`; bileşenler `components/` altında |
+| Çapalı dizi (Ç3f): uyanışa ya da yatışa bağlı günlük rutin, dizide sırası (`timing.anchor`, `timing.order`); diziyi çizen sahne, sahneden kapanış ve "Yatıyorum" | `rules.ts` (`rutin` türü, `chain_order`), `components/Scenes.tsx` (`ChainList`, gece sahnesi); örnek veri `scripts/demo-chains.ts` |
 
 Davranışı uçtan uca `tests/e2e/deneme-module.spec.ts` sınar.

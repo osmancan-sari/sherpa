@@ -16,7 +16,15 @@ import { addItem, EVENTS, listeners, onOutcome, proposalFor, proposes, settingsO
 // thing that makes the point. It is switched on only where NEXT_PUBLIC_SHERPA_DEMO_MODULE=1
 // (src/modules/registry.ts); it never runs against production data.
 
-const KINDS: DenemeKind[] = ["hedef", "aliskanlik", "etkinlik", "antrenman", "odak", "konu"];
+const KINDS: DenemeKind[] = [
+  "hedef",
+  "aliskanlik",
+  "etkinlik",
+  "antrenman",
+  "odak",
+  "konu",
+  "rutin",
+];
 
 /**
  * Ç3e: the module's facets. Two fixed ones, each with a scene and a tone of its own, as a
@@ -105,6 +113,7 @@ export const deneme: ModuleDefinition = {
             { value: "antrenman", label: "Antrenman" },
             { value: "odak", label: "Odak" },
             { value: "konu", label: "Konu" },
+            { value: "rutin", label: "Rutin (sabah ya da akşam dizisi)" },
           ],
         },
         {
@@ -120,6 +129,7 @@ export const deneme: ModuleDefinition = {
         },
         { name: "due_on", label: "Tarih", type: "date" },
         { name: "minutes", label: "Süre (dk)", type: "number", min: 5 },
+        { name: "chain_order", label: "Dizide sıra (1–99)", type: "number", min: 1, max: 99 },
       ],
       examples: ["deneme kaydı: rapor taslağı cuma", "haftada üç kez esneme"],
       async handle(values, ctx) {
@@ -134,6 +144,15 @@ export const deneme: ModuleDefinition = {
           minutes:
             typeof values.minutes === "number" && values.minutes >= 5 ? values.minutes : null,
           facet: values.facet === "sabah" || values.facet === "aksam" ? values.facet : null,
+          // Ç3f: a routine's place in its chain; only a routine has one.
+          chain_order:
+            kind === "rutin" &&
+            typeof values.chain_order === "number" &&
+            Number.isInteger(values.chain_order) &&
+            values.chain_order >= 1 &&
+            values.chain_order <= 99
+              ? values.chain_order
+              : null,
         });
       },
     },

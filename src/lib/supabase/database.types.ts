@@ -387,6 +387,7 @@ export type Database = {
       };
       deneme_items: {
         Row: {
+          chain_order: number | null;
           created_at: string;
           done: boolean;
           due_on: string | null;
@@ -403,6 +404,7 @@ export type Database = {
         };
         ComputedFields: never;
         Insert: {
+          chain_order?: number | null;
           created_at?: string;
           done?: boolean;
           due_on?: string | null;
@@ -418,6 +420,7 @@ export type Database = {
           user_id?: string;
         };
         Update: {
+          chain_order?: number | null;
           created_at?: string;
           done?: boolean;
           due_on?: string | null;

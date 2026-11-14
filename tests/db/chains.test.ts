@@ -3,6 +3,11 @@ import { createRegistry } from "@/core/contract/registry";
 import { endSessionClosing, goOnInChain } from "@/core/data/session-events";
 import { endSession, startSession, startSessionIfIdle } from "@/core/data/sessions";
 import { createRhythm, createTask } from "@/core/data/work";
+import { loadPlanRows } from "@/core/data/keep";
+import { buildPlan, planInput } from "@/core/planner";
+import { chainsOf } from "@/core/today/chain";
+import { dayKey, istanbulInstant } from "@/lib/date";
+import { seedChains } from "../../scripts/demo-chains";
 import { anonDb, makeModule, ok, ownerDb, wipe } from "./helpers";
 
 // Ç3f: the chain's own start (start_session_if_idle; docs/06-modul-sozlesmesi.md, "Diziler"):
@@ -152,5 +157,40 @@ describe("going on from an end (Ç3f step audit)", () => {
       "done",
     );
     expect(await openSessions()).toEqual([]);
+  });
+});
+
+describe("the sample chains (scripts/demo-chains.ts)", () => {
+  it("make one wake chain and one bed chain of two modules, in the shared order", async () => {
+    const now = new Date();
+    const summary = await seedChains(db, now);
+    expect(summary.chain_work).toBe(5);
+    const date = dayKey(now);
+    // A fresh account's settings: the day's frame is on by default.
+    ok(await db.from("settings").insert({}).select().single());
+    ok(
+      await db
+        .from("days")
+        .insert({ date, woke_at: istanbulInstant(date, "07:00").toISOString() })
+        .select()
+        .single(),
+    );
+    const rows = await loadPlanRows(db, now);
+    const input = planInput(rows, {
+      date,
+      now: istanbulInstant(date, "07:05"),
+      context: "desk",
+    });
+    const chains = chainsOf(input, buildPlan(input));
+    const slug = (moduleId: string) => rows.modules.find((row) => row.id === moduleId)?.slug;
+    expect(chains.wake?.rows.map((row) => `${row.title} (${slug(row.moduleId)})`)).toEqual([
+      "Diş ve su (deneme)",
+      "Boyun hareketleri (sablon-kopya)",
+      "Duş ve hazırlık (deneme)",
+    ]);
+    expect(chains.bed?.rows.map((row) => `${row.title} (${slug(row.moduleId)})`)).toEqual([
+      "Akşam esnemesi (sablon-kopya)",
+      "Akşam diş (deneme)",
+    ]);
   });
 });

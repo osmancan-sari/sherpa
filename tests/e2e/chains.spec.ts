@@ -437,3 +437,49 @@ test("a scene opens the evening closing inside it, comes back to it, and ends th
   await waitFor(open, (list) => list.length === 0);
   expect((await rows("tasks")).find((row) => row.id === face.id)?.status).toBe("done");
 });
+
+// --- The test module's own routines ----------------------------------------------------------
+
+test("a 'rutin' record of the test module proposes a daily routine at its place in the chain", async ({
+  page,
+}) => {
+  const { copy } = await setUp();
+  await insert("days", { date: DAY, woke_at: dayAt("07:00").toISOString() });
+  await insert("tasks", {
+    module_id: copy.id,
+    title: "Boyun",
+    est_minutes: 10,
+    timing: { anchor: "wake", order: 20 },
+  });
+  await page.clock.setFixedTime(dayAt("07:02"));
+  await page.goto("/");
+  await page.keyboard.press("n");
+  const dialog = page.getByRole("dialog", { name: "Yeni giriş" });
+  await dialog.getByLabel("Giriş").fill("Diş ve su");
+  await page.keyboard.press("Tab");
+  await dialog
+    .getByRole("group", { name: "Kayıt türü" })
+    .getByRole("button", { name: "Kayıt" })
+    .click();
+  await dialog.getByLabel("Tür", { exact: true }).selectOption("rutin");
+  await dialog.getByLabel(/^Bölüm/).selectOption("sabah");
+  await dialog.getByLabel(/Süre \(dk\)/).fill("5");
+  await dialog.getByLabel(/Dizide sıra/).fill("10");
+  await dialog.getByRole("button", { name: "Kaydet" }).click();
+  await expect(dialog).toBeHidden();
+
+  const [rhythm] = await waitFor(
+    () => rows("rhythms"),
+    (list) => list.length === 1,
+  );
+  expect(rhythm).toMatchObject({
+    title: "Diş ve su",
+    period: "day",
+    target_count: 1,
+    est_minutes: 5,
+    facet: "sabah",
+    timing: { anchor: "wake", order: 10 },
+  });
+  await expect(card(page).getByRole("heading", { name: "Diş ve su" })).toBeVisible();
+  await expect(card(page).getByTestId("chain-line")).toHaveText("Sabah dizisi 1/2 · sırada Boyun");
+});

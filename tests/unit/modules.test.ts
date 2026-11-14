@@ -1,10 +1,12 @@
 import { readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { parseProposal } from "@/core/contract/envelope";
 import { checkedFacets } from "@/core/contract/facets";
 import { createRegistry, definitionProblems } from "@/core/contract/registry";
 import { sablon } from "@/modules/_sablon/module";
 import { deneme } from "@/modules/deneme/module";
+import { proposalFor } from "@/modules/deneme/rules";
 import { DEMO_MODULE_ENABLED, registry, TEMPLATE_COPY } from "@/modules/registry";
 
 // The two modules of the core phases follow the contract, and a module is nothing but its own
@@ -93,6 +95,35 @@ describe("the deneme module", () => {
     ]);
     expect(facets[2].name).toBe("Ders A");
     expect(Object.keys(deneme.ui.scenes ?? {})).toEqual(["gunes", "gece"]);
+  });
+
+  it("Ç3f: a routine is a daily rhythm bound to the waking or, in the evening, to the bedtime", () => {
+    const item = (facet: string | null, chain_order: number | null) =>
+      ({
+        id: "dddddddd-0000-4000-8000-000000000004",
+        title: "Diş ve su",
+        kind: "rutin",
+        minutes: 5,
+        due_on: null,
+        facet,
+        chain_order,
+      }) as never;
+    const now = new Date("2026-11-14T06:00:00Z");
+    const morning = proposalFor(item("sabah", 10), {}, now);
+    const fixed = [
+      { key: "sabah", name: "Sabah", color: "#d97706" },
+      { key: "aksam", name: "Akşam", color: "#4361d8" },
+    ];
+    expect(parseProposal(morning, fixed).timing).toEqual({ anchor: "wake", order: 10 });
+    expect(morning).toMatchObject({
+      when: { recurrence: { count: 1, period: "day" } },
+      effort: { session_minutes: 5 },
+      timing: { anchor: "wake", order: 10 },
+      facet: "sabah",
+    });
+    expect(proposalFor(item("aksam", 20), {}, now).timing).toEqual({ anchor: "bed", order: 20 });
+    // Without a place, the chain orders it last, by score.
+    expect(proposalFor(item(null, null), {}, now).timing).toEqual({ anchor: "wake" });
   });
 
   afterEach(() => {
