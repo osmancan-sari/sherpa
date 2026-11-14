@@ -470,6 +470,49 @@ test("the scene uses the list as edited: a renamed step, a new order dragged on 
   await expect(page.getByTestId("rutin-chain")).toContainText("Dişler");
 });
 
+test("on a short phone the scene covers the screen and its panels end above the horizon", async ({
+  browser,
+}) => {
+  const phone = await browser.newPage({
+    storageState: "playwright/.auth/user.json",
+    viewport: { width: 375, height: 667 },
+    isMobile: true,
+    hasTouch: true,
+  });
+  await switchOn(phone);
+  const [settings] = await rows("settings");
+  await update("settings", settings.id as string, { day_frame: FRAME });
+  const evening = await rhythmOf("aksam");
+  const [mod] = await rows("modules");
+  await insert("sessions", { rhythm_id: evening.id, module_id: mod.id });
+  await phone.goto("/");
+  const view = scene(phone);
+  await expect(view).toHaveAttribute("data-screen", "adim");
+  const run = await waitFor(
+    () => runOf("aksam"),
+    (row) => Boolean(row),
+  );
+  await update("rutin_runs", run!.id, { step_position: 3, part_position: 1 });
+  await phone.reload();
+  await expect(view.getByRole("button", { name: "Yatıyorum" })).toBeVisible();
+  // The whole screen: no bottom menu, no "+".
+  const plus = (await phone.getByRole("button", { name: "Yeni giriş" }).boundingBox())!;
+  const onTop = await phone.evaluate(
+    ([x, y]) => Boolean(document.elementFromPoint(x, y)?.closest('[data-testid="scene"]')),
+    [plus.x + plus.width / 2, plus.y + plus.height / 2],
+  );
+  expect(onTop).toBe(true);
+  const frame = (await phone.getByTestId("scene").boundingBox())!;
+  expect(frame).toMatchObject({ x: 0, y: 0, width: 375, height: 667 });
+  // The panels end above the horizon (73% of the scene); the moon and the owl stay clear.
+  const box = (await view.boundingBox())!;
+  const panel = (await phone.getByTestId("rutin-next").boundingBox())!;
+  expect(panel.y + panel.height).toBeLessThanOrEqual(box.y + box.height * 0.73);
+  const owl = (await phone.getByTestId("rutin-owl").boundingBox())!;
+  expect(owl.y).toBeGreaterThanOrEqual(panel.y + panel.height);
+  await phone.close();
+});
+
 test("the scene keeps still with reduced motion", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
   await setUp(page);

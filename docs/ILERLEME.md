@@ -6,7 +6,7 @@ Bu dosyayı Claude Code günceller. Yeni bir oturum yalnızca bu dosyayı ve `pr
 
 - Faz: **Rutin 1. adım bitti** (14 Kas 2026, `rutin-1-tamam`; faz denetimi bir tur, GEÇTİ). Yayında (14 Kas: migration'lar `sherpa-dev` ve `sherpa-prod`'da, kod üretimde). Ç3f yayında (14 Kas)
 - Adım: 7 (kapanış) bitti ve yayınlandı; sırada Ç4 (ya da Rutin 2, senin seçimin)
-- Son commit: Progress record: Rutin 1 is released
+- Son commit: Rutin 1: full-screen phone scene, sky split at the horizon
 
 ### Rutin 1 planı
 
@@ -151,6 +151,15 @@ Her adımın sonunda `npm run check` ve commit; şema, geçit ve zarf adımları
 | 12. Gerçek telefonda: cam ve kaydırma, ekranın açık kalması ve "Dil", iki cihazda yalnızca dokunulan okur | **Kullanıcı deneyecek** | "Senden bekleyenler" → Rutin 1 |
 
 Testler: 511 birim, 297 veritabanı, 227 uçtan uca (ekran görüntüleriyle; `npm run check:full` yeşil, 14 Kas, `SHERPA_SHOTS=rutin-1`, faz denetiminin düzeltmelerinden sonra). Ekran görüntüleri `docs/ekran-goruntuleri/rutin-1/` (yeni: `rutin-gunaydin`, `rutin-sabah-safak`, `rutin-hazirlik-gunduz`, `rutin-aksam-gece`, `rutin-aksam-son`, `rutin-iyi-geceler`, `rutin-modul-sabah`, `rutin-modul-aksam`, `rutin-adim-duzenle`; pano ve telefon; sahne kendi gökyüzünü çizdiği için yalnızca koyu tema). Baktıklarım: yeni ekranların hepsi. Düzelttiklerim: gündüz görüntüsünün veri gelmeden çekilmesi; kısa telefonda "İyi geceler"in Yarın panelinin ayı örtmesi; panoda yarının uyanışı yokken boş kalan "Yarın" paneli; pano düğmelerinin kenara yapışması.
+
+**Yayından sonra düzeltme turu (14 Kas 2026, senin bildirdiğin dört görsel sorun)**
+
+1. Telefonda sahne ekranı kaplamıyordu, çekirdeğin "+" düğmesi sahnenin üstüne biniyordu: çekirdeğin sahne çerçevesi telefonda artık ekranı kaplıyor (`fixed`, alt menü ve "+" altında kalır, pencereler üstünde açılır; panoda değişiklik yok). `docs/05` "Sahne", `docs/09`. Bütün modüllerin sahneleri için geçerli.
+2. Gece gökyüzündeki parlak yıldızın halesi düz gri daireydi: dolgu gradyan değil düz renkti; `#dfe6ff` 0,45 → saydam dairesel gradyan verildi.
+3. Akşamın son adımında baykuş ve ay "Yarın" panelinin arkasında kalıyordu: gökyüzü ufuktan ikiye bölündü (üst katman yüksekliğin %74'ünde biter, tepeler alttaki şeritte), başlık ve paneller yüksekliğin %71'inde biter; kısa ekranda başlık, sayaç ve "Bu adımda" satırları küçülür (740 px'in altında iki satır, 620'nin altında tek satır ve "Sonra" satırı yok), manzara değişmez.
+4. "Yarın" panelinde "Uyanış saati henüz yok" kesiliyordu: satır artık kesilmez, sığmazsa iki satıra iner.
+
+Test: `rutin.spec.ts` +1 (375 × 667 telefonda sahne ekranı kaplar, "+"nın yerinde en üstte sahne var, "Sıradaki" paneli ufkun üstünde biter, baykuş panelin altında). Görüntüler yeniden alındı.
 
 **Sözleşmede eksik ya da zor bulduklarım** (ayrıntı `rutin.md` "Çekirdek için notlar")
 

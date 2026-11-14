@@ -125,6 +125,7 @@ Geniş ekranda tek sayfa, kaydırma yok:
 ```
 
 - Şerit: saat, modülün rengi ve işin adı, geçen süre, "Çık". Telefonda da tek satır.
+- **Telefonda sahne ekranı kaplar** (Rutin 1, 14 Kas 2026): alt menü ve hızlı giriş düğmesi (+) sahne açıkken görünmez, sahnenin altında kalır; şerit en üstte, güvenli alanın altında durur. Pencereler (soru, düzenleme) sahnenin üstünde açılır. Panoda sahne sayfanın içindedir, yan menü görünür kalır.
 - Geçiş kısa bir solmadır; hareket azaltma tercihinde hiç yoktur. `look.tone` arka planın tonunu verir: `calm` sakin, `focus` koyu ve düz, `energy` modülün rengine çalan. Son hali Ç4'te.
 - "Çık"tan sonra standart ekran; kartın altında "Sahneye dön". Çıkış o cihazda, o oturum için hatırlanır.
 - Sahne hata verirse standart kart ve altında tek satır: "Sahne açılamadı; iş sürüyor."

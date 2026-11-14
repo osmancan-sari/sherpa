@@ -241,6 +241,19 @@ function Scene(props: SceneProps) {
   }, [sky, glass]);
 
   const [screen, setScreen] = useState<Screen>("steps");
+  // The scene's height on the phone: the horizon stays at 73%, so on a short screen the header and
+  // the panels above it get smaller (fewer rows, smaller timer), never the landscape.
+  const rootRef = useRef<HTMLDivElement | null>(null);
+  const [sceneHeight, setSceneHeight] = useState(844);
+  useEffect(() => {
+    const node = rootRef.current;
+    if (!node || typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(([entry]) => setSceneHeight(entry.contentRect.height));
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, []);
+  const roomy = board || sceneHeight >= 740;
+  const tight = !board && sceneHeight < 620;
   // Günaydın: only when this screen was not touched lately (the waking came from outside: the
   // phone's automation opened the app, or it came back to the front in the morning). A tap on
   // "Uyandım" a moment ago means the voice is unlocked and the teeth come at once (8.3).
@@ -473,7 +486,8 @@ function Scene(props: SceneProps) {
       data-device={device}
       data-sky={sky.phase}
       {...extra}
-      className="relative -m-5 flex min-h-[78vh] flex-1 flex-col overflow-hidden md:-m-10 md:min-h-[82vh]"
+      ref={rootRef}
+      className="relative -m-5 flex flex-1 flex-col overflow-hidden md:-m-10 md:min-h-[82vh]"
       style={{ color: glass.text }}
     >
       <style>{TWINKLE}</style>
@@ -560,7 +574,7 @@ function Scene(props: SceneProps) {
         data-testid="rutin-timer"
         className="self-start text-left tabular-nums"
         style={{
-          fontSize: board ? 168 : 84,
+          fontSize: board ? 168 : roomy ? 84 : tight ? 52 : 64,
           fontWeight: 500,
           letterSpacing: "-0.045em",
           lineHeight: 1,
@@ -618,7 +632,7 @@ function Scene(props: SceneProps) {
           </span>
         ) : null}
       </div>
-      {windowOf(step.lines, partIndex).map(({ line: row, index }) => (
+      {windowOf(step.lines, partIndex, roomy ? 3 : tight ? 1 : 2).map(({ line: row, index }) => (
         <PartRow
           key={`${stepIndex}-${index}`}
           glass={glass}
@@ -659,13 +673,13 @@ function Scene(props: SceneProps) {
       data-testid="rutin-next"
       style={{ ...panel("small"), borderRadius: 22, padding: "12px 18px", marginTop: 12 }}
     >
-      <div className="flex items-baseline gap-2">
+      <div className="flex flex-wrap items-baseline gap-x-2">
         <span
           style={{ fontSize: 12, fontWeight: 600, letterSpacing: "0.08em", color: glass.secondary }}
         >
           {lastUnit ? (evening ? "YARIN" : "SONRA") : "SIRADAKİ"}
         </span>
-        <span className="min-w-0 flex-1 truncate" style={{ fontSize: 15, fontWeight: 600 }}>
+        <span className="min-w-0 flex-1" style={{ fontSize: 15, fontWeight: 600 }}>
           {lastUnit ? (lastText ?? (evening ? "Uyanış saati henüz yok" : null)) : nextUnit?.title}
         </span>
         <span
@@ -689,7 +703,7 @@ function Scene(props: SceneProps) {
           />
         ))}
       </div>
-      {!lastUnit && after.length > 0 ? (
+      {!lastUnit && after.length > 0 && !tight ? (
         <p className="truncate" style={{ fontSize: 13, marginTop: 8, color: glass.line }}>
           Sonra: {after.join(" · ")}
         </p>
@@ -866,23 +880,43 @@ function Scene(props: SceneProps) {
 
   return frame(
     <>
-      <header className="flex flex-col" style={{ padding: "26px 24px 0", gap: 4, minHeight: 200 }}>
-        <h2 style={{ fontSize: 34, fontWeight: 700, letterSpacing: "-0.02em", lineHeight: 1.2 }}>
-          {step.title}
-        </h2>
-        {counter ?? hint}
-        {voice}
-        {key === "sabah" && !counter ? (
-          <p data-testid="rutin-summary" style={{ fontSize: 14, color: glass.note, marginTop: 6 }}>
-            {summary}
-          </p>
-        ) : null}
-      </header>
-      <div style={{ padding: "16px 16px 0" }}>
-        {stepPanel}
-        {nextPanel}
+      {/* Above the horizon (73%): the header and the panels end here, however short the screen. */}
+      <div className="flex min-h-0 flex-col overflow-hidden" style={{ maxHeight: "71%" }}>
+        <header
+          className="flex shrink-0 flex-col"
+          style={{
+            padding: tight ? "14px 20px 0" : "26px 24px 0",
+            gap: 4,
+            minHeight: roomy ? 200 : undefined,
+          }}
+        >
+          <h2
+            style={{
+              fontSize: roomy ? 34 : tight ? 26 : 30,
+              fontWeight: 700,
+              letterSpacing: "-0.02em",
+              lineHeight: 1.2,
+            }}
+          >
+            {step.title}
+          </h2>
+          {counter ?? (tight ? null : hint)}
+          {tight ? null : voice}
+          {key === "sabah" && !counter && roomy ? (
+            <p
+              data-testid="rutin-summary"
+              style={{ fontSize: 14, color: glass.note, marginTop: 6 }}
+            >
+              {summary}
+            </p>
+          ) : null}
+        </header>
+        <div className="min-h-0" style={{ padding: tight ? "10px 16px 0" : "16px 16px 0" }}>
+          {stepPanel}
+          {nextPanel}
+        </div>
       </div>
-      <div className="flex-1" style={{ minHeight: 24 }} />
+      <div className="flex-1" style={{ minHeight: 12 }} />
       {buttons}
     </>,
     extra,
@@ -894,10 +928,14 @@ function Scene(props: SceneProps) {
 const TWINKLE =
   "@keyframes rutin-twinkle{50%{opacity:.25}}@media (prefers-reduced-motion:no-preference){.rutin-twinkle{animation:rutin-twinkle 7s ease-in-out infinite}}";
 
-/** At most three rows: the one before (done) when there is one, the current one, what comes. */
-function windowOf(lines: Line[], current: number): { line: Line; index: number }[] {
-  const start = Math.max(0, Math.min(current - 1, lines.length - 3));
-  return lines.slice(start, start + 3).map((line, offset) => ({ line, index: start + offset }));
+/**
+ * At most three rows: the one before (done) when there is one, the current one, what comes. A
+ * short screen shows two (the current one first) or the current one alone.
+ */
+function windowOf(lines: Line[], current: number, size = 3): { line: Line; index: number }[] {
+  const before = size >= 3 ? 1 : 0;
+  const start = Math.max(0, Math.min(current - before, lines.length - size));
+  return lines.slice(start, start + size).map((line, offset) => ({ line, index: start + offset }));
 }
 
 function PartRow({

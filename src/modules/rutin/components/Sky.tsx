@@ -75,251 +75,275 @@ export function Sky({ sky, device, evening, owlAsleep = false }: Props) {
   const board = device === "pano";
   const width = board ? 1440 : 390;
   const height = board ? 900 : 844;
+  // The horizon: the sky above it is cut to the screen's width and always ends at the same
+  // height (74% on the phone, 80% on the board); the hills fill the band below it. A short screen
+  // squeezes the panels, never the landscape.
+  const horizon = board ? 720 : 624;
+  const below = board ? 660 : 600;
   const hills = HILLS[device];
-  const stops = board ? boardStops(sky) : sky.stops;
+  const stops = (board ? boardStops(sky) : sky.stops).map(
+    ([position, color]) => [(position * height) / horizon, color] as const,
+  );
+  const last = stops[stops.length - 1][1];
   const sun = sunAt(sky.elevation, board);
   const dayness = sky.sun.rise;
   return (
-    <svg
+    <div
       aria-hidden
       data-testid="rutin-sky"
       data-phase={sky.phase}
-      className="pointer-events-none absolute inset-0 h-full w-full"
-      viewBox={`0 0 ${width} ${height}`}
-      preserveAspectRatio="xMidYMax slice"
+      className="pointer-events-none absolute inset-0"
+      style={{ background: last }}
     >
-      <defs>
-        <linearGradient id={`${id}-sky`} x1="0" y1="0" x2="0" y2="1">
-          {stops.map(([position, color]) => (
-            <stop key={position} offset={`${position}%`} stopColor={color} />
-          ))}
-        </linearGradient>
-        <linearGradient id={`${id}-near`} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor={sky.near} />
-          <stop offset="100%" stopColor={sky.nearBottom} />
-        </linearGradient>
-        <linearGradient id={`${id}-fog`} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor={sky.fogColor} stopOpacity="0" />
-          <stop offset="50%" stopColor={sky.fogColor} stopOpacity={sky.fog} />
-          <stop offset="100%" stopColor={sky.fogColor} stopOpacity="0" />
-        </linearGradient>
-        <linearGradient id={`${id}-shade`} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#080614" stopOpacity="0" />
-          <stop offset="100%" stopColor="#080614" stopOpacity={sky.shade} />
-        </linearGradient>
-        <radialGradient id={`${id}-halo`}>
-          <stop offset="0%" stopColor={dayness > 0.6 ? "#fff6d8" : "#fff3cf"} stopOpacity="0.9" />
-          <stop offset="40%" stopColor="#ffdc9c" stopOpacity={0.4 * (1 - dayness)} />
-          <stop offset="100%" stopColor="#ffdc9c" stopOpacity="0" />
-        </radialGradient>
-        <radialGradient id={`${id}-sun`} cx="0.5" cy="0.4" r="0.6">
-          <stop offset="0%" stopColor="#fffbe8" />
-          <stop offset="60%" stopColor={dayness > 0.6 ? "#fff8e0" : "#ffe7ad"} />
-          <stop offset="100%" stopColor={dayness > 0.6 ? "#fff8e0" : "#ffc878"} />
-        </radialGradient>
-        <radialGradient id={`${id}-moonhalo`}>
-          <stop offset="0%" stopColor="#b9c8ff" stopOpacity="0.42" />
-          <stop offset="45%" stopColor="#9fb2ff" stopOpacity="0.12" />
-          <stop offset="100%" stopColor="#9fb2ff" stopOpacity="0" />
-        </radialGradient>
-        <radialGradient id={`${id}-moon`} cx="0.38" cy="0.34" r="0.75">
-          <stop offset="0%" stopColor="#fdfdff" />
-          <stop offset="55%" stopColor="#e4e9f8" />
-          <stop offset="100%" stopColor="#b4bfe2" />
-        </radialGradient>
-        <radialGradient id={`${id}-starhalo`}>
-          <stop offset="0%" stopColor="#fff4e0" stopOpacity="0.5" />
-          <stop offset="100%" stopColor="#fff4e0" stopOpacity="0" />
-        </radialGradient>
-        <filter id={`${id}-blur44`} x="-50%" y="-200%" width="200%" height="500%">
-          <feGaussianBlur stdDeviation={board ? 60 : 44} />
-        </filter>
-        <filter id={`${id}-blur22`} x="-50%" y="-200%" width="200%" height="500%">
-          <feGaussianBlur stdDeviation="22" />
-        </filter>
-        <filter id={`${id}-blur30`} x="-50%" y="-200%" width="200%" height="500%">
-          <feGaussianBlur stdDeviation="30" />
-        </filter>
-      </defs>
+      <svg
+        className="absolute inset-x-0 top-0 w-full"
+        style={{ height: `${(horizon / height) * 100}%` }}
+        viewBox={`0 0 ${width} ${horizon}`}
+        preserveAspectRatio="xMidYMax slice"
+      >
+        <defs>
+          <linearGradient id={`${id}-sky`} x1="0" y1="0" x2="0" y2="1">
+            {stops.map(([position, color]) => (
+              <stop key={position} offset={`${Math.min(100, position)}%`} stopColor={color} />
+            ))}
+          </linearGradient>
+          <linearGradient id={`${id}-near`} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={sky.near} />
+            <stop offset="100%" stopColor={sky.nearBottom} />
+          </linearGradient>
+          <linearGradient id={`${id}-fog`} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={sky.fogColor} stopOpacity="0" />
+            <stop offset="50%" stopColor={sky.fogColor} stopOpacity={sky.fog} />
+            <stop offset="100%" stopColor={sky.fogColor} stopOpacity="0" />
+          </linearGradient>
+          <linearGradient id={`${id}-shade`} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#080614" stopOpacity="0" />
+            <stop offset="100%" stopColor="#080614" stopOpacity={sky.shade} />
+          </linearGradient>
+          <radialGradient id={`${id}-halo`}>
+            <stop offset="0%" stopColor={dayness > 0.6 ? "#fff6d8" : "#fff3cf"} stopOpacity="0.9" />
+            <stop offset="40%" stopColor="#ffdc9c" stopOpacity={0.4 * (1 - dayness)} />
+            <stop offset="100%" stopColor="#ffdc9c" stopOpacity="0" />
+          </radialGradient>
+          <radialGradient id={`${id}-sun`} cx="0.5" cy="0.4" r="0.6">
+            <stop offset="0%" stopColor="#fffbe8" />
+            <stop offset="60%" stopColor={dayness > 0.6 ? "#fff8e0" : "#ffe7ad"} />
+            <stop offset="100%" stopColor={dayness > 0.6 ? "#fff8e0" : "#ffc878"} />
+          </radialGradient>
+          <radialGradient id={`${id}-moonhalo`}>
+            <stop offset="0%" stopColor="#b9c8ff" stopOpacity="0.42" />
+            <stop offset="45%" stopColor="#9fb2ff" stopOpacity="0.12" />
+            <stop offset="100%" stopColor="#9fb2ff" stopOpacity="0" />
+          </radialGradient>
+          <radialGradient id={`${id}-moon`} cx="0.38" cy="0.34" r="0.75">
+            <stop offset="0%" stopColor="#fdfdff" />
+            <stop offset="55%" stopColor="#e4e9f8" />
+            <stop offset="100%" stopColor="#b4bfe2" />
+          </radialGradient>
+          <radialGradient id={`${id}-brighthalo`}>
+            <stop offset="0%" stopColor="#dfe6ff" stopOpacity="0.45" />
+            <stop offset="100%" stopColor="#dfe6ff" stopOpacity="0" />
+          </radialGradient>
+          <radialGradient id={`${id}-starhalo`}>
+            <stop offset="0%" stopColor="#fff4e0" stopOpacity="0.5" />
+            <stop offset="100%" stopColor="#fff4e0" stopOpacity="0" />
+          </radialGradient>
+          <filter id={`${id}-blur44`} x="-50%" y="-200%" width="200%" height="500%">
+            <feGaussianBlur stdDeviation={board ? 60 : 44} />
+          </filter>
+          <filter id={`${id}-blur22`} x="-50%" y="-200%" width="200%" height="500%">
+            <feGaussianBlur stdDeviation="22" />
+          </filter>
+          <filter id={`${id}-blur30`} x="-50%" y="-200%" width="200%" height="500%">
+            <feGaussianBlur stdDeviation="30" />
+          </filter>
+        </defs>
 
-      <rect width={width} height={height} fill={`url(#${id}-sky)`} />
+        <rect width={width} height={horizon} fill={`url(#${id}-sky)`} />
 
-      {/* The dawn's glow on the horizon. */}
-      {sky.glow > 0 ? (
-        board ? (
-          <ellipse
-            cx={800}
-            cy={690}
-            rx={500}
-            ry={80}
-            fill={`rgba(255,160,104,${(sky.glow * 0.38) / 0.3})`}
-            filter={`url(#${id}-blur44)`}
-          />
-        ) : (
-          <g>
+        {/* The dawn's glow on the horizon. */}
+        {sky.glow > 0 ? (
+          board ? (
             <ellipse
-              cx={250}
-              cy={618}
-              rx={220}
-              ry={70}
-              fill={`rgba(255,170,110,${sky.glow})`}
+              cx={800}
+              cy={690}
+              rx={500}
+              ry={80}
+              fill={`rgba(255,160,104,${(sky.glow * 0.38) / 0.3})`}
               filter={`url(#${id}-blur44)`}
             />
-            <ellipse
-              cx={285}
-              cy={620}
-              rx={95}
-              ry={22}
-              fill={`rgba(255,210,155,${sky.glow})`}
-              filter={`url(#${id}-blur22)`}
-            />
-          </g>
-        )
-      ) : null}
-      {/* The night's glow. */}
-      {sky.nightGlow > 0 ? (
-        board ? (
-          <ellipse
-            cx={800}
-            cy={690}
-            rx={500}
-            ry={80}
-            fill={`rgba(96,124,210,${0.22 * sky.nightGlow})`}
-            filter={`url(#${id}-blur44)`}
-          />
-        ) : (
-          <g opacity={sky.nightGlow}>
-            <ellipse
-              cx={200}
-              cy={526}
-              rx={270}
-              ry={40}
-              transform="rotate(-10 200 526)"
-              fill="rgba(112,132,224,0.11)"
-              filter={`url(#${id}-blur30)`}
-            />
-            <ellipse
-              cx={195}
-              cy={615}
-              rx={235}
-              ry={25}
-              fill="rgba(96,124,210,0.22)"
-              filter={`url(#${id}-blur22)`}
-            />
-          </g>
-        )
-      ) : null}
-
-      {/* Stars: the dawn's fade with the light; the night's are all there. */}
-      {board ? (
-        <g fill="#e8ecff" className="rutin-stars">
-          {BOARD_STARS.map(([cx, cy, r, base], index) => (
-            <circle
-              key={index}
-              cx={cx}
-              cy={cy}
-              r={r}
-              opacity={Math.min(1, base * (sky.dawnStars + 1.5 * sky.nightStars))}
-              className={index % 6 === 0 ? "rutin-twinkle" : undefined}
-            />
-          ))}
-          {sky.dawnStars > 0 ? (
-            <circle cx={1180} cy={150} r={2.2} fill="#fff6e6" opacity={sky.dawnStars} />
-          ) : null}
-        </g>
-      ) : (
-        <g className="rutin-stars">
-          {sky.dawnStars > 0 ? (
-            <g fill="#e8ecff">
-              {DAWN_STARS.map(([cx, cy, r, base], index) => (
-                <circle key={index} cx={cx} cy={cy} r={r} opacity={base * sky.dawnStars} />
-              ))}
-              <circle
-                cx={318}
-                cy={142}
-                r={9}
-                fill={`url(#${id}-starhalo)`}
-                opacity={sky.dawnStars}
+          ) : (
+            <g>
+              <ellipse
+                cx={250}
+                cy={618}
+                rx={220}
+                ry={70}
+                fill={`rgba(255,170,110,${sky.glow})`}
+                filter={`url(#${id}-blur44)`}
               />
-              <circle cx={318} cy={142} r={1.7} fill="#fff6e6" opacity={sky.dawnStars} />
+              <ellipse
+                cx={285}
+                cy={620}
+                rx={95}
+                ry={22}
+                fill={`rgba(255,210,155,${sky.glow})`}
+                filter={`url(#${id}-blur22)`}
+              />
             </g>
-          ) : null}
-          {sky.nightStars > 0 ? (
-            <g opacity={sky.nightStars}>
+          )
+        ) : null}
+        {/* The night's glow. */}
+        {sky.nightGlow > 0 ? (
+          board ? (
+            <ellipse
+              cx={800}
+              cy={690}
+              rx={500}
+              ry={80}
+              fill={`rgba(96,124,210,${0.22 * sky.nightGlow})`}
+              filter={`url(#${id}-blur44)`}
+            />
+          ) : (
+            <g opacity={sky.nightGlow}>
+              <ellipse
+                cx={200}
+                cy={526}
+                rx={270}
+                ry={40}
+                transform="rotate(-10 200 526)"
+                fill="rgba(112,132,224,0.11)"
+                filter={`url(#${id}-blur30)`}
+              />
+              <ellipse
+                cx={195}
+                cy={615}
+                rx={235}
+                ry={25}
+                fill="rgba(96,124,210,0.22)"
+                filter={`url(#${id}-blur22)`}
+              />
+            </g>
+          )
+        ) : null}
+
+        {/* Stars: the dawn's fade with the light; the night's are all there. */}
+        {board ? (
+          <g fill="#e8ecff" className="rutin-stars">
+            {BOARD_STARS.map(([cx, cy, r, base], index) => (
+              <circle
+                key={index}
+                cx={cx}
+                cy={cy}
+                r={r}
+                opacity={Math.min(1, base * (sky.dawnStars + 1.5 * sky.nightStars))}
+                className={index % 6 === 0 ? "rutin-twinkle" : undefined}
+              />
+            ))}
+            {sky.dawnStars > 0 ? (
+              <circle cx={1180} cy={150} r={2.2} fill="#fff6e6" opacity={sky.dawnStars} />
+            ) : null}
+          </g>
+        ) : (
+          <g className="rutin-stars">
+            {sky.dawnStars > 0 ? (
               <g fill="#e8ecff">
-                {NIGHT_STARS.map(([cx, cy, r, base], index) => (
-                  <circle
-                    key={index}
-                    cx={cx}
-                    cy={cy}
-                    r={r}
-                    opacity={base}
-                    className={index % 7 === 0 ? "rutin-twinkle" : undefined}
-                  />
+                {DAWN_STARS.map(([cx, cy, r, base], index) => (
+                  <circle key={index} cx={cx} cy={cy} r={r} opacity={base * sky.dawnStars} />
                 ))}
+                <circle
+                  cx={318}
+                  cy={142}
+                  r={9}
+                  fill={`url(#${id}-starhalo)`}
+                  opacity={sky.dawnStars}
+                />
+                <circle cx={318} cy={142} r={1.7} fill="#fff6e6" opacity={sky.dawnStars} />
               </g>
-              <g fill="#ffe9c9">
-                {WARM_STARS.map(([cx, cy, r, base], index) => (
-                  <circle key={index} cx={cx} cy={cy} r={r} opacity={base} />
-                ))}
+            ) : null}
+            {sky.nightStars > 0 ? (
+              <g opacity={sky.nightStars}>
+                <g fill="#e8ecff">
+                  {NIGHT_STARS.map(([cx, cy, r, base], index) => (
+                    <circle
+                      key={index}
+                      cx={cx}
+                      cy={cy}
+                      r={r}
+                      opacity={base}
+                      className={index % 7 === 0 ? "rutin-twinkle" : undefined}
+                    />
+                  ))}
+                </g>
+                <g fill="#ffe9c9">
+                  {WARM_STARS.map(([cx, cy, r, base], index) => (
+                    <circle key={index} cx={cx} cy={cy} r={r} opacity={base} />
+                  ))}
+                </g>
+                <g fill="#bcd0ff">
+                  {COLD_STARS.map(([cx, cy, r, base], index) => (
+                    <circle key={index} cx={cx} cy={cy} r={r} opacity={base} />
+                  ))}
+                </g>
+                <circle cx={158} cy={142} r={7} fill={`url(#${id}-brighthalo)`} />
+                <circle cx={158} cy={142} r={1.5} fill="#f4f6ff" />
               </g>
-              <g fill="#bcd0ff">
-                {COLD_STARS.map(([cx, cy, r, base], index) => (
-                  <circle key={index} cx={cx} cy={cy} r={r} opacity={base} />
-                ))}
-              </g>
-              <circle cx={158} cy={142} r={7} fill="#dfe6ff" opacity={0.45} />
-              <circle cx={158} cy={142} r={1.5} fill="#f4f6ff" />
-            </g>
-          ) : null}
-        </g>
-      )}
+            ) : null}
+          </g>
+        )}
 
-      {/* The sun, from the horizon up (the hills hide it until it clears them). */}
-      {!evening && sky.sun.visible ? (
-        <g data-testid="rutin-sun">
-          <circle cx={sun.x} cy={sun.y} r={sun.halo} fill={`url(#${id}-halo)`} />
-          <circle cx={sun.x} cy={sun.y} r={sun.body} fill={`url(#${id}-sun)`} />
-        </g>
-      ) : null}
+        {/* The sun, from the horizon up (the hills hide it until it clears them). */}
+        {!evening && sky.sun.visible ? (
+          <g data-testid="rutin-sun">
+            <circle cx={sun.x} cy={sun.y} r={sun.halo} fill={`url(#${id}-halo)`} />
+            <circle cx={sun.x} cy={sun.y} r={sun.body} fill={`url(#${id}-sun)`} />
+          </g>
+        ) : null}
 
-      {/* The moon: near the horizon on the right; its place and phase are not worked out. */}
-      {evening ? (
-        <g data-testid="rutin-moon">
-          <circle
-            cx={board ? 1250 : 322}
-            cy={board ? 610 : 556}
-            r={board ? 96 : 78}
-            fill={`url(#${id}-moonhalo)`}
-          />
-          <circle
-            cx={board ? 1250 : 322}
-            cy={board ? 610 : 556}
-            r={board ? 28 : 22}
-            fill={`url(#${id}-moon)`}
-          />
-        </g>
-      ) : null}
+        {/* The moon: near the horizon on the right; its place and phase are not worked out. */}
+        {evening ? (
+          <g data-testid="rutin-moon">
+            <circle
+              cx={board ? 1250 : 322}
+              cy={board ? 610 : 556}
+              r={board ? 96 : 78}
+              fill={`url(#${id}-moonhalo)`}
+            />
+            <circle
+              cx={board ? 1250 : 322}
+              cy={board ? 610 : 556}
+              r={board ? 28 : 22}
+              fill={`url(#${id}-moon)`}
+            />
+          </g>
+        ) : null}
 
-      <path d={hills.far} fill={sky.far} />
-      {!board && sky.fog > 0 ? (
-        <rect x={0} y={610} width={390} height={72} fill={`url(#${id}-fog)`} />
-      ) : null}
-      <path d={hills.mid} fill={sky.mid} />
-      {!board && sky.fog > 0 && sky.phase !== "night" ? (
-        <rect x={0} y={648} width={390} height={50} fill={`url(#${id}-fog)`} opacity={0.55} />
-      ) : null}
-      <path d={hills.near} fill={`url(#${id}-near)`} />
-      {!board && sky.shade > 0 ? (
-        <rect x={0} y={674} width={390} height={170} fill={`url(#${id}-shade)`} />
-      ) : null}
-
-      {evening ? (
-        <g transform={board ? "translate(250 96)" : undefined} data-testid="rutin-owl">
-          <Owl asleep={owlAsleep} />
-        </g>
-      ) : null}
-    </svg>
+        {evening ? (
+          <g transform={board ? "translate(250 96)" : undefined} data-testid="rutin-owl">
+            <Owl asleep={owlAsleep} />
+          </g>
+        ) : null}
+      </svg>
+      <svg
+        className="absolute inset-x-0 bottom-0 w-full"
+        style={{ top: `${(below / height) * 100}%` }}
+        viewBox={`0 ${below} ${width} ${height - below}`}
+        preserveAspectRatio="xMidYMin slice"
+      >
+        <path d={hills.far} fill={sky.far} />
+        {!board && sky.fog > 0 ? (
+          <rect x={0} y={610} width={390} height={72} fill={`url(#${id}-fog)`} />
+        ) : null}
+        <path d={hills.mid} fill={sky.mid} />
+        {!board && sky.fog > 0 && sky.phase !== "night" ? (
+          <rect x={0} y={648} width={390} height={50} fill={`url(#${id}-fog)`} opacity={0.55} />
+        ) : null}
+        <path d={hills.near} fill={`url(#${id}-near)`} />
+        {!board && sky.shade > 0 ? (
+          <rect x={0} y={674} width={390} height={170} fill={`url(#${id}-shade)`} />
+        ) : null}
+      </svg>
+    </div>
   );
 }
 

@@ -270,13 +270,19 @@ export function SceneFrame({
       data-bedtime={bedtime ? "" : undefined}
       data-tone={tone}
       data-facet={facet?.key}
+      data-device={device}
       className={cn(
-        "animate-in fade-in flex min-h-[70vh] flex-1 flex-col overflow-hidden rounded-2xl border duration-300 motion-reduce:animate-none",
+        "animate-in fade-in flex flex-col duration-300 motion-reduce:animate-none",
         TONE[tone],
+        // The phone gives the whole screen to the scene: the bottom menu and "+" stay under it
+        // (dialogs still open above it). The second screen keeps it in the page, beside the menu.
+        device === "telefon"
+          ? "bg-background fixed inset-0 z-30 overflow-x-hidden overflow-y-auto overscroll-contain pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]"
+          : "min-h-[70vh] flex-1 overflow-hidden rounded-2xl border",
       )}
       style={
         tone === "energy"
-          ? { backgroundColor: `color-mix(in oklab, ${color} 12%, transparent)` }
+          ? { backgroundColor: `color-mix(in oklab, ${color} 12%, var(--background))` }
           : undefined
       }
     >
