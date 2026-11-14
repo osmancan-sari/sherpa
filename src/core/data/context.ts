@@ -9,7 +9,7 @@ import { emitEvent } from "@/core/events/bus";
 import { rhythmProgress } from "@/core/today/select";
 import { check, type Db, type ModuleRow, unwrap, toJson } from "@/core/types";
 import { dayKey, shiftDay } from "@/lib/date";
-import { listDayFrames } from "./frame";
+import { listDayFrames, planningDayOf } from "./frame";
 import { propose, withdraw } from "./propose";
 
 /**
@@ -111,6 +111,8 @@ export function createModuleContext(input: {
     },
 
     days: (sinceDay) => listDayFrames(db, sinceDay),
+
+    day: (at) => planningDayOf(db, at ?? now()),
 
     async saveSettings(settings) {
       check(

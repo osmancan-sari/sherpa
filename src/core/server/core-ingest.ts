@@ -61,13 +61,14 @@ export const CORE_INGEST_HANDLERS: CoreIngest[] = [
       const { at } = payload as z.infer<typeof moment>;
       const instant = momentOf(at, deps.now());
       const date = await dayOf(deps, instant);
-      const row = await recordWake(deps.db, date, instant);
+      const row = await recordWake(deps.db, date, instant, "outside");
       // A recorded waking is use as well: the app does not open on "Kaldığın yerden devam" for
       // a day it was told about (src/core/planner/input.ts, lastActivityBefore).
       await tellDayStarted(serverTold(deps), {
         date,
         wokeAt: row.woke_at ?? instant.toISOString(),
         estimated: false,
+        source: "outside",
       });
     },
   },

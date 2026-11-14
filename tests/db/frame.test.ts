@@ -3,6 +3,7 @@ import { DEFAULT_FRAME } from "@/core/contract/frame";
 import {
   estimateWake,
   listDayFrames,
+  planningDayOf,
   recordBed,
   recordWake,
   saveDayFrame,
@@ -59,6 +60,33 @@ describe("waking", () => {
     ok(await db.from("days").insert({ date: DATE, top3: [], closing_note: "not" }).select());
     await estimateWake(db, DATE, at("08:00"));
     expect(await day()).toMatchObject({ closing_note: "not", woke_estimated: true });
+  });
+});
+
+describe("where the waking came from (Ç3g)", () => {
+  it("a screen, outside (core/wake) or the first touch; the latest waking says it", async () => {
+    await estimateWake(db, DATE, at("07:20"));
+    expect(await day()).toMatchObject({ woke_source: "estimate", woke_estimated: true });
+    await recordWake(db, DATE, at("07:05"), "outside");
+    expect(await day()).toMatchObject({ woke_source: "outside", woke_estimated: false });
+    await recordWake(db, DATE, at("07:00"));
+    expect(await day()).toMatchObject({ woke_source: "screen" });
+    const [frame] = await listDayFrames(db, DATE);
+    expect(frame.wokeFrom).toBe("screen");
+  });
+
+  it("the column takes only the three sources", async () => {
+    const { error } = await db.from("days").insert({ date: DATE, woke_source: "alarm" });
+    expect(error?.message).toMatch(/check/);
+  });
+});
+
+describe("the planning day (Ç3g)", () => {
+  it("is the day before until the night ends: 05:00, or the waking range's start if earlier", async () => {
+    expect(await planningDayOf(db, at("00:20", "2026-11-19"))).toBe(DATE);
+    expect(await planningDayOf(db, at("05:10", "2026-11-19"))).toBe("2026-11-19");
+    await saveDayFrame(db, { ...DEFAULT_FRAME, wake: ["04:30", "07:00"] });
+    expect(await planningDayOf(db, at("04:40", "2026-11-19"))).toBe("2026-11-19");
   });
 });
 

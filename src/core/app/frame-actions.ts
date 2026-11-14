@@ -43,6 +43,7 @@ function patchDay(date: string, patch: Partial<DayRow>) {
       closing_note: null,
       woke_at: null,
       woke_estimated: false,
+      woke_source: null,
       bed_at: null,
       bed_session_id: null,
       planned_wake: null,
@@ -66,14 +67,23 @@ export function useRecordWake() {
       const row = await recordWake(db, args.date, args.at);
       await tellDayStarted(
         { db, registry },
-        { date: args.date, wokeAt: row.woke_at ?? args.at.toISOString(), estimated: false },
+        {
+          date: args.date,
+          wokeAt: row.woke_at ?? args.at.toISOString(),
+          estimated: false,
+          source: "screen",
+        },
       );
       return row;
     },
     optimistic: ({ date, at }) => [
       {
         key: keys.days,
-        update: patchDay(date, { woke_at: at.toISOString(), woke_estimated: false }),
+        update: patchDay(date, {
+          woke_at: at.toISOString(),
+          woke_estimated: false,
+          woke_source: "screen",
+        }),
       },
     ],
     invalidate: [keys.days],

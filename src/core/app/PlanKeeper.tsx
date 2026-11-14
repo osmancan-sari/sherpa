@@ -199,7 +199,10 @@ export function PlanKeeper() {
         )
         .then((estimated) =>
           estimated?.woke_at
-            ? tellDayStarted({ db, registry }, { date, wokeAt: estimated.woke_at, estimated: true })
+            ? tellDayStarted(
+                { db, registry },
+                { date, wokeAt: estimated.woke_at, estimated: true, source: "estimate" },
+              )
             : null,
         )
         .then(() => queryClient.invalidateQueries({ queryKey: [CORE, "days"] }))

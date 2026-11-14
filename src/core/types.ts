@@ -20,6 +20,21 @@ export type Settings = Tables<"settings">;
 export type AiCall = Tables<"ai_calls">;
 export type AiFeedback = Tables<"ai_feedback">;
 export type DayRow = Tables<"days">;
+/**
+ * Ç3g: where a day's waking came from (`days.woke_source`): "Uyandım" or "Biraz önce" on a
+ * screen, the waking endpoint `core/wake` (outside), or the day's first touch (estimate).
+ */
+export type WakeSource = "screen" | "outside" | "estimate";
+
+/** The source of a day row's waking; null without one. One written before Ç3g reads as a screen's. */
+export function wakeSourceOf(
+  row: { woke_at: string | null; woke_estimated: boolean; woke_source?: string | null } | null,
+): WakeSource | null {
+  if (!row?.woke_at) return null;
+  if (row.woke_source === "screen" || row.woke_source === "outside") return row.woke_source;
+  if (row.woke_source === "estimate" || row.woke_estimated) return "estimate";
+  return "screen";
+}
 export type WeekPlanRow = Tables<"week_plans">;
 export type LifeModePeriod = Tables<"life_mode_periods">;
 export type PlannerStatRow = Tables<"planner_stats">;

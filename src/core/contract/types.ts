@@ -14,6 +14,7 @@ import type {
   Rhythm,
   RhythmLog,
   Task,
+  WakeSource,
   WorkItem,
 } from "@/core/types";
 
@@ -114,6 +115,8 @@ export type DayFrameRecord = {
   wokeAt: string | null;
   /** "Uyandım" was not said: the first touch of the day stands for it. */
   wokeEstimated: boolean;
+  /** Ç3g: where the waking came from; null without one. */
+  wokeFrom: WakeSource | null;
   bedAt: string | null;
   /** What the sleep plan chose ("HH:mm"). */
   plannedWake: string | null;
@@ -145,6 +148,11 @@ export type ModuleContext = {
   saveSettings: (settings: Record<string, unknown>) => Promise<void>;
   /** Ç3c: the days' waking and bedtime from this day on (read only). */
   days: (sinceDay: string) => Promise<DayFrameRecord[]>;
+  /**
+   * Ç3g: the core's planning day of a moment (default: now), "YYYY-MM-DD": until the night ends
+   * (05:00, or the waking range's start if earlier) it is still the day before.
+   */
+  day: (at?: Date) => Promise<string>;
 };
 
 /** What one of the module's extractors made of a text (docs/10-yapay-zeka.md, `extract`). */
@@ -184,14 +192,26 @@ export type Say = (text: string, options?: { interrupt?: boolean }) => void;
 
 /** The day in short, for a scene or a narration (read only). */
 export type TodayBrief = {
+  /** Ç3g: the core's planning day ("YYYY-MM-DD"): past midnight, until the night ends, the evening's day. */
+  date: string;
   /** The day's three. */
   top: { title: string; module: string; reason: string | null }[];
   /** Today's fixed blocks. */
   blocks: { title: string; startsAt: Date; endsAt: Date }[];
   finishLine: Date;
   wokeAt: Date | null;
+  /**
+   * Ç3g: where today's waking came from: a screen ("Uyandım", "Biraz önce"), outside (`core/wake`,
+   * the phone's alarm automation), or the first touch ('estimate'). Null without a waking.
+   */
+  wokeFrom: WakeSource | null;
   /** Ç3f: today's evening closing was done. */
   closed: boolean;
+  /**
+   * Ç3g: tomorrow's expected waking and tonight's expected sleep, as the planner has them (moved by
+   * a real bedtime, and back when it is taken back). Null when the day's frame is off.
+   */
+  tomorrow: { wake: Date; sleepMinutes: number } | null;
 };
 
 /**
@@ -222,8 +242,12 @@ export type SceneSubject =
 
 export type SceneProps = {
   subject: SceneSubject;
-  /** From the session's stored start: the same on every device. */
-  session: { id: string; startedAt: Date; elapsedSeconds: number };
+  /**
+   * From the session's stored start: the same on every device. Ç3g: `day` is the core's planning
+   * day of that start (a session started at 00:20 belongs to the evening before), the same day
+   * its `core.session_started` carries.
+   */
+  session: { id: string; startedAt: Date; elapsedSeconds: number; day: string };
   device: "pano" | "telefon";
   /** The core's session, the only way a scene acts on it. */
   controls: {

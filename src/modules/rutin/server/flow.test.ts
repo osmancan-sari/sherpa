@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { istanbulInstant, shiftDay } from "@/lib/date";
+import { shiftDay } from "@/lib/date";
 import {
   dayStepsOf,
   isDue,
@@ -8,7 +8,6 @@ import {
   partsOf,
   proposalMinutes,
   routineSeconds,
-  runDay,
   type Step,
   unitsOf,
 } from "./flow";
@@ -165,31 +164,6 @@ describe("lengths", () => {
     expect(proposalMinutes(2400)).toBe(40);
     expect(proposalMinutes(150)).toBe(5);
     expect(proposalMinutes(9000)).toBe(90);
-  });
-});
-
-describe("the day a run belongs to (B3)", () => {
-  const at = (day: string, time: string) => istanbulInstant(day, time);
-
-  it("is the night before for the evening's run before noon", () => {
-    expect(runDay(at("2026-11-14", "00:20"), "aksam", [])).toBe("2026-11-13");
-    expect(runDay(at("2026-11-14", "22:20"), "aksam", [])).toBe("2026-11-14");
-  });
-
-  it("is the waking's day for the morning, even an early one", () => {
-    expect(runDay(at("2026-11-14", "07:00"), "sabah", [])).toBe("2026-11-14");
-    const early = [
-      {
-        date: "2026-11-14",
-        wokeAt: at("2026-11-14", "04:30").toISOString(),
-        wokeEstimated: false,
-        bedAt: null,
-        plannedWake: null,
-        plannedBed: null,
-      },
-    ];
-    expect(runDay(at("2026-11-14", "04:35"), "hazirlik", early)).toBe("2026-11-14");
-    expect(runDay(at("2026-11-14", "04:35"), "sabah", [])).toBe("2026-11-13");
   });
 });
 

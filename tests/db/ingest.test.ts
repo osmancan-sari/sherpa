@@ -407,11 +407,16 @@ describe("the core's kinds", () => {
     const [day] = await ownerRows("days").then((rows) =>
       rows.filter((row) => row.date === "2026-11-11"),
     );
-    expect(day).toMatchObject({ woke_estimated: false, started_at: null });
+    // Ç3g: told from outside, and said so.
+    expect(day).toMatchObject({ woke_estimated: false, started_at: null, woke_source: "outside" });
     expect(new Date(day.woke_at!).getTime()).toBe(morning.getTime());
     const events = await ownerRows("events");
     expect(events.map((event) => event.type)).toEqual(["core.day_started"]);
-    expect(events[0].payload).toMatchObject({ date: "2026-11-11", estimated: false });
+    expect(events[0].payload).toMatchObject({
+      date: "2026-11-11",
+      estimated: false,
+      source: "outside",
+    });
     const [mod] = ok(await owner.from("modules").select("settings"));
     expect(mod.settings).toEqual({ woke: day.woke_at });
 

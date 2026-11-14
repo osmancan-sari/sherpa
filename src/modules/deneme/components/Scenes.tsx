@@ -8,6 +8,7 @@ import type { SceneChain, SceneProps } from "@/core/contract/types";
 import { type Step, StepRunner } from "@/core/ui/kit";
 import { useNotify } from "@/core/ui/Notices";
 import { SAVE_FAILED } from "@/core/ui/Notices";
+import { formatMinutes, formatTime } from "@/lib/date";
 import { getItem, updateItem } from "../queries";
 
 // The module's scenes (docs/06-modul-sozlesmesi.md, "Sahne"): while a focused sitting ("odak")
@@ -121,6 +122,32 @@ function WorkoutScene({ subject, controls, say, ctx }: SceneProps) {
   );
 }
 
+const WOKE_FROM: Record<NonNullable<SceneProps["today"]["wokeFrom"]>, string> = {
+  screen: "ekrandan",
+  outside: "dışarıdan",
+  estimate: "ilk dokunuştan",
+};
+
+/**
+ * Ç3g: the core's day as a scene reads it: the session's planning day, where the waking came
+ * from, tomorrow's expected waking and tonight's sleep (moved by a real bedtime).
+ */
+function DayLine({ session, today, evening }: SceneProps & { evening: boolean }) {
+  const parts = [`Gün ${session.day}`];
+  if (!evening) parts.push(`uyanış ${today.wokeFrom ? WOKE_FROM[today.wokeFrom] : "yok"}`);
+  if (evening && today.tomorrow) {
+    parts.push(
+      `yarın uyanış ${formatTime(today.tomorrow.wake)}`,
+      `uyku ${formatMinutes(today.tomorrow.sleepMinutes)}`,
+    );
+  }
+  return (
+    <p data-testid="scene-day" className="text-muted-foreground text-sm tabular-nums">
+      {parts.join(" · ")}
+    </p>
+  );
+}
+
 const STATE_LABEL: Record<SceneChain["items"][number]["state"], string> = {
   done: "yapıldı",
   running: "şimdi",
@@ -173,19 +200,27 @@ function ChainList({ chain }: { chain: SceneChain }) {
  * each, drawn with the facet the core hands over (`facet`: its name and the user's colour).
  * Ç3f: with the chain the work is part of beside it.
  */
-function FacetScene({
-  subject,
-  session,
-  controls,
-  facet,
-  chain,
-  today,
-  bedtime,
-  testId,
-  greeting,
-  sky,
-  evening = false,
-}: SceneProps & { testId: string; greeting: string; sky: string; evening?: boolean }) {
+function FacetScene(
+  props: SceneProps & {
+    testId: string;
+    greeting: string;
+    sky: string;
+    evening?: boolean;
+  },
+) {
+  const {
+    subject,
+    session,
+    controls,
+    facet,
+    chain,
+    today,
+    bedtime,
+    testId,
+    greeting,
+    sky,
+    evening = false,
+  } = props;
   const title = subject.kind === "task" ? subject.task.title : subject.rhythm.title;
   const color = facet?.color ?? "currentColor";
   const [undo, setUndo] = useState<string | null>(null);
@@ -195,6 +230,7 @@ function FacetScene({
       <div className="flex flex-1 flex-col justify-center gap-4" data-testid={`${testId}-bed`}>
         <h2 className="text-3xl font-semibold md:text-5xl">İyi geceler</h2>
         <p className="text-muted-foreground">Yatış kaydedildi.</p>
+        <DayLine {...props} evening />
         <div>
           <Button
             variant="outline"
@@ -243,6 +279,7 @@ function FacetScene({
         <p className="text-5xl font-semibold tabular-nums md:text-8xl" aria-label="Geçen süre">
           {clock(session.elapsedSeconds)}
         </p>
+        <DayLine {...props} evening={evening} />
         {chain ? <ChainList chain={chain} /> : null}
       </div>
       <div className="flex flex-wrap gap-2">

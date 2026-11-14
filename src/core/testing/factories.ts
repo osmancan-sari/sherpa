@@ -270,6 +270,7 @@ export function dayRow(overrides: Partial<DayRow> = {}): DayRow {
     closing_note: null,
     woke_at: null,
     woke_estimated: false,
+    woke_source: null,
     bed_at: null,
     bed_session_id: null,
     planned_wake: null,

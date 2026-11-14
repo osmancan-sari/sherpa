@@ -8,6 +8,7 @@ import { atTime, briefLines, briefText, nextOfDay } from "./brief";
 const at = (time: string) => istanbulInstant("2026-11-13", time);
 
 const today: TodayBrief = {
+  date: "2026-11-13",
   top: [
     { title: "Proje önerisi taslağı", module: "Okul", reason: null },
     { title: "İstatistik ödevi", module: "Okul", reason: null },
@@ -16,7 +17,9 @@ const today: TodayBrief = {
   blocks: [{ title: "Derin Öğrenme dersi", startsAt: at("10:30"), endsAt: at("12:30") }],
   finishLine: at("19:00"),
   wokeAt: at("07:00"),
+  wokeFrom: "screen",
   closed: false,
+  tomorrow: null,
 };
 
 describe("the morning's summary", () => {

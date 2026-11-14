@@ -273,6 +273,15 @@ test("Rutin: Sonraki on one screen brings the other to the same sub-step within 
   await update("settings", settings.id as string, {
     day_frame: { wake: ["06:00", "09:00"], bed: ["22:00", "01:00"], sleep_minutes: 480 },
   });
+  // As core/wake writes it, on the planning day (the night ends at 05:00).
+  const day = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Istanbul" }).format(
+    new Date(Date.now() - 5 * 3_600_000),
+  );
+  await insert("days", {
+    date: day,
+    woke_at: new Date(Date.now() - 2 * 60_000).toISOString(),
+    woke_source: "outside",
+  });
   await insert("sessions", { rhythm_id: morning.id, module_id: mod.id });
   await Promise.all([desktop.goto("/"), hand.goto("/")]);
   const desk = desktop.getByTestId("rutin-scene");

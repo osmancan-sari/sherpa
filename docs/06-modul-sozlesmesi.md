@@ -205,7 +205,8 @@ type SceneSubject =
 
 type SceneProps = {
   subject: SceneSubject
-  session: { id: string; startedAt: Date; elapsedSeconds: number }   // sunucudaki başlangıçtan; her cihazda aynı
+  session: { id: string; startedAt: Date; elapsedSeconds: number; day: string }
+                                     // sunucudaki başlangıçtan; her cihazda aynı. Ç3g: day, başlangıcın planlama günü ("YYYY-MM-DD"; olaydaki `day` ile aynı)
   device: 'pano' | 'telefon'
   controls: {
     finish: () => Promise<void>      // çekirdeğin "Bitti"si
@@ -300,6 +301,11 @@ type TodayBrief = {
   finishLine: Date
   wokeAt: Date | null
   closed: boolean                    // Ç3f: bugünün akşam kapanışı yapıldı mı
+  date: string                       // Ç3g: çekirdeğin planlama günü; gece yarısından sonra, gece bitene kadar akşamın günü
+  wokeFrom: 'screen' | 'outside' | 'estimate' | null
+                                     // Ç3g: uyanışın kaynağı: ekrandaki "Uyandım"/"Biraz önce", dışarıdan (`core/wake`), ilk dokunuştan tahmin; uyanış yoksa null
+  tomorrow: { wake: Date; sleepMinutes: number } | null
+                                     // Ç3g: yarının beklenen uyanışı ve bu gecenin beklenen uykusu (planlayıcının çerçevesinden; gerçek yatış kaydırır, geri alınınca döner); çerçeve kapalıysa null
 }
 ```
 
@@ -311,7 +317,9 @@ type TodayBrief = {
 
 ### Günün kaydını okuma (Ç3c)
 
-`ctx.days(sinceDay)` modülün günün çerçevesini okumasıdır (yalnızca okuma): `{ date, wokeAt, wokeEstimated, bedAt, plannedWake, plannedBed }[]`. Sabah ve akşam rutini gibi modüller uyanış, yatış ve uyku geçmişini buradan çizer.
+`ctx.days(sinceDay)` modülün günün çerçevesini okumasıdır (yalnızca okuma): `{ date, wokeAt, wokeEstimated, wokeFrom, bedAt, plannedWake, plannedBed }[]` (`wokeFrom` Ç3g). Sabah ve akşam rutini gibi modüller uyanış, yatış ve uyku geçmişini buradan çizer.
+
+**Planlama günü (Ç3g).** Modül bir kaydın hangi güne ait olduğunu çekirdekten alır, kuralı kendi içinde kopyalamaz: sahnede `today.date` (şimdinin günü) ve `session.day` (oturumun başladığı an), olaylarda `core.session_started` ve `core.session_ended`'ın `day`'i, öbür yerlerde `ctx.day(at?)` (bir anın planlama günü; varsayılan şimdi). Kural `docs/04-planlayici.md` `planningDay`: gece, 05:00'te (ya da uyanış aralığı daha erken başlıyorsa onun başında) biter; ondan önceki an önceki günündür. Gece yarısından sonra basılan "Yatıyorum" böylece akşamın gününe yazılır.
 
 Sınama modülü `deneme` her bağlantı noktasının çalışan örneğidir (`alerts` tanımlıdır ama çekirdek modül uyarılarını Ç3'te, `AlertBar` ile göstermeye başlar); yalnızca `NEXT_PUBLIC_SHERPA_DEMO_MODULE=1` verilen ortamlarda (yerel geliştirme, testler) kaydolur, üretimde kaydolmaz.
 
@@ -342,6 +350,7 @@ type ModuleContext = {
   }
   saveSettings: (settings: object) => Promise<void>        // modules.settings
   days: (sinceDay: string) => Promise<DayFrameRecord[]>   // Ç3c: uyanış ve yatış kayıtları (yalnızca okuma)
+  day: (at?: Date) => Promise<string>                     // Ç3g: bir anın çekirdekteki planlama günü (varsayılan şimdi)
 }
 
 type WorkProposal = {
@@ -421,9 +430,9 @@ Akış:
 | Olay | Ne zaman | Yük | Kime |
 | --- | --- | --- | --- |
 | `core.prompt_answered` | Modülün sorusu cevaplandı | `{ module, kind, subject_type, subject_id, value }` | Dinleyen etkin modüllere |
-| `core.session_started` (Ç3c) | Oturum başladı | `{ module, session_id, task_id, rhythm_id, source: { type, id }, facet, started_at }`; `facet` işin bölümü (oturum işinde kendisininki, yoksa kaleminki) ya da `null` (Ç3e) | Yalnızca işin modülüne |
+| `core.session_started` (Ç3c) | Oturum başladı | `{ module, session_id, task_id, rhythm_id, source: { type, id }, facet, started_at, day }`; `facet` işin bölümü (oturum işinde kendisininki, yoksa kaleminki) ya da `null` (Ç3e); `day` başlangıcın planlama günü (Ç3g) | Yalnızca işin modülüne |
 | `core.session_ended` (Ç3c) | Oturum kapandı | aynısı + `{ ended_at, result, minutes, measured }`; `result`: `done`, `stopped`, `deferred`, `stuck`, `unanswered` | Yalnızca işin modülüne |
-| `core.day_started` (Ç3c) | Uyanış kaydedildi | `{ date, woke_at, estimated }` | Etkin bütün modüllere |
+| `core.day_started` (Ç3c) | Uyanış kaydedildi | `{ date, woke_at, estimated, source }`; `source`: `screen`, `outside`, `estimate` (Ç3g) | Etkin bütün modüllere |
 | `core.day_closed` (Ç3c) | Yatış kaydedildi | `{ date, bed_at }` | Etkin bütün modüllere |
 | `core.bed_undone` (Rutin 1) | Sahnenin yazdığı yatış geri alındı ("Diziler", kural 6) | `{ date }` | Etkin bütün modüllere |
 

@@ -686,7 +686,12 @@ test("rutin screens", async ({ page }, testInfo) => {
     day_start_default: "08:00",
     finish_line_default: "19:00",
   });
-  await insert("days", { date: shotDay, woke_at: at("06:58").toISOString() });
+  // Told from outside (the phone's alarm automation, as core/wake writes it).
+  await insert("days", {
+    date: shotDay,
+    woke_at: at("06:58").toISOString(),
+    woke_source: "outside",
+  });
   const rhythm = (key: string) => rhythms.find((row) => row.key === `rutin:${key}`)!.id;
   const scene = page.getByTestId("rutin-scene");
   const run = async (key: string) => {

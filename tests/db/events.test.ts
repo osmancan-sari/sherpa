@@ -188,6 +188,41 @@ describe("session events", () => {
   });
 });
 
+describe("the core's day in the session events (Ç3g)", () => {
+  it("carry the planning day of the start: a session started past midnight is the evening's", async () => {
+    const { a, modA, told } = await setup();
+    const routine = await createRhythm(db, {
+      title: "Akşam",
+      period: "day",
+      target_count: 1,
+      module_id: modA.id,
+    });
+    const late = ok(
+      await db
+        .from("sessions")
+        .insert({
+          rhythm_id: routine.id,
+          module_id: modA.id,
+          started_at: "2026-11-10T21:20:00Z", // 00:20 on the 11th in Istanbul
+          ended_at: "2026-11-10T21:40:00Z",
+        })
+        .select()
+        .single(),
+    );
+    const { tellStarted } = await import("@/core/data/session-events");
+    await tellStarted(told, late);
+    expect(a.heard[0].payload).toMatchObject({ session_id: late.id, day: "2026-11-10" });
+    const now = await startSessionTold(told, { rhythmId: routine.id });
+    await endSessionTold(told, now.id, "done");
+    const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Istanbul" }).format(
+      new Date(Date.parse(now.started_at) - 5 * 3_600_000),
+    );
+    // Started now: its day is the planning day of now (before 05:00 the day before).
+    expect(a.heard[1].payload).toMatchObject({ session_id: now.id, day: today });
+    expect(a.heard[2].payload).toMatchObject({ session_id: now.id, day: today, result: "done" });
+  });
+});
+
 describe("day events", () => {
   it("reach every active module", async () => {
     const { a, b, told, modB } = await setup();
@@ -204,6 +239,8 @@ describe("day events", () => {
       date: "2026-11-18",
       woke_at: "2026-11-18T04:10:00Z",
       estimated: true,
+      // Ç3g: where the waking came from (an estimated one is the first touch's).
+      source: "estimate",
     });
   });
 });

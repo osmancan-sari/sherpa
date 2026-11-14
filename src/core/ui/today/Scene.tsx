@@ -16,11 +16,10 @@ import type {
   SceneSubject,
   TodayBrief,
 } from "@/core/contract/types";
-import type { NowState, Plan, PlanInput } from "@/core/planner";
+import { type NowState, type PlanInput, planningDay } from "@/core/planner";
 import type { Colors } from "@/core/app/facets";
 import type { PlannedTarget } from "@/core/data/sessions";
 import type { ChainLook } from "@/core/today/chain";
-import { blocksOfDay } from "@/core/today/select";
 import { useSay } from "@/core/voice";
 import { formatMinutes, formatTime } from "@/lib/date";
 import { cn } from "@/lib/utils";
@@ -114,38 +113,6 @@ export function useDevice(): SceneProps["device"] {
   );
 }
 
-/** The day in short for a scene or a narration (read only). */
-export function briefOf(
-  input: PlanInput,
-  plan: Plan,
-  modules: Map<string, KnownModule>,
-): TodayBrief {
-  const top = plan.top3.flatMap((id) => {
-    const candidate = plan.candidates.find((row) => row.id === id || row.task?.work_item_id === id);
-    if (!candidate) return [];
-    return [
-      {
-        title: candidate.title,
-        module: modules.get(candidate.moduleId)?.row.name ?? "",
-        reason: input.advice?.reasons?.[id] ?? null,
-      },
-    ];
-  });
-  return {
-    top,
-    blocks: blocksOfDay(input.blocks, input.date)
-      .filter((block) => block.status !== "cancelled")
-      .map((block) => ({
-        title: block.title,
-        startsAt: new Date(block.starts_at),
-        endsAt: new Date(block.ends_at),
-      })),
-    finishLine: input.finishLine,
-    wokeAt: input.frame?.woke ? input.frame.wake : null,
-    closed: Boolean(input.closed),
-  };
-}
-
 /** How a chain's rows look on this screen: the module, the resolved colour, the facet (Ç3f). */
 export function chainLook(modules: Map<string, KnownModule>, colors: Colors): ChainLook {
   return {
@@ -176,6 +143,7 @@ export function SceneFrame({
   chain = null,
   next = null,
   date,
+  dayStart,
   brief,
   bedtime = null,
   onExit,
@@ -194,6 +162,8 @@ export function SceneFrame({
   next?: PlannedTarget | null;
   /** The planning day (the bedtime is tonight's). */
   date: string;
+  /** Ç3g: the clock time the night ends by (`dayStartClock`): the session's planning day. */
+  dayStart: string;
   brief: TodayBrief;
   /**
    * Rutin 1: the session ended with the scene's "Yatıyorum" and its bedtime can still be taken
@@ -231,7 +201,12 @@ export function SceneFrame({
 
   const props: SceneProps = {
     subject,
-    session: { id: session.id, startedAt, elapsedSeconds },
+    session: {
+      id: session.id,
+      startedAt,
+      elapsedSeconds,
+      day: planningDay(startedAt, dayStart),
+    },
     device,
     controls: {
       finish: async () => {

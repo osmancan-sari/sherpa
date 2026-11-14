@@ -2,7 +2,7 @@ import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import { createRegistry } from "@/core/contract/registry";
 import type { ModuleContext } from "@/core/contract/types";
 import { createModuleContext } from "@/core/data/context";
-import { endSessionTold, startSessionTold } from "@/core/data/session-events";
+import { endSessionTold, startSessionTold, tellStarted } from "@/core/data/session-events";
 import type { AppEvent, ModuleRow } from "@/core/types";
 import { loadPlanRows } from "@/core/data/keep";
 import { buildPlan, planInput } from "@/core/planner";
@@ -253,6 +253,7 @@ describe("a run", () => {
         session_id: first.id,
         source: { type: "rutin.routine", id: rhythm.source_id },
         started_at: first.started_at,
+        day: run.day,
       }),
     );
     expect(ok(await db.from("rutin_runs").select("*").single())).toMatchObject({
@@ -288,42 +289,62 @@ describe("a run", () => {
   });
 
   it("belongs to the core's day: Yatıyorum after midnight closes the evening's run (criterion 7)", async () => {
+    // Ç3g: the day comes with the core's `core.session_started` (its planning day of the start);
+    // the module keeps no copy of the rule.
     const day = "2026-11-13";
-    const { ctx } = await setup();
+    const { ctx, row } = await setup();
     await rutin.onActivate!(ctx);
+    const told = { db, registry };
     const evening = await routineByKey(ctx, "aksam");
+    const rhythm = ok(
+      await db
+        .from("rhythms")
+        .select("*")
+        .eq("module_id", row.id)
+        .eq("key", "rutin:aksam")
+        .single(),
+    );
     const late = (time: string, date = "2026-11-14") => istanbulInstant(date, time).toISOString();
 
-    // Started at 23:50, "Yatıyorum" at 00:10.
+    // A start told without a session or without the core's day opens nothing.
     await openRun(
       ctx,
       event("core.session_started", {
         session_id: null,
         source: { type: "rutin.routine", id: evening.id },
         started_at: late("23:50", day),
+        day,
       }),
-    );
-    // No session id: nothing opened (a run is tied to a session).
-    expect(await getRun(ctx, evening.id, day)).toBeNull();
-
-    const session = ok(
-      await db
-        .from("sessions")
-        .insert({
-          title: "Akşam kapanışı",
-          started_at: late("23:50", day),
-          ended_at: late("00:10"),
-        })
-        .select()
-        .single(),
     );
     await openRun(
       ctx,
       event("core.session_started", {
-        session_id: session.id,
+        session_id: "00000000-0000-0000-0000-000000000000",
         source: { type: "rutin.routine", id: evening.id },
         started_at: late("23:50", day),
       }),
+    );
+    expect(await getRun(ctx, evening.id, day)).toBeNull();
+
+    // Started at 23:50, "Yatıyorum" at 00:10: the core tells the start with its day.
+    const session = ok(
+      await db
+        .from("sessions")
+        .insert({ rhythm_id: rhythm.id, module_id: row.id, started_at: late("23:50", day) })
+        .select()
+        .single(),
+    );
+    await tellStarted(told, session);
+    const [started] = ok(
+      await db.from("events").select("payload").eq("type", "core.session_started"),
+    );
+    expect(started.payload).toMatchObject({ session_id: session.id, day });
+    ok(
+      await db
+        .from("sessions")
+        .update({ ended_at: late("00:10") })
+        .eq("id", session.id)
+        .select(),
     );
     await closeRun(
       ctx,
@@ -341,18 +362,15 @@ describe("a run", () => {
     const second = ok(
       await db
         .from("sessions")
-        .insert({ title: "Akşam kapanışı", started_at: late("00:20", "2026-11-15") })
+        .insert({
+          rhythm_id: rhythm.id,
+          module_id: row.id,
+          started_at: late("00:20", "2026-11-15"),
+        })
         .select()
         .single(),
     );
-    await openRun(
-      ctx,
-      event("core.session_started", {
-        session_id: second.id,
-        source: { type: "rutin.routine", id: evening.id },
-        started_at: late("00:20", "2026-11-15"),
-      }),
-    );
+    await tellStarted(told, second);
     expect(await getRun(ctx, evening.id, "2026-11-14")).toMatchObject({ session_id: second.id });
   });
 

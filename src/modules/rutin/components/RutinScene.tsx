@@ -14,7 +14,7 @@ import { useRefreshAll } from "@/core/app/actions";
 import { useModuleQuery } from "@/core/app/hooks";
 import type { SceneProps } from "@/core/contract/types";
 import { SAVE_FAILED, useNotify } from "@/core/ui/Notices";
-import { dayKey, formatDayLabel, formatTime, istanbulInstant, shiftDay } from "@/lib/date";
+import { dayKey, formatDayLabel, formatTime, shiftDay } from "@/lib/date";
 import { briefLines, briefText, nextOfDay } from "../brief";
 import { css, GLASS, type Glass, SOLID, type Tone } from "../look";
 import {
@@ -40,7 +40,6 @@ import {
   minimumDone,
   type RoutineKey,
   type Run,
-  runDay,
   type Unit,
   unitsOf,
 } from "../server/flow";
@@ -172,15 +171,16 @@ function Scene(props: SceneProps) {
     data.data?.routines.find(
       (row) => subject.kind === "rhythm" && row.id === subject.rhythm.source_id,
     ) ?? data.data?.routines.find((row) => row.key === key);
-  const day = data.data ? runDay(session.startedAt, key, data.data.days) : null;
-  const run = useModuleQuery(ctx.module, ["run", routine?.id ?? "", day ?? ""], (c) =>
-    routine && day ? getRun(c, routine.id, day) : Promise.resolve(null),
+  // The run's day is the core's planning day of the session's start (Ç3g: `session.day`).
+  const day = session.day;
+  const run = useModuleQuery(ctx.module, ["run", routine?.id ?? "", day], (c) =>
+    routine ? getRun(c, routine.id, day) : Promise.resolve(null),
   );
 
   // The run is opened by the session's event; if that did not land yet, the scene opens it.
   const opening = useRef(false);
   useEffect(() => {
-    if (!routine || !day || !run.isSuccess || run.data || opening.current) return;
+    if (!routine || !run.isSuccess || run.data || opening.current) return;
     opening.current = true;
     ensureRun(ctx, { routineId: routine.id, day, sessionId: session.id, at: session.startedAt })
       .then(() => refreshAll())
@@ -197,7 +197,7 @@ function Scene(props: SceneProps) {
 
   const lastDone = useMemo(() => lastDoneDays(data.data?.records ?? []), [data.data]);
   const stepsOf = (routineId: string) =>
-    data.data && day ? dayStepsOf(data.data.steps, routineId, day, lastDone) : [];
+    data.data ? dayStepsOf(data.data.steps, routineId, day, lastDone) : [];
   const daySteps: DayStep[] = routine ? stepsOf(routine.id) : [];
   const stepIndex = view?.step_position ?? 0;
   const step: DayStep | undefined = daySteps[stepIndex];
@@ -254,10 +254,10 @@ function Scene(props: SceneProps) {
   }, []);
   const roomy = board || sceneHeight >= 740;
   const tight = !board && sceneHeight < 620;
-  // Günaydın: only when this screen was not touched lately (the waking came from outside: the
-  // phone's automation opened the app, or it came back to the front in the morning). A tap on
-  // "Uyandım" a moment ago means the voice is unlocked and the teeth come at once (8.3).
-  const untouched = useRef(!touchedWithin(15 * 60_000));
+  // Günaydın: only when the waking came from outside (the phone's alarm automation, `core/wake`;
+  // Ç3g: `today.wokeFrom`). "Uyandım" on a screen unlocked the voice already: the teeth come at
+  // once (8.3).
+  const fromOutside = today.wokeFrom === "outside";
   const [greeted, setGreeted] = useState(false);
   const runRecords = (data.data?.records ?? []).filter((row) => row.run_id === view?.id);
   const atStart = view !== null && stepIndex === 0 && partIndex === 0 && runRecords.length === 0;
@@ -267,9 +267,10 @@ function Scene(props: SceneProps) {
     !(chain?.items ?? []).slice(0, Math.max(0, runningAt)).some((row) => row.state === "done");
   // "Kalktım" on any screen stamps the step's start: the other screens leave Günaydın too.
   const woken = view?.step_started_at != null;
-  const greeting = !greeted && untouched.current && atStart && firstOfMorning && !woken;
-  // A touched screen (the tap that started it, "Uyandım") is awake: it stamps the start.
-  const stampStart = Boolean(view && !woken && !untouched.current && !bedtime);
+  const greets = fromOutside && atStart && firstOfMorning;
+  const greeting = !greeted && greets && !woken;
+  // No Günaydın to wait on: the step starts now (on every screen; the first write wins).
+  const stampStart = Boolean(view && !woken && !greets && !bedtime);
   useEffect(() => {
     if (!stampStart) return;
     const timer = setTimeout(() => apply({ step_started_at: stamp() }), 0);
@@ -278,7 +279,6 @@ function Scene(props: SceneProps) {
   }, [stampStart]);
 
   // The day's summary: said on the touched screen, and always written.
-  const tomorrow = day ? shiftDay(day, 1) : null;
   const plannedBed = data.data?.days.find((row) => row.date === day)?.plannedBed ?? null;
   const summary = briefText(today, new Date(now), plannedBed);
   const [speakingUntil, setSpeakingUntil] = useState(0);
@@ -502,12 +502,7 @@ function Scene(props: SceneProps) {
         glass={glass}
         panel={panel("big")}
         bedAt={bedtime.at}
-        wake={
-          tomorrow
-            ? (data.data?.days.find((row) => row.date === tomorrow)?.plannedWake ?? null)
-            : null
-        }
-        tomorrow={tomorrow}
+        tomorrow={today.tomorrow}
         reduceMotion={reduceMotion}
         onUndo={async () => {
           if (!view) return bedtime.undo();
@@ -658,12 +653,11 @@ function Scene(props: SceneProps) {
 
   const nextUnit = units[current + 1];
   const after = units.slice(current + 2).map((unit) => unit.title);
-  const wakeTomorrow = tomorrow
-    ? (data.data.days.find((row) => row.date === tomorrow)?.plannedWake ?? null)
-    : null;
+  // Tomorrow's expected waking and tonight's sleep, as the core plans them (Ç3g).
+  const tomorrow = today.tomorrow;
   const lastText = evening
-    ? wakeTomorrow
-      ? `${wakeTomorrow} · uyku ${sleepHours(new Date(now), tomorrow!, wakeTomorrow)}`
+    ? tomorrow
+      ? `${formatTime(tomorrow.wake)} · uyku ${sleepHours(tomorrow.sleepMinutes)}`
       : null
     : nextOfDay(today, new Date(now));
   const count = `${evening ? "bu akşam" : "bu sabah"} ${current + 1} / ${units.length}`;
@@ -793,17 +787,12 @@ function Scene(props: SceneProps) {
 
   if (board) {
     const lines = evening
-      ? [
-          ...(wakeTomorrow ? [{ left: wakeTomorrow, right: "Uyanış" }] : []),
-          ...(wakeTomorrow
-            ? [
-                {
-                  left: sleepHours(new Date(now), tomorrow!, wakeTomorrow),
-                  right: "Uyku, yaklaşık",
-                },
-              ]
-            : [{ left: "–", right: "Uyanış saati henüz yok." }]),
-        ]
+      ? tomorrow
+        ? [
+            { left: formatTime(tomorrow.wake), right: "Uyanış" },
+            { left: sleepHours(tomorrow.sleepMinutes), right: "Uyku, yaklaşık" },
+          ]
+        : [{ left: "–", right: "Uyanış saati henüz yok." }]
       : briefLines(today, new Date(now));
     return frame(
       <>
@@ -1214,7 +1203,6 @@ function GoodNight({
   glass,
   panel,
   bedAt,
-  wake,
   tomorrow,
   reduceMotion,
   onUndo,
@@ -1222,8 +1210,8 @@ function GoodNight({
   glass: Glass;
   panel: CSSProperties;
   bedAt: Date;
-  wake: string | null;
-  tomorrow: string | null;
+  /** The core's: tomorrow's expected waking after this bedtime, tonight's sleep. */
+  tomorrow: { wake: Date; sleepMinutes: number } | null;
   reduceMotion: boolean;
   onUndo: () => Promise<"undone" | "expired" | "changed">;
 }) {
@@ -1264,7 +1252,7 @@ function GoodNight({
           >
             YARIN
           </p>
-          {wake && tomorrow ? (
+          {tomorrow ? (
             <>
               <div
                 className="flex items-center justify-between"
@@ -1272,13 +1260,13 @@ function GoodNight({
               >
                 <span style={{ fontSize: 16, color: "#dfe4f6" }}>Uyanış</span>
                 <span className="tabular-nums" style={{ fontSize: 22, fontWeight: 600 }}>
-                  {wake}
+                  {formatTime(tomorrow.wake)}
                 </span>
               </div>
               <div className="flex items-center justify-between" style={{ padding: "10px 20px" }}>
                 <span style={{ fontSize: 16, color: "#dfe4f6" }}>Uyku</span>
                 <span style={{ fontSize: 16, fontWeight: 600 }}>
-                  yaklaşık {sleepHours(bedAt, tomorrow, wake, true)}
+                  yaklaşık {sleepHours(tomorrow.sleepMinutes, true)}
                 </span>
               </div>
             </>
@@ -1333,10 +1321,9 @@ function GoodNight({
   );
 }
 
-/** The sleep until tomorrow's waking, as said: "8 sa", "7,5 sa" (or "8 saat"). */
-function sleepHours(from: Date, tomorrow: string, wake: string, long = false): string {
-  const hours = (istanbulInstant(tomorrow, wake).getTime() - from.getTime()) / 3_600_000;
-  const rounded = Math.max(0, Math.round(hours * 2) / 2);
+/** Tonight's sleep, as said: "8 sa", "7,5 sa" (or "8 saat"), to the half hour. */
+function sleepHours(minutes: number, long = false): string {
+  const rounded = Math.max(0, Math.round((minutes / 60) * 2) / 2);
   const text = String(rounded).replace(".", ",");
   return `${text} ${long ? "saat" : "sa"}`;
 }

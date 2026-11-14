@@ -285,6 +285,7 @@ closing_note text null
 -- Günün çerçevesi (Ç3c, docs/04-planlayici.md "Günün çerçevesi"):
 woke_at timestamptz null      -- uyanış ("Uyandım"; dışarıdan da yazılır: giriş ucu `core/wake`, Ç3d)
 woke_estimated boolean default false   -- "Uyandım" denmedi; günün ilk dokunuşundan alındı
+woke_source text null         -- Ç3g: uyanışın kaynağı: 'screen' ("Uyandım", "Biraz önce"), 'outside' (`core/wake`), 'estimate' (ilk dokunuş); boş: uyanış yok ya da Ç3g'den önce yazıldı (ekrandan sayılır)
 bed_at timestamptz null       -- bu gecenin yatışı ("Yatıyorum"); denmezse boş kalır, uydurulmaz
 planned_wake time null        -- uyku planının bu gün için seçtiği uyanış (kayıt için)
 planned_bed time null         -- uyku planının bu gece için seçtiği yatış (kayıt için)

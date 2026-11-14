@@ -1,10 +1,9 @@
-import type { DayFrameRecord } from "@/core/contract/types";
 import type { Tables } from "@/lib/supabase/database.types";
-import { dayKey, formatTime, shiftDay } from "@/lib/date";
 
 // The routine's rules that need no database, no clock and no screen (docs/moduller/rutin.md,
 // "Kurallar"): which steps a run has on a day, which add-on is due, the day a run belongs to, the
-// lengths. The current time is always a parameter. The scene and the rules both use these.
+// lengths. The current time is always a parameter. The day a run belongs to is the core's
+// (Ç3g: `core.session_started`'s `day`, `SceneProps.session.day`); the module keeps no copy of it. The scene and the rules both use these.
 
 export type RoutineKey = "sabah" | "hazirlik" | "aksam";
 export const ROUTINE_KEYS: RoutineKey[] = ["sabah", "hazirlik", "aksam"];
@@ -177,25 +176,6 @@ export function formatSeconds(seconds: number): string {
   return rest === 0
     ? `${Math.floor(minutes / 60)} sa`
     : `${Math.floor(minutes / 60)} sa ${rest} dk`;
-}
-
-/** Istanbul wall-clock hour of an instant (0–23). */
-function hourOf(at: Date): number {
-  return Number(formatTime(at).slice(0, 2));
-}
-
-/**
- * The day a run belongs to: the core's day, not the calendar's (B3). The evening's run started
- * before noon belongs to the night before (a bedtime after midnight is the previous day's night,
- * as the core counts it). A morning run belongs to the calendar day once that day's waking is
- * recorded at or before it; before 05:00 without one, to the night before.
- */
-export function runDay(at: Date, routine: RoutineKey, days: DayFrameRecord[]): string {
-  const calendar = dayKey(at);
-  if (ANCHOR_OF[routine] === "bed") return hourOf(at) < 12 ? shiftDay(calendar, -1) : calendar;
-  const today = days.find((row) => row.date === calendar);
-  if (today?.wokeAt && Date.parse(today.wokeAt) <= at.getTime()) return calendar;
-  return hourOf(at) < 5 ? shiftDay(calendar, -1) : calendar;
 }
 
 /** Whether every open basic step of the day's list is done in the run. */

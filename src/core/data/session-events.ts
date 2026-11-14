@@ -1,7 +1,8 @@
 import { taskFacet } from "@/core/contract/facets";
 import type { ModuleRegistry, ProposalResult } from "@/core/contract/types";
 import { CORE_EVENTS, emitEvent } from "@/core/events/bus";
-import type { Db, Session } from "@/core/types";
+import type { Db, Session, WakeSource } from "@/core/types";
+import { planningDayOf } from "./frame";
 import {
   closeUnanswered,
   endSession,
@@ -77,7 +78,9 @@ async function ownerOf(db: Db, session: Session) {
       facet = data.facet;
     }
   }
-  return { slug, source, facet };
+  // Ç3g: the core's planning day of the start (a session started at 00:20 is the evening's).
+  const day = await planningDayOf(db, new Date(session.started_at));
+  return { slug, source, facet, day };
 }
 
 function basePayload(session: Session, owner: Awaited<ReturnType<typeof ownerOf>>) {
@@ -89,6 +92,7 @@ function basePayload(session: Session, owner: Awaited<ReturnType<typeof ownerOf>
     source: owner.source,
     facet: owner.facet,
     started_at: session.started_at,
+    day: owner.day,
   };
 }
 
@@ -250,12 +254,14 @@ export async function stopSessionsOnItemTold(
 /** The day began: its waking was recorded (said, or estimated from the first touch). */
 export async function tellDayStarted(
   told: Told,
-  day: { date: string; wokeAt: string; estimated: boolean },
+  day: { date: string; wokeAt: string; estimated: boolean; source?: WakeSource },
 ): Promise<void> {
   await tell(told, CORE_EVENTS.dayStarted, {
     date: day.date,
     woke_at: day.wokeAt,
     estimated: day.estimated,
+    // Ç3g: "screen", "outside" (core/wake) or "estimate".
+    source: day.source ?? (day.estimated ? "estimate" : "screen"),
   });
 }
 

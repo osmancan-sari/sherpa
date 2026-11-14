@@ -23,8 +23,9 @@ import { useColors } from "@/core/app/facets";
 import { useAnswerFollowUp, useDefer, useReplan, useStopForStuck } from "@/core/app/plan-actions";
 import { moduleColor } from "@/core/contract/colors";
 import type { ChipData, Health } from "@/core/contract/types";
-import { buildPlan, type Candidate, tomorrowInput } from "@/core/planner";
+import { buildPlan, type Candidate, dayStartClock, tomorrowInput } from "@/core/planner";
 import { sceneBedtime } from "@/core/today/bedtime";
+import { briefOf } from "@/core/today/brief";
 import type { PlannedTarget } from "@/core/data/sessions";
 import { chainLine, chainsOf, chainWith, nextInChain, sceneChain } from "@/core/today/chain";
 import { blocksOfDay } from "@/core/today/select";
@@ -37,7 +38,7 @@ import { useNotify } from "../Notices";
 import { QuickAddButton } from "../QuickAdd";
 import { AlertBar, DayStrip, isTyping, MinutesDialog, TopBar } from "./DayParts";
 import { NowCard, sessionTargetOf, travelText } from "./NowCard";
-import { briefOf, chainLook, SceneFrame, sceneFor, useSceneExit } from "./Scene";
+import { chainLook, SceneFrame, sceneFor, useSceneExit } from "./Scene";
 import { briefLine } from "./frame-text";
 import { useWakeChainStart } from "./wake-chain";
 
@@ -206,6 +207,7 @@ function TodayBody() {
           chain={runningChain}
           next={nextOf(running.task?.id ?? running.rhythm?.id)}
           date={input.date}
+          dayStart={dayStartClock(input.settings)}
           brief={briefOf(input, plan, moduleMap)}
           onExit={() => setExitedScene(running.session.id)}
           onStuck={() => {
@@ -246,6 +248,7 @@ function TodayBody() {
           subject={beddedScene.subject}
           facet={beddedScene.facet}
           date={input.date}
+          dayStart={dayStartClock(input.settings)}
           brief={briefOf(input, plan, moduleMap)}
           bedtime={{ at: bedded.at, until: bedded.until }}
           onExit={() => undefined}

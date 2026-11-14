@@ -36,6 +36,7 @@ async function setUp(
   page: Page,
   frame: Record<string, unknown> = {},
   woke: string | null = "07:00",
+  source: "screen" | "outside" = "screen",
 ) {
   await switchOn(page);
   const [settings] = await rows("settings");
@@ -44,7 +45,9 @@ async function setUp(
     day_start_default: "08:00",
     finish_line_default: "19:00",
   });
-  if (woke) await insert("days", { date: DAY, woke_at: dayAt(woke).toISOString() });
+  if (woke) {
+    await insert("days", { date: DAY, woke_at: dayAt(woke).toISOString(), woke_source: source });
+  }
 }
 
 const scene = (page: Page) => page.getByTestId("rutin-scene");
@@ -273,7 +276,7 @@ test("a waking told from outside shows Günaydın; Kalktım brings the teeth and
   page,
 }) => {
   // The phone's automation wrote the waking before the app came to the front (as core/wake does).
-  await setUp(page, { start_on_wake: true }, "06:58");
+  await setUp(page, { start_on_wake: true }, "06:58", "outside");
   await page.clock.setFixedTime(dayAt("07:00"));
   await page.goto("/");
   await expect(scene(page)).toHaveAttribute("data-screen", "gunaydin");

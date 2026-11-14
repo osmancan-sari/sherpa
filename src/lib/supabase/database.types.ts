@@ -334,6 +334,7 @@ export type Database = {
           user_id: string;
           woke_at: string | null;
           woke_estimated: boolean;
+          woke_source: string | null;
         };
         ComputedFields: never;
         Insert: {
@@ -360,6 +361,7 @@ export type Database = {
           user_id?: string;
           woke_at?: string | null;
           woke_estimated?: boolean;
+          woke_source?: string | null;
         };
         Update: {
           bed_at?: string | null;
@@ -385,6 +387,7 @@ export type Database = {
           user_id?: string;
           woke_at?: string | null;
           woke_estimated?: boolean;
+          woke_source?: string | null;
         };
         Relationships: [
           {

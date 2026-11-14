@@ -12,6 +12,7 @@ import type {
   RhythmLog,
   Session,
   Task,
+  WakeSource,
   WorkItem,
 } from "@/core/types";
 
@@ -125,6 +126,12 @@ export type DayFrame = {
   /** A waking is recorded (by "Uyandım", or estimated from the first touch). */
   woke: boolean;
   estimated: boolean;
+  /**
+   * Ç3g: where the recorded waking came from: a screen ("Uyandım", "Biraz önce"), outside
+   * (`core/wake`), or the first touch ('estimate'). Null without a waking. A waking written
+   * before the source was kept reads as a screen's.
+   */
+  wokeFrom?: WakeSource | null;
   /** Recorded bedtime, else the user's value for the night, else the sleep plan's. */
   bed: Date;
   bedAt: Date | null;

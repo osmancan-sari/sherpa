@@ -1,6 +1,6 @@
 import { type ClockRange, clockOf, type FrameSettings, rangesFor } from "@/core/contract/frame";
 import { readTiming } from "@/core/contract/timing";
-import type { Block, DayRow } from "@/core/types";
+import { type Block, type DayRow, wakeSourceOf } from "@/core/types";
 import { istanbulInstant, shiftDay, weekdayOf } from "@/lib/date";
 import { candidatesOf } from "./candidates";
 import { dayCapacity, dayTypeOf } from "./slots";
@@ -169,7 +169,7 @@ function roughFootprint(input: PlanInput, day: string): number {
 export type FrameDay = Pick<
   DayRow,
   "date" | "woke_at" | "woke_estimated" | "bed_at" | "expected_wake" | "expected_bed"
->;
+> & { woke_source?: string | null };
 
 const clockText = (time: string | null | undefined) =>
   time && /^\d{2}:\d{2}/.test(time) ? time.slice(0, 5) : null;
@@ -279,6 +279,7 @@ export function dayFrameOf(
       wake,
       woke: own?.woke_at != null,
       estimated: own?.woke_estimated ?? false,
+      wokeFrom: wakeSourceOf(own),
       bed,
       bedAt,
       bedEnd: bedInstant(date, ranges.bed[1]),

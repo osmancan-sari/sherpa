@@ -1,6 +1,15 @@
 import { type FrameSettings, toStoredFrame } from "@/core/contract/frame";
+import { dayStartClock, plannerSettings, planningDay } from "@/core/planner";
 import type { BedUndo, DayFrameRecord } from "@/core/contract/types";
-import { check, type Db, type DayRow, toJson, unwrap } from "@/core/types";
+import {
+  check,
+  type Db,
+  type DayRow,
+  toJson,
+  unwrap,
+  type WakeSource,
+  wakeSourceOf,
+} from "@/core/types";
 
 // The day's frame in the data (docs/03-veri-modeli.md, `days`, `settings.day_frame`): waking
 // and bedtime as they happen, the user's own values for one day, what the sleep plan chose,
@@ -8,12 +17,23 @@ import { check, type Db, type DayRow, toJson, unwrap } from "@/core/types";
 
 const onDay = { onConflict: "user_id,date" } as const;
 
-/** "Uyandım" (or a moment before it): the day's waking, said by the user. */
-export async function recordWake(db: Db, date: string, at: Date): Promise<DayRow> {
+/**
+ * "Uyandım" (or a moment before it): the day's waking, said by the user on a screen; or told
+ * from outside (`core/wake`, Ç3g: `source` "outside").
+ */
+export async function recordWake(
+  db: Db,
+  date: string,
+  at: Date,
+  source: Exclude<WakeSource, "estimate"> = "screen",
+): Promise<DayRow> {
   return unwrap(
     await db
       .from("days")
-      .upsert({ date, woke_at: at.toISOString(), woke_estimated: false }, onDay)
+      .upsert(
+        { date, woke_at: at.toISOString(), woke_estimated: false, woke_source: source },
+        onDay,
+      )
       .select()
       .single(),
   );
@@ -27,7 +47,7 @@ export async function estimateWake(db: Db, date: string, at: Date): Promise<DayR
   check(await db.from("days").upsert({ date }, { ...onDay, ignoreDuplicates: true }));
   const { data, error } = await db
     .from("days")
-    .update({ woke_at: at.toISOString(), woke_estimated: true })
+    .update({ woke_at: at.toISOString(), woke_estimated: true, woke_source: "estimate" })
     .eq("date", date)
     .is("woke_at", null)
     .select();
@@ -112,7 +132,7 @@ export async function listDayFrames(db: Db, sinceDay: string): Promise<DayFrameR
   const rows = unwrap(
     await db
       .from("days")
-      .select("date, woke_at, woke_estimated, bed_at, planned_wake, planned_bed")
+      .select("date, woke_at, woke_estimated, woke_source, bed_at, planned_wake, planned_bed")
       .gte("date", sinceDay)
       .order("date"),
   );
@@ -120,8 +140,18 @@ export async function listDayFrames(db: Db, sinceDay: string): Promise<DayFrameR
     date: row.date,
     wokeAt: row.woke_at,
     wokeEstimated: row.woke_estimated,
+    wokeFrom: wakeSourceOf(row),
     bedAt: row.bed_at,
     plannedWake: row.planned_wake?.slice(0, 5) ?? null,
     plannedBed: row.planned_bed?.slice(0, 5) ?? null,
   }));
+}
+
+/**
+ * Ç3g: the core's planning day of a moment, as the Today screen counts it then (a moment before
+ * the night ends is the day before's): for modules (`ctx.day`) and the session events (`day`).
+ */
+export async function planningDayOf(db: Db, at: Date): Promise<string> {
+  const { data } = await db.from("settings").select("*").maybeSingle();
+  return planningDay(at, dayStartClock(plannerSettings(data ?? null)));
 }

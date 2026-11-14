@@ -1,6 +1,5 @@
 import type { ModuleContext, WorkProposal } from "@/core/contract/types";
 import type { AppEvent } from "@/core/types";
-import { dayKey, shiftDay } from "@/lib/date";
 import {
   ensureRun,
   getRunOfSession,
@@ -21,7 +20,6 @@ import {
   type Routine,
   routineSeconds,
   type RoutineKey,
-  runDay,
   type Step,
 } from "./server/flow";
 import startList from "./server/start-list.json";
@@ -134,11 +132,11 @@ async function routineOf(ctx: ModuleContext, event: AppEvent): Promise<Routine |
 export async function openRun(ctx: ModuleContext, event: AppEvent): Promise<void> {
   const routine = await routineOf(ctx, event);
   if (!routine) return;
-  const payload = event.payload as { session_id?: string; started_at?: string };
-  if (!payload.session_id) return;
+  const payload = event.payload as { session_id?: string; started_at?: string; day?: string };
+  // The run's day is the core's planning day of the start (Ç3g): no copy of its rule here.
+  if (!payload.session_id || !payload.day) return;
   const at = payload.started_at ? new Date(payload.started_at) : ctx.now();
-  const days = await ctx.days(shiftDay(dayKey(at), -1));
-  const day = runDay(at, routine.key as RoutineKey, days);
+  const day = payload.day;
   const existing = await getRun(ctx, routine.id, day);
   if (!existing) {
     await ensureRun(ctx, { routineId: routine.id, day, sessionId: payload.session_id, at });
