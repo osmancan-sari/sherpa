@@ -206,17 +206,13 @@ test("Ertele goes on with the next work; Durdur and Takıldım do not", async ({
   await expect(card(page).getByRole("button", { name: "Başla", exact: true })).toBeVisible();
   await nothingStarts(page);
 
-  // Takıldım (from the scene of the shower): nothing starts.
-  await page.goto("/m/deneme");
-  await page
-    .getByRole("region", { name: "Yaklaşanlar" })
-    .getByRole("button", { name: "Başla: Duş ve hazırlık" })
-    .click();
-  await runningOn(shower.id);
-  await page.goto("/");
-  await page.getByTestId("deneme-gunes").getByRole("button", { name: "Takıldım" }).click();
+  // Takıldım on the neck, with the shower still after it in the chain: nothing starts.
+  await card(page).getByRole("button", { name: "Başla", exact: true }).click();
+  await runningOn(neck.id);
+  await card(page).getByRole("button", { name: "Takıldım" }).click();
   await expect(card(page).getByRole("button", { name: "Adımı küçült" })).toBeVisible();
   await nothingStarts(page);
+  expect((await rows("sessions")).some((row) => row.task_id === shower.id)).toBe(false);
 });
 
 test("a session closed unanswered does not start the next work", async ({ page }) => {
@@ -482,4 +478,30 @@ test("a 'rutin' record of the test module proposes a daily routine at its place 
   });
   await expect(card(page).getByRole("heading", { name: "Diş ve su" })).toBeVisible();
   await expect(card(page).getByTestId("chain-line")).toHaveText("Sabah dizisi 1/2 · sırada Boyun");
+});
+
+test("'Biraz önce' with the setting on starts the routine once (the waking it writes is before the front)", async ({
+  page,
+}) => {
+  const { teeth } = await morningUnwoken();
+  await page.clock.setFixedTime(dayAt("07:30"));
+  await page.goto("/");
+  await card(page).getByRole("button", { name: "Biraz önce" }).click();
+  await card(page).getByRole("button", { name: "15 dk önce" }).click();
+  await runningOn(teeth.id);
+  await page.waitForTimeout(2000);
+  expect(await rows("sessions")).toHaveLength(1);
+});
+
+test("going to Bugün inside the app is no coming to the front: the chain does not start", async ({
+  page,
+}) => {
+  const { woke } = await morningUnwoken();
+  await page.clock.install({ time: dayAt("06:50") });
+  await page.goto("/hafta");
+  await page.clock.fastForward("00:30");
+  await woke("06:50");
+  await page.getByRole("link", { name: "Bugün" }).first().click();
+  await expect(card(page).getByRole("heading", { name: "Diş ve su" })).toBeVisible();
+  await nothingStarts(page);
 });

@@ -16,6 +16,14 @@ import { sessionTargetOf } from "./NowCard";
 /** How long after coming to the front the data may still bring the waking. */
 const FRONT_WINDOW_MS = 20_000;
 const DONE_KEY = "sherpa.chain.wake";
+/**
+ * The page's opening, if it was a moment ago (`performance.now()` counts from it). Going from
+ * Hafta to Bugün inside the app is no coming to the front: by then the opening is over.
+ */
+function openedJustNow(): Date | null {
+  const since = performance.now();
+  return since < FRONT_WINDOW_MS ? new Date(Date.now() - since) : null;
+}
 
 function startedOn(): string | null {
   try {
@@ -40,7 +48,8 @@ export function useWakeChainStart(
 ) {
   const start = useStartChain();
   // When the app last came to the front on this device; null once that moment is over.
-  const [front, setFront] = useState<Date | null>(() => new Date());
+  const [front, setFront] = useState<Date | null>(openedJustNow);
+
   const tried = useRef(false);
 
   useEffect(() => {

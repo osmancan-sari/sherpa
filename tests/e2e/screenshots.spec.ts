@@ -631,6 +631,8 @@ for (const theme of ["dark", "light"] as const) {
     await shot("bugun-sahne-dizi");
     await page.getByTestId("deneme-gunes").getByRole("button", { name: "Bitti" }).click();
     await expect(now.getByRole("heading", { name: "Boyun hareketleri" })).toBeVisible();
+    // Once the session is written (its buttons wait for it).
+    await expect(now.getByRole("button", { name: "Bitti" })).toBeEnabled();
     await shot("bugun-dizi-kart");
     await now.getByRole("button", { name: "Durdur" }).click();
     await expect(now.getByRole("button", { name: "Başla", exact: true })).toBeVisible();
