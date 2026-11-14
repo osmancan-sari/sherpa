@@ -653,6 +653,107 @@ for (const theme of ["dark", "light"] as const) {
   });
 }
 
+// Rutin 1: the routine's scene by the clock (the dawn, the day, the night), Günaydın, the evening's
+// last step, "İyi geceler", and the module page with a step's sheet. The scene draws its own sky,
+// the same in both themes: the dark one only. Sessions are written straight (the scene comes with
+// the running work); the clock is yesterday's.
+test("rutin screens", async ({ page }, testInfo) => {
+  test.setTimeout(120_000);
+  await page.addInitScript(() => localStorage.setItem("theme", "dark"));
+  const shotDay = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Istanbul" }).format(
+    new Date(Date.now() - 86_400_000),
+  );
+  const at = (time: string) => new Date(`${shotDay}T${time}:00+03:00`);
+  const phone = testInfo.project.use.isMobile === true;
+  const shot = async (name: string) => {
+    await page.mouse.move(0, 0);
+    await page.screenshot({
+      path: path.join(folder, `${testInfo.project.name}-${name}-dark.png`),
+      fullPage: !phone,
+      animations: "disabled",
+    });
+  };
+  await page.goto("/ayarlar/moduller");
+  await page.getByRole("button", { name: "Rutin: etkinleştir" }).click();
+  const rhythms = await waitFor(
+    () => rows("rhythms"),
+    (list) => list.length === 3,
+  );
+  const [mod] = await rows("modules");
+  const [settings] = await rows("settings");
+  await update("settings", settings.id as string, {
+    day_frame: { wake: ["06:00", "09:00"], bed: ["22:00", "01:00"], sleep_minutes: 480 },
+    day_start_default: "08:00",
+    finish_line_default: "19:00",
+  });
+  await insert("days", { date: shotDay, woke_at: at("06:58").toISOString() });
+  const rhythm = (key: string) => rhythms.find((row) => row.key === `rutin:${key}`)!.id;
+  const scene = page.getByTestId("rutin-scene");
+  const run = async (key: string) => {
+    for (const open of (await rows("sessions")).filter((row) => row.ended_at === null)) {
+      await update("sessions", open.id as string, { ended_at: new Date().toISOString() });
+    }
+    await insert("sessions", { rhythm_id: rhythm(key), module_id: mod.id });
+  };
+
+  // The dawn: Günaydın (the waking came from outside), then the teeth with the timer.
+  await run("sabah");
+  await page.clock.setFixedTime(at("07:00"));
+  await page.goto("/");
+  await expect(scene).toHaveAttribute("data-screen", "gunaydin");
+  await shot("rutin-gunaydin");
+  await scene.getByRole("button", { name: "Kalktım" }).click();
+  await scene.getByRole("button", { name: "Sonraki" }).click();
+  await expect(scene).toHaveAttribute("data-part", "1");
+  await shot("rutin-sabah-safak");
+
+  // The day: the second block with the sun up.
+  await run("hazirlik");
+  await page.clock.setFixedTime(at("11:30"));
+  await page.goto("/");
+  await expect(scene).toHaveAttribute("data-sky", "day");
+  await expect(scene).toHaveAttribute("data-screen", "adim");
+  await shot("rutin-hazirlik-gunduz");
+
+  // The night: the evening, its last step, "İyi geceler".
+  await run("aksam");
+  await page.clock.setFixedTime(at("22:20"));
+  await page.goto("/");
+  await expect(scene).toHaveAttribute("data-routine", "aksam");
+  await expect(scene).toHaveAttribute("data-screen", "adim");
+  await shot("rutin-aksam-gece");
+  const evening = (await rows("rutin_routines")).find((row) => row.key === "aksam")!;
+  const eveningRun = await waitFor(
+    () => rows("rutin_runs"),
+    (list) => list.some((row) => row.routine_id === evening.id),
+  );
+  await update(
+    "rutin_runs",
+    eveningRun.find((row) => row.routine_id === evening.id)!.id as string,
+    { step_position: 3, part_position: 1 },
+  );
+  await expect(scene.getByRole("button", { name: "Yatıyorum" })).toBeVisible();
+  await shot("rutin-aksam-son");
+  await scene.getByRole("button", { name: "Yatıyorum" }).click();
+  await expect(scene).toHaveAttribute("data-screen", "iyi-geceler");
+  await shot("rutin-iyi-geceler");
+
+  // The module page: the morning, the evening, a step's sheet.
+  await page.goto("/m/rutin");
+  await expect(page.getByTestId("rutin-sabah")).toBeVisible();
+  await shot("rutin-modul-sabah");
+  await page.goto("/m/rutin/aksam");
+  await expect(page.getByTestId("rutin-aksam")).toBeVisible();
+  await shot("rutin-modul-aksam");
+  await page.goto("/m/rutin/sabah");
+  await page
+    .getByTestId("rutin-sabah")
+    .getByRole("button", { name: /^Diş bakımı temel/ })
+    .click();
+  await expect(page.getByRole("dialog", { name: "Adımı düzenle" })).toBeVisible();
+  await shot("rutin-adim-duzenle");
+});
+
 base("login screens", async ({ browser }, testInfo) => {
   const { viewport, deviceScaleFactor, isMobile, hasTouch } = testInfo.project.use;
   const context = await browser.newContext({

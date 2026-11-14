@@ -4,6 +4,8 @@ import type { ModuleContext } from "@/core/contract/types";
 import { createModuleContext } from "@/core/data/context";
 import { endSessionTold, startSessionTold } from "@/core/data/session-events";
 import type { AppEvent, ModuleRow } from "@/core/types";
+import { loadPlanRows } from "@/core/data/keep";
+import { buildPlan, planInput } from "@/core/planner";
 import { istanbulInstant } from "@/lib/date";
 import { rutin } from "@/modules/rutin/module";
 import {
@@ -433,5 +435,37 @@ describe("a run", () => {
     expect(parts.error).not.toBeNull();
     const often = await db.from("rutin_steps").update({ every_days: 0 }).eq("id", step.id);
     expect(often.error).not.toBeNull();
+  });
+});
+
+describe("a morning not done (criterion 11, simulation B2)", () => {
+  it("is offered after the waking and gone from the Today screen in the afternoon", async () => {
+    const { ctx, row } = await setup();
+    await rutin.onActivate!(ctx);
+    const date = "2026-11-13";
+    ok(await db.from("settings").insert({}).select().single());
+    ok(
+      await db
+        .from("days")
+        .insert({ date, woke_at: istanbulInstant(date, "07:00").toISOString() })
+        .select(),
+    );
+    const rhythms = ok(await db.from("rhythms").select("*").eq("module_id", row.id));
+    const morning = rhythms.filter((rhythm) => rhythm.key !== "rutin:aksam").map((r) => r.id);
+    const at = async (time: string) => {
+      const now = istanbulInstant(date, time);
+      const rows = await loadPlanRows(db, now);
+      const plan = buildPlan(planInput(rows, { date, now, context: "home" }));
+      const offered = plan.slots.flatMap((slot) =>
+        slot.assignment ? [slot.assignment.candidate.id] : [],
+      );
+      const now_ = plan.now.kind === "suggest" ? plan.now.assignment.candidate.id : null;
+      return { offered, now: now_, kind: plan.now.kind };
+    };
+    const early = await at("07:05");
+    expect(early.now).toBe(rhythms.find((rhythm) => rhythm.key === "rutin:sabah")!.id);
+    const afternoon = await at("14:00");
+    expect(afternoon.offered.filter((id) => morning.includes(id))).toEqual([]);
+    expect(morning).not.toContain(afternoon.now);
   });
 });

@@ -788,7 +788,7 @@ function Scene(props: SceneProps) {
                   right: "Uyku, yaklaşık",
                 },
               ]
-            : []),
+            : [{ left: "–", right: "Uyanış saati henüz yok." }]),
         ]
       : briefLines(today, new Date(now));
     return frame(
@@ -1204,7 +1204,10 @@ function GoodNight({
       data-dim={dim ? "true" : "false"}
       onPointerDown={() => setDim(false)}
     >
-      <div className="flex w-full max-w-md flex-col items-center" style={{ marginTop: 250 - 52 }}>
+      <div
+        className="flex w-full max-w-md flex-col items-center"
+        style={{ marginTop: "clamp(40px, 12vh, 198px)" }}
+      >
         <h2 style={{ fontSize: 44, fontWeight: 600, letterSpacing: "-0.03em" }}>İyi geceler</h2>
         <p style={{ fontSize: 17, color: "#c6cde8", marginTop: 12 }}>Işık kapalı.</p>
         <section
