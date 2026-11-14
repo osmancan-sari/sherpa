@@ -1,5 +1,7 @@
 # Modüller
 
+Yeni bir modül tasarlanmadan önce `ORTAK.md` okunur: önceki oturumlarda alınan ve her modül için geçerli olan kararlar (sınırlar, görsel dil, sahne, modül sayfası, öğrenme, dil).
+
 Bir modül ancak tasarımı "onaylandı" olduktan sonra kodlanır. Tasarım, her modül için ayrı bir oturumda (`prompts/modul-tasarim-oturumu.md`), `docs/06-modul-sozlesmesi.md` içindeki 11 başlıklı şablonla bu klasörde yazılır. Şu an hiçbir modül onaylı değildir; çekirdek hattı modüllerden bağımsız ilerler.
 
 ## Katalog
@@ -8,7 +10,7 @@ Bir modül ancak tasarımı "onaylandı" olduktan sonra kodlanır. Tasarım, her
 | --- | --- | --- | --- | --- | --- | --- |
 | 1 | Okul | Dönemlik | — | Kritik | Taslak (ayrıntılı) | `okul.md`, `okul-ninova.md` |
 | 2 | Beslenme | Ömürlük | Sağlık | Kritik | Taslak | aşağıda |
-| 3 | Rutin (sabah ve akşam) | Ömürlük | Sağlık | Yüksek | Taslak (tasarım oturumu sürüyor) | `rutin.md` |
+| 3 | Rutin (sabah ve akşam) | Ömürlük | Sağlık | Yüksek | Onaylandı (14 Kas 2026); kurulum Ç3f'den sonra | `rutin.md` |
 | 4 | Spor | Ömürlük | Sağlık | Yüksek | Bekliyor | aşağıda |
 | 5 | Ev | Ömürlük | — | Orta | Taslak | aşağıda |
 | 6 | İş | Ömürlük | — | Orta | Taslak | aşağıda |

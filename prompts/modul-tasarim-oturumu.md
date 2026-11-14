@@ -13,6 +13,7 @@ Her modül ayrı bir Claude sohbetinde tasarlanır.
 - `docs/06-modul-sozlesmesi.md`
 - `docs/10-yapay-zeka.md`
 - `docs/moduller/README.md`
+- `docs/moduller/ORTAK.md` (önceki modül oturumlarında alınan ortak kararlar: görsel dil, sahne ve modül sayfası düzeni, öğrenme, dil; yeniden tartışılmaz)
 - Modülün mevcut taslağı varsa o dosya (Okul için `okul.md` ve `okul-ninova.md`, ayrıca `docs/08-notion-aktarim.md`)
 
 ## Verilecek metin
@@ -30,6 +31,8 @@ Sherpa adlı kişisel planlama uygulamam için **<modül adı>** modülünü tas
 5. **Simülasyon.** Modülü birkaç gerçek günün ve bir kötü haftanın üzerinde yürüt; bulduğun açıkları tasarıma işle.
 6. **Adımlar.** Modülü en fazla üç kurulum adımına böl (temel, veri bağlantıları, otomasyon) ve her adımın kabul ölçütlerini yaz.
 7. **Çıktı.** Onayladığım tasarımı `docs/moduller/<slug>.md` dosyası olarak ver; durumunu "onaylandı" yap. Çekirdek için not ettiğin eksikleri ayrı bir liste olarak ekle.
+
+Başlamadan önce `docs/moduller/ORTAK.md` dosyasını oku ve oradaki kararları bu modüle uygula; oturumun sonunda bu modülde alınan ve öbür modüller için de geçerli olan yeni kararları o dosyaya ekle. Ekranları çizerken bir akışın her adımını ve modül sayfasının açılan her ekranını göster.
 
 Kurallar: sabit haftalık program önerme; ölçülemeyen durumu takip ettirme; oyunlaştırma ekleme; modülün iki hafta kullanılmadan büyütülmesini önerme.
 

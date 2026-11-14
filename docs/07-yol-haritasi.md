@@ -279,7 +279,7 @@ Bir modülün süreci: tasarım oturumu (bkz. `prompts/modul-tasarim-oturumu.md`
 | --- | --- | --- |
 | Okul | 1: dönem takibi ve Notion aktarımı · 2: Ninova · 3: hazırlık dokümanı otomasyonu | Taslak hazır; ayrı oturumda ayrıntılanacak |
 | Beslenme | 1: plan, prep, alışveriş · 2 ve 3: belirlenecek | Taslak |
-| Rutin (sabah ve akşam) | 1: adımlar, iki sahne, kayıt · 2 ve 3: belirlenecek | Taslak; tasarım oturumu sürüyor (`docs/moduller/rutin.md`) |
+| Rutin (sabah ve akşam) | 1: tablolar, üç ritim, iki sahne, modül sayfası, kayıt (Ç3f'den sonra) · 2: Kestirmeler bağlantısı, Düzenlilik, sürelerin öğrenilmesi · 3: çekirdeğin cam diline bağlanma ve faz 2 (Ç4'ten sonra) | Onaylandı (14 Kas 2026; `docs/moduller/rutin.md`); kurulmadı |
 | Spor | 1: duruş programı ve koç sahnesi | Bekliyor |
 | Ev | 1: ritimler | Taslak |
 | İş | 1: çalışma blokları | Taslak |
