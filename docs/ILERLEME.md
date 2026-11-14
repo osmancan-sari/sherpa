@@ -4,9 +4,9 @@ Bu dosyayı Claude Code günceller. Yeni bir oturum yalnızca bu dosyayı ve `pr
 
 ## Durum
 
-- Faz: **Ç3f (Çapalı diziler) sürüyor** (14 Kas 2026). Ç3e bitti ve yayında (`c3e-tamam`, 13 Kas)
-- Adım: 6 (`deneme` ve şablon kopyası) bitti; sırada 7 (kapanış)
-- Son commit: C3f: deneme's routines and the sample chains
+- Faz: **Ç3f (Çapalı diziler) bitti** (14 Kas 2026, `c3f-tamam`; faz denetimi iki tur). Yayını senin onayını bekliyor ("Senden bekleyenler" → Ç3f). Ç3e yayında (13 Kas)
+- Adım: 7 (kapanış) bitti; `sherpa-dev` ve `sherpa-prod` migration'ları ve `git push` senin onayınla
+- Son commit: C3f: phase report, tag
 
 ### Ç3f planı
 
@@ -21,7 +21,7 @@ Bu dosyayı Claude Code günceller. Yeni bir oturum yalnızca bu dosyayı ve `pr
 | 4 | Dışarıdan uyanış: uygulama öne gelince dizinin ilk işi (`start_on_wake`, 60 dakika, çift başlatma yok) | bitti: saf `wakeChainStart` (`chain.ts`: ayar açık, uyanış kayıtlı ve tahmini değil, uygulama öne gelmeden önce kaydedilmiş, açık oturum yok, dizide yapılan ya da çalışan yok, ilk iş hâlâ sırada), `useWakeChainStart` (`src/core/ui/today/wake-chain.ts`): öne gelme = sayfanın açılması ya da görünür olması; ondan sonraki 20 saniye taze veri beklenir, sonra an geçer (açık duran ekran kendiliğinden başlatmaz); cihaz başına günde bir (`localStorage`); başlatma `useStartChain` → `start_session_if_idle` (uyanıştan beri oturum yoksa). Elle "Uyandım" değişmedi (uyanış öne gelmeden sonra kaydedildiği için bu yol devreye girmez). Dışarıdan gelen uyanışı ayırmak için ayrı sütun yok: kayıtlı ve tahmini olmayan, ekran öne gelmeden önce yazılmış uyanış (karar). Testler: `chain.test.ts` +3, `chains.spec.ts` +5 (iki cihaz aynı anda açılınca tek oturum ve günde bir, ayar kapalı, 60 dakika geçmiş, elle "Uyandım", açık ekran başlatmaz ama öne gelince başlatır) |
 | 5 | Sahneden kapanış: `controls.closing()`, `controls.bed()`, `today.closed`, "Onayla ve yat"ın gizlenmesi | bitti: `ClosingInScene` (aynı adımlar, başlık `h2`, "Onayla ve yat" yok, "Vazgeç" var; onaylanınca ya da vazgeçilince sahneye döner; bu cihazda), `SceneFrame` kapanışı sahnenin yerinde açar, şerit durur, oturum sürer; kapanış açıkken Bugün'ün Boşluk/E/X/R tuşları susar (`data-scene-closing`). `controls.bed()`: oturumu "Bitti" ile kapatır (dizi sürmez), yatışı şimdi yazar. `today.closed` `days.closed_at`'ten. `deneme`'nin gece sahnesinde "Günü kapat" (kapanış yapılmadıysa) ve "Yatıyorum". Test: `chains.spec.ts` +1 (vazgeç, onay, `today.closed`, yatış, gece); önceki kapanış ve sahne dosyaları değişmeden geçti |
 | 6 | `deneme` ve şablon kopyası: iki modülün işleriyle uyanış ve yatış dizileri; diziyi çizen örnek sahne | bitti (`20261114100657_deneme_chains.sql`: `deneme_items.chain_order` 1–99, yeni tür `rutin`): `rutin` kaydı günlük bir ritim teklif eder, `aksam` bölümündeyse yatışa, yoksa uyanışa bağlı, sırası `chain_order` (giriş formunda "Dizide sıra (1–99)"); güneş ve gece sahneleri diziyi çizer (2. adım), gece sahnesinde "Günü kapat" ve "Yatıyorum" (5. adım). Örnek veri `scripts/demo-chains.ts` (`db:seed`, modül açıkken): uyanışta Diş ve su (`deneme`, 10), Boyun hareketleri (şablon kopyası, 20), Duş ve hazırlık (`deneme`, 30); yatışta Akşam esnemesi (şablon kopyası, 10), Akşam diş (`deneme`, 20). Şablon kopyasının kuralı olmadığı için onun işleri kullanıcının ritimleridir (`timing` formdan). Testler: `modules.test.ts` +1, `tests/db/chains.test.ts` +1 (örnek veri iki dizi), `chains.spec.ts` +1 (hızlı girişten `rutin`) |
-| 7 | Kapanış: uçtan uca testler, ekran görüntüleri (`docs/ekran-goruntuleri/c3f/`), `check:full`, faz denetimi, rapor, `c3f-tamam`, yayın | |
+| 7 | Kapanış: uçtan uca testler, ekran görüntüleri (`docs/ekran-goruntuleri/c3f/`), `check:full`, faz denetimi, rapor, `c3f-tamam`, yayın | uçtan uca testler, görüntüler, `check:full`, faz denetimi ve rapor bitti ("Biten fazlar" → Ç3f); yayın senin onayınla ("Senden bekleyenler" → Ç3f) |
 
 ### Ç3e planı
 
@@ -365,6 +365,46 @@ Faz denetimi:
 - **Uçtan uca testler** gece de çalışabilsin diye hesabın günü 00:00–23:59 (`tests/e2e/data.ts`); bitiş çizgisi ya da gece sınayan test kendi saatini yazar. Bir önceki testin sunucudaki yapay zeka isteği sonraki testin hesabına düşebiliyor; giriş çağrılarını sayan testler yalnızca kendi türlerine bakıyor.
 - **Kapı süresi:** `check:full` yaklaşık 7 dakika (ekran görüntüleriyle 9).
 
+### Ç3f: Çapalı diziler (14 Kas 2026)
+
+Uyanışa ve yatışa bağlı işler ekranda tek akış: sahne parçası olduğu diziyi (başka modülün işleri dahil) görür, dizide bir iş bitince sıradaki kendiliğinden başlar, dışarıdan kaydedilen uyanıştan sonra uygulama öne gelince dizi başlar, sahne akşam kapanışını kendi içinde açar ve yatışı kaydeder. Tasarım `docs/12` bölüm G; bağlayıcı hali `docs/06` ("Diziler", `SceneProps.chain`, `controls.closing`, `controls.bed`, `today.closed`), `docs/03` (`day_frame.chain_auto`, ortak `order`, `start_session_if_idle`), `docs/04` (dizinin türetilmesi), `docs/05` ("Diziler", Ayarlar). Planlayıcıya dokunulmadı (`src/core/planner/` değişmedi).
+
+**Kabul ölçütleri**
+
+| Ölçüt | Durum | Nasıl doğrulandı |
+| --- | --- | --- |
+| İki ayrı modülün (`deneme` ve şablon kopyası) uyanışa bağlı işleri aynı dizide; sahne `chain` ile hepsini sırasıyla, adı, modülü, rengi, süresi ve durumuyla alıyor; başka modülün satırında `source` ve `meta` yok | Sağlandı | `src/core/today/chain.test.ts` (iki modül tek dizide, ortak sıra; `sceneChain`'in anahtarları birebir, `source`/`meta` JSON'da yok), `tests/e2e/chains.spec.ts` (sahnede üç satır, başka modülün satırı "Şablon kopyası · 10 dk · sırada", `data-mine`), `tests/db/chains.test.ts` (örnek veri: uyanışta ve yatışta iki modül), görüntü `bugun-sahne-dizi` |
+| Dizideki iş "Bitti" ile kapanınca sıradaki aynı cihazda kendiliğinden başlıyor; başka modülünse o modülün sahnesi geliyor; ayar kapalıyken başlamıyor | Sağlandı | `chains.spec.ts` (`deneme` sahnesi → şablon kopyasının kartı → `deneme` sahnesi, her adımda veritabanında açık oturum; ayar kapalı; Boşluk tuşu), görüntü `bugun-dizi-kart` |
+| Ertele'den sonra sıradaki başlıyor; Durdur, Takıldım ve cevapsız kapanıştan sonra başlamıyor | Sağlandı | `chains.spec.ts` (çalışan işte Ertele; Durdur; ardında iş olan işte Takıldım; cevapsız kapanış), `tests/db/chains.test.ts` (başka ekranda Durdur'la kapanmış oturuma eski ekrandan Bitti diziyi sürdürmez; sıradakinin başlatılamaması bitirmeyi geri almaz) |
+| Dizinin son işi bitince standart ekran dönüyor; bugün yapılmış işler dizide `done` | Sağlandı | `chains.spec.ts` (son işten sonra sahne kapanır, yeni oturum yok; sahnede ilk iki satır `done`), `chain.test.ts` (yapılan iş ve ritim yerinde `done`; gece yarısından sonra planlama gününe göre) |
+| Yatış dizisinde aynı davranış | Sağlandı | `chains.spec.ts` (yatış dizisinde Bitti → gece sahnesi, son işten sonra standart ekran; akşam kartında dizi satırı), `chain.test.ts` (yatış dizisi, gece yarısından sonra). Yatışta Ertele ve Durdur ayrıca sınanmadı; kod yolu uyanışla aynı |
+| `core/wake` ile kaydedilen uyanıştan sonra uygulama öne gelince, `start_on_wake` açıksa dizinin ilk işi başlıyor; süre geçtiyse başlamıyor; elle "Uyandım" eskisi gibi | Sağlandı (gerçek telefonla **elle doğrulanacak**) | `chain.test.ts` (`wakeChainStart`: ayar, tahmini uyanış, sonradan kaydedilen uyanış, açık oturum, başlamış dizi, 60 dakika), `chains.spec.ts` (iki cihaz aynı anda açılınca tek oturum ve günde bir, ayar kapalı, 60 dakika geçmiş, elle "Uyandım" ve "Biraz önce" tek başlatma, açık duran ekran ve uygulama içi geçiş başlatmaz, öne gelince başlatır). Testler uyanışı `days`'e doğrudan yazar; uç aynı `recordWake`'i kullanır. iPhone Kestirmeler ile gerçek akış "Senden bekleyenler"de |
+| Sahne `controls.closing()` ile akşam kapanışını açıyor; bitince sahneye dönülüyor, oturum sürüyor; sahneden açılan kapanışta "Onayla ve yat" yok; `today.closed` doğru | Sağlandı | `chains.spec.ts` (Vazgeç ve Onayla ile sahneye dönüş, şerit duruyor, açık oturum 1, "Onayla ve yat" yok, `closed_at` yazıldı, sahne "Günün kapanışı yapıldı" diyor; ardından `controls.bed()` yatışı yazar, oturum biter), görüntü `bugun-sahne-kapanis`. Önceki kapanış testleri (`/kapanis`'te "Onayla ve yat") değişmeden geçti |
+| Standart kartta dizideki yer tek satırla görünüyor | Sağlandı | `chain.test.ts` ("Sabah dizisi 2/3 · sırada …", "son iş", geçilenler sayılmaz, "Akşam dizisi"), `chains.spec.ts` (öneride, çalışırken, sahneden çıkınca, akşam kartında), görüntüler `bugun-dizi-oneri`, `bugun-dizi-kart`, `bugun-dizi-aksam` |
+| Çapalı işi olmayan veride ve `chain` kullanmayan sahnede her şey Ç3e'deki gibi; önceki fazların testleri değiştirilmeden geçiyor | Sağlandı | Önceki test dosyalarına yalnızca ekleme yapıldı (`frame.test.ts`, `modules.test.ts`, `screenshots.spec.ts`); hiçbir beklenti değişmedi. `chainOf` çerçeve kapalıyken ve çapalı iş yokken `null` (`chain.test.ts`); `chain` almayan sahneler (`deneme`'nin odak ve antrenman sahneleri) değişmedi |
+| Planlayıcının çıktısı değişmedi (aynı girdi, aynı plan; testle) | Sağlandı | `src/core/planner/` aralıkta değişmedi; `chain.test.ts` ("is not changed by the chain": girdi aynı kalır, plan aynı) |
+
+Testler: 482 birim, 276 veritabanı, 213 uçtan uca, ekran görüntüleriyle (`npm run check:full` yeşil, 14 Kas, `SHERPA_SHOTS=c3f`, faz denetiminin düzeltmelerinden sonra). Ekran görüntüleri `docs/ekran-goruntuleri/c3f/` (yeni: `bugun-dizi-oneri`, `bugun-sahne-dizi`, `bugun-dizi-kart`, `bugun-dizi-aksam`, `bugun-sahne-aksam-dizi`, `bugun-sahne-kapanis`; pano ve telefon, koyu ve açık). Baktıklarım: yeni ekranların hepsi iki temada. Düzelttiklerim: telefonda dizi satırının iki sütuna bölünmesi; sabah kartının dünün tarihiyle çekilmesi; "Bitti" ile kapanan ritmin bir an açık görünmesi (iyimser kayıt eklendi); kartın oturum yazılmadan çekilmesi. Sabahleyin Sıradakiler'de yatışa bağlı işlerin görünmesi Ç3c'den kalan davranış (Ç4'e not).
+
+**Ses düzeltmesi (fazın içinde, kapsam dışı).** Aralıkta Ç3f'ye ait olmayan bir commit var: `b3ab1e3` (Ç3e'den sonra kullanıcının bildirdiği "se" sesi: ilk dokunuştaki boş anlatım kaldırıldı). Testli, `docs/06`'ya işlenmiş, üretimde. Denemesi "Senden bekleyenler" → Ç3e, 7.
+
+**Rutin'in bu bağlantı noktalarıyla kurulmasında eksik ya da zor bulduklarım**
+
+- Rutin'in blokları (Sabah, Duş ve hazırlık, Akşam kapanışı) birer günlük ritim olarak `timing.anchor` ve `timing.order` ile teklif edilmeli; `deneme`'nin `rutin` türü bunun çalışan örneği. Sıra numarası bir anlaşmadır, kayıt yeri yok: Rutin 10 ve 30, Spor 20 almalı; çakışınca skor belirler. Kullanıcı düzenleme formundan değiştirebilir.
+- Dizi blok düzeyindedir: sahne başka modülün işini tek satır görür (ad, süre, durum); Spor'un setleri ya da Rutin'in adımları diziye girmez. "BU SABAH" listesi, Rutin'in kendi adımlarını (kendi tablosundan) ve öbür modüllerin satırlarını (`chain`) birlikte çizerek kurulur.
+- Aynı bölümde iki blok (Sabah ve Duş ve hazırlık) aynı sahneyi kullanır; sahne hangi blokta olduğunu `subject.rhythm`'den okumalı. Kapanış ekranındaki "Sırada: hareketler." metni sabit yazılmamalı, `chain`'deki sıradaki satırdan alınmalı (Spor yokken "Sırada: duş." kendiliğinden olur).
+- Dışarıdan uyanışta dizi uygulama açılır açılmaz başlar; oturumun süresi "Kalktım"dan değil açılıştan sayılır. "Günaydın / Kalktım" ekranı sahnenin kendi durumu olarak kalmalı (adım değil); ses iOS'ta yine "Kalktım" dokunuşuyla açılır.
+- Akşam 4. adımı (`closing` türü) `controls.closing()`, son adım `controls.bed()`. `bed` oturumu "Bitti" ile kapatır; Rutin adımların kaydını `bed`'den önce yazmalı. "Yatıyorum" yatışı basıldığı an yazar; Rutin notu 4 (telefon bırakılırken basılıyor) açık kalıyor.
+- Gece yarısından sonra kaydı düşen çapalı ritmi planlayıcı takvim gününe göre saydığı için yeniden önerebilir ("Bilinen sorunlar"). Rutin'in akşamı ritimle kurulacaksa ve yatış aralığı gece yarısını aşıyorsa, Rutin'den önce planlayıcının "bugün yapıldı" sayımı planlama gününe çekilmeli.
+- Dizi 60 dakika kuralına bağlı: uyanıştan sonra uygulama sabah dizisinin bitişinden bir saat sonra açılırsa dizi başlamaz ve önerilmez (kural 2). Rutin'in "temel adım" kaydı için bu bir "yapılmadı" değil, "önerilmedi" günüdür.
+
+**Denetim**
+
+- Adım denetimi (1–2: dizi, sahneye verme): GEÇTİ, 4 önemli (tam koşuda kırılgan iki yapay zeka testi; gece yarısından sonra yatış dizisinin gün sınırı; akşam kartında satır yoktu; 2. adımın testi yoktu), 5 not; hepsi düzeltildi ya da kayda geçti (plan, 2. satır).
+- Adım denetimi (3: kendiliğinden devam): GEÇTİ, `check:full` denetçide yeşil (478 / 273 / 189). 2 önemli (başka ekranda kapanmış oturuma eski ekrandan Bitti diziyi sürdürüyordu; sıradakinin başlatılamaması bitirmeyi geri alıyordu), 3 not; düzeltildi (plan, 3. satır).
+- Faz denetimi, 1. tur (`9d38c3b`): GEÇTİ, `check:full` denetçide yeşil (482 / 276 / 197; daha önce kırılgan çıkan iki yapay zeka testi geçti). 2 önemli: (1) Takıldım testi dizinin son işinde deneniyordu, hiçbir şey sınamıyordu: ardında iş olan işe taşındı; (2) ilerleme kaydı fazın sonuna gelmemişti: bu rapor. 5 not: `docs/06` kural 4'e "çalışan iş" eklendi; uygulama içi Hafta→Bugün geçişi öne gelme sayılıyordu: artık sayfanın açılmasından beri geçen süre (`performance.now()`), testli; "Biraz önce" ile tek başlatma testi eklendi; ses düzeltmesi yukarıda ayrı başlıkta; kartın görüntüsü oturum yazıldıktan sonra çekiliyor.
+- Faz denetimi, 2. tur: AUDIT2
+
 ### Ç3e: Modülün bölümleri (13 Kas 2026)
 
 Bir modül kendini bölümlere ayırabilir: aynı veri ve sayfa, ana ekranda ayrı renk ve sahne. Modülün ve bölümlerin rengi kullanıcının. Tasarım `docs/12` bölüm F; bağlayıcı hali `docs/06` ("Bölümler", zarfta `facet`, `SceneProps.facet`, oturum olaylarında `facet`), `docs/03`, `docs/05` ("Renkler ve bölümler").
@@ -599,7 +639,7 @@ Testler: 413 birim, 207 veritabanı, 166 uçtan uca (`npm run check:full` yeşil
 
 ## Sıradaki adım
 
-Ç3e bitti (`c3e-tamam`); üretime çıkışı senin onayını bekliyor ("Senden bekleyenler" → Ç3e). Sıradaki faz **Ç4 (Pano ve telefon cilası)**, yeni oturumda; ya da önce ilk gerçek modül (rutin), tasarımı onaylanınca.
+Ç3f bitti (`c3f-tamam`); üretime çıkışı senin onayını bekliyor ("Senden bekleyenler" → Ç3f). Sıradaki iş ilk gerçek modül **Rutin** (tasarımı onaylanınca; `docs/moduller/rutin.md`, Ç3f raporundaki notlar) ya da **Ç4 (Pano ve telefon cilası)**, yeni oturumda. Rutin'den önce bakılması önerilen: gece yarısından sonra kaydı düşen çapalı ritmin planlayıcıda yeniden önerilmesi ("Bilinen sorunlar").
 
 **Sıra (kullanıcının kararı, 12 Kas 2026): Ç3c → Ç3d → Ç3e → Ç4.** Modüller tasarlanmadan önce altyapı üç katmana hazır olmalı (`docs/12-sahne-ve-otomasyon.md`, "Neden").
 
@@ -613,6 +653,25 @@ Testler: 413 birim, 207 veritabanı, 166 uçtan uca (`npm run check:full` yeşil
 Sonra Ç4 (Pano ve telefon cilası): yeni oturumda `docs/05-arayuz.md` ve `docs/11-yayin-ve-cihazlar.md` okunarak başlanır. Önce Ç3'ün ve Ç3b'nin "Görüşün gerek" satırları. Ç2'nin "Sunum slaytları cuma" ölçütü açık: Okul modülü kurulunca yeniden denenecek (D3, karar 5).
 
 ## Senden bekleyenler
+
+### Ç3f yayını ve elle denemeler
+
+İki migration var, ikisi de yalnızca ekleme yapar:
+
+- `20261114094009_chain_continue.sql`: `start_session_if_idle` fonksiyonu. Yeni kod onu çağırır (dizide Bitti ve Ertele'den sonra, dışarıdan uyanıştan sonra): **migration koddan önce** gider. Fonksiyon yokken kod çalışır ama dizi sürmez (başlatma hatası yutulur, Bitti yazılır).
+- `20261114100657_deneme_chains.sql`: `deneme_items.chain_order` ve yeni tür `rutin` (üretimde `deneme` kapalı; tablo yine de vardır).
+
+Sıra:
+
+1. `sherpa-dev`: `npm run db:push` (ya da bana izin ver). Deneme çalıştırmasında yalnızca bu iki migration görünmeli.
+2. `sherpa-prod`: `npx supabase db push --remote=jqqvfdjrkpxbklocsqvq --dry-run`, yalnızca bu ikisi görünürse aynısı `--yes` ile (ya da bana izin ver).
+3. `git push origin main`, sonra `git push origin c3f-tamam`. Vercel üretimi yayınlar.
+4. Senin denemen (üretimde gerçek modül yok; çapalı işi elle kurarsın): Bugün'de iki iş ekle, her birinin düzenleme formunda Zaman → "Uyanışa bağlı", sıra 10 ve 20. Ayarlar → Günün çerçevesi'nde "Dizide sıradaki iş kendiliğinden başlasın" açık (başlangıçta açık), "Uyandım'dan sonra ilk rutin kendiliğinden başlasın"ı aç. Ertesi sabah:
+   - Kestirmeler'in uyanış otomasyonu ("Ç3d yayını ve elle denemeler", 3) uyanışı yazsın, sonra Sherpa'yı aç: ilk iş kendiliğinden başlamalı; kartta "Sabah dizisi 1/2 · sırada …".
+   - "Bitti": ikinci iş kendiliğinden başlamalı. Pano açıksa orada da aynı oturum görünmeli, ikinci bir oturum başlamamalı.
+   - Sonucu bu başlığın altına yaz (telefon, otomasyon, başladı mı).
+
+**Görüşün gerek** satırları: kendiliğinden devamın başlangıçta açık olması; yalnızca çalışan işten sonra sürmesi (önerilen işi Ertele'lemek sıradakini başlatmaz); Ertele'den sonra sürmesi; kart satırının metni ve öneride de görünmesi; dışarıdan uyanışta 20 saniyelik "öne gelme" penceresi. Hepsi "Verdiğim kararlar"da (14 Kas, Ç3f).
 
 ### Ç3e yayını
 
@@ -1065,7 +1124,7 @@ Süre sapmasındaki artış çoğunlukla `enrich`'in kendi tahminlerinin çalı�
 
 - Ç3f: gece yarısından sonra (gece bitmeden) kaydı düşen çapalı ritim takvimin ertesi gününe yazılır (`rhythm_logs.done_on`); planlayıcı bugünü takvim gününe göre saydığı için o ritmi yeniden önerebilir (eski davranış, Ç3c'den). Dizi onu "yapıldı" gösterir ve sıradakine geçerken atlar.
 
-- Ç3f, adım denetimi (1–2): tam `check:full` koşusunda `yapay-zeka.ai.spec.ts`'in iki testi (127. ve 206. satır) "Target page, context or browser has been closed" ile düştü; dosya tek başına koşunca 16'sı da geçti. Bu fazın dokunmadığı dosya; neden bulunamadı. Kapanışta yeniden bakılacak.
+- Ç3f, adım denetimi (1–2): tam `check:full` koşusunda `yapay-zeka.ai.spec.ts`'in iki testi (127. ve 206. satır) "Target page, context or browser has been closed" ile düştü; dosya tek başına koşunca 16'sı da geçti. Bu fazın dokunmadığı dosya; neden bulunamadı. Sonraki tam koşularda (adım 3 denetimi, faz denetimi, kapanış) ikisi de geçti; yeniden düşerse trace dosyalarına bakılacak (`test-results/yapay-zeka.ai-*`).
 
 - Ç3e: `setFacetColor` (bölüm rengi) satırı okuyup birleştirip yazar; iki cihazda aynı anda iki ayrı bölümün rengi değiştirilirse biri kaybolabilir. Tek kullanıcıda olasılık düşük; gerekirse jsonb birleştiren tek bir veritabanı fonksiyonu.
 
