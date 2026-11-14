@@ -24,7 +24,8 @@ import { useAnswerFollowUp, useDefer, useReplan, useStopForStuck } from "@/core/
 import { moduleColor } from "@/core/contract/colors";
 import type { ChipData, Health } from "@/core/contract/types";
 import { buildPlan, type Candidate, tomorrowInput } from "@/core/planner";
-import { chainLine, chainsOf, chainWith, sceneChain } from "@/core/today/chain";
+import type { PlannedTarget } from "@/core/data/sessions";
+import { chainLine, chainsOf, chainWith, nextInChain, sceneChain } from "@/core/today/chain";
 import { blocksOfDay } from "@/core/today/select";
 import type { Block, Task } from "@/core/types";
 import { dayKey, formatDue, formatMinutes, formatTime } from "@/lib/date";
@@ -96,6 +97,15 @@ function TodayBody() {
       : null;
   }, [chains, runningWork, runningModule, moduleMap, colors]);
 
+  // Ç3f: the chain's next work after `id`, when the setting is on (Bitti and Ertele start it).
+  const chainAuto = input?.settings.frame?.chainAuto ?? false;
+  const nextOf = (id: string | null | undefined): PlannedTarget | null => {
+    if (!chainAuto || !id) return null;
+    const chain = chainWith(chains, id);
+    const next = chain ? nextInChain(chain, id) : null;
+    return next?.target ? sessionTargetOf(next.target) : null;
+  };
+
   const state = plan?.now;
   const doReplan = () => {
     if (!input) return;
@@ -116,7 +126,11 @@ function TodayBody() {
           start.mutate(sessionTargetOf(state.assignment.candidate));
         } else if (state.kind === "running" && state.session.id !== "pending") {
           event.preventDefault();
-          end.mutate({ session: state.session, outcome: "done" });
+          end.mutate({
+            session: state.session,
+            outcome: "done",
+            next: nextOf(state.task?.id ?? state.rhythm?.id),
+          });
         }
       } else if (key === "e" && state.kind === "suggest") {
         event.preventDefault();
@@ -183,6 +197,7 @@ function TodayBody() {
           subject={scene.subject}
           facet={scene.facet}
           chain={runningChain}
+          next={nextOf(running.task?.id ?? running.rhythm?.id)}
           brief={briefOf(input, plan, moduleMap)}
           onExit={() => setExitedScene(running.session.id)}
           onStuck={() => {
@@ -248,6 +263,7 @@ function TodayBody() {
             startOnWake={input.settings.frame?.startOnWake ?? false}
             brief={briefLine(input, plan)}
             chainLine={chainText}
+            nextOf={nextOf}
             onReturnToScene={
               scene && running && exitedScene === running.session.id
                 ? () => setExitedScene(null)

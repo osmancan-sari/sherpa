@@ -419,7 +419,7 @@ export function useModuleQuery<T>(
 
 // --- Mutations ---------------------------------------------------------------------------------
 
-type Optimistic = { key: QueryKey; update: (current: unknown) => unknown }[];
+export type Optimistic = { key: QueryKey; update: (current: unknown) => unknown }[];
 
 /**
  * A write with an optimistic interface: the caches named in `optimistic` change at once, the

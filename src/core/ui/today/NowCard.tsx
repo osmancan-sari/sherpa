@@ -23,6 +23,7 @@ import {
 import type { NowCardContent } from "@/core/contract/types";
 import { type Assignment, type Candidate, type NowState, overrun } from "@/core/planner";
 import { elapsedMinutes } from "@/core/today/select";
+import type { PlannedTarget } from "@/core/data/sessions";
 import type { Rhythm, Session, Task, WorkItem } from "@/core/types";
 import { useColors } from "@/core/app/facets";
 import { formatMinutes, formatTime } from "@/lib/date";
@@ -58,6 +59,8 @@ type Props = {
   brief?: TodayBriefLine;
   /** Ç3f: where the running or offered work stands in its chain ("Sabah dizisi 2/3 · …"). */
   chainLine?: string | null;
+  /** Ç3f: the chain's next work after a running one (null: none, or the setting is off). */
+  nextOf?: (id: string | null | undefined) => PlannedTarget | null;
 };
 
 function Frame({ children }: { children: ReactNode }) {
@@ -99,6 +102,7 @@ function CardFor({
   startOnWake,
   brief,
   chainLine,
+  nextOf,
 }: Props & { onStuck: (task: Task) => void }) {
   if (state.kind === "morning") {
     return (
@@ -137,6 +141,7 @@ function CardFor({
         onStuck={onStuck}
         onReturnToScene={onReturnToScene}
         chainLine={chainLine ?? null}
+        next={() => nextOf?.(state.task?.id ?? state.rhythm?.id) ?? null}
       />
     );
   }
@@ -431,9 +436,12 @@ function Running({
   onStuck,
   onReturnToScene,
   chainLine,
+  next,
 }: {
   onReturnToScene?: () => void;
   chainLine: string | null;
+  /** Ç3f: read at the touch: the chain's next work (Bitti and Ertele start it). */
+  next: () => PlannedTarget | null;
   session: Session;
   task: Task | null;
   rhythm: Rhythm | null;
@@ -499,7 +507,7 @@ function Running({
         <Button
           className={BIG}
           disabled={pending}
-          onClick={() => end.mutate({ session, outcome: "done" })}
+          onClick={() => end.mutate({ session, outcome: "done", next: next() })}
         >
           Bitti
         </Button>
@@ -513,7 +521,7 @@ function Running({
             variant="outline"
             className={SECOND}
             disabled={pending}
-            onClick={() => defer.mutate({ candidate: asCandidate, date, session })}
+            onClick={() => defer.mutate({ candidate: asCandidate, date, session, next: next() })}
           >
             Ertele
           </Button>

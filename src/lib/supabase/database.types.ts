@@ -1597,6 +1597,34 @@ export type Database = {
           isSetofReturn: false;
         };
       };
+      start_session_if_idle: {
+        Args: {
+          p_rhythm_id?: string;
+          p_since: string;
+          p_task_id?: string;
+          p_work_item_id?: string;
+        };
+        Returns: {
+          confirmed_at: string | null;
+          created_at: string;
+          ended_at: string | null;
+          id: string;
+          measured: boolean;
+          module_id: string | null;
+          rhythm_id: string | null;
+          started_at: string;
+          task_id: string | null;
+          title: string | null;
+          updated_at: string;
+          user_id: string;
+        };
+        SetofOptions: {
+          from: "*";
+          to: "sessions";
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
       valid_facet_colors: { Args: { p_colors: Json }; Returns: boolean };
     };
     Enums: {

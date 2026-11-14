@@ -16,6 +16,7 @@ import type {
 } from "@/core/contract/types";
 import type { NowState, Plan, PlanInput } from "@/core/planner";
 import type { Colors } from "@/core/app/facets";
+import type { PlannedTarget } from "@/core/data/sessions";
 import type { ChainLook } from "@/core/today/chain";
 import { blocksOfDay } from "@/core/today/select";
 import { useSay } from "@/core/voice";
@@ -171,6 +172,7 @@ export function SceneFrame({
   subject,
   facet = null,
   chain = null,
+  next = null,
   brief,
   onExit,
   onStuck,
@@ -184,6 +186,8 @@ export function SceneFrame({
   facet?: ModuleFacet | null;
   /** Ç3f: the chain the running work is part of. */
   chain?: SceneChain | null;
+  /** Ç3f: the chain's next work, started when this one ends with Bitti (setting on). */
+  next?: PlannedTarget | null;
   brief: TodayBrief;
   onExit: () => void;
   onStuck: () => void;
@@ -214,7 +218,7 @@ export function SceneFrame({
     device,
     controls: {
       finish: async () => {
-        await end.mutateAsync({ session, outcome: "done" });
+        await end.mutateAsync({ session, outcome: "done", next });
       },
       stop: async () => {
         await end.mutateAsync({ session, outcome: "stopped" });

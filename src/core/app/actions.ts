@@ -1,6 +1,6 @@
 "use client";
 
-import { useQueryClient } from "@tanstack/react-query";
+import { type QueryClient, useQueryClient } from "@tanstack/react-query";
 import {
   type BlockEdit,
   cancelBlock,
@@ -19,11 +19,12 @@ import {
   snoozePrompt,
 } from "@/core/data/inbox";
 import { answerModulePrompt, closeWorkItem } from "@/core/data/outcome";
-import type { SessionTarget } from "@/core/data/sessions";
+import type { PlannedTarget, SessionTarget } from "@/core/data/sessions";
 import {
   completeTaskTold,
   dropTaskTold,
   endSessionTold,
+  startSessionIfIdleTold,
   startSessionTold,
 } from "@/core/data/session-events";
 import {
@@ -61,7 +62,7 @@ import type {
 import { dayKey } from "@/lib/date";
 import { SAVE_FAILED, useNotify } from "@/core/ui/Notices";
 import { useRegistry } from "./CoreProvider";
-import { keys, list, useCoreMutation } from "./hooks";
+import { keys, list, type Optimistic, useCoreMutation } from "./hooks";
 
 // The touches of the main screens. Each one shows its result at once and writes in the
 // background; if the write fails the screen goes back and says so in one line.
@@ -145,72 +146,89 @@ export function useReopenTask() {
   });
 }
 
+/**
+ * What the card shows until the server answers a start: the title and the module of the thing
+ * that was started, read from what is already on screen. Shared by Başla and the chain's start.
+ */
+export function startedDraft(target: SessionTarget, queryClient: QueryClient): Optimistic {
+  const previous = queryClient.getQueryData<Session | null>(keys.openSession);
+  const now = stamp();
+  const tasks = queryClient.getQueryData<Task[]>(keys.tasks) ?? [];
+  const items = queryClient.getQueryData<WorkItem[]>(keys.workItems) ?? [];
+  const rhythms = queryClient.getQueryData<Rhythm[]>(keys.rhythms) ?? [];
+  const item = "workItemId" in target ? items.find((row) => row.id === target.workItemId) : null;
+  const moduleId =
+    "title" in target
+      ? (target.moduleId ?? null)
+      : "taskId" in target
+        ? (tasks.find((row) => row.id === target.taskId)?.module_id ?? null)
+        : "rhythmId" in target
+          ? (rhythms.find((row) => row.id === target.rhythmId)?.module_id ?? null)
+          : (item?.module_id ?? null);
+  const draft: Session = {
+    id: "pending",
+    user_id: "",
+    task_id: "taskId" in target ? target.taskId : null,
+    rhythm_id: "rhythmId" in target ? target.rhythmId : null,
+    module_id: moduleId,
+    title: "title" in target ? target.title : (item?.title ?? null),
+    started_at: now,
+    ended_at: null,
+    measured: true,
+    confirmed_at: null,
+    created_at: now,
+    updated_at: now,
+  };
+  return [
+    { key: keys.openSession, update: () => draft },
+    {
+      key: keys.tasks,
+      update: (current: unknown) =>
+        ((current as Task[] | undefined) ?? []).map((task) => {
+          if ("taskId" in target && task.id === target.taskId) {
+            return { ...task, status: "doing" as const };
+          }
+          // What was running goes back to the pool.
+          if (previous?.task_id === task.id && task.status === "doing") {
+            return { ...task, status: "todo" as const };
+          }
+          return task;
+        }),
+    },
+  ];
+}
+
 export function useStartSession() {
   const onError = useFailureNotice();
   const registry = useRegistry();
   return useCoreMutation({
     mutate: (db, target: SessionTarget) => startSessionTold({ db, registry }, target),
-    optimistic: (target, queryClient) => {
-      const previous = queryClient.getQueryData<Session | null>(keys.openSession);
-      const now = stamp();
-      // What the card shows until the server answers: the title and the module of the thing
-      // that was started, read from what is already on screen.
-      const tasks = queryClient.getQueryData<Task[]>(keys.tasks) ?? [];
-      const items = queryClient.getQueryData<WorkItem[]>(keys.workItems) ?? [];
-      const rhythms = queryClient.getQueryData<Rhythm[]>(keys.rhythms) ?? [];
-      const item =
-        "workItemId" in target ? items.find((row) => row.id === target.workItemId) : null;
-      const moduleId =
-        "title" in target
-          ? (target.moduleId ?? null)
-          : "taskId" in target
-            ? (tasks.find((row) => row.id === target.taskId)?.module_id ?? null)
-            : "rhythmId" in target
-              ? (rhythms.find((row) => row.id === target.rhythmId)?.module_id ?? null)
-              : (item?.module_id ?? null);
-      const draft: Session = {
-        id: "pending",
-        user_id: "",
-        task_id: "taskId" in target ? target.taskId : null,
-        rhythm_id: "rhythmId" in target ? target.rhythmId : null,
-        module_id: moduleId,
-        title: "title" in target ? target.title : (item?.title ?? null),
-        started_at: now,
-        ended_at: null,
-        measured: true,
-        confirmed_at: null,
-        created_at: now,
-        updated_at: now,
-      };
-      return [
-        { key: keys.openSession, update: () => draft },
-        {
-          key: keys.tasks,
-          update: (current: unknown) =>
-            ((current as Task[] | undefined) ?? []).map((task) => {
-              if ("taskId" in target && task.id === target.taskId) {
-                return { ...task, status: "doing" as const };
-              }
-              // What was running goes back to the pool.
-              if (previous?.task_id === task.id && task.status === "doing") {
-                return { ...task, status: "todo" as const };
-              }
-              return task;
-            }),
-        },
-      ];
-    },
+    optimistic: (target, queryClient) => startedDraft(target, queryClient),
     onError,
   });
 }
 
+/**
+ * Bitti or Durdur. Ç3f: with `next` (the chain's next work, when the setting is on and the work
+ * ended with Bitti), the next one starts at once on this device, through the chain's own start:
+ * if another screen started something meanwhile, nothing more starts.
+ */
 export function useEndSession() {
   const onError = useFailureNotice();
   const registry = useRegistry();
   return useCoreMutation({
-    mutate: (db, args: { session: Session; outcome: "done" | "stopped" }) =>
-      endSessionTold({ db, registry }, args.session.id, args.outcome),
-    optimistic: ({ session, outcome }) => [
+    mutate: async (
+      db,
+      args: { session: Session; outcome: "done" | "stopped"; next?: PlannedTarget | null },
+    ) => {
+      const told = { db, registry };
+      const ended = await endSessionTold(told, args.session.id, args.outcome);
+      if (args.next && ended.ended_at) {
+        await startSessionIfIdleTold(told, ended.ended_at, args.next);
+      }
+      return ended;
+    },
+    optimistic: ({ session, outcome, next }, queryClient) => [
       { key: keys.openSession, update: () => null },
       ...(session.task_id
         ? [
@@ -223,6 +241,8 @@ export function useEndSession() {
             },
           ]
         : []),
+      // Applied after the patch above: the ended task is no longer "doing", so it stays put.
+      ...(next ? startedDraft(next, queryClient) : []),
     ],
     onError,
   });

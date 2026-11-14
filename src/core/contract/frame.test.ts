@@ -55,3 +55,16 @@ describe("the day's frame settings", () => {
     expect(toStoredFrame(DEFAULT_FRAME)).toEqual(STORED);
   });
 });
+
+describe("the chain setting (Ç3f)", () => {
+  it("is on unless said off, and only 'off' is stored", () => {
+    expect(readFrame(STORED)?.chainAuto).toBe(true);
+    const { frame } = checkFrame({ ...STORED, chain_auto: false });
+    expect(frame?.chainAuto).toBe(false);
+    expect(toStoredFrame(frame!)).toEqual({ ...STORED, chain_auto: false });
+    expect(toStoredFrame({ ...DEFAULT_FRAME, chainAuto: true })).toEqual(STORED);
+    expect(checkFrame({ ...STORED, chain_auto: "evet" }).issues.map((i) => i.path)).toEqual([
+      ["chain_auto"],
+    ]);
+  });
+});

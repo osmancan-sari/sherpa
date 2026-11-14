@@ -15,6 +15,8 @@ export type FrameSettings = {
   sleepMinutes: number;
   byDayType: Partial<Record<DayType, { wake?: ClockRange; bed?: ClockRange }>>;
   startOnWake: boolean;
+  /** Ç3f: the chain's next work starts when one ends with Bitti or Ertele. On unless said off. */
+  chainAuto: boolean;
 };
 
 /** What the user said (12 Nov 2026): wake 06:00–09:00, bed 22:00–01:00, eight hours. */
@@ -24,6 +26,7 @@ export const DEFAULT_FRAME: FrameSettings = {
   sleepMinutes: 480,
   byDayType: {},
   startOnWake: false,
+  chainAuto: true,
 };
 
 export const SLEEP_MIN = 240;
@@ -63,6 +66,7 @@ export const frameSchema = z.strictObject({
     .strictObject({ home: ranges.optional(), office: ranges.optional(), campus: ranges.optional() })
     .optional(),
   start_on_wake: z.boolean().optional(),
+  chain_auto: z.boolean().optional(),
 });
 
 export type StoredFrame = z.infer<typeof frameSchema>;
@@ -84,6 +88,7 @@ function fromStored(stored: StoredFrame): FrameSettings {
     sleepMinutes: stored.sleep_minutes,
     byDayType,
     startOnWake: stored.start_on_wake ?? false,
+    chainAuto: stored.chain_auto ?? true,
   };
 }
 
@@ -98,6 +103,8 @@ export function toStoredFrame(frame: FrameSettings): StoredFrame {
     sleep_minutes: frame.sleepMinutes,
     ...(Object.keys(byDayType).length > 0 ? { by_day_type: byDayType } : {}),
     ...(frame.startOnWake ? { start_on_wake: true } : {}),
+    // On is the default: only "off" is written.
+    ...(frame.chainAuto ? {} : { chain_auto: false }),
   };
 }
 

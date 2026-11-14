@@ -11,8 +11,8 @@ import {
   waitOnTask,
 } from "@/core/data/planning";
 import { postAi } from "@/core/ai/client";
-import { confirmSession } from "@/core/data/sessions";
-import { endSessionTold } from "@/core/data/session-events";
+import { confirmSession, type PlannedTarget } from "@/core/data/sessions";
+import { endSessionTold, startSessionIfIdleTold } from "@/core/data/session-events";
 import type { ModuleRegistry } from "@/core/contract/types";
 import type { Db } from "@/core/types";
 import { useRegistry } from "./CoreProvider";
@@ -21,6 +21,7 @@ import { buildPlan, type Candidate, isFinished, type PlanInput } from "@/core/pl
 import type { LifeMode, LifeModePeriod, Session, Task } from "@/core/types";
 import { shiftDay } from "@/lib/date";
 import { SAVE_FAILED, useNotify } from "@/core/ui/Notices";
+import { startedDraft } from "./actions";
 import { keys, list, useCoreMutation } from "./hooks";
 
 // The planner's touches on the Today screen (docs/05-arayuz.md, "NowCard durumları"): put off,
@@ -31,29 +32,46 @@ function useFailureNotice() {
   return () => notify(SAVE_FAILED);
 }
 
-/** What "Ertele" does with a candidate: tomorrow for a task, off today's list for the rest. */
-export type DeferTarget = { candidate: Candidate; date: string; session?: Session | null };
+/**
+ * What "Ertele" does with a candidate: tomorrow for a task, off today's list for the rest.
+ * Ç3f: `next` is the chain's next work when the one put off was running in a chain.
+ */
+export type DeferTarget = {
+  candidate: Candidate;
+  date: string;
+  session?: Session | null;
+  next?: PlannedTarget | null;
+};
 
 /** "Ertele" while it runs: the session is stopped first, its module told it was put off. */
-async function stopFirst(db: Db, registry: ModuleRegistry, session?: Session | null) {
+async function stopFirst(
+  db: Db,
+  registry: ModuleRegistry,
+  session?: Session | null,
+): Promise<Session | null> {
   if (session && session.id !== "pending") {
-    await endSessionTold({ db, registry }, session.id, "stopped", "deferred");
+    return endSessionTold({ db, registry }, session.id, "stopped", "deferred");
   }
+  return null;
 }
 
 export function useDefer() {
   const onError = useFailureNotice();
   const registry = useRegistry();
   return useCoreMutation({
-    mutate: async (db, { candidate, date, session }: DeferTarget) => {
-      await stopFirst(db, registry, session);
+    mutate: async (db, { candidate, date, session, next }: DeferTarget) => {
+      const ended = await stopFirst(db, registry, session);
       if (candidate.type === "follow_up" && candidate.task) {
         return answerFollowUp(db, candidate.task, false, date);
       }
-      if (candidate.type === "task" && candidate.task) return deferTask(db, candidate.task, date);
-      return skipToday(db, date, candidate.id);
+      if (candidate.type === "task" && candidate.task) await deferTask(db, candidate.task, date);
+      else await skipToday(db, date, candidate.id);
+      // Ç3f: the chain goes on with its next work, as after Bitti (only if nothing started).
+      if (next && ended?.ended_at) {
+        await startSessionIfIdleTold({ db, registry }, ended.ended_at, next);
+      }
     },
-    optimistic: ({ candidate, date, session }) => [
+    optimistic: ({ candidate, date, session, next }, queryClient) => [
       ...(candidate.type === "task" && candidate.task
         ? [
             {
@@ -69,6 +87,7 @@ export function useDefer() {
           ]
         : []),
       ...(session ? [{ key: keys.openSession, update: () => null }] : []),
+      ...(session && next ? startedDraft(next, queryClient) : []),
     ],
     onError,
   });

@@ -1,5 +1,5 @@
 import type { Page } from "@playwright/test";
-import { insert, rows, update } from "./data";
+import { insert, rows, update, waitFor } from "./data";
 import { expect, test } from "./fixtures";
 
 // The anchored chains (Ç3f; docs/06-modul-sozlesmesi.md, "Diziler"): two modules' wake-bound
@@ -117,4 +117,170 @@ test("the evening's card shows the bed chain's place of the work it offers", asy
   await page.goto("/");
   await expect(card(page).getByRole("heading", { name: "Akşam esnemesi" })).toBeVisible();
   await expect(card(page).getByTestId("chain-line")).toHaveText("Akşam dizisi 1/2 · sırada Yüz");
+});
+
+// --- Going on by itself (day_frame.chain_auto) -------------------------------------------------
+
+const open = async () => (await rows("sessions")).filter((row) => row.ended_at === null);
+
+/** Waits until the open session is on this work. */
+const runningOn = (workId: string) =>
+  waitFor(open, (list) => list.length === 1 && list[0].task_id === workId);
+
+/** No session starts within a short while (the start would come right after the end). */
+async function nothingStarts(page: Page) {
+  await page.waitForTimeout(1500);
+  expect(await open()).toEqual([]);
+}
+
+test("Bitti in a chain starts the next work on this device: another module's card, then the scene again", async ({
+  page,
+}) => {
+  const { teeth, neck, shower } = await morning();
+  await page.clock.setFixedTime(dayAt("07:02"));
+  await page.goto("/");
+  await card(page).getByRole("button", { name: "Başla", exact: true }).click();
+  await expect(page.getByTestId("deneme-gunes")).toBeVisible();
+  await runningOn(teeth.id);
+
+  // The scene's Bitti: the template copy's work has no scene; its standard card comes.
+  await page.getByTestId("deneme-gunes").getByRole("button", { name: "Bitti" }).click();
+  await expect(page.getByTestId("deneme-gunes")).toBeHidden();
+  await expect(card(page).getByRole("heading", { name: "Boyun" })).toBeVisible();
+  await expect(card(page).getByTestId("chain-line")).toHaveText(
+    "Sabah dizisi 2/3 · sırada Duş ve hazırlık",
+  );
+  await expect(card(page).getByRole("button", { name: "Bitti" })).toBeVisible();
+  await runningOn(neck.id);
+
+  // The card's Bitti: back to the test module's sunny scene, the first two done.
+  await card(page).getByRole("button", { name: "Bitti" }).click();
+  await expect(page.getByTestId("deneme-gunes")).toBeVisible();
+  await expect(page.getByTestId("deneme-gunes").getByRole("heading")).toHaveText("Duş ve hazırlık");
+  const items = chainItems(page);
+  await expect(items.nth(0)).toHaveAttribute("data-state", "done");
+  await expect(items.nth(1)).toHaveAttribute("data-state", "done");
+  await expect(items.nth(2)).toHaveAttribute("data-state", "running");
+  await runningOn(shower.id);
+
+  // The last one: the standard screen comes back, nothing more starts.
+  await page.getByTestId("deneme-gunes").getByRole("button", { name: "Bitti" }).click();
+  await expect(page.getByTestId("deneme-gunes")).toBeHidden();
+  await nothingStarts(page);
+  const sessions = await rows("sessions");
+  expect(sessions.map((row) => row.task_id).sort()).toEqual([teeth.id, neck.id, shower.id].sort());
+  const tasks = await rows("tasks");
+  expect(tasks.every((row) => row.status === "done")).toBe(true);
+});
+
+test("with the setting off, Bitti starts nothing; the next work is offered", async ({ page }) => {
+  const { teeth } = await morning({ chain_auto: false });
+  await page.clock.setFixedTime(dayAt("07:02"));
+  await page.goto("/");
+  await card(page).getByRole("button", { name: "Başla", exact: true }).click();
+  await runningOn(teeth.id);
+  await page.getByTestId("deneme-gunes").getByRole("button", { name: "Bitti" }).click();
+  await expect(card(page).getByRole("heading", { name: "Boyun" })).toBeVisible();
+  await expect(card(page).getByRole("button", { name: "Başla", exact: true })).toBeVisible();
+  await nothingStarts(page);
+});
+
+test("Ertele goes on with the next work; Durdur and Takıldım do not", async ({ page }) => {
+  const { teeth, neck, shower } = await morning();
+  await page.clock.setFixedTime(dayAt("07:02"));
+  await page.goto("/");
+  await card(page).getByRole("button", { name: "Başla", exact: true }).click();
+  await runningOn(teeth.id);
+  // Out of the scene to the card's Ertele: the teeth go to tomorrow, the neck starts.
+  await page.getByRole("button", { name: "Çık" }).click();
+  await card(page).getByRole("button", { name: "Ertele" }).click();
+  await expect(card(page).getByRole("heading", { name: "Boyun" })).toBeVisible();
+  await expect(card(page).getByRole("button", { name: "Bitti" })).toBeVisible();
+  await runningOn(neck.id);
+  await expect(card(page).getByTestId("chain-line")).toHaveText(
+    "Sabah dizisi 1/2 · sırada Duş ve hazırlık",
+  );
+
+  // Durdur: nothing starts; the neck is offered again.
+  await card(page).getByRole("button", { name: "Durdur" }).click();
+  await expect(card(page).getByRole("button", { name: "Başla", exact: true })).toBeVisible();
+  await nothingStarts(page);
+
+  // Takıldım (from the scene of the shower): nothing starts.
+  await page.goto("/m/deneme");
+  await page
+    .getByRole("region", { name: "Yaklaşanlar" })
+    .getByRole("button", { name: "Başla: Duş ve hazırlık" })
+    .click();
+  await runningOn(shower.id);
+  await page.goto("/");
+  await page.getByTestId("deneme-gunes").getByRole("button", { name: "Takıldım" }).click();
+  await expect(card(page).getByRole("button", { name: "Adımı küçült" })).toBeVisible();
+  await nothingStarts(page);
+});
+
+test("a session closed unanswered does not start the next work", async ({ page }) => {
+  const { teeth } = await morning();
+  await update("tasks", teeth.id, { status: "doing" });
+  // Ten minutes planned, started at 07:01: asked at 07:21, closed unanswered at 07:51.
+  await insert("sessions", {
+    task_id: teeth.id,
+    module_id: teeth.module_id,
+    started_at: dayAt("07:01").toISOString(),
+  });
+  await page.clock.setFixedTime(dayAt("07:55"));
+  await page.goto("/");
+  await waitFor(open, (list) => list.length === 0, 10_000);
+  await nothingStarts(page);
+  expect(await rows("sessions")).toHaveLength(1);
+});
+
+test("the bed chain goes on the same way", async ({ page }) => {
+  const { deneme, copy } = await setUp();
+  await insert("days", { date: DAY, woke_at: dayAt("07:00").toISOString() });
+  const [stretch, face] = await insert<Row>("tasks", [
+    {
+      module_id: copy.id,
+      title: "Akşam esnemesi",
+      est_minutes: 10,
+      timing: { anchor: "bed", order: 10 },
+    },
+    {
+      module_id: deneme.id,
+      title: "Yüz",
+      est_minutes: 10,
+      facet: "aksam",
+      timing: { anchor: "bed", order: 20 },
+    },
+  ]);
+  await page.clock.setFixedTime(dayAt("21:00"));
+  await page.goto("/");
+  await card(page).getByRole("button", { name: "Başla", exact: true }).click();
+  await runningOn(stretch.id);
+  await card(page).getByRole("button", { name: "Bitti" }).click();
+  // The test module's night scene, with the bed chain.
+  await expect(page.getByTestId("deneme-gece")).toBeVisible();
+  await expect(page.getByTestId("scene-chain")).toHaveAttribute("aria-label", "Bu akşam");
+  await expect(chainItems(page).nth(0)).toHaveAttribute("data-state", "done");
+  await runningOn(face.id);
+  await page.getByTestId("deneme-gece").getByRole("button", { name: "Bitti" }).click();
+  await expect(page.getByTestId("deneme-gece")).toBeHidden();
+  await nothingStarts(page);
+});
+
+test("Ayarlar: the chain setting is on at first and can be switched off", async ({ page }) => {
+  await setUp();
+  await page.goto("/ayarlar");
+  const form = page.getByRole("form", { name: "Günün çerçevesi" });
+  const box = form.getByLabel("Dizide sıradaki iş kendiliğinden başlasın");
+  await expect(box).toBeChecked();
+  await box.uncheck();
+  await form.getByRole("button", { name: "Kaydet" }).click();
+  const [settings] = await waitFor(
+    () => rows("settings"),
+    (list) => (list[0].day_frame as Record<string, unknown>)?.chain_auto === false,
+  );
+  expect(settings.day_frame).toEqual({ ...FRAME, chain_auto: false });
+  await page.reload();
+  await expect(box).not.toBeChecked();
 });

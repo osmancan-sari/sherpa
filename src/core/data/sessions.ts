@@ -41,6 +41,30 @@ export async function startSession(db: Db, target: SessionTarget): Promise<Sessi
   );
 }
 
+/** What a chain starts on its own (Ç3f): planned work, never unplanned. */
+export type PlannedTarget = Exclude<SessionTarget, { title: string }>;
+
+/**
+ * Ç3f: Başla on the chain's behalf, through the same start, only if no session is open and none
+ * has started since `since` (the end of the work before it, or the waking). Two devices doing it
+ * at once start one session: the other gets null.
+ */
+export async function startSessionIfIdle(
+  db: Db,
+  since: string,
+  target: PlannedTarget,
+): Promise<Session | null> {
+  const { data, error } = await db.rpc("start_session_if_idle", {
+    p_since: since,
+    p_task_id: "taskId" in target ? target.taskId : undefined,
+    p_work_item_id: "workItemId" in target ? target.workItemId : undefined,
+    p_rhythm_id: "rhythmId" in target ? target.rhythmId : undefined,
+  });
+  if (error) throw new Error(error.message);
+  // A null composite comes back as null, or as a row of nulls.
+  return data && (data as Session).id ? (data as Session) : null;
+}
+
 /**
  * Stops a session that is running on one of a work item's sittings, so that closing the item
  * never leaves a clock running on it and the time already spent is counted.

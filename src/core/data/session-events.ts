@@ -6,8 +6,10 @@ import {
   closeUnanswered,
   endSession,
   getOpenSession,
+  type PlannedTarget,
   type SessionTarget,
   startSession,
+  startSessionIfIdle,
 } from "./sessions";
 import { completeTask, dropTask } from "./work";
 
@@ -136,6 +138,17 @@ export async function startSessionTold(told: Told, target: SessionTarget): Promi
     .neq("id", session.id);
   for (const ended of stopped ?? []) await tellEnded(told, ended, "stopped");
   await tellStarted(told, session);
+  return session;
+}
+
+/** Ç3f: the chain's own start (see startSessionIfIdle); told like any start when it happens. */
+export async function startSessionIfIdleTold(
+  told: Told,
+  since: string,
+  target: PlannedTarget,
+): Promise<Session | null> {
+  const session = await startSessionIfIdle(told.db, since, target);
+  if (session) await tellStarted(told, session);
   return session;
 }
 

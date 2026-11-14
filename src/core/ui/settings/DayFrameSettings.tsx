@@ -34,6 +34,7 @@ type Draft = {
   hours: string;
   byDayType: Record<DayType, { wake: Pair; bed: Pair }>;
   startOnWake: boolean;
+  chainAuto: boolean;
 };
 
 const EMPTY: Pair = ["", ""];
@@ -52,6 +53,7 @@ function draftOf(frame: FrameSettings | null): Draft {
     hours: String(source.sleepMinutes / 60).replace(".", ","),
     byDayType,
     startOnWake: source.startOnWake,
+    chainAuto: source.chainAuto,
   };
 }
 
@@ -72,6 +74,7 @@ function valueOf(draft: Draft): unknown {
     sleep_minutes: Number.isFinite(hours) ? Math.round(hours * 60) : NaN,
     ...(Object.keys(byDayType).length > 0 ? { by_day_type: byDayType } : {}),
     ...(draft.startOnWake ? { start_on_wake: true } : {}),
+    ...(draft.chainAuto ? {} : { chain_auto: false }),
   };
 }
 
@@ -206,6 +209,14 @@ function DayFrameForm({ stored }: { stored: FrameSettings | null }) {
               onChange={(event) => setDraft({ ...draft, startOnWake: event.target.checked })}
             />
             &quot;Uyandım&quot;dan sonra ilk rutin kendiliğinden başlasın
+          </label>
+          <label className="flex min-h-11 items-center gap-2 text-sm md:min-h-9">
+            <input
+              type="checkbox"
+              checked={draft.chainAuto}
+              onChange={(event) => setDraft({ ...draft, chainAuto: event.target.checked })}
+            />
+            Dizide sıradaki iş kendiliğinden başlasın
           </label>
         </>
       ) : null}
