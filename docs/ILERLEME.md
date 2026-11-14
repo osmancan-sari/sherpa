@@ -5,8 +5,8 @@ Bu dosyayı Claude Code günceller. Yeni bir oturum yalnızca bu dosyayı ve `pr
 ## Durum
 
 - Faz: **Rutin 1. adım sürüyor** (modül hattı; istem `prompts/rutin-1-temel.md`, tasarım `docs/moduller/rutin.md` "Adım 1 · Temel"). Ç3f bitti ve yayında (14 Kas, `c3f-tamam`)
-- Adım: 1–4 ve 6 bitti; sırada 5 (iki cihaz) ve 7 (kapanış)
-- Son commit: Rutin 1: two screens, one run
+- Adım: 7 (kapanış): faz denetimi
+- Son commit: Rutin 1: phase report
 
 ### Rutin 1 planı
 
@@ -22,7 +22,7 @@ Bu dosyayı Claude Code günceller. Yeni bir oturum yalnızca bu dosyayı ve `pr
 | 4 | Akşam ve yatış: "Yatıyorum", "İyi geceler"; çekirdek: yatışın geri alınması (sözleşme, migration, veritabanı testi, `deneme` örneği); ölçüt 5 | çekirdek kısmı bitti (`20261114114931_bed_undo.sql`: `days.bed_session_id`, `undo_scene_bed`): `recordBed` işareti yazar ya da siler, `useUndoBed`, `tellBedUndone` (`core.bed_undone` + aynı oturumun `core.session_started`'ı), `SceneProps.bedtime`, gece ekranında yatıştan sonraki 10 dakika sahne (şeritsiz; `sceneBedtime`), `deneme`'nin gece sahnesinde "Geri al"; `docs/06`, `docs/03`, `docs/09`. Testler: `tests/db/bed-undo.test.ts` 9 (yarış dahil), `src/core/today/bedtime.test.ts` 3. Adım denetimi (çekirdek): GEÇTİ, `check:full` denetçide yeşil (508 / 294 / 199). Önemliler düzeltildi: yatıştan sonra başlayıp biten iş de geri almayı durdurur (`changed`; testli); dakika düşme testi gerçek iş kalemiyle; yeni ekran durumu `docs/05`'te; `sceneBedtime` saf dosyada (`src/core/today/bedtime.ts`) ve testli; geri almanın haftanın yeniden taahhüdünü geri getirmemesi `docs/06`'da sınır olarak yazıldı (taahhüt plan istikrarı gereği kapasite artınca yeniden kurulmaz). Notlar: bu sürede `controls`'un etkisiz oluşu sözleşmede; `BedUndo` tek tip; `useUndoBed` iyimser değil (yanıt veritabanının) ve iş kalemlerini de tazeler; silinmiş yatışa `changed`; `chains.spec.ts`'e yatış sonrası sahnenin görünmesi eklendi. Arayüz yolu (İyi geceler, yenileme, Geri al) Rutin'in uçtan uca testinde |
 | 5 | İki cihaz ve ses: eşzamanlı ilerleme (ölçüt 9), günün özeti sesli ve yazılı, yalnızca dokunulan cihazda | bitti: yapılış "uyanılmamış" açılır (`step_started_at` boş); Kalktım ya da dokunulmuş ekran damgalar, öbür ekran Günaydın'dan kendiliğinden çıkar ve konuşmaz; ses yalnızca son dokunuşu bu sayfada olan ekranda (özet 30 sn, sayacın söylediği ad 10 dk içinde). Test: `tests/e2e/sync.spec.ts` +1 (telefonda Sonraki → panoda 1 saniye içinde aynı alt adım; pano hiçbir şey söylemez) |
 | 6 | Modül sayfası: Sabah ve Akşam sekmeleri, düzenleme, ekleme, sıralama, kapatma, silme, yeniden teklif (ölçüt 8) | bitti: `components/StepsTab.tsx` (gruplar ve hesaplanan toplamlar, satırda açık/kapalı anahtarı, tutamaktan sürükleyerek sıralama, alttan sayfa/sağdan panel: ad, süre ve "Otomatiğe dön", sıklık, temel, açık, ek, alt adımlar ve alt adımın süresi; "Adım ekle" hızlı eylemi; silme onayında "Kapat"); her değişiklikten sonra `proposeAll`. Uçtan uca test `rutin.spec.ts` |
-| 7 | Kapanış: ölçüt 11 denemesi, uçtan uca testler, ekran görüntüleri (`docs/ekran-goruntuleri/rutin-1/`), `check:full`, faz denetimi, rapor, `rutin-1-tamam`, yayın | bekliyor |
+| 7 | Kapanış: ölçüt 11 denemesi, uçtan uca testler, ekran görüntüleri (`docs/ekran-goruntuleri/rutin-1/`), `check:full`, faz denetimi, rapor, `rutin-1-tamam`, yayın | ölçüt 11 (düşüyor), testler, görüntüler, `check:full` yeşil (511 / 297 / 226), rapor ("Biten fazlar" → Rutin 1); faz denetimi sürüyor |
 
 ### Ç3f planı
 
@@ -128,6 +128,44 @@ Her adımın sonunda `npm run check` ve commit; şema, geçit ve zarf adımları
 | 7 | `check:full`, faz denetimi, düzeltmeler, faz raporu, etiket | bitti: faz denetimi 1. turda GEÇTİ (ayrıntı "Biten fazlar" → Ç2) |
 
 ## Biten fazlar
+
+### Rutin 1: Temel (14 Kas 2026)
+
+İlk gerçek modül: dört tablo, başlangıç listesi, üç ritim, sabah ve akşam sahnesi (gökyüzü ve cam modülün içinde), iki ekranda tek yapılış, günün özeti, modül sayfası; çekirdekte yatışın geri alınması. Tasarım `docs/moduller/rutin.md` ("Adım 1 · Temel"), değerler `docs/moduller/rutin-cizimler/degerler.md`. Çekirdeğe yalnızca yatışın geri alınması için dokunuldu (`docs/06` "Diziler" kural 6); öbür eksikler `rutin.md` "Çekirdek için notlar" 16–21.
+
+**Kabul ölçütleri**
+
+| Ölçüt | Durum | Nasıl doğrulandı |
+| --- | --- | --- |
+| 1. Etkinleştirilince üç ritim; uyanıştan sonra Bugün'de sabah dizisi sırayla (Sabah, sonra Duş ve hazırlık); Sabah bitince Duş ve hazırlık kendiliğinden başlar | Sağlandı | `tests/db/rutin.test.ts` (alanlar: `anchor`, `order` 10/30/10, bölüm, süre), `tests/e2e/rutin.spec.ts` ("switching on…": kartta "Sabah dizisi 1/2 · sırada Duş ve hazırlık"; Sabah'ın son adımından sonra Duş ve hazırlık oturumu ve sahnesi kendiliğinden) |
+| 2. Sahne 8.2'deki düzende; "bu sabah n / m" diziden (yalnız Rutin m = 6; `deneme`'nin uyanışa bağlı işiyle artar, onun sahnesine geçilip dönülür) | Sağlandı | `server/flow.test.ts` (`unitsOf`: 6, 7, geçilenler sayılmaz), `rutin.spec.ts` (1/6, 2/6, 3/6; `deneme` işiyle 1/7, `deneme-gunes` sahnesi, Bitti ile sabaha dönüş ve 4/7), ekran görüntüleri `rutin-sabah-safak`, `rutin-hazirlik-gunduz` |
+| 3. "Fırçala" bitince "Dil"e kendiliğinden geçilir; süre dolmadan ana düğme "Erken geç · basılı tut", kısa dokunuş geçirmez, basılı tutmak geçirir; yenilemede sayaç doğru yerden sürer | Sağlandı | `rutin.spec.ts` ("the timed sub-step…": kısa dokunuş geçirmez, 30 sn sonra yenilemede 01:2x, süre bitince `data-part` 2 ve "Dil" söylenir; "holding the main button…") |
+| 4. "Atla" `skipped`, "Sonraki" `done`; "Hepsini yaptım" kalanları `done` ve `bulk`; temel adımlar yapıldıysa `minimum_done` | Sağlandı | `rutin.spec.ts` (Diş `skipped`, Su `done`, Sabah'ın `minimum_done`'ı yanlış; Hepsini yaptım: 5 kayıt `done` ve `bulk`, `minimum_done` doğru) |
+| 5. Son adım "Bitti" → "İyi günler" → Bugün; akşam "Yatıyorum" yatışı yazar, "İyi geceler"; "Geri al" yatışı siler, sahne son adımda açılır; "Uyandım"la Günaydın atlanır, `core/wake`'ten sonra görünür | Sağlandı | `rutin.spec.ts` (Bitti → "İyi günler" → sahne yok; Yatıyorum → `bed_at` ve `bed_session_id`, yenilemeden sonra da "İyi geceler" ve uyuyan baykuş, Geri al → son adım, açık oturum, `bed_at` boş, yapılış yeniden açık; Uyandım → Diş bakımı ve özet; dışarıdan uyanış → Günaydın, Kalktım → Diş bakımı ve özet), `tests/db/bed-undo.test.ts` 9, `src/core/today/bedtime.test.ts` 3. Testler uyanışı `days`'e doğrudan yazar (uç aynı `recordWake`'i kullanır) |
+| 6. `every_days` 3 olan ek 3 gün sonra Duş ekranında; 5 gün arada bir kez | Sağlandı | `server/flow.test.ts` (saf; gün parametre) |
+| 7. Gece yarısından sonra basılan "Yatıyorum" önceki günün yapılışına | Sağlandı | `tests/db/rutin.test.ts` (23:50'de açılan yapılış 00:10'da aynı günde kapanır; 00:20'de açılan da önceki günün), `server/flow.test.ts` (`runDay`); yatış çekirdeğin planlama gününe yazılır (`controls.bed`) |
+| 8. Modül sayfasında ad, süre, sıklık, temel ve açık anahtarı, alt adımlar değişir; adım eklenir, kapatılır, silinir; her değişiklikten sonra ritmin süresi yeniden teklif edilir, sahne yeni listeyi kullanır | Sağlandı | `rutin.spec.ts` ("the module page…": Giyin'in adı, 17 dk elle, 3 günde bir, temel, alt adım → hazırlık 42 dk; Yürüyüş kapatılınca 30 dk; Akşam'a ekleme 10 dk; silme onayında "Kapat" ve "Sil" → 9 dk). Sahne listeyi veriden okur ve Realtime ile tazeler |
+| 9. Bir cihazda "Sonraki" → öbür cihaz bir saniye içinde aynı adımda | Sağlandı | `tests/e2e/sync.spec.ts` (telefonda Sonraki → panoda `data-part` 1, 1000 ms sınırla; pano Günaydın'dan kendiliğinden çıkar ve hiçbir şey söylemez) |
+| 10. Hareket ve saydamlık azaltma tercihleri; metin ile zemin arasında şafak, gündüz ve gecede en az 4,5:1 (ölçümle) | Sağlandı (saydamlık azaltma **elle doğrulanacak**) | `sky.test.ts` (dört gökyüzünde, panellerin oturduğu yükseklikte, her metin rengi en az 4,5:1), `rutin.spec.ts` ("reduced motion": sahnede çalışan animasyon yok). Playwright `prefers-reduced-transparency`'yi taklit edemiyor; kod opak panele geçiyor |
+| 11. Yapılmayan sabah bloğu öğleden sonra | Denendi: düşüyor | `tests/db/rutin.test.ts` ("a morning not done": 07:05'te Sabah öneriliyor, 14:00'te sabah blokları ne "Şimdi"de ne yuvalarda). Çekirdek notu 13 kapandı |
+| 12. Gerçek telefonda: cam ve kaydırma, ekranın açık kalması ve "Dil", iki cihazda yalnızca dokunulan okur | **Kullanıcı deneyecek** | "Senden bekleyenler" → Rutin 1 |
+
+Testler: 511 birim, 297 veritabanı, 226 uçtan uca (ekran görüntüleriyle; `npm run check:full` yeşil, 14 Kas, `SHERPA_SHOTS=rutin-1`). Ekran görüntüleri `docs/ekran-goruntuleri/rutin-1/` (yeni: `rutin-gunaydin`, `rutin-sabah-safak`, `rutin-hazirlik-gunduz`, `rutin-aksam-gece`, `rutin-aksam-son`, `rutin-iyi-geceler`, `rutin-modul-sabah`, `rutin-modul-aksam`, `rutin-adim-duzenle`; pano ve telefon; sahne kendi gökyüzünü çizdiği için yalnızca koyu tema). Baktıklarım: yeni ekranların hepsi. Düzelttiklerim: gündüz görüntüsünün veri gelmeden çekilmesi; kısa telefonda "İyi geceler"in Yarın panelinin ayı örtmesi; panoda yarının uyanışı yokken boş kalan "Yarın" paneli; pano düğmelerinin kenara yapışması.
+
+**Sözleşmede eksik ya da zor bulduklarım** (ayrıntı `rutin.md` "Çekirdek için notlar")
+
+- Sahne çekirdeğin planlama gününü bilmiyor (16): Rutin kuralı kendi içinde kopyalıyor.
+- Şerit çekirdeğindir (17): tasarımın "Sabah · uyanıştan beri" şeridi ve şeritsiz açılış/kapanış ekranları kurulamıyor.
+- Boşluk tuşu sahnede işin tamamını bitiriyor (18): adımlı sahne tuşları kendisi yakalamak zorunda.
+- Modül sayfası dizinin öbür modüllerini görmüyor (19): "Hareketler" grubu Spor'la birlikte gelmeli.
+- Yarının beklenen uyanışı sahneye gelmiyor (20); dışarıdan gelen uyanış sahneye ayırt edilmiyor (21).
+- Sahne iş bitince ekranı bırakmak zorunda: "İyi günler" ancak `finish()`'ten önce gösterilebiliyor; "İyi geceler" için çekirdeğe yatıştan sonraki 10 dakikalık sahne eklendi.
+- Uçtan uca testlerde tarayıcının saati dündür, oturumun başlangıcı veritabanının saatidir; sahne ikisini karıştırmamalı (Rutin oturumun başlangıcını yalnızca yapılışın gününü bulmak için kullanır).
+
+**Denetim**
+
+- Adım denetimi (veri, `b440c06..dd2b357`): GEÇMEDİ, 1 engelleyici (dışa aktarım uçtan uca testi) ve 5 önemli; düzeltildi (plan, 1a).
+- Adım denetimi (çekirdek: yatışın geri alınması, `f64518f..853c8df`): GEÇTİ, 5 önemli ve 6 not; düzeltildi ya da sınır olarak yazıldı (plan, 4).
 
 ### Ç0: İskelet (10 Kas 2026)
 
@@ -656,11 +694,34 @@ Testler: 413 birim, 207 veritabanı, 166 uçtan uca (`npm run check:full` yeşil
 
 ## Sıradaki adım
 
-Rutin 1. adım (`prompts/rutin-1-temel.md`), sonra Ç4.
+Ç4 (`prompts/BASLA.md`). Rutin 2. adım (Kestirmeler bağlantısı, Düzenlilik, sürelerin öğrenilmesi, akşam hatırlatması) tasarıma göre iki hafta beklemeden de kurulabilir; sırasını sen belirlersin.
 
-Ç4 (Pano ve telefon cilası): yeni oturumda `docs/05-arayuz.md` ve `docs/11-yayin-ve-cihazlar.md` okunarak başlanır. Önce Ç3'ün ve Ç3b'nin "Görüşün gerek" satırları. Ç2'nin "Sunum slaytları cuma" ölçütü açık: Okul modülü kurulunca yeniden denenecek (D3, karar 5).
+Ç4 (Pano ve telefon cilası): yeni oturumda `docs/05-arayuz.md` ve `docs/11-yayin-ve-cihazlar.md` okunarak başlanır. Önce Ç3'ün ve Ç3b'nin "Görüşün gerek" satırları. Ç2'nin "Sunum slaytları cuma" ölçütü açık: Okul modülü kurulunca yeniden denenecek (D3, karar 5). Rutin'in çekirdek notları 14 ve 16–21 Ç4'e ya da Rutin 3. adıma girdidir.
 
 ## Senden bekleyenler
+
+### Rutin 1 yayını ve telefon denemeleri
+
+Üç migration var, üçü de yalnızca ekleme yapar; kod onları ister: **migration'lar koddan önce** gider.
+
+- `20261114112828_rutin_tables.sql`: Rutin'in dört tablosu (RLS, Realtime).
+- `20261114114703_rutin_step_parent.sql`: ekin aynı rutinde ve tek düzeyli olması.
+- `20261114114931_bed_undo.sql`: `days.bed_session_id` ve `undo_scene_bed` (çekirdek).
+
+Sıra (senin onayınla): 1) `sherpa-dev`'e migration'lar (`npm run db:push`; deneme çalıştırması yalnızca bu üçünü göstermeli); 2) `sherpa-prod`'a (`npx supabase db push --remote=<prod ref>`); 3) `git push origin main` ve `git push origin rutin-1-tamam` (Vercel üretimi yayınlar).
+
+Yayından sonra:
+
+1. Üretimde **Ayarlar → Modüller → Rutin → "Etkinleştir"**. Başlangıç listesi yazılır; üç ritim (Sabah, Duş ve hazırlık, Akşam kapanışı) Bugün'de uyanışa ve yatışa bağlı görünür. Ayrıca onaylanacak bir teklif ekranı yok: etkinleştirmek üç ritmi teklif eder; istemediğin adımı modül sayfasında kapatırsın.
+2. **Ayarlar → Günün çerçevesi**: önerilen ayar uyanış 06:00–08:00, yatış 22:00–24:00, uyku 8 saat; "Uyandım'dan sonra ilk rutin kendiliğinden başlasın" açık.
+3. **Ölçüt 12, gerçek telefonda** (sonuçları bu başlığın altına yaz):
+   - Sahnenin cam panelleri ve gökyüzü: görünüş, kaydırma ve dokunuşun akıcılığı (iPhone, ana ekran uygulaması).
+   - Diş bakımında "Fırçala" sayacı boyunca ekran kapanmıyor mu; süre bitince "Dil" sesli söyleniyor mu.
+   - Pano ve telefon birlikte açıkken "Kalktım"a telefonda bas: günün planını yalnızca telefon okumalı, pano Günaydın'dan kendiliğinden çıkmalı.
+   - "Saydamlığı azalt" (iOS: Erişilebilirlik → Ekran ve Metin Boyutu) açıkken paneller opak mı.
+4. Bir akşam: "Yatıyorum" → "İyi geceler" → 10 dakika içinde "Geri al": sahne son adımda geri gelmeli.
+
+**Görüşün gerek** satırları "Verdiğim kararlar" → Rutin 1'de (gökyüzünün yalnız koyu tonu, camın gündüz koyulaşması, Günaydın koşulu, ses kuralları, süreler ve metinler, modül sayfasının düzenleme sayfası ve sıralama).
 
 ### Ç3f yayını ve elle denemeler
 
