@@ -16,7 +16,7 @@ Rutin modülünün tasarım oturumunda (13–14 Kas 2026) alınan ve öbür mod�
 
 - **Cam ortaktır, zemin modüle göre değişir.** Paneller, şerit, düğmeler, liste satırları ve geçiş kuralları her ekranda aynı camdır (bulanık, yarı saydam koyu dolgu, ince açık kenar, üstte ışık çizgisi). Zemin varsayılan olarak günün saatine göre gökyüzüdür; modül isterse kendi zeminini verir (Spor: siyah-yeşil).
 - **Gökyüzü ilerlemeye değil saate bakar.** Güneşin yüksekliği tarih, saat ve ayardaki sabit koordinattan (varsayılan İstanbul) cihazda hesaplanır; konum izni, dış servis ve hava durumu yoktur. Hiçbir modül "adım ilerledikçe değişen zemin" kurmaz. İlerleme küçük bir çizgi dizisiyle gösterilir.
-- **Metin tonu zemine göre seçilir:** koyu zeminde açık metin ve koyu cam; aydınlık gökyüzünde koyu metin ve açık cam.
+- **Metin tonu:** gökyüzü zemininde her saatte açık metin ve koyu cam (gündüz kareleri de böyle çizildi; 14 Kas 2026). Zemin metni okutmayacak kadar parlarsa cam koyulaşır (en az 4,5:1). Kendi zeminini veren modül (aydınlık bir zemin) tonunu kendisi seçer.
 - **Renk tek başına anlam taşımaz;** modülün ve bölümün rengi nokta, vurgu ve ilerleme çizgisinde kullanılır.
 - **Geçişler kesintisizdir.** Zemin aynıysa yalnızca paneller yer değiştirir; zemin değişiyorsa çapraz geçer. Sıçrama, parlama, konfeti yok.
 - **Telefonun alt menüsü:** seçili sayfa öbürlerinden geniş, opak açık hap (koyu ikon ve yazı); hızlı giriş düğmesi (+) menüyle aynı koyu camdan. Ekranda tek opak açık öğe seçili sayfadır.

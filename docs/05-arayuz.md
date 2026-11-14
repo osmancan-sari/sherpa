@@ -198,6 +198,8 @@ Her modül hızlı girişe kendi türlerini ekler (sözleşmenin `intake` bölü
 
 Kısıtların çoğunu modüller kendi ayarlarından yazar; kullanıcı bunları tek bir işte değiştirmek ya da elle eklenen bir işe koymak isteyince formda görür. Veri: `docs/03-veri-modeli.md`, "Zaman kısıtları".
 
+**Saat alanları** (bu bölüm, Ayarlar → Günün çerçevesi ve gün tipine göre aralıklar; 14 Kas 2026): metin olarak "SS:dd" yazılır, telefonda rakam klavyesi açılır. Rakam klavyesinde ":" olmadığı için alan iki noktayı kendisi koyar: dört rakam yazılınca hemen ("0800" → 08:00), alandan çıkınca kısa yazılan da ("800" → 08:00, "8" → 08:00, "24" ya da "2400" → 24:00); elle yazılan ":", "." ya da "," da olur. Tek yardımcı: `src/lib/clock-input.ts`, bileşen `TimeInput`. Günün çerçevesi gece yarısını 00:00 diye saklar (24:00 yazılan yatış 00:00 olur). Sabit bloklar ve gelen kutusu cihazın kendi saat seçicisini kullanır.
+
 **Formda "Zaman" bölümü.** İş, iş kalemi ve ritim düzenleme formlarında, öbür alanların altında kapalı gelir. Kısıt varsa kapalıyken tek satırlık özeti görünür; yoksa yalnızca başlığı. Açılınca:
 
 ```

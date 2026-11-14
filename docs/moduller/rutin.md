@@ -213,7 +213,7 @@ Ortak kurallar `ORTAK.md` bölüm 2'dedir. Rutin'e özel olanlar:
 - **Zemin:** günün saatine göre gökyüzü; adım ilerledikçe değişmez. Kasım ortasında 07:00'de kalkılan sabahın çoğu şafak öncesidir, güneş yürüyüşte ufukta belirir; yazın aynı saatte yukarıdadır. Bugün ekranıyla aynı zemin olduğu için sabah bitince zemin değişmez.
 - **Manzara:** gökyüzü ufukta biter (yüksekliğin yaklaşık %73'ü); altında üç tepe katmanı ve sis. En yakın sırt her zaman koyudur; alttaki düğmeler onun üzerinde durur.
 - **Akşam:** gece gökyüzü; yıldızlar baştan görünür. Ay ufka yakın, sağda durur; yeri ve evresi hesaplanmaz. Dalda küçük baykuş silüeti durur; yalnızca "İyi geceler" ekranında gözleri kapalıdır.
-- **Metin:** şafakta ve gecede açık metin, koyu cam; gündüz gökyüzünde koyu metin, açık cam. Eşik cihazda ayarlanır.
+- **Metin:** her saatte açık metin ve koyu cam (çizimlerdeki gündüz kareleri de koyu cam ve açık metinle çizildi; kullanıcının kararı, 14 Kas 2026). Gökyüzü ufka yakın parladığında (gün doğumu, gündüz) cam yalnızca metnin 4,5:1 karşıtlığı için gerektiği kadar koyulaşır.
 - **Hareket:** neredeyse durağan (bulut çok yavaş kayar, birkaç yıldız hafifçe titreşir). Hareket azaltma tercihinde sürekli hareket olmaz.
 - Renkler, tepe eğrileri, baykuş ve yıldız ölçüleri çizim dosyalarındadır; kurulumda oradan alınır.
 

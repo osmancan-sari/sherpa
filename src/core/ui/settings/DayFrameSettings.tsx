@@ -15,6 +15,8 @@ import { useSettings } from "@/core/app/hooks";
 import type { DayType } from "@/core/types";
 import { ClientOnly } from "../ClientOnly";
 import { useNotify } from "../Notices";
+import { TimeInput } from "../TimeInput";
+import { normalizeClock } from "@/lib/clock-input";
 
 // Settings → Günün çerçevesi (docs/05-arayuz.md): the waking and bedtime ranges, the sleep
 // target, ranges for a type of day, and whether "Uyandım" starts the first routine. What is
@@ -57,20 +59,30 @@ function draftOf(frame: FrameSettings | null): Draft {
   };
 }
 
+/**
+ * A range as typed, as the frame stores it: "800" is 08:00 (src/lib/clock-input.ts); midnight is
+ * written 00:00 in the frame, so a bedtime typed as 24:00 is kept as 00:00.
+ */
+const clocks = (pair: Pair): Pair =>
+  pair.map((value) => {
+    const clock = normalizeClock(value);
+    return clock === "24:00" ? "00:00" : clock;
+  }) as Pair;
+
 /** The draft as a stored value to check: empty day-type ranges left out. */
 function valueOf(draft: Draft): unknown {
   const byDayType: Record<string, { wake?: Pair; bed?: Pair }> = {};
   for (const { type } of DAY_TYPES) {
     const own = draft.byDayType[type];
     const entry: { wake?: Pair; bed?: Pair } = {};
-    if (own.wake[0] || own.wake[1]) entry.wake = own.wake;
-    if (own.bed[0] || own.bed[1]) entry.bed = own.bed;
+    if (own.wake[0] || own.wake[1]) entry.wake = clocks(own.wake);
+    if (own.bed[0] || own.bed[1]) entry.bed = clocks(own.bed);
     if (entry.wake || entry.bed) byDayType[type] = entry;
   }
   const hours = Number(draft.hours.replace(",", "."));
   return {
-    wake: draft.wake,
-    bed: draft.bed,
+    wake: clocks(draft.wake),
+    bed: clocks(draft.bed),
     sleep_minutes: Number.isFinite(hours) ? Math.round(hours * 60) : NaN,
     ...(Object.keys(byDayType).length > 0 ? { by_day_type: byDayType } : {}),
     ...(draft.startOnWake ? { start_on_wake: true } : {}),
@@ -116,22 +128,18 @@ function DayFrameForm({ stored }: { stored: FrameSettings | null }) {
 
   const pair = (value: Pair, onChange: (next: Pair) => void, label: string) => (
     <span className="flex items-center gap-1">
-      <Input
+      <TimeInput
         aria-label={`${label} başlangıç`}
         value={value[0]}
-        placeholder="SS:dd"
-        inputMode="numeric"
         className="h-11 w-20 text-center tabular-nums md:h-9"
-        onChange={(event) => onChange([event.target.value, value[1]])}
+        onChange={(next) => onChange([next, value[1]])}
       />
       –
-      <Input
+      <TimeInput
         aria-label={`${label} bitiş`}
         value={value[1]}
-        placeholder="SS:dd"
-        inputMode="numeric"
         className="h-11 w-20 text-center tabular-nums md:h-9"
-        onChange={(event) => onChange([value[0], event.target.value])}
+        onChange={(next) => onChange([value[0], next])}
       />
     </span>
   );

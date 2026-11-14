@@ -1,5 +1,7 @@
 "use client";
 
+import { normalizeClock } from "@/lib/clock-input";
+import { TimeInput } from "../TimeInput";
 import { X } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -78,8 +80,8 @@ export function valueOf(draft: TimingDraft): unknown {
       ? undefined
       : ranges.map((range) => ({
           ...(range.days === "all" ? {} : { days: range.days.split(",").map(Number) }),
-          from: range.from,
-          to: range.to,
+          from: normalizeClock(range.from),
+          to: normalizeClock(range.to),
         }));
   const number = (text: string) => (text.trim() === "" ? undefined : Number(text));
   const before = number(draft.before);
@@ -246,23 +248,17 @@ export function TimingSection({
                   </select>
                   {/* The two times and the remove button wrap together on a narrow screen. */}
                   <span className="flex items-center gap-2">
-                    <Input
-                      type="text"
-                      inputMode="numeric"
-                      placeholder="SS:dd"
+                    <TimeInput
                       aria-label={`${name}: başlangıç`}
                       value={range.from}
-                      onChange={(event) => update({ from: event.target.value })}
+                      onChange={(from) => update({ from })}
                       className="h-11 w-24 md:h-9"
                     />
                     <span aria-hidden>–</span>
-                    <Input
-                      type="text"
-                      inputMode="numeric"
-                      placeholder="SS:dd"
+                    <TimeInput
                       aria-label={`${name}: bitiş`}
                       value={range.to}
-                      onChange={(event) => update({ to: event.target.value })}
+                      onChange={(to) => update({ to })}
                       className="h-11 w-24 md:h-9"
                     />
                     <Button

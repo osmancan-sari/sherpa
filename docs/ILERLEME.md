@@ -6,7 +6,7 @@ Bu dosyayı Claude Code günceller. Yeni bir oturum yalnızca bu dosyayı ve `pr
 
 - Faz: **Rutin 1. adım bitti** (14 Kas 2026, `rutin-1-tamam`; faz denetimi bir tur, GEÇTİ). Yayında (14 Kas: migration'lar `sherpa-dev` ve `sherpa-prod`'da, kod üretimde). Ç3f yayında (14 Kas)
 - Adım: 7 (kapanış) bitti ve yayınlandı; sırada Ç4 (ya da Rutin 2, senin seçimin)
-- Son commit: Rutin 1: full-screen phone scene, sky split at the horizon
+- Son commit: Clock fields take digits alone; daytime stays dark
 
 ### Rutin 1 planı
 
@@ -146,7 +146,7 @@ Her adımın sonunda `npm run check` ve commit; şema, geçit ve zarf adımları
 | 7. Gece yarısından sonra basılan "Yatıyorum" önceki günün yapılışına | Sağlandı | `tests/db/rutin.test.ts` (23:50'de açılan yapılış 00:10'da aynı günde kapanır; 00:20'de açılan da önceki günün), `server/flow.test.ts` (`runDay`); yatış çekirdeğin planlama gününe yazılır (`controls.bed`) |
 | 8. Modül sayfasında ad, süre, sıklık, temel ve açık anahtarı, alt adımlar değişir; adım eklenir, kapatılır, silinir; her değişiklikten sonra ritmin süresi yeniden teklif edilir, sahne yeni listeyi kullanır | Sağlandı | `rutin.spec.ts` ("the module page…": Giyin'in adı, 17 dk elle, 3 günde bir, temel, alt adım → hazırlık 42 dk; Yürüyüş kapatılınca 30 dk; Akşam'a ekleme 10 dk; silme onayında "Kapat" ve "Sil" → 9 dk); "the scene uses the list as edited": tutamaktan sürükleyerek sıralanan ve yeniden adlandırılan adımlarla sahne yeni sırayla açılır |
 | 9. Bir cihazda "Sonraki" → öbür cihaz bir saniye içinde aynı adımda | Sağlandı | `tests/e2e/sync.spec.ts` (telefonda Sonraki → panoda `data-part` 1, 1000 ms sınırla; pano Günaydın'dan kendiliğinden çıkar ve hiçbir şey söylemez) |
-| 10. Hareket ve saydamlık azaltma tercihleri; metin ile zemin arasında şafak, gündüz ve gecede en az 4,5:1 (ölçümle) | Kısmen: karşıtlık telefon karesinde panel, başlık ve düğme metinleri için ölçüldü (pano yerleşimi ve panel dışındaki küçük yazılar ölçülmedi); saydamlık azaltma **elle doğrulanacak**; gündüz tasarımdaki açık ton (koyu metin, açık cam) kurulmadı (**görüşün gerek**, aşağıda) | `sky.test.ts` (dört gökyüzünde, panellerin oturduğu yükseklikte, her metin rengi en az 4,5:1), `rutin.spec.ts` ("reduced motion": sahnede çalışan animasyon yok). Playwright `prefers-reduced-transparency`'yi taklit edemiyor; kod opak panele geçiyor |
+| 10. Hareket ve saydamlık azaltma tercihleri; metin ile zemin arasında şafak, gündüz ve gecede en az 4,5:1 (ölçümle) | Kısmen: karşıtlık telefon karesinde panel, başlık ve düğme metinleri için ölçüldü (pano yerleşimi ve panel dışındaki küçük yazılar ölçülmedi); saydamlık azaltma **elle doğrulanacak**. Gündüz koyu tonda kalır (senin kararın, 14 Kas) | `sky.test.ts` (dört gökyüzünde, panellerin oturduğu yükseklikte, her metin rengi en az 4,5:1), `rutin.spec.ts` ("reduced motion": sahnede çalışan animasyon yok). Playwright `prefers-reduced-transparency`'yi taklit edemiyor; kod opak panele geçiyor |
 | 11. Yapılmayan sabah bloğu öğleden sonra | Denendi: düşüyor | `tests/db/rutin.test.ts` ("a morning not done": 07:05'te Sabah öneriliyor, 14:00'te sabah blokları ne "Şimdi"de ne yuvalarda). Çekirdek notu 13 kapandı |
 | 12. Gerçek telefonda: cam ve kaydırma, ekranın açık kalması ve "Dil", iki cihazda yalnızca dokunulan okur | **Kullanıcı deneyecek** | "Senden bekleyenler" → Rutin 1 |
 
@@ -160,6 +160,12 @@ Testler: 511 birim, 297 veritabanı, 227 uçtan uca (ekran görüntüleriyle; `n
 4. "Yarın" panelinde "Uyanış saati henüz yok" kesiliyordu: satır artık kesilmez, sığmazsa iki satıra iner.
 
 Test: `rutin.spec.ts` +1 (375 × 667 telefonda sahne ekranı kaplar, "+"nın yerinde en üstte sahne var, "Sıradaki" paneli ufkun üstünde biter, baykuş panelin altında). Görüntüler yeniden alındı.
+
+**Kararların ve düzeltmelerin devamı (14 Kas 2026)**
+
+- Gündüz tonu: senin kararınla koyu tonda kalır (gündüz kareleri de koyu cam ve açık metinle çizilmişti); `rutin.md` 8.5 ve `ORTAK.md` bölüm 2 buna göre düzeltildi, `docs/09`. Ölçüt 10'daki "gündüzün açık tonu kurulmadı" çekincesi kalktı.
+- Önceki fazların dört test değişikliği senin onayınla kalıcı (`blocks.test.ts`, `settings.spec.ts`, `server-boundary.test.ts`, `chains.spec.ts`).
+- Telefonda saat girilemiyordu (rakam klavyesinde ":" yok, "0800" geçersiz sayılıyordu): metin olarak yazılan bütün saat alanları (Günün çerçevesi ve gün tipine göre aralıklar, iş formlarındaki "Zaman" pencereleri) tek yardımcıya bağlandı (`src/lib/clock-input.ts`, `TimeInput`): dört rakamda iki nokta hemen gelir, alandan çıkınca "800" → 08:00, "24" → 24:00; elle ":" da olur. Günün çerçevesi 24:00'ı 00:00 diye saklar (çerçevenin saatleri 24:00'ı tanımıyor). Sabit bloklar ve gelen kutusu cihazın saat seçicisini kullandığı için değişmedi. Testler: `src/lib/clock-input.test.ts` 5, `tests/e2e/clock.both.spec.ts` 2 (pano ve telefon). `docs/05` "Zaman kısıtları", `docs/09`.
 
 **Sözleşmede eksik ya da zor bulduklarım** (ayrıntı `rutin.md` "Çekirdek için notlar")
 
