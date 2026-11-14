@@ -105,6 +105,17 @@ export const rutin: ModuleDefinition = {
       { key: "sabah", label: "Sabah", component: MorningTab },
       { key: "aksam", label: "Akşam", component: EveningTab },
     ],
+    // "Adım ekle" (8.6): the step's sheet, empty, on the tab it was asked from.
+    actions: [
+      {
+        key: "adim-ekle",
+        label: "Adım ekle",
+        run: (ctx) => {
+          const evening = window.location.pathname.endsWith("/aksam");
+          ctx.navigate(evening ? "aksam?ekle=aksam" : "sabah?ekle=sabah");
+        },
+      },
+    ],
     scenes: { rutin: rutinScene },
   },
 };
