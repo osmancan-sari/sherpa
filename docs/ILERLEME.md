@@ -4,9 +4,9 @@ Bu dosyayı Claude Code günceller. Yeni bir oturum yalnızca bu dosyayı ve `pr
 
 ## Durum
 
-- Faz: **Rutin 1. adım bitti** (14 Kas 2026, `rutin-1-tamam`; faz denetimi bir tur, GEÇTİ). Yayın senin onayınla ("Senden bekleyenler" → Rutin 1). Ç3f yayında (14 Kas)
-- Adım: 7 (kapanış) bitti; sırada yayın, sonra Ç4
-- Son commit: Rutin 1: phase audit fixes, tag
+- Faz: **Rutin 1. adım bitti** (14 Kas 2026, `rutin-1-tamam`; faz denetimi bir tur, GEÇTİ). Yayında (14 Kas: migration'lar `sherpa-dev` ve `sherpa-prod`'da, kod üretimde). Ç3f yayında (14 Kas)
+- Adım: 7 (kapanış) bitti ve yayınlandı; sırada Ç4 (ya da Rutin 2, senin seçimin)
+- Son commit: Progress record: Rutin 1 is released
 
 ### Rutin 1 planı
 
@@ -709,7 +709,7 @@ Testler: 413 birim, 207 veritabanı, 166 uçtan uca (`npm run check:full` yeşil
 - `20261114114703_rutin_step_parent.sql`: ekin aynı rutinde ve tek düzeyli olması.
 - `20261114114931_bed_undo.sql`: `days.bed_session_id` ve `undo_scene_bed` (çekirdek).
 
-Sıra (senin onayınla): 1) `sherpa-dev`'e migration'lar (`npm run db:push`; deneme çalıştırması yalnızca bu üçünü göstermeli); 2) `sherpa-prod`'a (`npx supabase db push --remote=<prod ref>`); 3) `git push origin main` ve `git push origin rutin-1-tamam` (Vercel üretimi yayınlar).
+Sıra: 1) ~~`sherpa-dev`~~: **yapıldı** (14 Kas, senin onayınla; deneme çalıştırması yalnızca bu üçünü gösterdi); 2) ~~`sherpa-prod`~~: **yapıldı** (14 Kas; ardından "up to date"); 3) ~~`git push origin main`, `git push origin rutin-1-tamam`~~: **yapıldı**; üretim yayını hazır (`sherpa-private-djwwgo3o2`).
 
 Yayından sonra:
 
