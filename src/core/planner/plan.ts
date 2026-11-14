@@ -483,7 +483,8 @@ export function buildPlan(input: PlanInput): Plan {
     warnings: warningsOf(input, candidates, placed, closed, outOfTime),
     usableMinutes,
     plannedMinutes,
-    candidates,
+    // Ç3g: every candidate of the day, anchored work without the frame included (as before).
+    candidates: found.candidates,
     ...(framed ? { frame: framed.marks } : {}),
   };
 }

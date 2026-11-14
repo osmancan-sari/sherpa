@@ -742,6 +742,23 @@ Testler: 413 birim, 207 veritabanı, 166 uçtan uca (`npm run check:full` yeşil
 
 ## Senden bekleyenler
 
+### Ç3g yayını ve 14 Kas kayıtlarının temizliği
+
+Bir migration var, yalnızca ekleme yapar; kod onu ister (`woke_source` yazar): **migration koddan önce** gider.
+
+- `20261114170000_wake_source.sql`: `days.woke_source` (kontrol: `screen`, `outside`, `estimate`); var olan tahmini uyanışlar `estimate` yapılır.
+
+Sıra (senin iznini bu sohbette ister): 1) `sherpa-dev`; 2) `sherpa-prod`; 3) `git push origin main` ve `c3g-tamam`.
+
+Yayından sonra, **ayrıca senin açık iznine bağlı**, üretimde yalnızca 14 Kas'ın deneme kayıtları silinir (adım listesi, ayarlar ve başka günler değişmez):
+
+- `days` 14 Kas: `bed_at` ve `bed_session_id` boşaltılır (yeni "Yatışı sil" yolunun yaptığının aynısı).
+- `rutin_run_steps`: 11 satır (üç yapılışın kayıtları).
+- `rutin_runs`: 3 satır (14 Kas: Sabah, Akşam kapanışı, Duş ve hazırlık).
+- `rhythm_logs`: 14 Kas'ın 8 satırı (Sabah 6, Akşam kapanışı 1, Duş ve hazırlık 1).
+- `sessions`: 14 Kas'ın 5 oturumu (16:33:21, 16:33:24, 16:33:24–16:34:45, 16:48:56, 16:58:56).
+- `events` günlüğüne dokunulmaz.
+
 ### Rutin 1 yayını ve telefon denemeleri
 
 Üç migration var, üçü de yalnızca ekleme yapar; kod onları ister: **migration'lar koddan önce** gider.
@@ -1000,6 +1017,19 @@ Süre sapmasındaki artış çoğunlukla `enrich`'in kendi tahminlerinin çalı�
 - Ekran görüntüleri: `docs/ekran-goruntuleri/c1/`.
 
 ## Verdiğim kararlar
+
+**Ç3g (14 Kas 2026)** — ayrıntı ve gerekçe `docs/09-kararlar.md` (Ç3g satırları)
+
+- Planlama günü sahneye `TodayBrief.date` ve `SceneProps.session.day` (oturumun başladığı anın günü; şimdinin günü değil), olaylara `day`, modüle `ctx.day()` olarak gelir; Rutin'in `runDay`'i ve testleri kaldırıldı. Sabahta "05:00'ten önce kayıtlı uyanış o gün" ayrımı gitti (çekirdeğin kuralı geçerli).
+- Uyanışın kaynağı `days.woke_source` sütununda (migration yalnızca ekleme; kaynağı olmayan eski kayıt ekrandan sayılır). `wakeChainStart` değişmedi (Fikirler'de).
+- Şerit: `SceneProps.strip` (`title`, `since`, `hidden`); gizli şeritte "Çık" da yok. **Görüşün gerek.**
+- Tuşlar: `ModuleScene.keys: 'scene'` beş tuşu birden devralır; sahnenin işlemediği E/X/R ölü kalır. **Görüşün gerek.**
+- Modül sayfasında dizi `useModuleChains()` (`ctx`'ye değil). Rutin'de başka modülün grubu bölümün adıyla, numarası sıradan. **Görüşün gerek.**
+- Çerçeve kapalıyken çapalı iş: uyanışa bağlı iş ayarlardaki günün başından (ilk dokunuştan değil), yatışa bağlı iş bitiş çizgisinden önce; yatışa bağlı iş "Şimdi"ye yuvasından en çok 15 dakika önce gelir, önce akşam kartında "Sırada: … · saat" ve "Şimdi başla". **Görüşün gerek.**
+- "Yatıyorum" yatış aralığının başından 2 saatten çok önceyse (çerçeve kapalıyken bitiş çizgisinden) bir kez sorar: "Saat 16:49. Şimdi yatıyor musun?". `controls.bed()` `Promise<boolean>` döner. **Görüşün gerek.**
+- Kayıtların düzeltilmesi Ayarlar → "Uyanış ve yatış kayıtları" (`/ayarlar#kayitlar`), bugün ve dün; gece kartında "Yatışı düzelt". Silinen yatış `core.bed_undone` söyletir. **Görüşün gerek** (yer).
+- Ses: Türkçe ses yoksa sessiz; liste boşsa 1,5 sn beklenir; `tr_TR` kabul. Testlerde konuşma motoru ortak kurulumda sahte, tarayıcı `--mute-audio`.
+- Önceki fazların test değişiklikleri (beklenti gevşetilmedi): `events.test.ts` yüke `source` beklentisi; `ingest.test.ts` `woke_source` beklentisi; `chains.spec.ts` üç akşam testine o gece için 21:20/21:30 yatış (yatışa bağlı işin 15 dakikası); `day-screens.spec.ts` "Onayla ve yat" 19:30'da artık soruyor, test "Evet, yatıyorum"a basıyor; Rutin 1'in `rutin.spec.ts` "Yatıyorum" testi gerçek saatle koştuğu için 20:00'den önce gelen soruya "Evet" diyor; dışarıdan uyanış testleri `woke_source: 'outside'` yazıyor; `sync.spec.ts` Rutin testi dışarıdan uyanışı açıkça yazıyor (önceden uyanış yokken "dokunulmamış ekran" Günaydın gösteriyordu).
 
 **Rutin 1 (14 Kas 2026)**
 
