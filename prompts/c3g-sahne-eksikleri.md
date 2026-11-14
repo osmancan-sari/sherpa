@@ -35,6 +35,17 @@ Her madde için: sözleşmeyi (`docs/06`, gerekiyorsa `docs/03`, `docs/05`) ve `
 5. **Yarının beklenen uyanışı (not 20).** `TodayBrief`'e yarının beklenen uyanışı ve beklenen uyku süresi gelsin: planlayıcının çerçevesindeki, gerçek yatışla kaydırılmış değer. Yoksa `null`. Rutin'in "Yarın" kutuları (son adım, "İyi geceler", pano) bunu gösterir; yatış yazılınca ve geri alınınca değer yenilenir.
 6. **Uyanışın kaynağı (not 21).** Sahne uyanışın nereden geldiğini bilsin (ekrandaki dokunuş, dışarıdan `core/wake`, tahmin). Ç3f'te bu ayrım bir sütun olmadan türetiliyordu; gerekiyorsa şimdi sakla (migration yalnızca ekleme). Rutin "son 15 dakikada dokunulmadı" kuralını bırakır: Günaydın yalnızca uyanış dışarıdan geldiğinde görünür (Rutin 1, ölçüt 5'in tam hali).
 
+## İlk gerçek kullanımda görülenler (14 Kas 2026 akşamı; bu fazın işi)
+
+Kullanıcı Rutin'i üretimde 18:50 civarında etkinleştirdi. Bugün ekranında önce sabah rutini çıktı; ilerletip bitirdi. Sonra akşam kapanışı çıktı; onu da ilerletti ve "Yatıyorum"a bastı. Yatış aralığı 22:00–24:00'tü; "Geri al"ın süresi geçti. Ne olduğunu tam hatırlamıyor; bu yüzden önce üretim verisine **yalnızca okuyarak** bak (bugünün gün kaydı, uyanış ve yatış, oturumlar, `rutin_runs`, plan) ve gördüğünü rapora yaz. Sonra şunları kapat; hepsi genel kurulur, testleri yazılır:
+
+1. **Akşam saatinde sabah işi önerilmemeli.** Uyanışa bağlı iş, o gün uyanış kaydı olmasa da (modül gün ortasında açıldı, kullanıcı "Uyandım"a hiç basmadı) günün ilerleyen saatinde önerilmez. Rutin 1'in 11. ölçütü "yapılmayan sabah öğleden sonra düşüyor" diyordu; bu durumda neden düşmediğini bul. Modül etkinleştirildiği gün, saati geçmiş çapalı işler o gün için teklif edilmez.
+2. **Yatışa bağlı iş yatıştan saatler önce önerilmemeli.** Akşam kapanışı planlanan yatıştan kısa süre önce (işin süresi ve küçük bir pay) "Şimdi"ye gelir; 18:50'de neden öndeydi, bul ve düzelt. Kullanıcı erken başlatmak isterse listeden başlatabilir.
+3. **Aralığın çok dışında "Yatıyorum".** Yatış aralığının başlangıcından epey önce basılan "Yatıyorum" (öneri: 2 saatten fazla) tek dokunuşla günü kapatmaz; kısa bir onay sorar ("Saat 18:50. Şimdi yatıyor musun?"). Aralığın içinde ve yakınında bugünkü gibi tek dokunuş. Çekirdekte, `bed()` yolunda; `docs/05`, `docs/06`. **Görüşün gerek** (eşik ve metin).
+4. **Yanlış yazılmış uyanış ve yatış düzeltilebilmeli.** "Geri al"ın süresi geçtikten sonra da kullanıcı bugünün (ve dünün) uyanış ve yatış kaydını düzeltebilsin ya da silebilsin (Bugün'ün günün çerçevesi kartından ya da Ayarlar'dan; yerini sen seç). Düzeltilince ona bağlı her şey yeniden hesaplanır. Böyle bir yol zaten varsa nerede olduğunu rapora yaz ve bulunmasını kolaylaştır.
+
+Bunlar bitince, yayından sonra ve **kullanıcının bu sohbetteki açık izniyle**: üretimde 14 Kas'ın yanlış yatış kaydını ve o akşamki deneme yapılışlarını (`rutin_runs`, `rutin_run_steps`, ilgili oturumlar ve ritim kayıtları) temizle; tercihen 4. maddedeki yolla, olmuyorsa tek seferlik bir düzeltmeyle. Neyi sildiğini satır sayılarıyla rapora yaz. Adım listesine, ayarlara ve başka günlere dokunma.
+
 ## Bu faza özel kurallar
 
 - **Geriye uyum.** Yeni alanları kullanmayan sahne ve modül sayfasında hiçbir şey değişmez; önceki fazların ve Rutin 1'in testleri beklenti gevşetilmeden geçer.

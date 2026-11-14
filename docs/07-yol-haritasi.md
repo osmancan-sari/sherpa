@@ -20,6 +20,7 @@ Her faz tek başına kullanılabilir bir şey bırakır. Bir fazın kabul ölç�
 | Ç3d. Sunucu zemini | Uygulama kapalıyken çalışan taraf: cihaz anahtarları, giriş ucu, zamanlanmış işler, sunucuda modül bağlamı | Ç3c |
 | Ç3e. Modülün bölümleri | Bir modülün içinde ayrı renk ve sahne taşıyan bölümler (rutinde Sabah ve Akşam, Okul'da dersler); renklerin Ayarlar'dan değişmesi | Ç3c |
 | Ç3f. Çapalı diziler | Uyanışa ve yatışa bağlı işlerin tek akış olması: sahnenin diziyi görmesi (başka modülün adımları dahil), sıradaki işin kendiliğinden başlaması, dışarıdan gelen uyanıştan sonra başlama, sahneden akşam kapanışı | Ç3e |
+| Ç3g. Sahnenin çekirdek eksikleri | Rutin'in kurulumunda sözleşmede eksik bulunan altı nokta (planlama günü, şerit, tuşlar, modül sayfasında dizi, yarının uyanışı, uyanışın kaynağı) ve ilk gerçek kullanımda görülen dört sorun | Ç3f, Rutin 1 |
 | Ç4. Pano ve telefon cilası | Gün boyu açık duracak kalitede pano; uygulama gibi çalışan telefon | Ç3 |
 | Ç5. Claude köprüsü | Claude sohbetleri Sherpa'yı okuyup yazar | Ç1 |
 
@@ -232,6 +233,27 @@ Tasarım: `docs/12-sahne-ve-otomasyon.md`, bölüm G. İstem `prompts/c3f-capali
 
 **Kabul ölçütleri:** `docs/12-sahne-ve-otomasyon.md`, "Kabul ölçütleri" → Ç3f.
 
+### Ç3g: Sahnenin çekirdek eksikleri
+
+İstem `prompts/c3g-sahne-eksikleri.md`. Rutin 1. kurulum adımında görülen sözleşme eksikleri (`docs/moduller/rutin.md`, "Çekirdek için notlar" 16–21) ve kullanıcının ilk gerçek kullanımında (14 Kas 2026 akşamı) görülenler. Ç4'ün görsel işi (cam dili, gökyüzünün çekirdek ekranlarına taşınması) bu fazda değildir.
+
+**Kapsam**
+- Sahneye ve oturum olaylarına çekirdeğin planlama günü; `TodayBrief`'e yarının beklenen uyanışı ve uyku süresi, uyanışın kaynağı
+- Sahnenin şeridin içeriğini vermesi ve şeridi belirli ekranlarda gizlemesi; Bugün tuşlarını devralması
+- Modül sayfasının o günün dizilerini salt okunur alması
+- Çerçeve kapalıyken de çapalı işin saatine uyulması; yatışa bağlı işin yatıştan kısa süre önce öne gelmesi
+- Yatış aralığından çok önce basılan "Yatıyorum"da kısa onay; uyanış ve yatış kaydının sonradan düzeltilmesi
+- Testlerde sahte konuşmacının ortak kurulumdan gelmesi; Türkçe ses yoksa sessizlik
+
+**Kabul ölçütleri**
+- [ ] Altı sözleşme maddesi için: alan sözleşmede, testli, `deneme`'de örneği var; Rutin yeni yolu kullanıyor ve geçici çözümünü bıraktı (`runDay`, şeridin kopyası, `window`'da tuş yakalama, "15 dakika" kuralı, `plannedWake`)
+- [ ] Gece yarısından sonraki "Yatıyorum" önceki günün yapılışına yazılıyor (Rutin 1, ölçüt 7)
+- [ ] Günaydın yalnızca dışarıdan gelen uyanışta (Rutin 1, ölçüt 5'in tam hali)
+- [ ] Uyanış kaydı olmayan ve çerçevesi kapalı günde saati geçmiş uyanışa bağlı iş önerilmiyor; yatışa bağlı iş yatıştan saatler önce "Şimdi"de değil
+- [ ] Aralıktan 2 saatten çok önce "Yatıyorum" onay soruyor; aralıkta tek dokunuş
+- [ ] Bugünün ve dünün uyanışı ve yatışı düzeltilip silinebiliyor; plan yeniden hesaplanıyor
+- [ ] Yeni alanları kullanmayan sahne ve sayfada hiçbir şey değişmedi; önceki fazların ve Rutin 1'in testleri gevşetilmeden geçiyor
+
 ### Ç4: Pano ve telefon cilası
 
 Tasarım: `docs/05-arayuz.md`, `docs/11-yayin-ve-cihazlar.md`.
@@ -288,4 +310,4 @@ Bir modülün süreci: tasarım oturumu (bkz. `prompts/modul-tasarim-oturumu.md`
 
 Okul modülünün adımları için taslak kapsam ve kabul ölçütleri `docs/moduller/okul.md` ve `docs/moduller/okul-ninova.md` içindedir; tasarım oturumunda kesinleşir.
 
-Önerilen sıra: Ç0 → Ç1 → Ç2 → Ç3 → Ç3b → Ç3c → Ç3d → Ç3e → Ç3f → Ç4 (Ç3c–Ç3f kullanıcının kararıyla Ç4'ten önce, 12–13 Kas 2026); ilk modül (rutin) Ç3f'den sonra, tasarımı onaylanınca kurulabilir, Ç4'ü beklemez; Okul adım 1 tasarımı onaylanınca, Ç5 ve Okul adım 2 ihtiyaca göre araya girer. (Ç3, Okul adım 1'den önce bitti; Ç3b modüller tasarlanmadan önce yapılır, çünkü iş zarfını değiştirir.)
+Önerilen sıra: Ç0 → Ç1 → Ç2 → Ç3 → Ç3b → Ç3c → Ç3d → Ç3e → Ç3f → Ç3g → Ç4 (Ç3c–Ç3g kullanıcının kararıyla Ç4'ten önce, 12–13 Kas 2026); ilk modül (rutin) Ç3f'den sonra, tasarımı onaylanınca kurulabilir, Ç4'ü beklemez; Okul adım 1 tasarımı onaylanınca, Ç5 ve Okul adım 2 ihtiyaca göre araya girer. (Ç3, Okul adım 1'den önce bitti; Ç3b modüller tasarlanmadan önce yapılır, çünkü iş zarfını değiştirir.)
