@@ -202,7 +202,8 @@ export type TodayBrief = {
   wokeAt: Date | null;
   /**
    * Ç3g: where today's waking came from: a screen ("Uyandım", "Biraz önce"), outside (`core/wake`,
-   * the phone's alarm automation), or the first touch ('estimate'). Null without a waking.
+   * the phone's alarm automation), or the first touch ('estimate'). Null without a waking, and
+   * with the day's frame off (as `wokeAt`).
    */
   wokeFrom: WakeSource | null;
   /** Ç3f: today's evening closing was done. */

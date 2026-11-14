@@ -81,8 +81,10 @@ describe("the day in short (Ç3g)", () => {
     expect(brief("23:35", rows([woke])).tomorrow?.wake).toEqual(at("09:00", NEXT));
   });
 
-  it("is null without the day's frame", () => {
-    const off = brief("21:00", rows([], settingsRow({ day_frame: null })));
+  it("is null without the day's frame, a recorded waking too (as wokeAt)", () => {
+    const woke = { woke_at: at("07:00").toISOString(), woke_source: "outside" };
+    const off = brief("21:00", rows([woke], settingsRow({ day_frame: null })));
+    expect(off.wokeAt).toBeNull();
     expect(off.tomorrow).toBeNull();
     expect(off.wokeFrom).toBeNull();
   });

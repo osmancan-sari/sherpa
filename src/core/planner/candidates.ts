@@ -455,7 +455,7 @@ export function candidatesOf(input: PlanInput): {
     .filter((candidate) => !deferred.has(candidate.id) || candidate.mandatory !== null)
     .sort(compareScored);
   // Anchored work is placed at the waking or the bedtime, never in the slots. Without the frame
-  // the anchor means nothing (it carries no hours) and the work is planned like any other.
+  // it stays among the candidates here; buildPlan keeps its hour (Ç3g, `unframedLines`).
   if (!input.frame) return { candidates: kept, closed, anchored: [] };
   return {
     candidates: kept.filter((candidate) => !candidate.timing?.anchor),

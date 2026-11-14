@@ -5,8 +5,8 @@ Bu dosyayı Claude Code günceller. Yeni bir oturum yalnızca bu dosyayı ve `pr
 ## Durum
 
 - Faz: **Ç3g. Sahnenin çekirdek eksikleri** (14 Kas 2026; istem `prompts/c3g-sahne-eksikleri.md`). Rutin 1 (`rutin-1-tamam`) ve Ç3f yayında
-- Adım: 8 (kapanış): `check:full` yeşil, rapor yazıldı; faz denetimi
-- Son commit: Ç3g kapanış raporu
+- Adım: 8 (kapanış) bitti: faz denetimi iki tur, GEÇTİ; `c3g-tamam`. Yayın ve 14 Kas temizliği senin izninle
+- Son commit: Ç3g faz denetimi 2. tur
 
 ### Ç3g planı
 
@@ -179,7 +179,7 @@ Rutin'in 1. kurulum adımında sözleşmede eksik bulunan altı nokta (`rutin.md
 | Sesli testler: sahte konuşmacı ortak kurulumdan; Türkçe ses yoksa sessiz, Ayarlar söyler | Sağlandı; gerçek cihazda **elle denenecek** | `tests/unit/quiet-tests.test.ts`, `fixtures.ts` (her bağlam), `--mute-audio`, `voice.spec.ts` (+1), `voice.test.ts` |
 | Geriye uyum; önceki testler gevşetilmeden | Sağlandı, değişen kurulumlar aşağıda | Önceki fazların değişen testleri: `events.test.ts` (yüke `source` beklentisi eklendi), `ingest.test.ts` (beklenti eklendi), `chains.spec.ts` üç test ve görüntü koşusu (yatışa bağlı işin 15 dakikalık kuralı yüzünden o geceye 21:30 yatış eklendi; beklentiler aynı), Rutin 1'in testleri dışarıdan uyanışı `woke_source: 'outside'` ile yazıyor, `runDay` testleri kuralla birlikte kalktı |
 
-Testler: 529 birim, 302 veritabanı, 246 uçtan uca, ekran görüntüleriyle (`npm run check:full` yeşil, 14 Kas, `SHERPA_SHOTS=c3g`). Ekran görüntüleri `docs/ekran-goruntuleri/c3g/` (yeni: `bugun-aksam-sirada`, `bugun-yatis-sorusu`, `ayarlar-kayitlar`, `rutin-modul-sabah-diger`; Rutin sahneleri şeritleriyle yeniden). Baktıklarım: yeni dört ekran ve Rutin sabah sahnesinin şeridi ("Sabah · 2 dk").
+Testler: 529 birim, 302 veritabanı, 231 uçtan uca (faz denetiminin 2. turunda denetçinin `check:full`'ü yeşil, görüntüsüz; görüntülü koşu 1. turdan önce 246 ile yeşildi, `SHERPA_SHOTS=c3g`). Ekran görüntüleri `docs/ekran-goruntuleri/c3g/` (yeni: `bugun-aksam-sirada`, `bugun-yatis-sorusu`, `ayarlar-kayitlar`, `rutin-modul-sabah-diger`; Rutin sahneleri şeritleriyle yeniden). Baktıklarım: yeni dört ekran ve Rutin sabah sahnesinin şeridi ("Sabah · 2 dk").
 
 **Kararlar** "Verdiğim kararlar" → Ç3g ve `docs/09` (14 Kas satırları). **Görüşün gerek:** şeridin gizlenmesi (gizli şeritte "Çık" yok), tuşları devralan sahnede işlenmeyen E/X/R'nin ölü kalması, başka modülün grubunun başlığı, yatışa bağlı işin 15 dakikası ve akşam kartındaki "Sırada" satırı, "Yatıyorum" sorusunun 2 saatlik eşiği ve metni, kayıt düzeltmenin Ayarlar'daki yeri.
 
@@ -195,7 +195,7 @@ Testler: 529 birim, 302 veritabanı, 246 uçtan uca, ekran görüntüleriyle (`n
 
 - Adım denetimi (1–4, `1ce5108..548e23e`): GEÇTİ, `check:full` denetçide yeşil (523 / 301 / 223). 3 önemli: (1) ses listesi henüz yüklenmemişken `say` susuyordu, `tr_TR` tanınmıyordu: liste boşsa 1,5 sn `voiceschanged` beklenir, `tr_TR` kabul, Ayarlar "Türkçe ses yok"u 1,5 sn sonra yazar (`voice.test.ts` +); (2) `ctx.day()`, olayın `day`'i ve uyanış kaynağı için `deneme`'de örnek yoktu: çip `ctx.day()`, `last_session.day`, `last_wake_source` (`events.test.ts` +); (3) `deneme`'nin sahnedeki gün satırı sınanmıyordu: `scene-strip-keys.spec.ts` +1 (00:20'de başlayan oturum önceki günün; dışarıdan uyanış). Notlar: odak sahnesinde bekleyen oturumda Boşluk (düzeltildi), `deneme` dizi durumları Türkçe (düzeltildi), `planningDayOf` tek yardımcı ve hata fırlatır (olaylarda varsayılana düşer), `quiet-tests` alt klasörleri de okur, ILERLEME'nin "Son commit"i; E/X/R'nin ölü kalması ve `deneme`'nin "Şeridi gizle" örneği görüş olarak kayıtta; Rutin'in dokunuşu not eden pasif `window` dinleyicisi Rutin 1'den kalma, eylem yapmıyor (açık).
 - Faz denetimi, 1. tur (`1ce5108..2374591`): GEÇTİ, `check:full` denetçide yeşil (529 / 302 / 228, görüntüsüz). 2 önemli: (1) sahnenin `controls.bed()` sorusu ve Rutin'in "Vazgeç"te son adıma dönmesi saate bağlı olmayan bir testle sınanmıyordu: `day-records.spec.ts` +2 (19:30'da `deneme` gece sahnesi Vazgeç/Evet; Rutin'in son adımı Vazgeç'te geri gelir, yatış yok, oturum sürer); (2) dünün düzeltilmesi, uyanışın "Kaydet"i ve yayılan olaylar testsizdi: `day-records.spec.ts` +1 (dünün uyanışı 07:15 ve yatışı 00:30 → ertesi takvim günü; `core.day_started` `source: screen`, `core.day_closed`, silinen yatışta `core.bed_undone`). Notlar: `brief.test` günü artık `planningDay`'den kuruyor; gece kartındaki "Yatışı düzelt" yalnızca yatış kayıtlıyken; iki kod yorumu; çerçeve kapalıyken pencerenin itilmesi ve "Bugün tamam"ın yatışa bağlı rutinden önce gelmesi Fikirler'de; Rutin'in pasif dokunuş dinleyicisi Rutin 3. adıma.
-- Faz denetimi, 2. tur: FAZ_AUDIT2
+- Faz denetimi, 2. tur (`1ce5108..65f99ad`): GEÇTİ, `check:full` denetçide yeşil (529 / 302 / 231). 1 önemli: çerçeve kapalıyken kayıtlı uyanışta da `wokeFrom` null (`wokeAt` gibi): sözleşmeye yazıldı, `brief.test.ts`'e kayıtlı uyanışla durum eklendi (davranış bilerek böyle: çerçevesiz günde uyanış kavramı planlayıcıda yok). Notlar: çerçevesizken dizinin olmaması ve `Plan.candidates`'in çapalı işi taşıması `docs/04`'e yazıldı (ikincisi Ç3 kabulündeki taban testi için, Ç3g öncesindeki gibi); `candidates.ts` yorumu düzeltildi; `rutin.spec.ts` "Yatıyorum" testinin gerçek saate göre dallanması açık (sabit saatli karşılığı `day-records.spec.ts`'te); Rutin sayfasındaki "9 dk" ile akşam kartındaki 10 dakikalık yuva planlayıcının 5'e yuvarlamasıdır. 2. turdan sonra yalnızca doküman, yorum ve bir birim testi değişti (`npm run check` yeşil).
 
 ### Rutin 1: Temel (14 Kas 2026)
 
@@ -778,7 +778,7 @@ Testler: 413 birim, 207 veritabanı, 166 uçtan uca (`npm run check:full` yeşil
 
 ## Sıradaki adım
 
-Ç3g sürüyor (`prompts/c3g-sahne-eksikleri.md`); ardından Ç4 (`prompts/BASLA.md`). Rutin 2. adım (Kestirmeler bağlantısı, Düzenlilik, sürelerin öğrenilmesi, akşam hatırlatması) tasarıma göre iki hafta beklemeden de kurulabilir; sırasını sen belirlersin.
+Ç4 (`prompts/BASLA.md`); önce Ç3g'nin yayını ve 14 Kas temizliği ("Senden bekleyenler" → Ç3g). Rutin 2. adım (Kestirmeler bağlantısı, Düzenlilik, sürelerin öğrenilmesi, akşam hatırlatması) tasarıma göre iki hafta beklemeden de kurulabilir; sırasını sen belirlersin.
 
 Ç4 (Pano ve telefon cilası): yeni oturumda `docs/05-arayuz.md` ve `docs/11-yayin-ve-cihazlar.md` okunarak başlanır. Önce Ç3'ün ve Ç3b'nin "Görüşün gerek" satırları. Ç2'nin "Sunum slaytları cuma" ölçütü açık: Okul modülü kurulunca yeniden denenecek (D3, karar 5). Rutin'in çekirdek notları 14 ve 16–21 Ç4'e ya da Rutin 3. adıma girdidir.
 

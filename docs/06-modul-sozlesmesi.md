@@ -315,7 +315,7 @@ type TodayBrief = {
   closed: boolean                    // Ç3f: bugünün akşam kapanışı yapıldı mı
   date: string                       // Ç3g: çekirdeğin planlama günü; gece yarısından sonra, gece bitene kadar akşamın günü
   wokeFrom: 'screen' | 'outside' | 'estimate' | null
-                                     // Ç3g: uyanışın kaynağı: ekrandaki "Uyandım"/"Biraz önce", dışarıdan (`core/wake`), ilk dokunuştan tahmin; uyanış yoksa null
+                                     // Ç3g: uyanışın kaynağı: ekrandaki "Uyandım"/"Biraz önce", dışarıdan (`core/wake`), ilk dokunuştan tahmin; uyanış yoksa ya da çerçeve kapalıysa null (`wokeAt` gibi)
   tomorrow: { wake: Date; sleepMinutes: number } | null
                                      // Ç3g: yarının beklenen uyanışı ve bu gecenin beklenen uykusu (planlayıcının çerçevesinden; gerçek yatış kaydırır, geri alınınca döner); çerçeve kapalıysa null
 }
