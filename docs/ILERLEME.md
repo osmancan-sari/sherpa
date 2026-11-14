@@ -5,7 +5,7 @@ Bu dosyayı Claude Code günceller. Yeni bir oturum yalnızca bu dosyayı ve `pr
 ## Durum
 
 - Faz: **Ç3g. Sahnenin çekirdek eksikleri** (14 Kas 2026 başladı; istem `prompts/c3g-sahne-eksikleri.md`). Rutin 1 (`rutin-1-tamam`) ve Ç3f yayında
-- Adım: 0 (plan ve üretim verisinin okunması)
+- Adım: 4 bitti; adım denetimi (1–4), sonra 5 (planlayıcı)
 - Son commit: Ç3g plan
 
 ### Ç3g planı
@@ -15,10 +15,10 @@ Bu dosyayı Claude Code günceller. Yeni bir oturum yalnızca bu dosyayı ve `pr
 | # | Adım | Durum |
 | --- | --- | --- |
 | 0 | Plan; `docs/07`'ye Ç3g; üretim verisine yalnızca okuyarak bakış (aşağıda) | bitti |
-| 1 | Ses: cihazda Türkçe ses yoksa `say` sessiz, Ayarlar'da "Bu cihazda Türkçe ses yok"; uçtan uca testlerde sahte konuşmacı ortak kurulumdan (her bağlam), Chromium sessiz | |
-| 2 | Gün ve uyanış: `TodayBrief.date`, `SceneProps.session.day`, oturum olaylarında `day` (16); `TodayBrief.tomorrow` (20); uyanışın kaynağı (`days.woke_source`, `TodayBrief.wokeFrom`, olayda `source`) (21); Rutin `runDay`'i, "15 dakika" kuralını ve `plannedWake` okumasını bırakır | |
-| 3 | Şerit ve tuşlar: sahnenin şeridi vermesi ve gizlemesi (17), sahnenin Bugün tuşlarını devralması (18); `deneme` örnekleri, Rutin bağlanır | |
-| 4 | Modül sayfasında dizi (19): `useModuleChains`; Rutin'in Sabah sekmesinde başka modülün işi kendi grubu olarak | |
+| 1 | Ses: cihazda Türkçe ses yoksa `say` sessiz, Ayarlar'da "Bu cihazda Türkçe ses yok"; uçtan uca testlerde sahte konuşmacı ortak kurulumdan (her bağlam), Chromium sessiz | bitti: `turkishVoice` (`device.ts`), `fixtures.ts` (`quietTest`, `fakeSpeech`, `browser.newContext` de), `--mute-audio`, `tests/unit/quiet-tests.test.ts`; `voice.spec.ts` +1 |
+| 2 | Gün ve uyanış: `TodayBrief.date`, `SceneProps.session.day`, oturum olaylarında `day` (16); `TodayBrief.tomorrow` (20); uyanışın kaynağı (`days.woke_source`, `TodayBrief.wokeFrom`, olayda `source`) (21); Rutin `runDay`'i, "15 dakika" kuralını ve `plannedWake` okumasını bırakır | bitti (`20261114170000_wake_source.sql`): `ctx.day()`, `planningDayOf`, `briefOf` saf dosyada (`src/core/today/brief.ts`, testli); Rutin'in çipi de `ctx.day()`. Testler: `brief.test.ts` 4, `frame.test.ts` +3, `events.test.ts` +1 (ve önceki birinde beklentiye `source` eklendi), `ingest.test.ts` (+beklenti), `rutin.test.ts` ölçüt 7 çekirdeğin olayıyla |
+| 3 | Şerit ve tuşlar: sahnenin şeridi vermesi ve gizlemesi (17), sahnenin Bugün tuşlarını devralması (18); `deneme` örnekleri, Rutin bağlanır | bitti: `SceneProps.strip`, `ModuleScene.keys`, `SceneProps.keys`; `deneme` (odak ve antrenman sahnesi tuşları alır, güneş sahnesi şeridi "Sabah" yapar, gece sahnesinde "Şeridi gizle"). Testler: `registry.test.ts` +1, `scene-strip-keys.spec.ts` 3, `rutin.spec.ts` +1 ve beklentiler |
+| 4 | Modül sayfasında dizi (19): `useModuleChains`; Rutin'in Sabah sekmesinde başka modülün işi kendi grubu olarak | bitti: `src/core/ui/today/chains.ts` (`useDayChains`), `deneme` Kayıtlar sekmesinde "Bugünün … dizisi". Testler: `module-chains.spec.ts` 1, `rutin.spec.ts` +1 |
 | 5 | Planlayıcı: çerçeve kapalıyken çapalı işin saati (uyanışa bağlı iş günün başında, saati geçince düşer; yatışa bağlı iş bitiş çizgisinden hemen önce), yatışa bağlı işin "Şimdi"ye yatıştan kısa süre önce gelmesi (önce testler) | |
 | 6 | Aralığın çok dışında "Yatıyorum": kısa onay (çekirdeğin bütün "Yatıyorum" yollarında) | |
 | 7 | Uyanış ve yatış kaydının düzeltilmesi ve silinmesi (bugün ve dün) | |
