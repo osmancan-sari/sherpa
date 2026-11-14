@@ -1,6 +1,8 @@
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import { DEFAULT_FRAME } from "@/core/contract/frame";
 import {
+  correctBed,
+  correctWake,
   estimateWake,
   listDayFrames,
   planningDayOf,
@@ -78,6 +80,24 @@ describe("where the waking came from (Ç3g)", () => {
   it("the column takes only the three sources", async () => {
     const { error } = await db.from("days").insert({ date: DATE, woke_source: "alarm" });
     expect(error?.message).toMatch(/check/);
+  });
+});
+
+describe("setting a day's records right (Ç3g)", () => {
+  it("a waking and a bedtime are corrected or deleted, after the scene's 10 minutes too", async () => {
+    await recordWake(db, DATE, at("07:05"), "outside");
+    await recordBed(db, DATE, at("16:49"), null);
+    await correctBed(db, DATE, at("23:10"));
+    expect(await day()).toMatchObject({ bed_at: at("23:10").toISOString(), bed_session_id: null });
+    await correctBed(db, DATE, null);
+    await correctWake(db, DATE, at("07:20"));
+    expect(await day()).toMatchObject({
+      bed_at: null,
+      woke_at: at("07:20").toISOString(),
+      woke_source: "screen",
+    });
+    await correctWake(db, DATE, null);
+    expect(await day()).toMatchObject({ woke_at: null, woke_source: null, woke_estimated: false });
   });
 });
 

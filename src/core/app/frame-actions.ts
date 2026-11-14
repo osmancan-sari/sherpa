@@ -2,8 +2,21 @@
 
 import type { FrameSettings } from "@/core/contract/frame";
 import type { BedUndo } from "@/core/contract/types";
-import { recordBed, recordWake, saveDayFrame, setExpected, undoSceneBed } from "@/core/data/frame";
-import { tellBedUndone, tellDayClosed, tellDayStarted } from "@/core/data/session-events";
+import {
+  correctBed,
+  correctWake,
+  recordBed,
+  recordWake,
+  saveDayFrame,
+  setExpected,
+  undoSceneBed,
+} from "@/core/data/frame";
+import {
+  tellBedRemoved,
+  tellBedUndone,
+  tellDayClosed,
+  tellDayStarted,
+} from "@/core/data/session-events";
 import { useRegistry } from "./CoreProvider";
 import type { DayRow } from "@/core/types";
 import { SAVE_FAILED, useNotify } from "@/core/ui/Notices";
@@ -139,6 +152,56 @@ export function useUndoBed() {
       keys.tasks,
       keys.workItems,
     ],
+    onError,
+  });
+}
+
+/**
+ * Ç3g: a day's waking or bedtime set right, or deleted (Ayarlar → Günün çerçevesi). Everything
+ * that depends on them is worked out again (the plan reads the day's row); the modules hear it.
+ */
+export function useCorrectDay() {
+  const onError = useFailureNotice();
+  const registry = useRegistry();
+  return useCoreMutation({
+    mutate: async (db, args: { date: string; wake?: Date | null; bed?: Date | null }) => {
+      const told = { db, registry };
+      if (args.wake !== undefined) {
+        const row = await correctWake(db, args.date, args.wake);
+        if (args.wake && row.woke_at) {
+          await tellDayStarted(told, {
+            date: args.date,
+            wokeAt: row.woke_at,
+            estimated: false,
+            source: "screen",
+          });
+        }
+      }
+      if (args.bed !== undefined) {
+        const row = await correctBed(db, args.date, args.bed);
+        if (args.bed && row.bed_at)
+          await tellDayClosed(told, { date: args.date, bedAt: row.bed_at });
+        else if (!args.bed) await tellBedRemoved(told, { date: args.date });
+      }
+    },
+    optimistic: ({ date, wake, bed }) => [
+      {
+        key: keys.days,
+        update: patchDay(date, {
+          ...(wake !== undefined
+            ? {
+                woke_at: wake?.toISOString() ?? null,
+                woke_estimated: false,
+                woke_source: wake ? "screen" : null,
+              }
+            : {}),
+          ...(bed !== undefined
+            ? { bed_at: bed?.toISOString() ?? null, bed_session_id: null }
+            : {}),
+        }),
+      },
+    ],
+    invalidate: [keys.days, keys.weekPlans],
     onError,
   });
 }

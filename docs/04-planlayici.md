@@ -154,7 +154,7 @@ Bilinen sınırlar: yol süresi iş başına tek sayıdır, nereden gelindiğine
 
 ## Günün çerçevesi (Ç3c)
 
-Gün iki gerçek olaya bağlanır: uyanış ve yatış (gerekçe: `docs/12-sahne-ve-otomasyon.md`, bölüm D; veri: `docs/03-veri-modeli.md`, `days` ve `settings.day_frame`). **`settings.day_frame` boşsa bu bölümdeki hiçbir kural devreye girmez ve planlayıcı Ç3b'deki gibi çalışır.** Çerçeve açık ama uyanış kaydı, çapa ve `after_finish` yokken de çalışma penceresinin içindeki plan, aynı pencereyle Ç3b'nin kurduğu planın aynısıdır; değişen yalnızca pencerenin başıdır.
+Gün iki gerçek olaya bağlanır: uyanış ve yatış (gerekçe: `docs/12-sahne-ve-otomasyon.md`, bölüm D; veri: `docs/03-veri-modeli.md`, `days` ve `settings.day_frame`). **`settings.day_frame` boşsa bu bölümdeki kurallar devreye girmez ve planlayıcı Ç3b'deki gibi çalışır; tek istisna çapalı iştir (aşağıda "Çerçeve kapalıyken çapalı iş", Ç3g).** Çerçeve açık ama uyanış kaydı, çapa ve `after_finish` yokken de çalışma penceresinin içindeki plan, aynı pencereyle Ç3b'nin kurduğu planın aynısıdır; değişen yalnızca pencerenin başıdır.
 
 ```
 uyku │ uyanışa bağlı işler │ çalışma penceresi │ akşam │ yatışa bağlı işler │ uyku
@@ -174,8 +174,11 @@ Kurallar:
 
 1. **Çapa.** Uyanışa bağlı işler uyanıştan başlayarak art arda, yatışa bağlı işler beklenen yatışta bitecek biçimde geriye doğru dizilir. Sıra `order` (küçük önce; olmayan sonda), eşitse skordur. Çapalı iş yuvalara dağıtılmaz, kapasiteye sayılmaz, günün 3 işine girmez ve günün "tamam"ını bekletmez. Sabit bloklar çapalı işi kaydırmaz (uyku planı en geç uyanışı ilk yükümlülüğe göre zaten öne alır).
 2. **Akşam.** Bitiş çizgisinden sonraya yalnızca `after_finish = true` taşıyan iş konur. Böyle bir iş önce gündüz yuvalarında olağan kurallarla yarışır; gündüz yerleşemezse akşamın yuvalarına (bloklar çıkarılmış, aynı yuva kuralları) konur. `windows` ve öbür kısıtlar yine geçerlidir. Akşam süresi kapasite çarpanına girmez (`usableMinutes` değişmez, akşama konan iş kapasiteden düşmez). `after_finish` taşıyan işin "bugün kapalı" denetimi bitiş çizgisine değil akşamın sonuna göre yapılır.
+2a. **Yatışa bağlı iş yatıştan kısa süre önce öne gelir (Ç3g).** Yatışa bağlı işin yuvası beklenen yatışta biter; "Şimdi"ye yuvasının başından en çok 15 dakika önce gelir (`BED_LEAD`). Ondan önce akşam ekranı onu önermez; `evening` durumu onu `later` olarak taşır (iş ve yuvasının başı) ve kart "Sırada: Akşam kapanışı · 22:20" der, "Şimdi başla" ile erken başlatılır. Akşamdaki `after_finish` işleri olağan sırayla önerilir.
 3. **Gün kısalınca.** Geç uyanılan günde pencere kısalır; sığmayanlar olağan kurallarla "vakit kalırsa"ya ya da sonraki günlere gider. Uyarı metinleri bunu kusur gibi anlatmaz.
 4. **Hafta.** Haftanın kapasitesi her günü kendi başından sayar: bugün günün başından, yarın beklenen uyanıştan (uyku planı, yatış kaydı ve kullanıcının değerleriyle), sonraki günler en geç uyanıştan (yüke göre erkene çekme sonraki günler için hesaplanmaz), her biri uyanışa bağlı işlerin ayak iziyle. Haftanın taahhüdü yalnızca mevcut tetikleyiciyle yeniden kurulur: kalan günlerin kapasitesi toplamda 30 dakikadan çok düşerse. Kazanılan süre günün doldurmasına açılır, taahhüt yeniden kurulmaz.
+
+**Çerçeve kapalıyken çapalı iş (Ç3g).** Çerçeve kapalıyken de çapa işin saatini taşır; çapalı iş yuvalara dağıtılmaz. Uyanış yerine ayarlardaki günün başı (`day_start_default`; günün ilk dokunuşu değil), yatış yerine bitiş çizgisi kullanılır: uyanışa bağlı işler günün başından art arda dizilir ve çerçeve açıkkenki gibi bittikten 60 dakika sonra o gün düşer; yatışa bağlı işler bitiş çizgisinde bitecek biçimde dizilir ve yuvalarından 15 dakika önce öne gelir. Çalışma penceresi uyanış dizisi önerildiği sürece onun bitişinde başlar, yatış dizisinin başında biter. Gerekçe: 14 Kas 2026'da çerçeve kapalıyken öğleden sonra etkinleştirilen Rutin'in sabahı ve akşamı sıradan ritim gibi öne geldi (`docs/ILERLEME.md`, Ç3g).
 
 **Uyku planı (`sleepPlan`).** Her gece için bir yatış, ertesi sabah için bir uyanış seçer; amaç aralıkların içinde kalarak uyku hedefini tutturmaktır. Saf fonksiyondur; yapay zekaya sorulmaz. Uyku borcu tutulmaz: her gece kendi hedefiyle planlanır. Uygulama uyandırmaz; planlanan uyanış bilgidir.
 
@@ -359,6 +362,7 @@ Günün çerçevesi (Ç3c):
 - Günün başı: kayıtlı uyanış, yoksa `expected_wake`, yoksa uyku planı; uyanışa bağlı işlerin ayak izinin eklenmesi; geç uyanışta pencerenin kısalması
 - Uyku planı: ilk yükümlülüğe göre en geç uyanış (yol ve ayak izi dahil); yükümlülük yokken aralığın sonu; yük sığmayınca 15'er dakika erkene çekme; yük hafifken çekmeme; uykunun yüke feda edilmemesi (yatış aralığının başı sınırı); sabit yükümlülüğün uykuyu kısaltması ve `short`; gerçek yatışın ertesi günün beklenen uyanışını değiştirmesi (geç yatış geriye, erken yatış öne, sınırlar); kullanıcının uyanış ve yatış değerleri
 - Çapalı işler: uyanıştan art arda, yatışta bitecek biçimde geriye, `order` ve skor sırası, yuvalara dağıtılmama, günün 3 işine girmeme
+- Ç3g: çerçeve kapalıyken uyanışa bağlı işin günün başında dizilmesi ve saati geçince düşmesi (öğleden sonra önerilmemesi); yatışa bağlı işin bitiş çizgisinden önce dizilmesi ve yalnızca yuvasından 15 dakika önce önerilmesi; çerçeve açıkken akşamda yatışa bağlı işin `later` olarak beklemesi, vakti gelince `next` olması; akşamın `after_finish` işinin önce gelmesi
 - Akşam: `after_finish` taşımayan işin bitiş çizgisinden sonraya konmaması; taşıyanın gündüz yer yoksa akşama konması, penceresine uyması, kapasiteye sayılmaması
 - `now`: `morning`, `evening`, `night` koşulları ve sıraları; kapatılmış günün akşamda kalması
 - Hafta: yarının beklenen uyanışı değişince günlük kapasitenin değişmesi ve 30 dakikadan çok düşüşün yeniden taahhüdü tetiklemesi

@@ -129,9 +129,13 @@ describe("the device's voice (Ç3g)", () => {
     { voiceURI: "en-1", lang: "en-US" },
     { voiceURI: "tr-1", lang: "tr-TR" },
     { voiceURI: "tr-2", lang: "tr" },
+    { voiceURI: "tr-3", lang: "tr_TR" },
   ];
   it("takes the chosen Turkish voice, else the first Turkish one", () => {
     expect(turkishVoice(voices, "tr-2")?.voiceURI).toBe("tr-2");
+    // Android writes the language with an underscore.
+    expect(turkishVoice(voices, "tr-3")?.voiceURI).toBe("tr-3");
+    expect(turkishVoice([{ voiceURI: "x", lang: "trk" }], null)).toBeNull();
     expect(turkishVoice(voices, null)?.voiceURI).toBe("tr-1");
     // A chosen voice that is not Turkish is not used.
     expect(turkishVoice(voices, "en-1")?.voiceURI).toBe("tr-1");

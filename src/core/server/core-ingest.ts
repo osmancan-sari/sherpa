@@ -1,11 +1,9 @@
 import "server-only";
 import { z } from "zod";
 import { CORE_INGEST } from "@/core/contract/ingest";
-import { recordBed, recordWake } from "@/core/data/frame";
-import { getSettings } from "@/core/data/inbox";
+import { planningDayOf, recordBed, recordWake } from "@/core/data/frame";
 import { tellDayClosed, tellDayStarted } from "@/core/data/session-events";
 import { CORE_EVENTS, emitEvent } from "@/core/events/bus";
-import { dayStartClock, plannerSettings, planningDay } from "@/core/planner";
 import { type ServerDeps, serverTold } from "./context";
 import { keepWeekOnServer } from "./plan";
 
@@ -41,8 +39,7 @@ function momentOf(at: string | undefined, now: Date): Date {
 
 /** The day a moment belongs to, as the Today screen sees it then (a bedtime at 01:00: the night before). */
 async function dayOf(deps: ServerDeps, instant: Date): Promise<string> {
-  const settings = plannerSettings(await getSettings(deps.db));
-  return planningDay(instant, dayStartClock(settings));
+  return planningDayOf(deps.db, instant);
 }
 
 const DEVICE_CONTEXTS = ["desk", "home", "campus", "office", "out", "commute"] as const;

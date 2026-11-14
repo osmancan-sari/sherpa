@@ -76,6 +76,36 @@ export async function recordBed(
 }
 
 /**
+ * Ç3g: a day's waking set right afterwards (Ayarlar → Günün çerçevesi, "Uyanış ve yatış
+ * kayıtları"): a new moment, as the user's own ("screen"), or none at all.
+ */
+export async function correctWake(db: Db, date: string, at: Date | null): Promise<DayRow> {
+  if (at) return recordWake(db, date, at, "screen");
+  return unwrap(
+    await db
+      .from("days")
+      .upsert({ date, woke_at: null, woke_estimated: false, woke_source: null }, onDay)
+      .select()
+      .single(),
+  );
+}
+
+/**
+ * Ç3g: a night's bedtime set right afterwards, or taken away, after the scene's 10 minutes too.
+ * The session the scene's "Yatıyorum" closed stays closed: only the record changes.
+ */
+export async function correctBed(db: Db, date: string, at: Date | null): Promise<DayRow> {
+  if (at) return recordBed(db, date, at, null);
+  return unwrap(
+    await db
+      .from("days")
+      .upsert({ date, bed_at: null, bed_session_id: null }, onDay)
+      .select()
+      .single(),
+  );
+}
+
+/**
  * Rutin 1: takes back the bedtime a scene's "Yatıyorum" wrote, within 10 minutes: the bedtime is
  * gone and the session runs again. "expired" and "changed" (written another way since, or
  * another session started) change nothing. Two screens at once get one result.
@@ -152,6 +182,7 @@ export async function listDayFrames(db: Db, sinceDay: string): Promise<DayFrameR
  * the night ends is the day before's): for modules (`ctx.day`) and the session events (`day`).
  */
 export async function planningDayOf(db: Db, at: Date): Promise<string> {
-  const { data } = await db.from("settings").select("*").maybeSingle();
+  const { data, error } = await db.from("settings").select("*").maybeSingle();
+  if (error) throw new Error(error.message);
   return planningDay(at, dayStartClock(plannerSettings(data ?? null)));
 }

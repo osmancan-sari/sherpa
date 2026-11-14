@@ -1,4 +1,4 @@
-import type { NowState, PlanRows } from "@/core/planner";
+import type { NowState, PlanInput, PlanRows } from "@/core/planner";
 
 // Rutin 1 (docs/06-modul-sozlesmesi.md, "Diziler" rule 6): after a scene's "Yatıyorum" its
 // bedtime can be taken back for a while, and meanwhile the night screen is that scene's. Pure: the
@@ -34,4 +34,21 @@ export function sceneBedtime(
     at: new Date(day.bed_at),
     until,
   };
+}
+
+/** Ç3g: "Yatıyorum" this long before tonight's bedtime range starts asks once (docs/05). */
+export const BED_ASK_MINUTES = 120;
+
+/**
+ * Ç3g: whether a "Yatıyorum" at `at` asks first: when it is more than two hours before tonight's
+ * bedtime range starts (without the frame: the finish line). Null when one tap is enough; else
+ * the range's start and whether it is the frame's.
+ */
+export function bedAsks(
+  input: Pick<PlanInput, "frame" | "finishLine">,
+  at: Date,
+): { start: Date; framed: boolean } | null {
+  const start = input.frame?.bedStart ?? input.finishLine;
+  if (at.getTime() >= start.getTime() - BED_ASK_MINUTES * 60_000) return null;
+  return { start, framed: Boolean(input.frame?.bedStart) };
 }

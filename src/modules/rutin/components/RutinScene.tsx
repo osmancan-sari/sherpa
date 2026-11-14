@@ -377,8 +377,16 @@ function Scene(props: SceneProps) {
 
   const finish = (records: Rec[], then: "finish" | "goodbye" | "bed") =>
     apply(at(daySteps.length, 0, true), records, async () => {
-      if (then === "bed") await controls.bed();
-      else if (then === "goodbye") {
+      if (then === "bed") {
+        // Ç3g: asked first when it is far before bedtime; "Vazgeç" puts the last step back.
+        if (!(await controls.bed()) && view) {
+          await updateRun(ctx, view.id, {
+            step_position: Math.max(0, daySteps.length - 1),
+            part_position: 0,
+          });
+          await refreshAll();
+        }
+      } else if (then === "goodbye") {
         setScreen("goodbye");
         await new Promise((resolve) => setTimeout(resolve, reduceMotion ? 900 : 1600));
         await controls.finish();

@@ -14,6 +14,7 @@ import { useColors } from "@/core/app/facets";
 import { type KnownModule, useAiStatus, useModules, useTodayPlan } from "@/core/app/hooks";
 import { useCloseDay } from "@/core/app/plan-actions";
 import { useRecordBed } from "@/core/app/frame-actions";
+import { useAskBed } from "../today/BedAsk";
 import { useQuery } from "@tanstack/react-query";
 import { postAi } from "@/core/ai/client";
 import { buildPlan, type Candidate, type PlanAdvice, tomorrowInput } from "@/core/planner";
@@ -61,6 +62,7 @@ function ClosingBody({ inScene }: { inScene?: { onDone: () => void } } = {}) {
   const addEntry = useAddInboxEntry();
   const close = useCloseDay();
   const recordBed = useRecordBed();
+  const askBed = useAskBed();
   const [step, setStep] = useState(0);
   const [picked, setPicked] = useState<string[] | null>(null);
   const [removed, setRemoved] = useState<string[]>([]);
@@ -340,7 +342,11 @@ function ClosingBody({ inScene }: { inScene?: { onDone: () => void } } = {}) {
                 variant="outline"
                 className="h-11 md:h-9"
                 disabled={close.isPending}
-                onClick={() => confirm(true)}
+                onClick={() =>
+                  void askBed(new Date()).then((yes) => {
+                    if (yes) confirm(true);
+                  })
+                }
               >
                 Onayla ve yat
               </Button>

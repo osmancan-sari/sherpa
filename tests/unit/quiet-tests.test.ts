@@ -8,7 +8,9 @@ import { describe, expect, it } from "vitest";
 // (On 14 Nov 2026 a development run spoke aloud with an English voice.)
 
 const dir = path.join("tests", "e2e");
-const files = readdirSync(dir).filter((name) => name.endsWith(".ts"));
+const files = (readdirSync(dir, { recursive: true }) as string[]).filter((name) =>
+  name.endsWith(".ts"),
+);
 const source = (name: string) => readFileSync(path.join(dir, name), "utf8");
 
 describe("end-to-end tests are quiet", () => {

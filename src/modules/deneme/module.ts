@@ -63,7 +63,8 @@ export const deneme: ModuleDefinition = {
   async chip(ctx) {
     const items = await listItems(ctx);
     const open = items.filter((item) => !item.done);
-    const soon = shiftDay(dayKey(ctx.now()), 1);
+    // Ç3g: the core's day (`ctx.day`): past midnight, until the night ends, still the evening's.
+    const soon = shiftDay(await ctx.day(), 1);
     const due = open.filter((item) => item.due_on !== null && item.due_on <= soon);
     if (open.length === 0) return { text: "açık kayıt yok", health: "ok" };
     if (due.length > 0) return { text: `${due.length} kayıt yarına kadar`, health: "attention" };

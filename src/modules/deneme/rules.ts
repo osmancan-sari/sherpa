@@ -27,7 +27,10 @@ type Settings = {
   archived_on?: string;
   /** Ç3c: days the module heard begin, and the last of its sessions that ended. */
   days_started?: number;
-  last_session?: { result: string; minutes: number };
+  /** Ç3g: with the core's planning day of its start (`day` in the session events). */
+  last_session?: { result: string; minutes: number; day?: string | null };
+  /** Ç3g: where the last waking it heard came from (`core.day_started`'s `source`). */
+  last_wake_source?: string | null;
   last_bed_day?: string | null;
   /** Ç3d: written every morning by the scheduled job (jobs.ts). */
   daily_digest?: { date: string; open: number };
@@ -201,16 +204,25 @@ export const listeners: Record<string, (event: AppEvent, ctx: ModuleContext) => 
   },
   // Ç3c: how the module's last session ended (done, stopped, deferred, stuck, unanswered).
   "core.session_ended": async (event, ctx) => {
-    const payload = event.payload as { result?: string; minutes?: number };
+    const payload = event.payload as { result?: string; minutes?: number; day?: string };
     await ctx.saveSettings({
       ...settingsOf(ctx),
-      last_session: { result: payload.result ?? "", minutes: payload.minutes ?? 0 },
+      last_session: {
+        result: payload.result ?? "",
+        minutes: payload.minutes ?? 0,
+        day: payload.day ?? null,
+      },
     });
   },
   // Ç3c: every module hears the day begin; this one counts them.
-  "core.day_started": async (_event, ctx) => {
+  "core.day_started": async (event, ctx) => {
     const settings = settingsOf(ctx);
-    await ctx.saveSettings({ ...settings, days_started: (settings.days_started ?? 0) + 1 });
+    const source = (event.payload as { source?: string }).source ?? null;
+    await ctx.saveSettings({
+      ...settings,
+      days_started: (settings.days_started ?? 0) + 1,
+      last_wake_source: source,
+    });
   },
   // Ç3c: the night's bedtime; the module keeps the last one it heard.
   "core.day_closed": async (event, ctx) => {

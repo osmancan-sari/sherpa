@@ -9,7 +9,25 @@ import type { SpeakOptions, VoiceOption, VoiceProvider } from "./types";
 // at volume 0 to unlock iOS; Chrome's network voices ignore the volume, and a short sound came
 // out now and then, even with the voice switched off.)
 
-const TURKISH = /^tr\b|^tr-/i;
+const TURKISH = /^tr(?:$|[-_])/i;
+
+/** How long an empty voice list is waited on (Chrome and Android fill it a moment later). */
+const VOICES_WAIT_MS = 1500;
+
+/** The device's voices; an empty list is waited on once, for `voiceschanged` or a while. */
+function voicesOf(speech: SpeechSynthesis): Promise<SpeechSynthesisVoice[]> {
+  const now = speech.getVoices();
+  if (now.length > 0) return Promise.resolve(now);
+  return new Promise((resolve) => {
+    const done = () => {
+      clearTimeout(timer);
+      speech.removeEventListener?.("voiceschanged", done);
+      resolve(speech.getVoices());
+    };
+    const timer = setTimeout(done, VOICES_WAIT_MS);
+    speech.addEventListener?.("voiceschanged", done);
+  });
+}
 
 /**
  * The voice an utterance is given: the chosen one if it speaks Turkish, else the device's first
@@ -43,32 +61,38 @@ export const deviceVoice: VoiceProvider = {
   speak(text: string, options: SpeakOptions): Promise<void> {
     const speech = synth();
     if (!speech) return Promise.resolve();
-    return new Promise((resolve) => {
-      const voice = turkishVoice(speech.getVoices(), options.voice);
-      // No Turkish voice on this device: silent (Settings says so).
-      if (!voice) {
-        resolve();
-        return;
-      }
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = voice.lang;
-      try {
-        utterance.voice = voice;
-      } catch {
-        // Not the engine's own voice object (a stand-in): the language picks it.
-      }
-      utterance.rate = options.rate;
-      // Ended, cut off or refused ("not-allowed" without a tap): the queue goes on either way.
-      // Some engines never say they are done: the queue goes on after a generous while anyway.
-      const guard = setTimeout(resolve, (5_000 + text.length * 150) / Math.max(0.5, options.rate));
-      const done = () => {
-        clearTimeout(guard);
-        resolve();
-      };
-      utterance.onend = done;
-      utterance.onerror = done;
-      speech.speak(utterance);
-    });
+    return voicesOf(speech).then(
+      (all) =>
+        new Promise<void>((resolve) => {
+          const voice = turkishVoice(all, options.voice);
+          // No Turkish voice on this device: silent (Settings says so).
+          if (!voice) {
+            resolve();
+            return;
+          }
+          const utterance = new SpeechSynthesisUtterance(text);
+          utterance.lang = voice.lang;
+          try {
+            utterance.voice = voice;
+          } catch {
+            // Not the engine's own voice object (a stand-in): the language picks it.
+          }
+          utterance.rate = options.rate;
+          // Ended, cut off or refused ("not-allowed" without a tap): the queue goes on either way.
+          // Some engines never say they are done: the queue goes on after a generous while anyway.
+          const guard = setTimeout(
+            resolve,
+            (5_000 + text.length * 150) / Math.max(0.5, options.rate),
+          );
+          const done = () => {
+            clearTimeout(guard);
+            resolve();
+          };
+          utterance.onend = done;
+          utterance.onerror = done;
+          speech.speak(utterance);
+        }),
+    );
   },
 
   cancel() {

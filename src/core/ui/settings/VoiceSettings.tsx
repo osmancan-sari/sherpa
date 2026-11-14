@@ -22,11 +22,17 @@ function useDeviceVoices(): VoiceOption[] | null {
   const [voices, setVoices] = useState<VoiceOption[] | null>(null);
   useEffect(() => {
     const read = () => setVoices(deviceVoice.voices());
-    const timer = setTimeout(read, 0);
+    // Ç3g: an empty list may fill in a moment: "no Turkish voice" only once it had the time.
+    const first = setTimeout(() => {
+      const now = deviceVoice.voices();
+      if (now.length > 0) setVoices(now);
+    }, 0);
+    const timer = setTimeout(read, 1500);
     // The device's list may fill in a moment after the page opens.
     const synth = "speechSynthesis" in window ? window.speechSynthesis : null;
     synth?.addEventListener?.("voiceschanged", read);
     return () => {
+      clearTimeout(first);
       clearTimeout(timer);
       synth?.removeEventListener?.("voiceschanged", read);
     };

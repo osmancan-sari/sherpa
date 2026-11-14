@@ -53,7 +53,7 @@ test("the module page lists today's chains: its own work and another module's, w
   await expect(items.nth(0)).toHaveAttribute("data-mine", "true");
   await expect(items.nth(0)).toContainText("Diş ve su");
   await expect(items.nth(1)).toHaveAttribute("data-mine", "false");
-  await expect(items.nth(1)).toContainText("Şablon kopyası · 10 dk · next");
+  await expect(items.nth(1)).toContainText("Şablon kopyası · 10 dk · sırada");
   await expect(items.nth(1).getByRole("link", { name: "Boyun hareketleri" })).toHaveAttribute(
     "href",
     "/m/sablon",

@@ -6,6 +6,7 @@ import { PageShell } from "@/core/ui/PageShell";
 import { AiSettings } from "@/core/ui/settings/AiSettings";
 import { ConnectionsSettings } from "@/core/ui/settings/ConnectionsSettings";
 import { DayFrameSettings } from "@/core/ui/settings/DayFrameSettings";
+import { DayRecords } from "@/core/ui/settings/DayRecords";
 import { VoiceSettings } from "@/core/ui/settings/VoiceSettings";
 import { getCurrentUser } from "@/lib/auth/session";
 import { signOut } from "./actions";
@@ -22,6 +23,10 @@ export default function SettingsPage() {
 
       <Section title="Günün çerçevesi">
         <DayFrameSettings />
+      </Section>
+
+      <Section title="Uyanış ve yatış kayıtları" id="kayitlar">
+        <DayRecords />
       </Section>
 
       <Section title="Sesli anlatım (bu cihaz)">
@@ -94,9 +99,12 @@ function SettingsLink({ href, children }: { href: Route; children: ReactNode }) 
   );
 }
 
-function Section({ title, children }: { title: string; children: ReactNode }) {
+function Section({ title, id, children }: { title: string; id?: string; children: ReactNode }) {
   return (
-    <section className="border-border flex flex-col gap-3 rounded-xl border p-5">
+    <section
+      id={id}
+      className="border-border flex scroll-mt-6 flex-col gap-3 rounded-xl border p-5"
+    >
       <h2 className="text-sm font-medium">{title}</h2>
       {children}
     </section>

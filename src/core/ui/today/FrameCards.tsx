@@ -10,6 +10,7 @@ import type { KnownModule } from "@/core/app/hooks";
 import type { Assignment, DayFrame, SleepPlan, TodayBriefLine } from "./frame-text";
 import { sleepLine, shortLine } from "./frame-text";
 import { formatTime, shiftDay } from "@/lib/date";
+import { useAskBed } from "./BedAsk";
 import { sessionTargetOf } from "./NowCard";
 
 // The day's frame on the card (docs/05-arayuz.md, "Günün çerçevesi"; Ç3c): "Günaydın" with
@@ -144,6 +145,7 @@ export function EveningCard({
   now,
   frame,
   next,
+  later = null,
   closed,
   modules,
   chainLine = null,
@@ -152,12 +154,15 @@ export function EveningCard({
   now: Date;
   frame: DayFrame;
   next: Assignment | null;
+  /** Ç3g: bed-bound work not offered yet, and when it comes. */
+  later?: { assignment: Assignment; at: Date } | null;
   closed: boolean;
   modules: Map<string, KnownModule>;
   /** Ç3f: the next work's place in the bed chain. */
   chainLine?: string | null;
 }) {
   const bed = useRecordBed();
+  const askBed = useAskBed();
   const expected = useSetExpected();
   const start = useStartSession();
   const [change, setChange] = useState<"bed" | "wake" | null>(null);
@@ -187,6 +192,23 @@ export function EveningCard({
         <p data-testid="sleep-line" className="tabular-nums md:text-lg">
           {sleepLine(frame)}
         </p>
+        {later ? (
+          <p
+            data-testid="evening-later"
+            className="text-muted-foreground flex flex-wrap items-center gap-x-2 tabular-nums md:text-lg"
+          >
+            <span>
+              Sırada: {later.assignment.candidate.title} · {formatTime(later.at)}
+            </span>
+            <Button
+              variant="ghost"
+              className={SMALL}
+              onClick={() => start.mutate(sessionTargetOf(later.assignment.candidate))}
+            >
+              Şimdi başla
+            </Button>
+          </p>
+        ) : null}
         {short ? (
           <p role="note" className="text-muted-foreground md:text-lg">
             {short}
@@ -203,7 +225,11 @@ export function EveningCard({
           <Button
             className={next ? SECOND : BIG}
             variant={next ? "outline" : "default"}
-            onClick={() => bed.mutate({ date, at: now })}
+            onClick={() =>
+              void askBed(now).then((yes) => {
+                if (yes) bed.mutate({ date, at: now });
+              })
+            }
           >
             Yatıyorum
           </Button>

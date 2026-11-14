@@ -123,6 +123,7 @@ function CardFor({
         now={now}
         frame={frame}
         next={state.next}
+        later={state.later ?? null}
         closed={state.closed}
         modules={modules}
         chainLine={chainLine ?? null}
@@ -207,6 +208,13 @@ function CardFor({
               ? `Yarın ilk iş: ${tomorrowFirst.title}`
               : "Yarın için planlanan bir şey yok."}
           </p>
+          {/* Ç3g: a bedtime written by mistake is set right there. */}
+          <Link
+            href="/ayarlar#kayitlar"
+            className="text-muted-foreground w-fit text-sm underline underline-offset-4"
+          >
+            Yatışı düzelt
+          </Link>
         </div>
       </Frame>
     );

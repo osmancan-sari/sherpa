@@ -1,4 +1,4 @@
-import { rows, waitFor } from "./data";
+import { insert, rows, update, waitFor } from "./data";
 import { expect, test } from "./fixtures";
 import { activateDeneme, addRecord, startFromModule } from "./scene-helpers";
 
@@ -77,4 +77,70 @@ test("a focus scene that takes the keys keeps Space as Bitti, its own now", asyn
     (list) => list.length === 1 && list[0].ended_at !== null,
   );
   await expect(page.getByTestId("scene")).toBeHidden();
+});
+
+test("a scene reads the core's day: the session's planning day past midnight, where the waking came from, tomorrow's waking", async ({
+  page,
+}) => {
+  const day = (offset: number) =>
+    new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Istanbul" }).format(
+      new Date(Date.now() + offset * 86_400_000),
+    );
+  const yesterday = day(-1);
+  const before = day(-2);
+  const at = (date: string, time: string) => new Date(`${date}T${time}:00+03:00`);
+  /** The day's row as given (the screens may have written one already). */
+  const putDay = async (date: string, fields: Record<string, unknown>) => {
+    const known = (await rows("days")).find((row) => row.date === date);
+    if (known) await update("days", known.id as string, fields);
+    else await insert("days", { date, ...fields });
+  };
+  await activateDeneme(page);
+  const [settings] = await rows("settings");
+  await update("settings", settings.id as string, {
+    day_frame: { wake: ["06:00", "09:00"], bed: ["22:00", "01:00"], sleep_minutes: 480 },
+  });
+  await putDay(before, { woke_at: at(before, "07:00").toISOString(), woke_source: "outside" });
+  const [mod] = await rows("modules");
+  const [task] = await insert<{ id: string }>("tasks", {
+    module_id: mod.id,
+    title: "Gece notu",
+    est_minutes: 20,
+    facet: "aksam",
+  });
+  // Started at 00:20: the evening's day, the night before.
+  await insert("sessions", {
+    task_id: task.id,
+    module_id: mod.id,
+    started_at: at(yesterday, "00:20").toISOString(),
+  });
+  await page.clock.setFixedTime(at(yesterday, "00:30"));
+  await page.goto("/");
+  await expect(page.getByTestId("deneme-gece")).toBeVisible();
+  await expect(page.getByTestId("scene-day")).toContainText(`Gün ${before}`);
+  await expect(page.getByTestId("scene-day")).toContainText(/yarın uyanış \d\d:\d\d · uyku/);
+
+  // The morning's scene says the waking came from outside.
+  await update("sessions", (await rows("sessions"))[0].id as string, {
+    ended_at: at(yesterday, "00:40").toISOString(),
+  });
+  await putDay(yesterday, {
+    woke_at: at(yesterday, "07:00").toISOString(),
+    woke_source: "outside",
+  });
+  const [morning] = await insert<{ id: string }>("tasks", {
+    module_id: mod.id,
+    title: "Sabah notu",
+    est_minutes: 20,
+    facet: "sabah",
+  });
+  await insert("sessions", {
+    task_id: morning.id,
+    module_id: mod.id,
+    started_at: at(yesterday, "07:10").toISOString(),
+  });
+  await page.clock.setFixedTime(at(yesterday, "07:15"));
+  await page.goto("/");
+  await expect(page.getByTestId("deneme-gunes")).toBeVisible();
+  await expect(page.getByTestId("scene-day")).toContainText(`Gün ${yesterday} · uyanış dışarıdan`);
 });

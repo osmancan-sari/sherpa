@@ -54,7 +54,8 @@ function FocusScene({ subject, session, controls, say, today, device, keys }: Sc
   const [said, setSaid] = useState<string | null>(null);
   // Ç3g: Space is still "Bitti" here, now the scene's own.
   useSceneKeys(keys, (key) => {
-    if (key === "space") void controls.finish();
+    // A session still being written is not ended (the core's own Space waits for it too).
+    if (key === "space" && session.id !== "pending") void controls.finish();
   });
   if (title.includes("[hata]")) throw new Error("deneme: the scene fails on purpose");
   const tell = () => {

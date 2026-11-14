@@ -311,10 +311,21 @@ function matches(id: string, candidate: Candidate): boolean {
 
 export function buildPlan(input: PlanInput): Plan {
   const { settings } = input;
-  const { candidates, closed, anchored } = candidatesOf(input);
-  const windowStart = input.now > input.dayStart ? input.now : input.dayStart;
+  const found = candidatesOf(input);
+  const { closed } = found;
+  // Ç3g: without the frame an anchor still keeps its hour (docs/04-planlayici.md, "Çerçeve
+  // kapalıyken çapalı iş"): wake-bound work at the day's set start, bed-bound work before the
+  // finish line; it is never spread over the day's slots.
+  const unframed = input.frame ? [] : found.candidates.filter((row) => row.timing?.anchor);
+  const candidates = input.frame
+    ? found.candidates
+    : found.candidates.filter((row) => !row.timing?.anchor);
+  const anchored = input.frame ? found.anchored : unframed;
+  const loose = input.frame ? null : unframedLines(input, unframed);
+  let windowStart = input.now > input.dayStart ? input.now : input.dayStart;
+  if (loose?.workFrom && loose.workFrom > windowStart) windowStart = loose.workFrom;
   const slots = buildSlots(
-    { start: windowStart, end: input.finishLine },
+    { start: windowStart, end: loose?.workEnd ?? input.finishLine },
     blocksOfDay(input.blocks, input.date),
     settings,
   );
@@ -456,7 +467,11 @@ export function buildPlan(input: PlanInput): Plan {
     ? [...framed.wake, ...slots, ...framed.evening, ...framed.bed].sort(
         (a, b) => a.start.getTime() - b.start.getTime(),
       )
-    : slots;
+    : loose
+      ? [...loose.wake, ...slots, ...loose.bed].sort(
+          (a, b) => a.start.getTime() - b.start.getTime(),
+        )
+      : slots;
 
   return {
     date: input.date,
@@ -483,6 +498,64 @@ export function buildPlan(input: PlanInput): Plan {
 /** Minutes past its end the morning's line is still offered (Ç3c). */
 export const WAKE_GRACE = 60;
 
+/**
+ * Ç3g: bed-bound work comes to "Şimdi" this many minutes before its place at the earliest (its
+ * own length is in its place already): not hours before the bedtime. Until then the evening's
+ * card says when; the work can be started from the list.
+ */
+export const BED_LEAD = 15;
+
+/** An anchored work's slot at `start`. */
+function lineSlot(input: PlanInput, candidate: Candidate, start: number, part: "wake" | "bed") {
+  const slot: Slot = {
+    start: new Date(start),
+    end: new Date(start + candidate.minutes * MINUTE),
+    minutes: candidate.minutes,
+    kind: kindOf(candidate.minutes, input.settings) ?? "light",
+    assignment: { candidate, minutes: candidate.minutes, reasons: engineReasons(candidate, input) },
+    part,
+  };
+  return slot;
+}
+
+/** Back to back from `from`; kept while the line is not over by more than `grace` minutes. */
+function lineOf(
+  input: PlanInput,
+  list: Candidate[],
+  from: number,
+  part: "wake" | "bed",
+  grace = 0,
+): Slot[] {
+  const now = input.now.getTime();
+  const slots: Slot[] = [];
+  let cursor = from;
+  for (const candidate of list) {
+    const slot = lineSlot(input, candidate, cursor, part);
+    cursor = slot.end.getTime();
+    slots.push(slot);
+  }
+  return cursor + grace * MINUTE > now
+    ? slots.filter((slot) => slot.end.getTime() > now || grace > 0)
+    : [];
+}
+
+/**
+ * Ç3g: anchored work on a day without the frame. The waking is the day's set start (the
+ * settings', not the first touch: a module switched on in the afternoon does not bring the
+ * morning back), the bedtime is the finish line. The working window starts after the morning's
+ * line while it is offered and ends before the bed-bound work.
+ */
+function unframedLines(input: PlanInput, anchored: Candidate[]) {
+  const wakeAt = istanbulInstant(input.date, input.settings.dayStart).getTime();
+  const wake = lineOf(input, anchoredIn(anchored, "wake"), wakeAt, "wake", WAKE_GRACE);
+  const bedWork = anchoredIn(anchored, "bed");
+  const bedMinutes = bedWork.reduce((sum, candidate) => sum + candidate.minutes, 0);
+  const bedFrom = input.finishLine.getTime() - bedMinutes * MINUTE;
+  const bed = lineOf(input, bedWork, bedFrom, "bed");
+  const wakeEnd = wake.length > 0 ? wake[wake.length - 1].end : null;
+  return { wake, bed, workFrom: wakeEnd, workEnd: new Date(bedFrom) };
+}
+
 function frameParts(
   input: PlanInput,
   anchored: Candidate[],
@@ -491,27 +564,8 @@ function frameParts(
 ) {
   const frame = input.frame!;
   const now = input.now.getTime();
-  const row = (candidate: Candidate, start: number, part: "wake" | "bed"): Slot => ({
-    start: new Date(start),
-    end: new Date(start + candidate.minutes * MINUTE),
-    minutes: candidate.minutes,
-    kind: kindOf(candidate.minutes, input.settings) ?? "light",
-    assignment: { candidate, minutes: candidate.minutes, reasons: engineReasons(candidate, input) },
-    part,
-  });
-  /** Back to back from `from`; kept while the line is not over by more than `grace` minutes. */
-  const line = (list: Candidate[], from: number, part: "wake" | "bed", grace = 0) => {
-    const slots: Slot[] = [];
-    let cursor = from;
-    for (const candidate of list) {
-      const slot = row(candidate, cursor, part);
-      cursor = slot.end.getTime();
-      slots.push(slot);
-    }
-    return cursor + grace * MINUTE > now
-      ? slots.filter((slot) => slot.end.getTime() > now || grace > 0)
-      : [];
-  };
+  const line = (list: Candidate[], from: number, part: "wake" | "bed", grace = 0) =>
+    lineOf(input, list, from, part, grace);
   // A morning said late ("Biraz önce: 30 dk") still gets its routine: the line stays offered
   // until an hour after it would have ended.
   const wake = line(anchoredIn(anchored, "wake"), frame.wake.getTime(), "wake", WAKE_GRACE);
@@ -606,12 +660,21 @@ function nowOf(
   const frame = input.frame;
   const parted = (part: "wake" | "evening" | "bed") => (slot: Slot) =>
     slot.part === part && slot.assignment !== null && slot.end > input.now;
+  // Ç3g: bed-bound work is offered from shortly before its place on (BED_LEAD).
+  const bedDue = (slot: Slot) =>
+    parted("bed")(slot) && input.now.getTime() >= slot.start.getTime() - BED_LEAD * MINUTE;
   if (frame) {
     // Ç3c: night comes with bed, or once the bedtime range is over; the evening before it.
     if (frame.bedAt || input.now >= frame.bedEnd) return { kind: "night" };
     if (input.closed || input.now >= input.finishLine) {
-      const next = slots.find((slot) => parted("evening")(slot) || parted("bed")(slot))?.assignment;
-      return { kind: "evening", next: next ?? null, closed: Boolean(input.closed) };
+      const next = slots.find((slot) => parted("evening")(slot) || bedDue(slot))?.assignment;
+      const waiting = next ? undefined : slots.find((slot) => parted("bed")(slot));
+      return {
+        kind: "evening",
+        next: next ?? null,
+        closed: Boolean(input.closed),
+        later: waiting?.assignment ? { assignment: waiting.assignment, at: waiting.start } : null,
+      };
     }
     if (!frame.woke && input.now < frame.morningUntil) {
       return { kind: "morning", first: slots.find(parted("wake"))?.assignment ?? null };
@@ -655,7 +718,7 @@ function nowOf(
   // The next work in time order. Work bound to its time (windows, travel) is offered when its
   // footprint starts, the time to set off; before that the card says when (`at`).
   const next = slots.find(
-    (slot) => slot.assignment && (slot.part === undefined || slot.part === "wake"),
+    (slot) => slot.assignment && (slot.part === undefined || slot.part === "wake" || bedDue(slot)),
   );
   if (next?.assignment) {
     const footStart = next.start.getTime() - (next.assignment.travelBefore ?? 0) * MINUTE;

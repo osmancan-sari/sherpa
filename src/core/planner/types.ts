@@ -135,6 +135,8 @@ export type DayFrame = {
   /** Recorded bedtime, else the user's value for the night, else the sleep plan's. */
   bed: Date;
   bedAt: Date | null;
+  /** Ç3g: the start of tonight's bedtime range ("Yatıyorum" long before it asks first). */
+  bedStart?: Date;
   /** The end of tonight's bedtime range: the night state comes then at the latest. */
   bedEnd: Date;
   /** The morning state lasts until then (an hour after the waking range). */
@@ -229,7 +231,16 @@ export type NowState =
   /** Ç3c: the day has begun and nobody said "Uyandım"; `first` is the first wake-bound work. */
   | { kind: "morning"; first: Assignment | null }
   /** Ç3c: past the finish line (or closed), before bed; `next` is the evening's next work. */
-  | { kind: "evening"; next: Assignment | null; closed: boolean }
+  | {
+      kind: "evening";
+      next: Assignment | null;
+      closed: boolean;
+      /**
+       * Ç3g: bed-bound work not offered yet (more than BED_LEAD minutes before its place) and when
+       * it is planned; null when there is none, or when it is `next`.
+       */
+      later?: { assignment: Assignment; at: Date } | null;
+    }
   | { kind: "return"; top3: Candidate[] }
   | { kind: "empty" };
 

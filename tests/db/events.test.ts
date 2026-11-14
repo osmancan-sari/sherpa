@@ -297,5 +297,9 @@ describe("the deneme module hears the core (Ç3c)", () => {
     expect(settings.last_bed_day).toBe("2026-11-18");
     expect(settings.days_started).toBe(1);
     expect(settings.last_session?.result).toBe("stuck");
+    // Ç3g: the core's day of the session and where the waking came from.
+    const more = settings as { last_session?: { day?: string }; last_wake_source?: string };
+    expect(more.last_session?.day).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    expect(more.last_wake_source).toBe("screen");
   });
 });

@@ -2,6 +2,7 @@ import { taskFacet } from "@/core/contract/facets";
 import type { ModuleRegistry, ProposalResult } from "@/core/contract/types";
 import { CORE_EVENTS, emitEvent } from "@/core/events/bus";
 import type { Db, Session, WakeSource } from "@/core/types";
+import { dayStartClock, plannerSettings, planningDay } from "@/core/planner";
 import { planningDayOf } from "./frame";
 import {
   closeUnanswered,
@@ -79,7 +80,11 @@ async function ownerOf(db: Db, session: Session) {
     }
   }
   // Ç3g: the core's planning day of the start (a session started at 00:20 is the evening's).
-  const day = await planningDayOf(db, new Date(session.started_at));
+  // A failed settings read gives the default night end (05:00): telling never fails the action.
+  const start = new Date(session.started_at);
+  const day = await planningDayOf(db, start).catch(() =>
+    planningDay(start, dayStartClock(plannerSettings(null))),
+  );
   return { slug, source, facet, day };
 }
 
@@ -271,6 +276,11 @@ export async function tellDayClosed(
   day: { date: string; bedAt: string },
 ): Promise<void> {
   await tell(told, CORE_EVENTS.dayClosed, { date: day.date, bed_at: day.bedAt });
+}
+
+/** Ç3g: a night's bedtime was deleted (set right in Ayarlar): the day is open again. */
+export async function tellBedRemoved(told: Told, day: { date: string }): Promise<void> {
+  await tell(told, CORE_EVENTS.bedUndone, { date: day.date });
 }
 
 /**

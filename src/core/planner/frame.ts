@@ -282,6 +282,7 @@ export function dayFrameOf(
       wokeFrom: wakeSourceOf(own),
       bed,
       bedAt,
+      bedStart: bedInstant(date, ranges.bed[0]),
       bedEnd: bedInstant(date, ranges.bed[1]),
       morningUntil: plus(istanbulInstant(date, ranges.wake[1]), MORNING_GRACE),
       lastNight: last.plan,

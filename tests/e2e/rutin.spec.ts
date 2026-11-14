@@ -146,6 +146,38 @@ test("switching on proposes the three rhythms; after the waking the morning is o
   await expect(scene(page)).toBeHidden();
 });
 
+test("switched on in the afternoon: the morning is not offered then, the evening only shortly before bed (Ç3g, 14 Nov 2026)", async ({
+  page,
+}) => {
+  // As in production on 14 Nov: the frame off, no waking, the module switched on at 16:33.
+  await switchOn(page);
+  await page.clock.setFixedTime(dayAt("16:33"));
+  await page.goto("/");
+  await expect(card(page)).toBeVisible();
+  await expect(card(page).getByRole("heading", { name: "Sabah" })).toHaveCount(0);
+  await expect(card(page).getByRole("heading", { name: "Akşam kapanışı" })).toHaveCount(0);
+  // The test account's day ends at 23:59: the evening comes 15 minutes before its place.
+  await page.clock.setFixedTime(dayAt("23:40"));
+  await page.goto("/");
+  await expect(card(page).getByRole("heading", { name: "Akşam kapanışı" })).toBeVisible();
+
+  // With the frame on, at 21:00 the evening card says when it comes, and starts it if asked.
+  const [settings] = await rows("settings");
+  await update("settings", settings.id as string, {
+    day_frame: FRAME,
+    day_start_default: "08:00",
+    finish_line_default: "19:00",
+  });
+  await insert("days", { date: DAY, woke_at: dayAt("07:00").toISOString() });
+  await page.clock.setFixedTime(dayAt("21:00"));
+  await page.goto("/");
+  await expect(card(page).getByRole("heading", { name: "Akşam", exact: true })).toBeVisible();
+  const later = card(page).getByTestId("evening-later");
+  await expect(later).toContainText(/Sırada: Akşam kapanışı · \d\d:\d\d/);
+  await later.getByRole("button", { name: "Şimdi başla" }).click();
+  await expect(scene(page)).toHaveAttribute("data-routine", "aksam");
+});
+
 test("another module's wake-bound work counts in the morning and its own scene comes between (m = 7)", async ({
   page,
 }) => {

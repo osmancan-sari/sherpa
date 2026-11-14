@@ -135,6 +135,13 @@ export function ItemsTab() {
   );
 }
 
+const STATE: Record<SceneChain["items"][number]["state"], string> = {
+  done: "yapıldı",
+  running: "şimdi",
+  next: "sırada",
+  passed: "geçildi",
+};
+
 const CHAIN_NAME = { wake: "Bugünün uyanış dizisi", bed: "Bugünün yatış dizisi" } as const;
 
 /**
@@ -171,7 +178,7 @@ function DayChains() {
                   </Link>
                 )}
                 <span className="text-muted-foreground">
-                  {[item.mine ? null : item.module.name, `${item.minutes} dk`, item.state]
+                  {[item.mine ? null : item.module.name, `${item.minutes} dk`, STATE[item.state]]
                     .filter(Boolean)
                     .join(" · ")}
                 </span>

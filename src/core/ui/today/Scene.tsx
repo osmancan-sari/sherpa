@@ -33,6 +33,7 @@ import { useSay } from "@/core/voice";
 import { formatMinutes, formatTime } from "@/lib/date";
 import { cn } from "@/lib/utils";
 import { useModuleScope } from "../module/ModuleProvider";
+import { useAskBed } from "./BedAsk";
 import { isTyping } from "./DayParts";
 
 // The scene (docs/06-modul-sozlesmesi.md, "Sahne"; docs/05-arayuz.md, "Sahne"): while a
@@ -174,6 +175,7 @@ export function SceneFrame({
   const say = useSay();
   const recordBed = useRecordBed();
   const undoBed = useUndoBed();
+  const askBed = useAskBed();
   // Ç3f: the evening closing opened by the scene, in its place (this device only).
   const [closing, setClosing] = useState(false);
   const device = useDevice();
@@ -267,10 +269,14 @@ export function SceneFrame({
       exit: onExit,
       closing: () => setClosing(true),
       bed: async () => {
+        // Ç3g: far before tonight's bedtime range it asks first; "Vazgeç" changes nothing.
+        const at = new Date();
+        if (!(await askBed(at))) return false;
         // "Yatıyorum" ends the day: the work is done, no chain goes on from it. The day keeps
         // which session did it, so that it can be taken back for a while (Rutin 1).
         await end.mutateAsync({ session, outcome: "done" });
-        await recordBed.mutateAsync({ date, at: new Date(), sessionId: session.id });
+        await recordBed.mutateAsync({ date, at, sessionId: session.id });
+        return true;
       },
     },
     say,

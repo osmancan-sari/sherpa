@@ -606,7 +606,12 @@ for (const theme of ["dark", "light"] as const) {
       day_start_default: "08:00",
       finish_line_default: "19:00",
     });
-    await insert("days", { date: shotDay, woke_at: at("07:00").toISOString() });
+    // Ç3g: tonight's bed at 21:30, so the bed-bound work is offered at 21:00 (15 minutes ahead).
+    await insert("days", {
+      date: shotDay,
+      woke_at: at("07:00").toISOString(),
+      expected_bed: "21:30:00",
+    });
     if (morningDay !== shotDay) {
       await insert("days", { date: morningDay, woke_at: at("07:00", morningDay).toISOString() });
     }

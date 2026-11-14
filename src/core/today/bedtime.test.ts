@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { PlanRows } from "@/core/planner";
 import { dayRow, rhythm, session, task } from "@/core/testing/factories";
-import { sceneBedtime } from "./bedtime";
+import { bedAsks, sceneBedtime } from "./bedtime";
 
 // Rutin 1: the night screen is the scene whose "Yatıyorum" wrote tonight's bedtime, for the 10
 // minutes it can be taken back (docs/06-modul-sozlesmesi.md, "Diziler" rule 6).
@@ -69,5 +69,24 @@ describe("the scene after its bedtime", () => {
     const running = rowsWith({ sessions: [{ ...closed, ended_at: null }] });
     expect(sceneBedtime("2026-11-13", running, minutes(1))).toBeNull();
     expect(sceneBedtime("2026-11-13", undefined, minutes(1))).toBeNull();
+  });
+});
+
+describe("Yatıyorum far before bedtime asks first (Ç3g)", () => {
+  const at = (time: string, day = "2026-11-14") => new Date(`${day}T${time}:00+03:00`);
+  const framed = { frame: { bedStart: at("22:00") } as never, finishLine: at("19:00") };
+
+  it("asks more than two hours before the bedtime range; one tap in it and near it", () => {
+    expect(bedAsks(framed, at("16:49"))).toEqual({ start: at("22:00"), framed: true });
+    expect(bedAsks(framed, at("19:59"))).not.toBeNull();
+    expect(bedAsks(framed, at("20:00"))).toBeNull();
+    expect(bedAsks(framed, at("22:30"))).toBeNull();
+    expect(bedAsks(framed, at("00:40", "2026-11-15"))).toBeNull();
+  });
+
+  it("without the frame the finish line stands for the range", () => {
+    const off = { frame: undefined, finishLine: at("19:00") };
+    expect(bedAsks(off, at("16:49"))).toEqual({ start: at("19:00"), framed: false });
+    expect(bedAsks(off, at("17:30"))).toBeNull();
   });
 });

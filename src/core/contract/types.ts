@@ -259,8 +259,12 @@ export type SceneProps = {
     exit: () => void;
     /** Ç3f: opens the evening closing inside the scene; back to the scene when it is done. */
     closing: () => void;
-    /** Ç3f: "Yatıyorum": tonight's bedtime is now; the session ends as done. */
-    bed: () => Promise<void>;
+    /**
+     * Ç3f: "Yatıyorum": tonight's bedtime is now; the session ends as done. Ç3g: more than two
+     * hours before tonight's bedtime range it asks first; false when the answer was "Vazgeç"
+     * (nothing changed: the session runs on).
+     */
+    bed: () => Promise<boolean>;
   };
   say: Say;
   today: TodayBrief;

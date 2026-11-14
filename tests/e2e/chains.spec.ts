@@ -96,7 +96,13 @@ test("two modules' wake-bound work is one chain: the scene gets all of it, the c
 
 test("the evening's card shows the bed chain's place of the work it offers", async ({ page }) => {
   const { deneme, copy } = await setUp();
-  await insert("days", { date: DAY, woke_at: dayAt("07:00").toISOString() });
+  // Ç3g: bed-bound work is offered from 15 minutes before its place; tonight's bed is 21:30
+  // (the user's own value), so at 21:00 the evening offers it.
+  await insert("days", {
+    date: DAY,
+    woke_at: dayAt("07:00").toISOString(),
+    expected_bed: "21:30:00",
+  });
   await insert("tasks", [
     {
       module_id: copy.id,
@@ -112,7 +118,6 @@ test("the evening's card shows the bed chain's place of the work it offers", asy
       timing: { anchor: "bed", order: 20 },
     },
   ]);
-  // Tomorrow is light: bed at 01:00, the bed-bound work from 00:40.
   await page.clock.setFixedTime(dayAt("21:00"));
   await page.goto("/");
   await expect(card(page).getByRole("heading", { name: "Akşam esnemesi" })).toBeVisible();
@@ -233,7 +238,13 @@ test("a session closed unanswered does not start the next work", async ({ page }
 
 test("the bed chain goes on the same way", async ({ page }) => {
   const { deneme, copy } = await setUp();
-  await insert("days", { date: DAY, woke_at: dayAt("07:00").toISOString() });
+  // Ç3g: bed-bound work is offered from 15 minutes before its place; tonight's bed is 21:30
+  // (the user's own value), so at 21:00 the evening offers it.
+  await insert("days", {
+    date: DAY,
+    woke_at: dayAt("07:00").toISOString(),
+    expected_bed: "21:30:00",
+  });
   const [stretch, face] = await insert<Row>("tasks", [
     {
       module_id: copy.id,
@@ -382,7 +393,13 @@ test("a scene opens the evening closing inside it, comes back to it, and ends th
   page,
 }) => {
   const { deneme } = await setUp();
-  await insert("days", { date: DAY, woke_at: dayAt("07:00").toISOString() });
+  // Ç3g: bed-bound work is offered from 15 minutes before its place; tonight's bed is 21:30
+  // (the user's own value), so at 21:00 the evening offers it.
+  await insert("days", {
+    date: DAY,
+    woke_at: dayAt("07:00").toISOString(),
+    expected_bed: "21:30:00",
+  });
   const [face] = await insert<Row>("tasks", {
     module_id: deneme.id,
     title: "Yüz",

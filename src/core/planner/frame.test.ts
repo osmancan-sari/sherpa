@@ -347,6 +347,86 @@ describe("anchored work", () => {
   });
 });
 
+describe("anchored work without the frame, and bed-bound work's lead (Ç3g)", () => {
+  const off = (extra: Partial<PlanRows> = {}) =>
+    rows({ settings: settingsRow({ day_frame: null }), ...extra });
+
+  it("without the frame, wake-bound work is the day's start and goes when its time is past", () => {
+    // The module was switched on in the afternoon and nobody said "Uyandım" (14 Nov 2026).
+    const routine = rhythm({
+      period: "day",
+      target_count: 1,
+      est_minutes: 10,
+      timing: { anchor: "wake" },
+    });
+    const work = task({ est_minutes: 30 });
+    const morning = planAt("08:05", off({ rhythms: [routine], tasks: [work] }));
+    expect(placement(morning, routine.id)).toBe("08:00–08:10 wake");
+    expect(morning.now).toMatchObject({ assignment: { candidate: { id: routine.id } } });
+    expect(placement(morning, work.id)).toBe("08:10–08:40 work");
+    const afternoon = planAt("16:33", off({ rhythms: [routine], tasks: [work] }));
+    expect(placement(afternoon, routine.id)).toBeNull();
+    expect(afternoon.overflow.map((row) => row.id)).not.toContain(routine.id);
+    expect(afternoon.now).toMatchObject({
+      kind: "suggest",
+      assignment: { candidate: { id: work.id } },
+    });
+  });
+
+  it("without the frame, bed-bound work ends at the finish line and is offered only shortly before it", () => {
+    const winddown = rhythm({
+      period: "day",
+      target_count: 1,
+      est_minutes: 10,
+      timing: { anchor: "bed" },
+    });
+    const work = task({ est_minutes: 30 });
+    const early = planAt("16:48", off({ rhythms: [winddown], tasks: [work] }));
+    expect(placement(early, winddown.id)).toBe("18:50–19:00 bed");
+    expect(early.now).toMatchObject({
+      kind: "suggest",
+      assignment: { candidate: { id: work.id } },
+    });
+    // Nothing else left: still not before its lead (its minutes and 15 more).
+    const idle = planAt("16:48", off({ rhythms: [winddown] }));
+    expect(idle.now).not.toMatchObject({ assignment: { candidate: { id: winddown.id } } });
+    const near = planAt("18:36", off({ rhythms: [winddown] }));
+    expect(near.now).toMatchObject({
+      kind: "suggest",
+      assignment: { candidate: { id: winddown.id } },
+    });
+  });
+
+  it("with the frame, the evening offers bed-bound work only shortly before it; until then it says when", () => {
+    const woke = today({ woke_at: iso("07:00") });
+    const winddown = anchored("bed", { est_minutes: 20 });
+    // Tomorrow is light: bed at 01:00, the work from 00:40.
+    const evening = planAt("21:00", rows({ tasks: [winddown], days: [woke] }));
+    expect(evening.now).toMatchObject({ kind: "evening", next: null });
+    expect(evening.now).toMatchObject({
+      later: { assignment: { candidate: { id: winddown.id } }, at: at("00:40", NEXT) },
+    });
+    const near = planAt("00:25", rows({ tasks: [winddown], days: [woke] }), NEXT);
+    expect(near.now).toMatchObject({
+      kind: "evening",
+      next: { candidate: { id: winddown.id } },
+      later: null,
+    });
+  });
+
+  it("evening work in the evening is offered as before; the bed-bound work waits behind it", () => {
+    const woke = today({ woke_at: iso("07:00") });
+    const gym = task({
+      est_minutes: 60,
+      energy: "physical",
+      timing: { after_finish: true, windows: [{ from: "20:00", to: "22:00" }] },
+    });
+    const winddown = anchored("bed", { est_minutes: 20 });
+    const plan = planAt("19:30", rows({ days: [woke], tasks: [gym, winddown] }));
+    expect(plan.now).toMatchObject({ kind: "evening", next: { candidate: { id: gym.id } } });
+  });
+});
+
 describe("the evening", () => {
   const woke = [today({ woke_at: iso("07:00") })];
 
