@@ -9,11 +9,14 @@ import { chooseScene, findFacet, sceneTone, taskFacet } from "@/core/contract/fa
 import type {
   ModuleFacet,
   ModuleScene,
+  SceneChain,
   SceneProps,
   SceneSubject,
   TodayBrief,
 } from "@/core/contract/types";
 import type { NowState, Plan, PlanInput } from "@/core/planner";
+import type { Colors } from "@/core/app/facets";
+import type { ChainLook } from "@/core/today/chain";
 import { blocksOfDay } from "@/core/today/select";
 import { useSay } from "@/core/voice";
 import { formatMinutes, formatTime } from "@/lib/date";
@@ -136,6 +139,22 @@ export function briefOf(
       })),
     finishLine: input.finishLine,
     wokeAt: input.frame?.woke ? input.frame.wake : null,
+    closed: Boolean(input.closed),
+  };
+}
+
+/** How a chain's rows look on this screen: the module, the resolved colour, the facet (Ç3f). */
+export function chainLook(modules: Map<string, KnownModule>, colors: Colors): ChainLook {
+  return {
+    module: (moduleId) => {
+      const mod = modules.get(moduleId);
+      return mod ? { slug: mod.row.slug, name: mod.row.name } : null;
+    },
+    color: (row) => colors.of(row.moduleId, row.work),
+    facet: (row) => {
+      const facet = colors.facetOf(row.moduleId, row.work);
+      return facet ? { key: facet.key, name: facet.name } : null;
+    },
   };
 }
 
@@ -151,6 +170,7 @@ export function SceneFrame({
   scene,
   subject,
   facet = null,
+  chain = null,
   brief,
   onExit,
   onStuck,
@@ -162,6 +182,8 @@ export function SceneFrame({
   subject: SceneSubject;
   /** Ç3e: the running work's facet in the module's current list. */
   facet?: ModuleFacet | null;
+  /** Ç3f: the chain the running work is part of. */
+  chain?: SceneChain | null;
   brief: TodayBrief;
   onExit: () => void;
   onStuck: () => void;
@@ -204,6 +226,7 @@ export function SceneFrame({
     today: brief,
     ctx,
     facet: facet ? { key: facet.key, name: facet.name, color } : null,
+    chain,
   };
 
   return (

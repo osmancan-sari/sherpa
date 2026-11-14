@@ -56,6 +56,8 @@ type Props = {
   frame?: DayFrame;
   startOnWake?: boolean;
   brief?: TodayBriefLine;
+  /** Ç3f: where the running or offered work stands in its chain ("Sabah dizisi 2/3 · …"). */
+  chainLine?: string | null;
 };
 
 function Frame({ children }: { children: ReactNode }) {
@@ -96,6 +98,7 @@ function CardFor({
   frame,
   startOnWake,
   brief,
+  chainLine,
 }: Props & { onStuck: (task: Task) => void }) {
   if (state.kind === "morning") {
     return (
@@ -132,6 +135,7 @@ function CardFor({
         modules={modules}
         onStuck={onStuck}
         onReturnToScene={onReturnToScene}
+        chainLine={chainLine ?? null}
       />
     );
   }
@@ -151,7 +155,15 @@ function CardFor({
   }
   if (state.kind === "prompt") return <PromptState prompt={state.prompt} modules={modules} />;
   if (state.kind === "suggest") {
-    return <Suggest assignment={state.assignment} at={state.at} date={date} modules={modules} />;
+    return (
+      <Suggest
+        assignment={state.assignment}
+        at={state.at}
+        date={date}
+        modules={modules}
+        chainLine={chainLine ?? null}
+      />
+    );
   }
   if (state.kind === "done") {
     return (
@@ -221,6 +233,16 @@ function ModuleLine({
   );
 }
 
+/** Ç3f: the work's place in its anchored chain, one line under the module. */
+function ChainLine({ text }: { text: string | null }) {
+  if (!text) return null;
+  return (
+    <p data-testid="chain-line" className="text-muted-foreground text-sm tabular-nums md:text-base">
+      {text}
+    </p>
+  );
+}
+
 /** "Neden?": why this work, why now; the engine's notes and the AI's. */
 function Why({ reasons }: { reasons: string[] }) {
   const [open, setOpen] = useState(false);
@@ -260,7 +282,9 @@ function Suggest({
   at,
   date,
   modules,
+  chainLine,
 }: {
+  chainLine: string | null;
   assignment: Assignment;
   /** Work bound to its time whose footprint starts later: when to start (or set off). */
   at?: Date;
@@ -359,6 +383,7 @@ function Suggest({
     <Frame>
       <div className="flex flex-col gap-2">
         <ModuleLine mod={mod} work={candidate} />
+        <ChainLine text={chainLine} />
         <h2 className={TITLE}>{candidate.title}</h2>
         <p className="text-muted-foreground tabular-nums md:text-lg">
           {[
@@ -404,8 +429,10 @@ function Running({
   modules,
   onStuck,
   onReturnToScene,
+  chainLine,
 }: {
   onReturnToScene?: () => void;
+  chainLine: string | null;
   session: Session;
   task: Task | null;
   rhythm: Rhythm | null;
@@ -437,6 +464,7 @@ function Running({
     <Frame>
       <div className="flex flex-col gap-2">
         <ModuleLine mod={mod} work={{ task, rhythm }} />
+        <ChainLine text={chainLine} />
         <h2 className={TITLE}>{title}</h2>
         {extra?.detail ? <p className="text-muted-foreground md:text-lg">{extra.detail}</p> : null}
       </div>

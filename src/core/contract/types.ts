@@ -190,6 +190,30 @@ export type TodayBrief = {
   blocks: { title: string; startsAt: Date; endsAt: Date }[];
   finishLine: Date;
   wokeAt: Date | null;
+  /** Ç3f: today's evening closing was done. */
+  closed: boolean;
+};
+
+/**
+ * Ç3f: the day's wake-bound or bed-bound work as one list (docs/06-modul-sozlesmesi.md,
+ * "Diziler"). Another module's row carries only these fields: no source, no meta.
+ */
+export type SceneChain = {
+  anchor: "wake" | "bed";
+  items: {
+    /** The task or the rhythm. */
+    id: string;
+    title: string;
+    module: { slug: string; name: string };
+    facet: { key: string; name: string } | null;
+    /** The resolved colour (docs/06, "Bölümler" rule 4). */
+    color: string;
+    minutes: number;
+    /** Done today, running, still to do, passed today (put off, or its time went by). */
+    state: "done" | "running" | "next" | "passed";
+    /** The work of this scene's module. */
+    mine: boolean;
+  }[];
 };
 
 /** The running work a scene is for. */
@@ -215,6 +239,8 @@ export type SceneProps = {
   ctx: ModuleUiContext;
   /** Ç3e: the running work's facet (its colour resolved); null when it has none. */
   facet: { key: string; name: string; color: string } | null;
+  /** Ç3f: the chain the running work is part of; null when it is in none. */
+  chain: SceneChain | null;
 };
 
 /** Ç3e: a part of a module with its own colour and scene on the main screen (docs/06, "Bölümler"). */

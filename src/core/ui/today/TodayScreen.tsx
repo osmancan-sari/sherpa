@@ -24,6 +24,7 @@ import { useAnswerFollowUp, useDefer, useReplan, useStopForStuck } from "@/core/
 import { moduleColor } from "@/core/contract/colors";
 import type { ChipData, Health } from "@/core/contract/types";
 import { buildPlan, type Candidate, tomorrowInput } from "@/core/planner";
+import { chainLine, chainsOf, chainWith, sceneChain } from "@/core/today/chain";
 import { blocksOfDay } from "@/core/today/select";
 import type { Block, Task } from "@/core/types";
 import { dayKey, formatDue, formatMinutes, formatTime } from "@/lib/date";
@@ -34,7 +35,7 @@ import { useNotify } from "../Notices";
 import { QuickAddButton } from "../QuickAdd";
 import { AlertBar, DayStrip, isTyping, MinutesDialog, TopBar } from "./DayParts";
 import { NowCard, sessionTargetOf, travelText } from "./NowCard";
-import { briefOf, SceneFrame, sceneFor, useSceneExit } from "./Scene";
+import { briefOf, chainLook, SceneFrame, sceneFor, useSceneExit } from "./Scene";
 import { briefLine } from "./frame-text";
 
 // The Today screen (docs/05-arayuz.md): drawn from the planner's plan, re-made on every change
@@ -78,6 +79,12 @@ function TodayBody() {
     const tomorrow = buildPlan(tomorrowInput(rows, { now, context: input!.context }));
     return tomorrow.slots.find((slot) => slot.assignment)?.assignment?.candidate ?? null;
   }, [plan, rows, now, input]);
+
+  // Ç3f: the day's anchored chains, from the plan and the day's records.
+  const chains = useMemo(
+    () => (input && plan ? chainsOf(input, plan) : { wake: null, bed: null }),
+    [input, plan],
+  );
 
   const state = plan?.now;
   const doReplan = () => {
@@ -165,6 +172,10 @@ function TodayBody() {
           scene={scene.scene}
           subject={scene.subject}
           facet={scene.facet}
+          chain={(() => {
+            const chain = chainWith(chains, running.task?.id ?? running.rhythm?.id);
+            return chain ? sceneChain(chain, sceneMod.row.id, chainLook(moduleMap, colors)) : null;
+          })()}
           brief={briefOf(input, plan, moduleMap)}
           onExit={() => setExitedScene(running.session.id)}
           onStuck={() => {
@@ -185,6 +196,9 @@ function TodayBody() {
       : state.kind === "suggest"
         ? state.assignment.candidate.id
         : null;
+  // Ç3f: where the current work stands in its chain, on the standard card.
+  const currentChain = chainWith(chains, currentId);
+  const chainText = currentChain && currentId ? chainLine(currentChain, currentId) : null;
   const assignments = plan.slots.flatMap((slot) => (slot.assignment ? [slot.assignment] : []));
   const ahead = assignments.filter((row) => row.candidate.id !== currentId);
   // When the day is done, what is still planned waits behind "Vakit kalırsa" with the rest.
@@ -224,6 +238,7 @@ function TodayBody() {
             frame={input.frame}
             startOnWake={input.settings.frame?.startOnWake ?? false}
             brief={briefLine(input, plan)}
+            chainLine={chainText}
             onReturnToScene={
               scene && running && exitedScene === running.session.id
                 ? () => setExitedScene(null)

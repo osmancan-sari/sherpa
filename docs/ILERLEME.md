@@ -5,8 +5,8 @@ Bu dosyayı Claude Code günceller. Yeni bir oturum yalnızca bu dosyayı ve `pr
 ## Durum
 
 - Faz: **Ç3f (Çapalı diziler) sürüyor** (14 Kas 2026). Ç3e bitti ve yayında (`c3e-tamam`, 13 Kas)
-- Adım: 0 (tasarımın dokümanlara işlenmesi) bitti; sırada 1 (dizi)
-- Son commit: C3f: section G in the numbered docs
+- Adım: 1 (dizi) bitti; 2'nin bir kısmı (sahneye `chain`, `today.closed`, kartta satır) yazıldı, testi sırada
+- Son commit: C3f: chainOf
 
 ### Ç3f planı
 
@@ -15,7 +15,7 @@ Bu dosyayı Claude Code günceller. Yeni bir oturum yalnızca bu dosyayı ve `pr
 | # | Adım | Durum |
 | --- | --- | --- |
 | 0 | Bölüm G numaralı dokümanlara işlendi; tasarım oturumunun commit edilmemiş dokümanları (`docs/01`, `07`, `09`, `12`, `docs/moduller/`, istem) aynı commit'te | bitti |
-| 1 | Dizi: `chainOf` (saf, `src/core/today/chain.ts`, önce testler): planın çapalı yuvaları, bugün yapılanlar, bugün geçilenler; başka modülün satırında yalnızca izinli alanlar; planlayıcının çıktısının değişmediği testi | |
+| 1 | Dizi: `chainOf` (saf, `src/core/today/chain.ts`, önce testler): planın çapalı yuvaları, bugün yapılanlar, bugün geçilenler; başka modülün satırında yalnızca izinli alanlar; planlayıcının çıktısının değişmediği testi | bitti: `chainOf`, `chainsOf`, `chainWith`, `nextInChain`, `sceneChain` (yalnızca `SceneChain` alanları), `chainLine`; `SceneChain` sözleşmede. `done`: bugün biten iş ve oturum işi, bugün kaydı düşen ritim; `passed`: planın artık önermediği çapalı aday, bugün atlanan kalem ve ritim, bugün yarına ertelenen iş (`planned_date` yarın, `defer_count > 0`, bugün güncellendi); çalışan çapalı iş satırı kalmamış olsa da `running`. Sıra `order` (yoksa sonda), eşitse yapılanlar, yuvalar, geçilenler. Testler: `src/core/today/chain.test.ts` 12 (aynı girdi aynı plan dahil) |
 | 2 | Sahneye verme: `SceneProps.chain`, `today.closed`; standart kartta dizi satırı | |
 | 3 | Kendiliğinden devam: `day_frame.chain_auto` (migration yok: değer uygulamada doğrulanır), `start_session_if_idle` (migration: kilitli, "o andan beri oturum başlamadıysa" `start_session`), Bitti ve Ertele'den sonra başlatma, öbür sonuçlardan sonra başlatmama, iki çapa, iki cihaz yarışı | |
 | 4 | Dışarıdan uyanış: uygulama öne gelince dizinin ilk işi (`start_on_wake`, 60 dakika, çift başlatma yok) | |
