@@ -1,6 +1,6 @@
 # Modül sahnesi, günün çerçevesi ve otomasyon zemini
 
-**Durum: A–D numaralı dokümanlara işlendi ve Ç3c'de kuruldu (`c3c-tamam`); E numaralı dokümanlara işlendi (`docs/02`, `03`, `06`, `11`) ve Ç3d'de kuruldu (`c3d-tamam`); F numaralı dokümanlara işlendi (`docs/03`, `05`, `06`) ve Ç3e'de kuruluyor.** A–F'nin bağlayıcı hali numaralı dokümanlardadır. Kurulurken netleşenler (E): kapsam adresle aynı yazılır (`core/wake`); sunucu kullanıcı adına veritabanına kullanıcı olarak gider; zamanlayıcı Supabase'in `pg_cron`'u. Bu dosya özet ve gerekçe olarak kalır.
+**Durum: A–D numaralı dokümanlara işlendi ve Ç3c'de kuruldu (`c3c-tamam`); E numaralı dokümanlara işlendi (`docs/02`, `03`, `06`, `11`) ve Ç3d'de kuruldu (`c3d-tamam`); F numaralı dokümanlara işlendi (`docs/03`, `05`, `06`) ve Ç3e'de kuruldu (`c3e-tamam`); G numaralı dokümanlara işlendi (`docs/03`, `04`, `05`, `06`) ve Ç3f'de kuruluyor.** A–F'nin bağlayıcı hali numaralı dokümanlardadır. Kurulurken netleşenler (E): kapsam adresle aynı yazılır (`core/wake`); sunucu kullanıcı adına veritabanına kullanıcı olarak gider; zamanlayıcı Supabase'in `pg_cron`'u. Bu dosya özet ve gerekçe olarak kalır.
 
 ## Neden
 
@@ -298,6 +298,54 @@ Kurallar:
 
 **Görüşün gerek:** renk paleti; Ayarlar'daki renk seçicinin yerleşimi; modül düzeyinde kalan yerler (çip, payların modül renginde kalması).
 
+## G. Çapalı diziler (Ç3f)
+
+Uyanışa ve yatışa bağlı işler planlayıcıda zaten art arda dizilir (bölüm D). Ama ekranda her biri ayrı bir iştir: sahne yalnızca kendi işini bilir, bir iş bitince sıradaki için "Başla"ya basmak gerekir, başka modülün işi sahneden görünmez. Kullanıcının isteği (13 Kas 2026): sabah tek bir akış olarak yaşansın. Diş ve su (Rutin), boyun hareketleri (Spor), duş ve hazırlık (Rutin) tek listede görünsün; biri bitince öbürü kendiliğinden gelsin; hareket adımında ekran Spor'un sahnesine geçsin ve bitince sabaha dönsün. Veri modüllerde ayrı kalır.
+
+**Dizi**, aynı çapaya bağlı işlerin o günkü sıralı listesidir: uyanış dizisi ve yatış dizisi. Sırayı planlayıcı verir (`order`, eşitse skor); bu adım planlayıcıyı değiştirmez, dizinin görünürlüğünü ve akışını ekler.
+
+```ts
+type SceneChain = {
+  anchor: 'wake' | 'bed'
+  items: {
+    id: string                         // iş ya da ritim kimliği
+    title: string
+    module: { slug: string; name: string }
+    facet: { key: string; name: string } | null
+    color: string                      // çözülmüş renk (bölüm F, kural 4)
+    minutes: number
+    state: 'done' | 'running' | 'next' | 'passed'   // bugün yapıldı, çalışıyor, sırada, bugün geçildi (ertelendi ya da zamanı geçti)
+    mine: boolean                      // bu sahnenin modülünün işi mi
+  }[]
+}
+
+type SceneProps = {
+  // …
+  chain: SceneChain | null             // çalışan iş bir dizinin parçasıysa o dizi
+  controls: {
+    // …
+    closing: () => void                // akşam kapanışını sahnenin içinde açar (aşağıda kural 6)
+  }
+}
+```
+
+Kurallar:
+
+1. **Dizi türetilir.** Planın çapalı yuvalarından ve bugünün kayıtlarından saf bir yardımcıyla kurulur (`chainOf`); bugün yapılmış çapalı işler `done` olarak listede kalır. Planlayıcının girdisi ve çıktısı değişmez.
+2. **Başka modülün işi yalnızca görünür.** Dizideki başka modüle ait satır adını, modülünü, bölümünü, rengini, süresini ve durumunu taşır; `source`, `meta` ve modülün verisi gelmez. Modüller birbirini yine tanımaz; sahne satırı çizer, o kadar.
+3. **Kendiliğinden devam.** Ayar: `day_frame.chain_auto` ("Dizide sıradaki iş kendiliğinden başlasın", başlangıçta açık). Dizideki iş "Bitti" ile kapanınca ya da ertelenince, dizinin sıradaki işi aynı cihazda hemen başlar. Sıradaki iş başka modülünse onun sahnesi (yoksa standart kart) gelir; geçiş sahne geçişiyle aynıdır. Durdur, Takıldım ve cevapsız kapanıştan sonra kendiliğinden başlamaz. Dizinin son işi bitince standart ekran döner. Kendiliğinden başlayan oturum her oturum gibidir: durdurulur, sahneden çıkılır.
+4. **Uyanış dışarıdan gelince.** Uyanış `core/wake` ile kaydedildiyse ve o gün uyanış dizisi hiç başlamadıysa, uygulama o cihazda ilk öne geldiğinde (`start_on_wake` açıkken ve dizinin önerildiği süre içinde: bölüm D'nin uygulama notlarındaki 60 dakika) dizinin ilk işi başlar. Elle "Uyandım"ın davranışı değişmez.
+5. **Yatış dizisi** aynı kurallarla çalışır.
+6. **Sahneden kapanış.** `controls.closing()` akşam kapanışını sahnenin içinde açar (çekirdeğin şeridi durur, oturum sürer); kapanış onaylanınca ya da vazgeçilince sahneye dönülür. Sahneden açılan kapanışta "Onayla ve yat" yoktur: yatışı sahnenin kendi son adımı kaydeder. Kapanışın yapılıp yapılmadığı `today.closed` ile okunur.
+7. **Standart ekran.** Sahnesi olmayan ya da sahneden çıkılmış bir çapalı işte Şimdi kartı dizideki yeri tek satırla gösterir ("Sabah dizisi 2/3 · sırada Duş ve hazırlık").
+8. **Sıra.** `timing.order` modüller arasında ortaktır (1–99); modüller araya yer bırakarak numara verir (10, 20, 30). Kullanıcı bir işin sırasını düzenleme formundan değiştirebilir (alan zaten kullanıcıya aittir).
+
+Kapsam dışı: bir işin başka bir işin hemen ardına bağlanması ("antrenman o gün plandaysa duş onun ardına"; salon antrenmanı gelince ayrı karar), dizinin sürükleyerek sıralanması.
+
+Kurulurken netleşen (Ç3f): yatışı sahnenin son adımının kaydedebilmesi için `controls.bed()` ("Yatıyorum") eklendi; kural 6 onsuz uygulanamıyordu.
+
+**Görüşün gerek:** kendiliğinden devamın başlangıçta açık olması; ertelemeden sonra devam etmesi; standart karttaki satırın metni.
+
 ## Kabul ölçütleri
 
 **Ç3c**
@@ -342,6 +390,19 @@ Kurallar:
 - [ ] Ayarlar'da modülün ve bölümlerin rengi değişiyor, "varsayılana dön" çalışıyor; değişiklik öbür cihazda canlı görünüyor
 - [ ] Oturum olayları `facet`'i taşıyor; dışa aktarım yeni sütunları ve renkleri içeriyor
 - [ ] Planlayıcının çıktısı bölümden bağımsız (aynı girdi, bölüm eklenince aynı plan)
+
+**Ç3f**
+
+- [ ] İki ayrı modülün (`deneme` ve şablon kopyası) uyanışa bağlı işleri aynı dizide; sahne `chain` ile hepsini sırasıyla, adı, modülü, rengi, süresi ve durumuyla alıyor; başka modülün satırında `source` ve `meta` yok
+- [ ] Dizideki iş "Bitti" ile kapanınca sıradaki iş aynı cihazda kendiliğinden başlıyor; sıradaki iş başka modülünse o modülün sahnesi geliyor; ayar kapalıyken başlamıyor
+- [ ] Ertele'den sonra sıradaki başlıyor; Durdur, Takıldım ve cevapsız kapanıştan sonra başlamıyor
+- [ ] Dizinin son işi bitince standart ekran dönüyor; bugün yapılmış işler dizide `done` olarak duruyor
+- [ ] Yatış dizisinde aynı davranış
+- [ ] `core/wake` ile kaydedilen uyanıştan sonra uygulama öne gelince, `start_on_wake` açıksa dizinin ilk işi başlıyor; süre geçtiyse başlamıyor; elle "Uyandım" eskisi gibi
+- [ ] Sahne `controls.closing()` ile akşam kapanışını açıyor; bitince sahneye dönülüyor, oturum sürüyor; sahneden açılan kapanışta "Onayla ve yat" yok; `today.closed` doğru
+- [ ] Standart kartta dizideki yer tek satırla görünüyor
+- [ ] Çapalı işi olmayan veride ve `chain` kullanmayan sahnede her şey Ç3e'deki gibi; önceki fazların testleri değiştirilmeden geçiyor
+- [ ] Planlayıcının çıktısı değişmedi (aynı girdi, aynı plan; testle)
 
 ## Kapsam dışı
 

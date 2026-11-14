@@ -40,7 +40,7 @@ Uygulamanın adı **Sherpa**: dağda yolu bilen ve yükü taşıyan rehber. Zirv
 | Kavram | Anlamı |
 | --- | --- |
 | Modül | Bir hayat alanı: Okul, Beslenme, Ev. Türü ömürlük, dönemlik ya da hedefe kadar olabilir |
-| Alan | Birden fazla modülü tek sayfada birleştiren grup. İlk alan Sağlık: Beslenme + Sabah rutini ve hareket |
+| Alan | Birden fazla modülü tek sayfada birleştiren grup. İlk alan Sağlık: Rutin + Spor + Beslenme |
 | İş zarfı | Modüllerin çekirdeğe iş teklif ederken kullandığı ortak yapı. Temel alanlar her modülde aynıdır; modüle özel ayrıntı `meta` içindedir |
 | İş kalemi | Sonucu olan iş: "Midterm hazırlığı", "TUM başvurusu". Toplam eforu vardır; uzaktayken kaba durur, haftası gelince oturumlara bölünür |
 | İş (oturum işi) | Tek oturumda biten şey, en fazla 90 dakika. Çoğu bir iş kaleminin parçasıdır |
@@ -66,7 +66,7 @@ Uygulamanın adı **Sherpa**: dağda yolu bilen ve yükü taşıyan rehber. Zirv
 
 ### Sonra (tasarımı onaylandıkça)
 
-- Sağlık alanı: Beslenme, Sabah rutini ve hareket
+- Sağlık alanı: Rutin (sabah ve akşam), Spor, Beslenme
 - Ev, İş, Yüksek lisans, Hayat idaresi modülleri
 - Ninova bağlantısı: ödev, duyuru ve dosyaların kendiliğinden gelmesi
 - Claude köprüsü: Claude sohbetlerinin ve ders projelerinin Sherpa'yı okuyup yazması (MCP)

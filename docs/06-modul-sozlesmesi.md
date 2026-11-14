@@ -212,11 +212,14 @@ type SceneProps = {
     stop: () => Promise<void>        // "Durdur"
     stuck: () => void                // "Takıldım" akışını açar (sahneden çıkar)
     exit: () => void                 // sahneden çık; oturum sürer
+    closing: () => void              // Ç3f: akşam kapanışını sahnenin içinde açar (aşağıda "Diziler")
+    bed: () => Promise<void>         // Ç3f: "Yatıyorum": yatışı kaydeder, oturumu "Bitti" ile kapatır
   }
   say: Say
   today: TodayBrief                  // günün kısa özeti (anlatım için; yalnızca okuma)
   ctx: ModuleUiContext
   facet: { key: string; name: string; color: string } | null   // Ç3e: çalışan işin bölümü; color çözülmüş renk
+  chain: SceneChain | null           // Ç3f: çalışan iş bir çapalı dizinin parçasıysa o dizi
 }
 ```
 
@@ -230,6 +233,34 @@ Kurallar:
 6. **Tam ekranla ilişkisi.** `fullscreen` kullanıcının modül sayfasından açtığı görünümdür; sahne iş çalışırken Bugün ekranında kendiliğinden gelir. Aynı bileşen ikisinde de kullanılabilir.
 
 **Nerede tanımlanır.** `scene` nesnesi (`when` dahil) modülün sıradan bir dosyasında (`module.ts` ya da `scene.ts`) tanımlanır; yalnızca `component` `"use client"` dosyasından gelir. İstemci dosyasının dışa aktardığı nesne sunucuda yalnızca bir başvurudur: `when` orada fonksiyon olmaz ve kayıt denetimi uygulamayı açtırmaz.
+
+### Diziler (Ç3f)
+
+Uyanışa ve yatışa bağlı işler (`timing.anchor`) o gün birer **dizi** oluşturur: uyanış dizisi ve yatış dizisi. Dizideki iş çalışırken sahne bütün diziyi görür, başka modüllerin işleri dahil; bir iş bitince sıradaki kendiliğinden başlayabilir. Gerekçe `docs/12-sahne-ve-otomasyon.md`, bölüm G.
+
+```ts
+type SceneChain = {
+  anchor: 'wake' | 'bed'
+  items: {
+    id: string                         // iş ya da ritim kimliği (kalemin oturum işi: işin kimliği)
+    title: string
+    module: { slug: string; name: string }
+    facet: { key: string; name: string } | null
+    color: string                      // çözülmüş renk (Bölümler, kural 4)
+    minutes: number                    // planlanan süre
+    state: 'done' | 'running' | 'next' | 'passed'   // bugün yapıldı, çalışıyor, sırada, bugün geçildi (ertelendi ya da zamanı geçti)
+    mine: boolean                      // bu sahnenin modülünün işi mi
+  }[]
+}
+```
+
+1. **Türetilir.** Dizi planın çapalı yuvalarından ve bugünün kayıtlarından saf bir yardımcıyla kurulur (`chainOf`, `src/core/today/chain.ts`); planlayıcının girdisi ve çıktısı değişmez. Sıra planlayıcınındır (`order`, eşitse skor); bugün yapılan işler `done` olarak listede kalır.
+2. **Başka modülün işi yalnızca görünür.** Satır yalnızca yukarıdaki alanları taşır; `source`, `meta` ve modülün verisi gelmez. Modüller birbirini tanımamaya devam eder.
+3. **Sıra modüller arasında ortaktır.** `timing.order` 1–99 arası tek bir sayı ekseni; modüller araya yer bırakarak numara verir (10, 20, 30). Kullanıcı formdan değiştirebilir (alan kullanıcıya aittir).
+4. **Kendiliğinden devam.** `settings.day_frame.chain_auto` açıkken (başlangıçta açık) dizideki iş "Bitti" ile kapanınca ya da ertelenince dizinin sıradaki işi aynı cihazda hemen başlar; başka modülün işiyse onun sahnesi (yoksa standart kart) gelir. Durdur, Takıldım ve cevapsız kapanıştan sonra başlamaz; son iş bitince standart ekran döner. Başlatma çekirdeğin oturum yolundandır; kendiliğinden başlayan oturum her oturum gibidir ("Devam ediyor musun?" ve 30 dakika kuralı aynı). İki cihaz aynı anda bitirse de tek oturum başlar.
+5. **Dışarıdan gelen uyanış.** Uyanış dışarıdan kaydedildiyse (`core/wake`) ve o gün uyanış dizisi hiç başlamadıysa, `start_on_wake` açıkken uygulama o cihazda ilk öne geldiğinde, dizi hâlâ önerilirken (bitişinden 60 dakika sonrasına kadar), dizinin ilk işi başlar. Elle "Uyandım"ın davranışı değişmez.
+6. **Sahneden kapanış.** `controls.closing()` akşam kapanışını sahnenin içinde açar: çekirdeğin şeridi durur, oturum sürer; kapanış onaylanınca ya da vazgeçilince sahneye dönülür. Bu kapanışta "Onayla ve yat" yoktur: yatışı sahnenin kendi son adımı kaydeder, `controls.bed()` ile (çekirdeğin "Yatıyorum"u: yatışı şimdi olarak yazar, çalışan oturumu "Bitti" ile kapatır, ekran geceye geçer). Kapanışın yapıldığı `today.closed` ile okunur.
+7. **Standart kart.** Sahnesi olmayan ya da sahneden çıkılmış çapalı işte Şimdi kartı dizideki yeri tek satırla gösterir.
 
 **Adım yürütücü (`StepRunner`, bileşen takımında).** Sıralı adımlı sahneler (rutin, pişirme, antrenman) için: adım listesi (ad, süre ya da tekrar sayısı, açıklama), geri sayım, "Sonraki", "Atla", her adım bitince ve liste bitince geri çağrı. Yalnızca arayüzdür; hangi adımda olunduğunu modül saklar (`step` ve `onStep` ile denetimli kullanılır).
 
@@ -265,6 +296,7 @@ type TodayBrief = {
   blocks: { title: string; startsAt: Date; endsAt: Date }[]         // bugünün sabit blokları
   finishLine: Date
   wokeAt: Date | null
+  closed: boolean                    // Ç3f: bugünün akşam kapanışı yapıldı mı
 }
 ```
 
@@ -336,7 +368,7 @@ type Timing = {
   travel?: { before?: number; after?: number }   // dakika
   rest_days?: number                   // yalnızca tekrar biçiminde: iki yapılış arasında en az bu kadar boş gün
   anchor?: 'wake' | 'bed'              // Ç3c: uyanıştan hemen sonra ya da yatıştan hemen önce (yuvalara dağıtılmaz)
-  order?: number                       // Ç3c: aynı çapadaki işlerin sırası (1, 2, …); yalnızca `anchor` ile
+  order?: number                       // Ç3c: aynı çapadaki işlerin sırası, 1–99, modüller arasında ortak (Ç3f: araya yer bırakarak 10, 20, 30); yalnızca `anchor` ile
   after_finish?: true                  // Ç3c: bitiş çizgisinden sonra, akşama da konabilir
 }
 

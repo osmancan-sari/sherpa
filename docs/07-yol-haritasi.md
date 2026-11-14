@@ -19,6 +19,7 @@ Her faz tek başına kullanılabilir bir şey bırakır. Bir fazın kabul ölç�
 | Ç3c. Sahne ve günün çerçevesi | Modülün işi çalışırken Bugün ekranını devralan sahne, oturum ve gün olayları, sesli anlatım; uyanış, yatış, uyku planı, çapalı işler, akşam | Ç3b |
 | Ç3d. Sunucu zemini | Uygulama kapalıyken çalışan taraf: cihaz anahtarları, giriş ucu, zamanlanmış işler, sunucuda modül bağlamı | Ç3c |
 | Ç3e. Modülün bölümleri | Bir modülün içinde ayrı renk ve sahne taşıyan bölümler (rutinde Sabah ve Akşam, Okul'da dersler); renklerin Ayarlar'dan değişmesi | Ç3c |
+| Ç3f. Çapalı diziler | Uyanışa ve yatışa bağlı işlerin tek akış olması: sahnenin diziyi görmesi (başka modülün adımları dahil), sıradaki işin kendiliğinden başlaması, dışarıdan gelen uyanıştan sonra başlama, sahneden akşam kapanışı | Ç3e |
 | Ç4. Pano ve telefon cilası | Gün boyu açık duracak kalitede pano; uygulama gibi çalışan telefon | Ç3 |
 | Ç5. Claude köprüsü | Claude sohbetleri Sherpa'yı okuyup yazar | Ç1 |
 
@@ -218,6 +219,19 @@ Tasarım: `docs/12-sahne-ve-otomasyon.md`, bölüm F. İstem `prompts/c3e-modul-
 
 **Kabul ölçütleri:** `docs/12-sahne-ve-otomasyon.md`, "Kabul ölçütleri" → Ç3e.
 
+### Ç3f: Çapalı diziler
+
+Tasarım: `docs/12-sahne-ve-otomasyon.md`, bölüm G. İstem `prompts/c3f-capali-diziler.md`. Rutin modülünün tasarım oturumunda çıkan çekirdek eksiklerinden (13 Kas 2026; `docs/moduller/rutin.md`, "Çekirdek için notlar" 2, 7, 11).
+
+**Kapsam**
+- Dizinin plandan ve bugünün kayıtlarından türetilmesi (`chainOf`); `SceneProps.chain`
+- Kendiliğinden devam (`day_frame.chain_auto`), iki çapa için
+- `core/wake` ile gelen uyanıştan sonra dizinin başlaması
+- `controls.closing()` ve `today.closed`
+- Standart kartta dizi satırı; `deneme` modülünde örnekler
+
+**Kabul ölçütleri:** `docs/12-sahne-ve-otomasyon.md`, "Kabul ölçütleri" → Ç3f.
+
 ### Ç4: Pano ve telefon cilası
 
 Tasarım: `docs/05-arayuz.md`, `docs/11-yayin-ve-cihazlar.md`.
@@ -265,7 +279,8 @@ Bir modülün süreci: tasarım oturumu (bkz. `prompts/modul-tasarim-oturumu.md`
 | --- | --- | --- |
 | Okul | 1: dönem takibi ve Notion aktarımı · 2: Ninova · 3: hazırlık dokümanı otomasyonu | Taslak hazır; ayrı oturumda ayrıntılanacak |
 | Beslenme | 1: plan, prep, alışveriş · 2 ve 3: belirlenecek | Taslak |
-| Sabah rutini ve hareket | 1: rutin ve koç modu | Taslak |
+| Rutin (sabah ve akşam) | 1: adımlar, iki sahne, kayıt · 2 ve 3: belirlenecek | Taslak; tasarım oturumu sürüyor (`docs/moduller/rutin.md`) |
+| Spor | 1: duruş programı ve koç sahnesi | Bekliyor |
 | Ev | 1: ritimler | Taslak |
 | İş | 1: çalışma blokları | Taslak |
 | Yüksek lisans | Belirlenecek | Bekliyor |
@@ -273,4 +288,4 @@ Bir modülün süreci: tasarım oturumu (bkz. `prompts/modul-tasarim-oturumu.md`
 
 Okul modülünün adımları için taslak kapsam ve kabul ölçütleri `docs/moduller/okul.md` ve `docs/moduller/okul-ninova.md` içindedir; tasarım oturumunda kesinleşir.
 
-Önerilen sıra: Ç0 → Ç1 → Ç2 → Ç3 → Ç3b → Ç3c → Ç3d → Ç3e → Ç4 (Ç3c, Ç3d ve Ç3e kullanıcının kararıyla Ç4'ten önce, 12 Kas 2026); ilk modül (rutin) Ç3e'den sonra, tasarımı onaylanınca kurulabilir, Ç4'ü beklemez; Okul adım 1 tasarımı onaylanınca, Ç5 ve Okul adım 2 ihtiyaca göre araya girer. (Ç3, Okul adım 1'den önce bitti; Ç3b modüller tasarlanmadan önce yapılır, çünkü iş zarfını değiştirir.)
+Önerilen sıra: Ç0 → Ç1 → Ç2 → Ç3 → Ç3b → Ç3c → Ç3d → Ç3e → Ç3f → Ç4 (Ç3c–Ç3f kullanıcının kararıyla Ç4'ten önce, 12–13 Kas 2026); ilk modül (rutin) Ç3f'den sonra, tasarımı onaylanınca kurulabilir, Ç4'ü beklemez; Okul adım 1 tasarımı onaylanınca, Ç5 ve Okul adım 2 ihtiyaca göre araya girer. (Ç3, Okul adım 1'den önce bitti; Ç3b modüller tasarlanmadan önce yapılır, çünkü iş zarfını değiştirir.)

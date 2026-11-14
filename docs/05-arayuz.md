@@ -130,6 +130,15 @@ Geniş ekranda tek sayfa, kaydırma yok:
 - Sahne hata verirse standart kart ve altında tek satır: "Sahne açılamadı; iş sürüyor."
 - **Görüşün gerek:** sahnenin yalnızca çalışan işte gelmesi; şeridin içeriği; "Çık"tan sonra dönüş yolu; tonların karşılığı.
 
+### Diziler (Ç3f)
+
+Uyanışa ve yatışa bağlı işler bir dizidir (`docs/06-modul-sozlesmesi.md`, "Diziler"):
+
+- **Standart kartta dizi satırı.** Dizideki iş çalışırken (sahnesi yoksa ya da sahneden çıkıldıysa) ya da önerilirken Şimdi kartında modül satırının altında tek satır: "Sabah dizisi 2/3 · sırada Duş ve hazırlık" (yatışta "Akşam dizisi"; son işte "son iş"). Sayı yapılmış ve çalışan işlerle birlikte sıradır; geçilenler sayılmaz. **Görüşün gerek** (metin).
+- **Kendiliğinden devam.** Dizideki iş Bitti ya da Ertele ile kapanınca sıradaki iş aynı cihazda hemen başlar; ekran sıradaki işin sahnesine (yoksa standart karta) aynı solmayla geçer. Son iş bitince standart ekran.
+- **Sahneden kapanış.** Sahne akşam kapanışını isteyince kapanış sahnenin yerinde açılır; çekirdeğin şeridi üstte durur, oturum sürer. Onaylayınca ya da "Vazgeç"le sahneye dönülür; bu kapanışta "Onayla ve yat" yoktur.
+- **Ayarlar → Günün çerçevesi:** "Dizide sıradaki iş kendiliğinden başlasın" (başlangıçta açık). **Görüşün gerek** (başlangıç değeri, ertelemeden sonra devam).
+
 ### Günün çerçevesi (Ç3c)
 
 Çerçeve açıkken (`settings.day_frame`, `docs/04-planlayici.md` "Günün çerçevesi"):
@@ -141,7 +150,7 @@ Geniş ekranda tek sayfa, kaydırma yok:
 - **Zaman çizelgesi** uyanıştan beklenen yatışa uzanır; uyanışa bağlı, çalışma, akşam ve yatışa bağlı bölümler zemin tonuyla ayrılır, bitiş çizgisi ince bir çizgidir.
 - **Akşam kapanışının sonunda** "Onayla"nın yanında "Onayla ve yat" (kapanışı yazar ve yatışı kaydeder).
 - **Hafta:** en üstte tek satır: son 7 günün ortalama uyanışı, yatışı ve uykusu (kayıt olan günlerden; yoksa satır yok). Seri, puan, rozet yok.
-- **Ayarlar → Günün çerçevesi:** "Günün çerçevesi açık" (kapalıyken planlayıcı Ç3b'deki gibi), uyanış ve yatış aralığı, uyku hedefi (saat), gün tipine özel aralıklar (isteğe bağlı), "Uyandım'dan sonra ilk rutin kendiliğinden başlasın".
+- **Ayarlar → Günün çerçevesi:** "Günün çerçevesi açık" (kapalıyken planlayıcı Ç3b'deki gibi), uyanış ve yatış aralığı, uyku hedefi (saat), gün tipine özel aralıklar (isteğe bağlı), "Uyandım'dan sonra ilk rutin kendiliğinden başlasın" (Ç3f: uyanış telefondan gelince uygulama açılınca da), "Dizide sıradaki iş kendiliğinden başlasın".
 - **Ayarlar → Sesli anlatım (bu cihaz):** açık ya da kapalı, ses (cihazın Türkçe sesleri), hız, "Bu cihaz dokunuş olmadan da konuşsun", "Dene".
 
 ### Ayarlar → Bağlantılar (Ç3d)

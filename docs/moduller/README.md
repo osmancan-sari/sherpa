@@ -8,11 +8,12 @@ Bir modül ancak tasarımı "onaylandı" olduktan sonra kodlanır. Tasarım, her
 | --- | --- | --- | --- | --- | --- | --- |
 | 1 | Okul | Dönemlik | — | Kritik | Taslak (ayrıntılı) | `okul.md`, `okul-ninova.md` |
 | 2 | Beslenme | Ömürlük | Sağlık | Kritik | Taslak | aşağıda |
-| 3 | Sabah rutini ve hareket | Ömürlük | Sağlık | Yüksek | Taslak | aşağıda |
-| 4 | Ev | Ömürlük | — | Orta | Taslak | aşağıda |
-| 5 | İş | Ömürlük | — | Orta | Taslak | aşağıda |
-| 6 | Yüksek lisans | Hedefe kadar | — | Yüksek | Bekliyor | — |
-| 7 | Hayat idaresi | Ömürlük | — | Orta | Bekliyor | — |
+| 3 | Rutin (sabah ve akşam) | Ömürlük | Sağlık | Yüksek | Taslak (tasarım oturumu sürüyor) | `rutin.md` |
+| 4 | Spor | Ömürlük | Sağlık | Yüksek | Bekliyor | aşağıda |
+| 5 | Ev | Ömürlük | — | Orta | Taslak | aşağıda |
+| 6 | İş | Ömürlük | — | Orta | Taslak | aşağıda |
+| 7 | Yüksek lisans | Hedefe kadar | — | Yüksek | Bekliyor | — |
+| 8 | Hayat idaresi | Ömürlük | — | Orta | Bekliyor | — |
 
 Modül olmayanlar (çekirdekte çözülür): korunan zaman (bir sabit blok türü), fikir havuzu ve yan projeler (gelen kutusu + etiket), keyif işleri (takip edilmez).
 
@@ -24,21 +25,26 @@ Aşağıdaki özetler tasarım değil, tasarıma girdidir. Her biri kendi dosyas
 - **Veri stratejisi (karar bekliyor):** Öneri "plan = kayıt". Kullanıcı meal prep yaptığı için planlanan öğün yenen öğündür; yalnızca sapmalar ve haftada 2–3 tartı girilir. Hedefler trend kilodan uyarlanır ve her değişiklik kullanıcı onayına sunulur. Alternatifler: bir kalori takip uygulamasına dönmek ya da yalnızca kilo ve protein takibi.
 - **Tablolar (öngörü):** besinler, tarifler, gün tipleri, haftalık plan, prep oturumları, alışveriş listesi, öğün kayıtları, ölçümler ve hedef geçmişi.
 - **Çekirdeğe verdikleri:** prep oturumu işleri, alışveriş işi (prep'ten 1 gün önce), tartı ritmi, öğün uyumu sorusu.
-- **Olaylar:** dinler `hareket.workout_done`, `is.office_day`; yayınlar `beslenme.prep_done`.
+- **Olaylar:** dinler `spor.workout_done`, `is.office_day`; yayınlar `beslenme.prep_done`.
 - **Özel ekranlar:** telefonda alışveriş modu (reyonlara göre işaretlenen liste), prep koç modu (adım adım, zamanlayıcılı).
 - **Açık sorular:** veri stratejisi; karbonhidrat döngüsü sürecek mi; akşam yemekleri kaç kişilik; prep günleri; güvenlik sınırları (haftalık değişim hızı, kalori tabanı).
 
-## Sabah rutini ve hareket (taslak)
+## Rutin (sabah ve akşam)
 
-- **Amaç:** Her sabah yapılan sabit rutini adım adım yürütmek ve kaydını kendiliğinden tutmak. Salon üyeliği olmadığı sürece hareket de bu modüldedir; üyelik alınınca Spor ayrı modül olur.
-- **İçerik:** Kullanıcının hazır rutini 4 aşama ve 12 hareketten oluşur: omurga uyanışı, boyun ve kürek çalışması, core stabilite (6-4-2 piramidi, her tekrar 10 sn), tam gövde güç. Kısa gün seçeneği: 1. ve 3. aşama, yaklaşık 10 dk. Hareket listesi kullanıcının mevcut dokümanından aktarılacak.
-- **Çekirdeğe verdikleri:** günlük ritim (`floor_count` ile kısa sürüm korunur).
-- **Özel ekran:** koç modu: hareket adı, form ipucu, tekrar sayacı, tutuşlar için geri sayım. Bitince ritim kaydı kendiliğinden düşer.
-- **Olaylar:** yayınlar `hareket.routine_done`, `hareket.workout_done`.
+Tasarımı `rutin.md` içinde. Günün açılışı ve kapanışı: bakım adımları, günün özeti, uyku görünümü. Hareket bu modülde değildir (13 Kas 2026 kararı).
+
+## Spor (bekliyor)
+
+- **Amaç:** Bütün hareketi tek yerde yürütmek. İlk programı kullanıcının boyun ve sırt (duruş) çalışmasıdır; salon üyeliği alınınca antrenmanlar aynı modüle ikinci program olarak eklenir.
+- **Rutin'den bağımsızdır:** yapılamadığı gün Rutin tam görünür. Sabah yapılması bir zaman kısıtıdır, modül üyeliği değil.
+- **Özel ekran:** koç sahnesi: hareket adı, form ipucu, tekrar sayacı, tutuşlar için geri sayım.
+- **Olaylar (öngörü):** yayınlar `spor.workout_done` (Beslenme dinler).
+- **Araştırmadan girdi (13 Kas 2026; `rutin.md` içindeki dayanak):** boyun asgarisi her gün, yaklaşık 5 dk (01 nefes, 04 çene içe, 05 duvar kaydırma), sabaha bağlı; tam set (01–12) haftada 3, sabit gün olmadan ve arada dinlenme günüyle; adaylar: çıkarken ışık yürüyüşü, yemek sonrası yürüyüş, adım sayısı (telefondan veri bağlantısı ister; denenmedi). Spor günü duşun spordan sonraya gelmesi Rutin'in Duş ritmiyle bağlanacak.
+- **Açık sorular:** programların bölüm olarak gösterimi; hareket listesinin ayrıntısı (kullanıcının mevcut dokümanından).
 
 ## Sağlık alanı sayfası
 
-Beslenme ile Sabah rutini ve hareketi tek gidişatta gösterir: kilo gidişatı (tartılar, trend, hedef), haftalık ızgara (gün gün öğün uyumu ve rutin; boş gün gri kalır), sekmeler (haftalık plan, tarifler, alışveriş, rutin, hedef geçmişi).
+Rutin, Spor ve Beslenme'yi tek sayfada gösterir. Metrikleri şimdi tasarlanmaz: en az iki modül iki hafta kullanıldıktan sonra, gerçek veriyle belirlenir. Kural: yalnızca kullanıcının zaten yaptığı dokunuşlardan türeyen metrik girer (uyku: "Uyandım" ve "Yatıyorum"; rutin: sahnedeki adımlar; antrenman: koç sahnesi; kilo: tartı girişi). Önceki öngörü girdi olarak durur: kilo gidişatı, haftalık ızgara (öğün uyumu, rutin, antrenman; boş gün gri kalır).
 
 ## Ev (taslak)
 

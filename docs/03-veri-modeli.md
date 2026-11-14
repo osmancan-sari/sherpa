@@ -97,7 +97,7 @@ Kurallar:
 | `after_finish` | `true`: bitiş çizgisinden sonra, akşama da konabilir | Kesin |
 
 - `anchor` `windows`, `prefer`, `avoid` ve `travel` ile birlikte kullanılmaz (çapalı iş saate değil uyanışa ya da yatışa bağlıdır); `rest_days` ile kullanılabilir.
-- `order` 1–99 arası tam sayıdır ve yalnızca `anchor` ile verilir.
+- `order` 1–99 arası tam sayıdır ve yalnızca `anchor` ile verilir. Sayı ekseni modüller arasında ortaktır (Ç3f): modüller araya yer bırakarak numara verir (10, 20, 30), uyanış dizisinde başka modülün işi araya girebilir.
 - `after_finish` yalnızca `true` olarak yazılır (`false` "kısıt yok" sayılır, atılır) ve `anchor` ile birlikte kullanılmaz.
 - Biçime göre: üçü de son tarih ve tekrar biçiminde ve işte (oturum işi dahil) kullanılır; sabit zaman biçiminde kullanılmaz.
 - Kaynakları `timing.anchor`, `timing.order`, `timing.after_finish`; öbür alt alanlar gibi olgu alanıdır.
@@ -391,13 +391,15 @@ day_frame jsonb null          -- Ç3c: günün çerçevesi; boşsa çerçeve kap
   "bed": ["22:00", "01:00"],
   "sleep_minutes": 480,
   "by_day_type": { "office": { "wake": ["06:00", "07:30"] } },
-  "start_on_wake": false
+  "start_on_wake": false,
+  "chain_auto": true
 }
 ```
 - `wake` ve `bed` birer aralıktır (`HH:mm`, İstanbul); yatış aralığı gece yarısını aşabilir (bitişi 12:00'den önceyse ertesi gündür). Uyanış aralığı gece yarısını aşamaz.
 - `sleep_minutes` uyku hedefi, 240–720 dakika.
 - `by_day_type` isteğe bağlıdır: o tipteki gün için uyanış aralığı ve o günün gecesi için yatış aralığı.
-- `start_on_wake`: "Uyandım"dan sonra uyanışa bağlı ilk iş kendiliğinden başlar.
+- `start_on_wake`: "Uyandım"dan sonra uyanışa bağlı ilk iş kendiliğinden başlar. Ç3f: uyanış dışarıdan (`core/wake`) kaydedildiyse uygulama o cihazda ilk öne geldiğinde de (`docs/06-modul-sozlesmesi.md`, "Diziler").
+- `chain_auto` (Ç3f): dizideki iş "Bitti" ile kapanınca ya da ertelenince dizinin sıradaki işi kendiliğinden başlar. Yoksa açık sayılır; yalnızca `false` yazılır.
 - Sütunun başlangıç değeri kullanıcının verdiği değerlerdir (uyanış 06:00–09:00, yatış 22:00–01:00, uyku 8 saat). Boş değer çerçeveyi kapatır: planlayıcı Ç3b'deki gibi çalışır (günün başı ilk dokunuş ya da `day_start_default`, bitiş çizgisinden sonrası gece). Doğrulama uygulamadadır (`src/core/contract/frame.ts`); veritabanı yalnızca değerin bir nesne olduğunu denetler.
 - `day_start_default` çerçeve açıkken günün başını belirlemez (uyanış belirler); çerçeve kapalıyken eskisi gibi kullanılır.
 

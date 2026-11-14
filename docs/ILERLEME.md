@@ -4,9 +4,24 @@ Bu dosyayı Claude Code günceller. Yeni bir oturum yalnızca bu dosyayı ve `pr
 
 ## Durum
 
-- Faz: **Ç3e (Modülün bölümleri) bitti** (13 Kas 2026, `c3e-tamam`; faz denetimi iki tur, ikisi de GEÇTİ). Yayında (13 Kas: migration'lar `sherpa-dev` ve `sherpa-prod`'da, kod üretimde, fonksiyonlar `fra1`'de). Ç3d yayında ve zamanlayıcısı kurulu (13 Kas; `job_runs` kontrolü sende)
-- Adım: 6 (kapanış) bitti; `sherpa-dev`'e migration'lar ve yayın senin onayınla
-- Son commit: C3e: phase report, tag
+- Faz: **Ç3f (Çapalı diziler) sürüyor** (14 Kas 2026). Ç3e bitti ve yayında (`c3e-tamam`, 13 Kas)
+- Adım: 0 (tasarımın dokümanlara işlenmesi) bitti; sırada 1 (dizi)
+- Son commit: C3f: section G in the numbered docs
+
+### Ç3f planı
+
+İstem `prompts/c3f-capali-diziler.md`, tasarım `docs/12` bölüm G; bağlayıcı hali `docs/06` ("Diziler", `SceneProps.chain`, `controls.closing`, `controls.bed`, `today.closed`), `docs/03` (`day_frame.chain_auto`, ortak `order`), `docs/04` (dizinin türetilmesi), `docs/05` ("Diziler", Ayarlar). Her adımın sonunda `npm run check` (veri adımlarında `test:db`) ve commit; 1. ve 3. adımdan sonra denetçi (adım kipi). Planlayıcı değişmez; çapalı işi olmayan veride ve `chain` kullanmayan sahnede her şey Ç3e'deki gibi.
+
+| # | Adım | Durum |
+| --- | --- | --- |
+| 0 | Bölüm G numaralı dokümanlara işlendi; tasarım oturumunun commit edilmemiş dokümanları (`docs/01`, `07`, `09`, `12`, `docs/moduller/`, istem) aynı commit'te | bitti |
+| 1 | Dizi: `chainOf` (saf, `src/core/today/chain.ts`, önce testler): planın çapalı yuvaları, bugün yapılanlar, bugün geçilenler; başka modülün satırında yalnızca izinli alanlar; planlayıcının çıktısının değişmediği testi | |
+| 2 | Sahneye verme: `SceneProps.chain`, `today.closed`; standart kartta dizi satırı | |
+| 3 | Kendiliğinden devam: `day_frame.chain_auto` (migration yok: değer uygulamada doğrulanır), `start_session_if_idle` (migration: kilitli, "o andan beri oturum başlamadıysa" `start_session`), Bitti ve Ertele'den sonra başlatma, öbür sonuçlardan sonra başlatmama, iki çapa, iki cihaz yarışı | |
+| 4 | Dışarıdan uyanış: uygulama öne gelince dizinin ilk işi (`start_on_wake`, 60 dakika, çift başlatma yok) | |
+| 5 | Sahneden kapanış: `controls.closing()`, `controls.bed()`, `today.closed`, "Onayla ve yat"ın gizlenmesi | |
+| 6 | `deneme` ve şablon kopyası: iki modülün işleriyle uyanış ve yatış dizileri; diziyi çizen örnek sahne | |
+| 7 | Kapanış: uçtan uca testler, ekran görüntüleri (`docs/ekran-goruntuleri/c3f/`), `check:full`, faz denetimi, rapor, `c3f-tamam`, yayın | |
 
 ### Ç3e planı
 
