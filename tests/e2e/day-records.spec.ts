@@ -81,3 +81,118 @@ test("a wrong bedtime and waking are set right or deleted in Ayarlar; the night 
   await page.goto("/");
   await expect(card(page).getByRole("heading", { name: "Akşam", exact: true })).toBeVisible();
 });
+
+test("a scene's Yatıyorum far before bed asks too: Vazgeç keeps the work running, Evet records it", async ({
+  page,
+}) => {
+  await setUp();
+  await page.goto("/ayarlar/moduller");
+  await page.getByRole("button", { name: "Deneme: etkinleştir" }).click();
+  await waitFor(
+    () => rows("modules"),
+    (list) => list.length === 1,
+  );
+  const [mod] = await rows("modules");
+  const [task] = await insert<{ id: string }>("tasks", {
+    module_id: mod.id,
+    title: "Gece notu",
+    est_minutes: 20,
+    facet: "aksam",
+  });
+  await insert("sessions", { task_id: task.id, module_id: mod.id });
+  await page.clock.setFixedTime(dayAt("19:30"));
+  await page.goto("/");
+  const scene = page.getByTestId("deneme-gece");
+  await scene.getByRole("button", { name: "Yatıyorum" }).click();
+  const ask = page.getByRole("dialog", { name: "Saat 19:30. Şimdi yatıyor musun?" });
+  await ask.getByRole("button", { name: "Vazgeç" }).click();
+  await expect(ask).toBeHidden();
+  await expect(scene).toBeVisible();
+  await page.waitForTimeout(300);
+  expect((await today())?.bed_at).toBeNull();
+  expect((await rows("sessions")).filter((row) => row.ended_at === null)).toHaveLength(1);
+
+  await scene.getByRole("button", { name: "Yatıyorum" }).click();
+  await page.getByRole("button", { name: "Evet, yatıyorum" }).click();
+  await expect(page.getByTestId("deneme-gece-bed")).toBeVisible();
+  await waitFor(today, (row) => Boolean(row?.bed_at && row.bed_session_id));
+});
+
+test("Rutin's last step: Vazgeç on the question puts the evening back on its last step", async ({
+  page,
+}) => {
+  await setUp();
+  await page.goto("/ayarlar/moduller");
+  await page.getByRole("button", { name: "Rutin: etkinleştir" }).click();
+  const rhythms = await waitFor(
+    () => rows("rhythms"),
+    (list) => list.length === 3,
+  );
+  const evening = rhythms.find((row) => row.key === "rutin:aksam")!;
+  const [mod] = await rows("modules");
+  await insert("sessions", { rhythm_id: evening.id, module_id: mod.id });
+  await page.clock.setFixedTime(dayAt("19:30"));
+  await page.goto("/");
+  const scene = page.getByTestId("rutin-scene");
+  await expect(scene).toHaveAttribute("data-routine", "aksam");
+  const routine = (await rows("rutin_routines")).find((row) => row.key === "aksam")!;
+  const run = await waitFor(
+    async () => (await rows("rutin_runs")).find((row) => row.routine_id === routine.id),
+    (row) => Boolean(row),
+  );
+  await update("rutin_runs", run!.id as string, { step_position: 3, part_position: 1 });
+  await page.reload();
+  await scene.getByRole("button", { name: "Yatıyorum" }).click();
+  await page
+    .getByRole("dialog", { name: "Saat 19:30. Şimdi yatıyor musun?" })
+    .getByRole("button", { name: "Vazgeç" })
+    .click();
+  await expect(scene.getByRole("heading", { name: "Telefonu salona bırak" })).toBeVisible();
+  await waitFor(
+    async () => (await rows("rutin_runs")).find((row) => row.id === run!.id),
+    (row) => row?.step_position === 3,
+  );
+  expect((await today())?.bed_at).toBeNull();
+  expect((await rows("sessions")).filter((row) => row.ended_at === null)).toHaveLength(1);
+});
+
+test("yesterday's records are set right too, and the modules hear it", async ({ page }) => {
+  await setUp();
+  const yesterday = new Intl.DateTimeFormat("en-CA", { timeZone: ISTANBUL }).format(
+    new Date(Date.now() - 2 * 86_400_000),
+  );
+  const row = await today();
+  await update("days", row!.id as string, { bed_at: dayAt("21:30").toISOString() });
+  await page.clock.setFixedTime(dayAt("22:00"));
+  await page.goto("/ayarlar#kayitlar");
+  const before = page.getByTestId("day-records").getByRole("region", { name: /^Dün/ });
+  await before.getByLabel("Uyanış saati").fill("0715");
+  await before.getByRole("button", { name: "Kaydet" }).first().click();
+  await before.getByLabel("Yatış saati").fill("0030");
+  await before.getByRole("button", { name: "Kaydet" }).nth(1).click();
+  await waitFor(
+    async () => (await rows("days")).find((value) => value.date === yesterday),
+    (value) =>
+      Date.parse(value?.woke_at as string) === new Date(`${yesterday}T07:15:00+03:00`).getTime() &&
+      // 00:30 is that night's: past midnight, on the next calendar day.
+      Date.parse(value?.bed_at as string) === new Date(`${DAY}T00:30:00+03:00`).getTime() &&
+      value?.woke_source === "screen",
+  );
+  // Today's bedtime deleted: the day is open again, and the modules are told.
+  const day = page.getByTestId("day-records").getByRole("region", { name: /^Bugün/ });
+  await day.getByRole("button", { name: "Yatışı sil" }).click();
+  await waitFor(today, (value) => value?.bed_at === null);
+  const events = await waitFor(
+    () => rows("events"),
+    (list) =>
+      list.some((event) => event.type === "core.bed_undone") &&
+      list.some(
+        (event) =>
+          event.type === "core.day_started" &&
+          (event.payload as { date?: string; source?: string }).date === yesterday,
+      ),
+  );
+  const started = events.find((event) => event.type === "core.day_started")!;
+  expect(started.payload).toMatchObject({ date: yesterday, source: "screen", estimated: false });
+  expect(events.some((event) => event.type === "core.day_closed")).toBe(true);
+});

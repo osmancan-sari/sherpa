@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { dayRow, moduleRow, settingsRow } from "@/core/testing/factories";
-import { buildPlan, type PlanRows, planInput } from "@/core/planner";
+import {
+  buildPlan,
+  dayStartClock,
+  plannerSettings,
+  planningDay,
+  type PlanRows,
+  planInput,
+} from "@/core/planner";
 import type { DayRow, Settings } from "@/core/types";
 import { istanbulInstant } from "@/lib/date";
 import { briefOf } from "./brief";
@@ -34,7 +41,10 @@ function rows(days: Partial<DayRow>[] = [], settings: Settings | null = settings
 }
 
 function brief(time: string, data: PlanRows, day = DATE) {
-  const input = planInput(data, { date: DATE, now: at(time, day), context: "desk" });
+  const now = at(time, day);
+  // The day as the screen picks it (useTodayPlan): the planning day of the moment.
+  const date = planningDay(now, dayStartClock(plannerSettings(data.settings)));
+  const input = planInput(data, { date, now, context: "desk" });
   return briefOf(input, buildPlan(input), new Map());
 }
 

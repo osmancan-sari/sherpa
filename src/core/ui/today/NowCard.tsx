@@ -209,12 +209,14 @@ function CardFor({
               : "Yarın için planlanan bir şey yok."}
           </p>
           {/* Ç3g: a bedtime written by mistake is set right there. */}
-          <Link
-            href="/ayarlar#kayitlar"
-            className="text-muted-foreground w-fit text-sm underline underline-offset-4"
-          >
-            Yatışı düzelt
-          </Link>
+          {frame?.bedAt ? (
+            <Link
+              href="/ayarlar#kayitlar"
+              className="text-muted-foreground w-fit text-sm underline underline-offset-4"
+            >
+              Yatışı düzelt
+            </Link>
+          ) : null}
         </div>
       </Frame>
     );

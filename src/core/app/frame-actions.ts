@@ -157,7 +157,7 @@ export function useUndoBed() {
 }
 
 /**
- * Ç3g: a day's waking or bedtime set right, or deleted (Ayarlar → Günün çerçevesi). Everything
+ * Ç3g: a day's waking or bedtime set right, or deleted (Ayarlar → "Uyanış ve yatış kayıtları"). Everything
  * that depends on them is worked out again (the plan reads the day's row); the modules hear it.
  */
 export function useCorrectDay() {

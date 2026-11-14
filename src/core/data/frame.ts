@@ -76,7 +76,7 @@ export async function recordBed(
 }
 
 /**
- * Ç3g: a day's waking set right afterwards (Ayarlar → Günün çerçevesi, "Uyanış ve yatış
+ * Ç3g: a day's waking set right afterwards (Ayarlar → "Uyanış ve yatış
  * kayıtları"): a new moment, as the user's own ("screen"), or none at all.
  */
 export async function correctWake(db: Db, date: string, at: Date | null): Promise<DayRow> {
