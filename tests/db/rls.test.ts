@@ -66,6 +66,15 @@ const SAMPLES: Record<string, (ids: Record<string, string>) => Row> = {
     user_value: { est_minutes: 30 },
   }),
   deneme_items: () => ({ title: "Deneme kaydı" }),
+  // Rutin (the first real module).
+  rutin_routines: () => ({ key: "sabah", title: "Sabah" }),
+  rutin_steps: (ids) => ({ routine_id: ids.rutin_routines, title: "Diş bakımı" }),
+  rutin_runs: (ids) => ({ routine_id: ids.rutin_routines, day: "2026-11-12" }),
+  rutin_run_steps: (ids) => ({
+    run_id: ids.rutin_runs,
+    step_id: ids.rutin_steps,
+    result: "done",
+  }),
   // Ç3d. Each account its own digest: the column is unique across accounts.
   device_tokens: () => ({
     name: "Kestirmeler",
@@ -96,6 +105,10 @@ const ORDER = [
   "blocks",
   "device_tokens",
   "ingest_requests",
+  "rutin_routines",
+  "rutin_steps",
+  "rutin_runs",
+  "rutin_run_steps",
 ];
 
 /** Tables whose rows are never changed or removed by design; the grants say so too. */

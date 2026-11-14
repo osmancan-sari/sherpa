@@ -1,5 +1,5 @@
 import { readdirSync, readFileSync } from "node:fs";
-import { join, relative } from "node:path";
+import { join, posix, relative } from "node:path";
 import { describe, expect, it } from "vitest";
 
 // Ç3d (docs/02-mimari.md, "Sunucuda kullanıcı adına erişim"): the Supabase secret key is used in
@@ -36,10 +36,16 @@ describe("the server boundary", () => {
   });
 
   it("is imported by the server's own code only: its routes and itself", () => {
-    // The alias, a relative path into src/core/server, or a dynamic import of either.
-    const importers = files.filter((file) =>
-      /(from |import\()["'](@\/core\/server\/|(\.{1,2}\/)+(core\/)?server\/)/.test(file.text),
-    );
+    // The alias, a relative path into src/core/server, or a dynamic import of either. A relative
+    // path is resolved first: a module's own server/ folder (docs/06, "Sunucu zemini") is not it.
+    const intoCoreServer = (file: { path: string; text: string }) =>
+      [...file.text.matchAll(/(?:from |import\()["']([^"']+)["']/g)].some(([, target]) => {
+        if (target.startsWith("@/core/server/")) return true;
+        if (!target.startsWith(".")) return false;
+        const resolved = posix.normalize(posix.join(posix.dirname(file.path), target));
+        return resolved.startsWith("src/core/server/");
+      });
+    const importers = files.filter(intoCoreServer);
     for (const file of importers) {
       expect(
         file.path.startsWith("src/core/server/") || file.path.startsWith("src/app/api/"),

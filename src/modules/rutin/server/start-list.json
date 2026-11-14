@@ -1,0 +1,177 @@
+{
+  "source": "docs/moduller/rutin.md, 8.1 (14 Kas 2026). Written once, when the module is switched on for the first time; after that the list is the user's.",
+  "routines": [
+    {
+      "key": "sabah",
+      "title": "Sabah",
+      "steps": [
+        {
+          "title": "Diş bakımı",
+          "seconds": 180,
+          "minimum": true,
+          "active": true,
+          "phase": 1,
+          "ref": "S1",
+          "parts": [
+            { "title": "Su jeti" },
+            { "title": "Fırçala", "seconds": 120, "timer": true, "hold": true },
+            { "title": "Dil", "seconds": 25, "timer": false, "hold": false },
+            { "title": "Tükür", "note": "Suyla çalkala." }
+          ]
+        },
+        {
+          "title": "Bir bardak su",
+          "seconds": 60,
+          "minimum": false,
+          "active": true,
+          "phase": 1,
+          "ref": "S2",
+          "hint": "Mutfakta, bir bardak."
+        }
+      ]
+    },
+    {
+      "key": "hazirlik",
+      "title": "Duş ve hazırlık",
+      "steps": [
+        {
+          "title": "Duş",
+          "seconds": 600,
+          "minimum": true,
+          "active": true,
+          "phase": 1,
+          "ref": "A3",
+          "hint": "Ilık; parmak aralarını kurula.",
+          "addOns": [
+            {
+              "title": "Dercos şampuan",
+              "seconds": 0,
+              "minimum": false,
+              "active": true,
+              "phase": 1,
+              "ref": "A3",
+              "hint": "Köpüğü 3–5 dk beklet.",
+              "every_days": 3
+            },
+            {
+              "title": "Nasır kremi",
+              "seconds": 60,
+              "minimum": false,
+              "active": false,
+              "phase": 2,
+              "ref": "A5",
+              "hint": "Üreli krem.",
+              "every_days": 2
+            }
+          ]
+        },
+        {
+          "title": "SPF",
+          "seconds": 180,
+          "minimum": true,
+          "active": true,
+          "phase": 1,
+          "ref": "S4",
+          "hint": "Yüz kuruyken.",
+          "parts": [
+            { "title": "Yarım çay kaşığı kadar al" },
+            { "title": "Yüz, boyun ve kulaklara yay", "note": "Kulak arkasını unutma." }
+          ]
+        },
+        {
+          "title": "Giyin",
+          "seconds": 900,
+          "minimum": false,
+          "active": true,
+          "phase": 1,
+          "ref": "S7",
+          "hint": "Çıkışa hazırlan."
+        },
+        {
+          "title": "Yürüyüş",
+          "seconds": 720,
+          "minimum": false,
+          "active": true,
+          "phase": 1,
+          "ref": "S8",
+          "hint": "Çıkarken, arabaya binmeden tempolu 10–15 dk."
+        }
+      ]
+    },
+    {
+      "key": "aksam",
+      "title": "Akşam kapanışı",
+      "steps": [
+        {
+          "title": "Antiperspirant",
+          "seconds": 60,
+          "minimum": true,
+          "active": true,
+          "phase": 1,
+          "ref": "A4",
+          "hint": "Kuru cilde."
+        },
+        {
+          "title": "Diş bakımı",
+          "seconds": 180,
+          "minimum": true,
+          "active": true,
+          "phase": 1,
+          "ref": "A6",
+          "parts": [
+            { "title": "Ara fırça ya da ağız duşu" },
+            { "title": "Fırçala", "seconds": 120, "timer": true, "hold": true },
+            { "title": "Dil" },
+            { "title": "Tükür", "note": "Çalkala; sonra yalnızca su." }
+          ]
+        },
+        {
+          "title": "Yüz",
+          "seconds": 180,
+          "minimum": false,
+          "active": true,
+          "phase": 1,
+          "ref": "A3, A7",
+          "hint": "Lavaboda.",
+          "parts": [
+            { "title": "Nazik temizleyiciyle yıka", "note": "Günün güneş kremi ve teri." },
+            { "title": "Nemlendirici" }
+          ],
+          "addOns": [
+            {
+              "title": "Azelaik asit",
+              "seconds": 0,
+              "minimum": false,
+              "active": false,
+              "phase": 2,
+              "ref": "A7",
+              "every_days": 2
+            }
+          ]
+        },
+        {
+          "title": "Yarının listesi",
+          "kind": "closing",
+          "seconds": 0,
+          "minimum": true,
+          "active": false,
+          "phase": 2,
+          "ref": "A8",
+          "hint": "Çekirdeğin kapanışına geçer."
+        },
+        {
+          "title": "Telefonu salona bırak",
+          "seconds": 120,
+          "minimum": true,
+          "active": true,
+          "phase": 1,
+          "ref": "A9",
+          "parts": [
+            { "title": "Şarja tak", "note": "Yatak odasının dışında." },
+            { "title": "Çalar saati kontrol et" }
+          ]
+        }
+      ]
+    }
+  ]
+}

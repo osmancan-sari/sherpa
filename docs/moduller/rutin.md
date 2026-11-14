@@ -57,9 +57,12 @@ rutin_runs
   session_id uuid null        -- çekirdeğin oturumu
   step_position int           -- kaldığı adım (iki cihazda aynı)
   part_position int default 0 -- adımın içinde kaldığı alt adım
+  step_started_at timestamptz null -- adımın ekrana geldiği an (adımda geçen süre buradan sayılır; 1. adımda eklendi)
   part_started_at timestamptz null -- süreli alt adımın başladığı an (sayaç saat damgasından hesaplanır)
+  part_paused_at timestamptz null  -- sayaca dokunularak durdurulduğu an (boş: işliyor; 1. adımda eklendi)
   minimum_done boolean        -- o yapılışta açık temel adımların hepsi yapıldı mı
   finished_at timestamptz null
+  -- (routine_id, day) tekil: rutin günde bir yapılır; yeniden başlatılan yapılış aynı satırda sürer
 
 rutin_run_steps
   run_id -> rutin_runs
@@ -69,7 +72,7 @@ rutin_run_steps
   bulk boolean default false  -- arka arkaya birkaç saniyede ya da "Hepsini yaptım" ile kapatıldı; öğrenmeye girmez
 ```
 
-Uyanış, yatış ve uyku modülde saklanmaz; `ctx.days` ile çekirdekten okunur. Alt adımlar tek tek kaydedilmez; kayıt adımın kendisi içindir. İlk liste kurulumda 8. bölümdeki tablolardan yazılır.
+Uyanış, yatış ve uyku modülde saklanmaz; `ctx.days` ile çekirdekten okunur. Yapılışın günü (B3): akşamın 12:00'den önce başlayan yapılışı önceki günün gecesidir; sabahınki, o takvim gününün uyanışı kayıtlıysa ve yapılıştan önceyse o gündür, uyanış yokken 05:00'ten önce önceki gündür (`server/flow.ts`, `runDay`). Alt adımlar tek tek kaydedilmez; kayıt adımın kendisi içindir. İlk liste kurulumda 8. bölümdeki tablolardan yazılır.
 
 ## 4. Veri kaynakları ve otomasyon
 

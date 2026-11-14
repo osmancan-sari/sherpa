@@ -4,9 +4,24 @@ Bu dosyayı Claude Code günceller. Yeni bir oturum yalnızca bu dosyayı ve `pr
 
 ## Durum
 
-- Faz: **Ç3f (Çapalı diziler) bitti** (14 Kas 2026, `c3f-tamam`; faz denetimi üç tur, üçü de GEÇTİ). Yayında (14 Kas: migration'lar `sherpa-dev` ve `sherpa-prod`'da, kod üretimde, fonksiyonlar `fra1`'de). Ç3e yayında (13 Kas)
-- Adım: 7 (kapanış) bitti ve yayınlandı; sırada Rutin 1. adım
-- Son commit: C3f: phase report, tag
+- Faz: **Rutin 1. adım sürüyor** (modül hattı; istem `prompts/rutin-1-temel.md`, tasarım `docs/moduller/rutin.md` "Adım 1 · Temel"). Ç3f bitti ve yayında (14 Kas, `c3f-tamam`)
+- Adım: 1–2 bitti (veri, teklifler); sırada 3 (sahne)
+- Son commit: Progress record: C3f is released
+
+### Rutin 1 planı
+
+İstem `prompts/rutin-1-temel.md`; bağlayıcı tasarım `docs/moduller/rutin.md` (8.1 başlangıç listesi, 8.2–8.6, kabul ölçütleri 1–12), `docs/moduller/ORTAK.md`, çizim değerleri `docs/moduller/rutin-cizimler/degerler.md` (bölüm 1–8). Çekirdeğe yalnızca yatışın geri alınması için dokunulur (çekirdek notu 15); öbür eksikler `rutin.md` "Çekirdek için notlar"a yazılır. Her adımın sonunda `npm run check` (veri adımlarında `test:db`) ve commit; 1., 4. ve 5. adımdan sonra denetçi (adım kipi).
+
+| # | Adım | Durum |
+| --- | --- | --- |
+| 0 | Plan; modül `_sablon`'dan `src/modules/rutin/`, kayıt defterinde (üretimde de kaydolur) | bitti |
+| 1 | Veri: `rutin_routines`, `rutin_steps`, `rutin_runs`, `rutin_run_steps` (RLS, Realtime); etkinleştirilince başlangıç listesi (8.1, yalnızca ilk kez); yapılışın günü (ölçüt 7); veritabanı testleri | bitti (`20261114112828_rutin_tables.sql`): `queries.ts`, `rules.ts` (`writeStartList`: rutin yoksa yazar, iki ekran aynı anda yazsa da tek liste; `openRun`/`closeRun`: `core.session_started` ve `core.session_ended`), `server/flow.ts` (saf: `dayStepsOf`, `isDue`, `runDay`, `minimumDone`, süreler), `server/start-list.json` (8.1, veri). Testler: `tests/db/rutin.test.ts` 9 (ölçüt 7 dahil), `src/modules/rutin/server/flow.test.ts`; `rls.test.ts` ve `helpers.ts`'e dört tablo eklendi |
+| 2 | Teklifler: üç ritim (`anchor`, `order` 10/30/10, bölümler Sabah ve Akşam), süre adımlardan; `every_days` saf fonksiyon (ölçüt 6); ölçüt 1 | teklif ve ölçüt 6 bitti (`proposalFor`, `proposeAll`; `flow.test.ts`); ölçüt 1'in uçtan uca testi 3. adımda |
+| 3 | Sahne: adım ekranı, alt adımlar, süreli alt adım (basılı tutma, saat damgasından sayaç, ekranı açık tutma), Günaydın, "İyi günler", cam ve gökyüzü (güneş yüksekliği saf fonksiyon), hareket ve saydamlık azaltma, ölçülen karşıtlık; ölçüt 2, 3, 4, 10 | bekliyor |
+| 4 | Akşam ve yatış: "Yatıyorum", "İyi geceler"; çekirdek: yatışın geri alınması (sözleşme, migration, veritabanı testi, `deneme` örneği); ölçüt 5 | bekliyor |
+| 5 | İki cihaz ve ses: eşzamanlı ilerleme (ölçüt 9), günün özeti sesli ve yazılı, yalnızca dokunulan cihazda | bekliyor |
+| 6 | Modül sayfası: Sabah ve Akşam sekmeleri, düzenleme, ekleme, sıralama, kapatma, silme, yeniden teklif (ölçüt 8) | bekliyor |
+| 7 | Kapanış: ölçüt 11 denemesi, uçtan uca testler, ekran görüntüleri (`docs/ekran-goruntuleri/rutin-1/`), `check:full`, faz denetimi, rapor, `rutin-1-tamam`, yayın | bekliyor |
 
 ### Ç3f planı
 
@@ -881,6 +896,15 @@ Süre sapmasındaki artış çoğunlukla `enrich`'in kendi tahminlerinin çalı�
 - Ekran görüntüleri: `docs/ekran-goruntuleri/c1/`.
 
 ## Verdiğim kararlar
+
+**Rutin 1 (14 Kas 2026)**
+
+- `rutin_runs`'a tasarımda olmayan iki sütun: `step_started_at` (adımda geçen süre "ekrana geldiği andan" sayılır; iki cihaz aynı değeri görür) ve `part_paused_at` (sayaca dokunarak durdurma, 8.2; ekran yenilense de durur). `(routine_id, day)` tekil: rutin günde birdir; Durdur'dan sonra yeniden başlayan yapılış kaldığı yerden sürer, "Bitti" ile bitmiş yapılış aynı gün yeniden başlatılırsa ilk adımdan başlar (kayıtlar üzerine yazılır). `rutin.md` bölüm 3'e işlendi.
+- Başlangıç listesi kodda değil `src/modules/rutin/server/start-list.json` veri dosyasında; yalnızca modülde hiç rutin yokken yazılır (`writeStartList`), iki ekranın aynı anda etkinleştirmesi tekil `(user_id, key)` ile tek liste yazar. Adım adları kodun hiçbir yerinde geçmez; sahne adımları yalnızca veriden okur.
+- Liste 8.1'deki not sütunu adımın `hint`'ine, alt adımların notları `parts[].note`'a yazıldı; çizimde olup tabloda olmayan açıklamalar ("Mutfakta, bir bardak.", "Yüz kuruyken.", "Kuru cilde.", "Lavaboda.", "Çıkışa hazırlan.") çizimden alındı. "Dil" sabahta 25 sn, sayaçsız ve basılı tutmasız (`hold: false`: tabloda "süre dolmadan geçilmez" yalnızca Fırçala için yazıyor). **Görüşün gerek.**
+- Ritmin süresi açık adımların toplamıdır (ekler sayılmaz: günlük değiller); çekirdek oturum süresini 5–90 dk arasında aldığı için 4 dakikalık Sabah bloğu 5 dk teklif edilir. Modül sayfası gerçek toplamı ("toplam 4 dk") gösterir.
+- Yapılışın günü (B3) modülde saf bir kuralla bulunur (`runDay`): sahne ve olay çekirdeğin planlama gününü taşımadığı için. Akşam: 12:00'den önce başlayan önceki günün gecesi; sabah: takvim gününün uyanışı kayıtlı ve yapılıştan önceyse o gün, yoksa 05:00'ten önce önceki gün. Çekirdek notu 16 (`rutin.md`).
+- Test değişiklikleri (önceki fazların): `tests/unit/server-boundary.test.ts` modülün kendi `server/` klasörünü (`docs/06` "Sunucu zemini"nin izin verdiği yer) `src/core/server` sanıyordu; göreli yol artık çözülüp denetleniyor. `tests/db/blocks.test.ts` ("export covers every core table") yalnızca `deneme_` ile başlayanları modül tablosu sayıyordu; artık `helpers.ts`'teki `MODULE_TABLES` listesini kullanıyor. İkisinde de beklenti gevşemedi: çekirdeğin tabloları ve sunucu sınırı aynı denetleniyor.
 
 "Görüşün gerek" yazanlar zevkine ya da alışkanlığına bağlı; fazın sonunda bakman yeter.
 

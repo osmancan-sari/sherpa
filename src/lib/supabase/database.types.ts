@@ -1006,6 +1006,238 @@ export type Database = {
           },
         ];
       };
+      rutin_routines: {
+        Row: {
+          active: boolean;
+          created_at: string;
+          id: string;
+          key: string;
+          title: string;
+          updated_at: string;
+          user_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          active?: boolean;
+          created_at?: string;
+          id?: string;
+          key: string;
+          title: string;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Update: {
+          active?: boolean;
+          created_at?: string;
+          id?: string;
+          key?: string;
+          title?: string;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
+      rutin_run_steps: {
+        Row: {
+          bulk: boolean;
+          created_at: string;
+          id: string;
+          result: string;
+          run_id: string;
+          seconds: number | null;
+          step_id: string | null;
+          updated_at: string;
+          user_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          bulk?: boolean;
+          created_at?: string;
+          id?: string;
+          result: string;
+          run_id: string;
+          seconds?: number | null;
+          step_id?: string | null;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Update: {
+          bulk?: boolean;
+          created_at?: string;
+          id?: string;
+          result?: string;
+          run_id?: string;
+          seconds?: number | null;
+          step_id?: string | null;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "rutin_run_steps_run_id_user_id_fkey";
+            columns: ["run_id", "user_id"];
+            isOneToOne: false;
+            referencedRelation: "rutin_runs";
+            referencedColumns: ["id", "user_id"];
+          },
+          {
+            foreignKeyName: "rutin_run_steps_step_id_user_id_fkey";
+            columns: ["step_id", "user_id"];
+            isOneToOne: false;
+            referencedRelation: "rutin_steps";
+            referencedColumns: ["id", "user_id"];
+          },
+        ];
+      };
+      rutin_runs: {
+        Row: {
+          created_at: string;
+          day: string;
+          finished_at: string | null;
+          id: string;
+          minimum_done: boolean;
+          part_paused_at: string | null;
+          part_position: number;
+          part_started_at: string | null;
+          routine_id: string;
+          session_id: string | null;
+          step_position: number;
+          step_started_at: string | null;
+          updated_at: string;
+          user_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          created_at?: string;
+          day: string;
+          finished_at?: string | null;
+          id?: string;
+          minimum_done?: boolean;
+          part_paused_at?: string | null;
+          part_position?: number;
+          part_started_at?: string | null;
+          routine_id: string;
+          session_id?: string | null;
+          step_position?: number;
+          step_started_at?: string | null;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Update: {
+          created_at?: string;
+          day?: string;
+          finished_at?: string | null;
+          id?: string;
+          minimum_done?: boolean;
+          part_paused_at?: string | null;
+          part_position?: number;
+          part_started_at?: string | null;
+          routine_id?: string;
+          session_id?: string | null;
+          step_position?: number;
+          step_started_at?: string | null;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "rutin_runs_routine_id_user_id_fkey";
+            columns: ["routine_id", "user_id"];
+            isOneToOne: false;
+            referencedRelation: "rutin_routines";
+            referencedColumns: ["id", "user_id"];
+          },
+          {
+            foreignKeyName: "rutin_runs_session_id_user_id_fkey";
+            columns: ["session_id", "user_id"];
+            isOneToOne: false;
+            referencedRelation: "sessions";
+            referencedColumns: ["id", "user_id"];
+          },
+        ];
+      };
+      rutin_steps: {
+        Row: {
+          active: boolean;
+          created_at: string;
+          every_days: number | null;
+          evidence: string | null;
+          hint: string | null;
+          id: string;
+          kind: string;
+          minimum: boolean;
+          parent_id: string | null;
+          parts: Json | null;
+          phase: number | null;
+          position: number;
+          ref: string | null;
+          routine_id: string;
+          seconds: number;
+          seconds_auto: boolean;
+          title: string;
+          updated_at: string;
+          user_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          active?: boolean;
+          created_at?: string;
+          every_days?: number | null;
+          evidence?: string | null;
+          hint?: string | null;
+          id?: string;
+          kind?: string;
+          minimum?: boolean;
+          parent_id?: string | null;
+          parts?: Json | null;
+          phase?: number | null;
+          position?: number;
+          ref?: string | null;
+          routine_id: string;
+          seconds?: number;
+          seconds_auto?: boolean;
+          title: string;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Update: {
+          active?: boolean;
+          created_at?: string;
+          every_days?: number | null;
+          evidence?: string | null;
+          hint?: string | null;
+          id?: string;
+          kind?: string;
+          minimum?: boolean;
+          parent_id?: string | null;
+          parts?: Json | null;
+          phase?: number | null;
+          position?: number;
+          ref?: string | null;
+          routine_id?: string;
+          seconds?: number;
+          seconds_auto?: boolean;
+          title?: string;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "rutin_steps_parent_id_user_id_fkey";
+            columns: ["parent_id", "user_id"];
+            isOneToOne: false;
+            referencedRelation: "rutin_steps";
+            referencedColumns: ["id", "user_id"];
+          },
+          {
+            foreignKeyName: "rutin_steps_routine_id_user_id_fkey";
+            columns: ["routine_id", "user_id"];
+            isOneToOne: false;
+            referencedRelation: "rutin_routines";
+            referencedColumns: ["id", "user_id"];
+          },
+        ];
+      };
       sessions: {
         Row: {
           confirmed_at: string | null;

@@ -16,7 +16,16 @@ import { addInboxEntry, dismissEntry, listInbox, markRouted } from "@/core/data/
 import { SERIES_HORIZON_DAYS } from "@/core/data/series";
 import { createTask, listTasks } from "@/core/data/work";
 import { dayKey, shiftDay, weekdayOf } from "@/lib/date";
-import { CORE_TABLES, makeModule, ok, ownerDb, strangerDb, SUPABASE_URL, wipe } from "./helpers";
+import {
+  CORE_TABLES,
+  makeModule,
+  MODULE_TABLES,
+  ok,
+  ownerDb,
+  strangerDb,
+  SUPABASE_URL,
+  wipe,
+} from "./helpers";
 
 // Block series, the inbox and the export, against the real database.
 
@@ -277,8 +286,9 @@ describe("export", () => {
       headers: { apikey: key, Authorization: `Bearer ${key}` },
     });
     const spec = (await response.json()) as { definitions: Record<string, unknown> };
+    // Module tables are the modules' own (exported through their `tables`), not the core's.
     const coreTables = Object.keys(spec.definitions).filter(
-      (table) => !table.startsWith("deneme_"),
+      (table) => !MODULE_TABLES.includes(table),
     );
     expect([...CORE_EXPORT_TABLES].sort()).toEqual(coreTables.sort());
     expect([...CORE_TABLES].sort()).toEqual(coreTables.sort());
