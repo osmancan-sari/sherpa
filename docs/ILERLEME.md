@@ -640,18 +640,9 @@ Testler: 413 birim, 207 veritabanı, 166 uçtan uca (`npm run check:full` yeşil
 
 ## Sıradaki adım
 
-Ç3f bitti (`c3f-tamam`); üretime çıkışı senin onayını bekliyor ("Senden bekleyenler" → Ç3f). Sıradaki iş ilk gerçek modül **Rutin** (tasarımı onaylanınca; `docs/moduller/rutin.md`, Ç3f raporundaki notlar) ya da **Ç4 (Pano ve telefon cilası)**, yeni oturumda. Rutin'den önce bakılması önerilen: gece yarısından sonra kaydı düşen çapalı ritmin planlayıcıda yeniden önerilmesi ("Bilinen sorunlar").
+Rutin 1. adım (`prompts/rutin-1-temel.md`), sonra Ç4.
 
-**Sıra (kullanıcının kararı, 12 Kas 2026): Ç3c → Ç3d → Ç3e → Ç4.** Modüller tasarlanmadan önce altyapı üç katmana hazır olmalı (`docs/12-sahne-ve-otomasyon.md`, "Neden").
-
-1. **Ç3c (Sahne ve günün çerçevesi):** istem `prompts/c3c-sahne-ve-gun.md`, etiket `c3c-tamam`.
-2. **Ç3d (Sunucu zemini):** istem `prompts/c3d-sunucu-zemini.md`, etiket `c3d-tamam`.
-3. **Ç3e (Modülün bölümleri):** istem `prompts/c3e-modul-bolumleri.md`, etiket `c3e-tamam`. Tasarım `docs/12-sahne-ve-otomasyon.md`, bölüm F.
-4. `c3e-tamam` yokken Ç4'e başlanmaz. İlk gerçek modül (rutin) tasarımı onaylanınca Ç3e'den sonra kurulabilir.
-
-Ç3b üretimde; kullanıcı üretimde "Zaman" bölümünü dener ("Senden bekleyenler" → Ç3b yayını).
-
-Sonra Ç4 (Pano ve telefon cilası): yeni oturumda `docs/05-arayuz.md` ve `docs/11-yayin-ve-cihazlar.md` okunarak başlanır. Önce Ç3'ün ve Ç3b'nin "Görüşün gerek" satırları. Ç2'nin "Sunum slaytları cuma" ölçütü açık: Okul modülü kurulunca yeniden denenecek (D3, karar 5).
+Ç4 (Pano ve telefon cilası): yeni oturumda `docs/05-arayuz.md` ve `docs/11-yayin-ve-cihazlar.md` okunarak başlanır. Önce Ç3'ün ve Ç3b'nin "Görüşün gerek" satırları. Ç2'nin "Sunum slaytları cuma" ölçütü açık: Okul modülü kurulunca yeniden denenecek (D3, karar 5).
 
 ## Senden bekleyenler
 
