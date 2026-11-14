@@ -1,14 +1,8 @@
 "use client";
 
 import type { FrameSettings } from "@/core/contract/frame";
-import {
-  type BedUndo,
-  recordBed,
-  recordWake,
-  saveDayFrame,
-  setExpected,
-  undoSceneBed,
-} from "@/core/data/frame";
+import type { BedUndo } from "@/core/contract/types";
+import { recordBed, recordWake, saveDayFrame, setExpected, undoSceneBed } from "@/core/data/frame";
 import { tellBedUndone, tellDayClosed, tellDayStarted } from "@/core/data/session-events";
 import { useRegistry } from "./CoreProvider";
 import type { DayRow } from "@/core/types";
@@ -125,7 +119,16 @@ export function useUndoBed() {
       if (result === "undone") await tellBedUndone({ db, registry }, args);
       return result;
     },
-    invalidate: [keys.days, keys.openSession, keys.sessions, keys.rhythmLogs, keys.tasks],
+    // Not optimistic: whether it can be taken back is the database's answer (10 minutes, nothing
+    // written since); the screen waits for it. The module's own rows come back with Realtime.
+    invalidate: [
+      keys.days,
+      keys.openSession,
+      keys.sessions,
+      keys.rhythmLogs,
+      keys.tasks,
+      keys.workItems,
+    ],
     onError,
   });
 }

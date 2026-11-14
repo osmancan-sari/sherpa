@@ -23,14 +23,8 @@ import { useColors } from "@/core/app/facets";
 import { useAnswerFollowUp, useDefer, useReplan, useStopForStuck } from "@/core/app/plan-actions";
 import { moduleColor } from "@/core/contract/colors";
 import type { ChipData, Health } from "@/core/contract/types";
-import {
-  buildPlan,
-  type Candidate,
-  type NowState,
-  type PlanRows,
-  tomorrowInput,
-} from "@/core/planner";
-import { BED_UNDO_MINUTES } from "@/core/data/frame";
+import { buildPlan, type Candidate, tomorrowInput } from "@/core/planner";
+import { sceneBedtime } from "@/core/today/bedtime";
 import type { PlannedTarget } from "@/core/data/sessions";
 import { chainLine, chainsOf, chainWith, nextInChain, sceneChain } from "@/core/today/chain";
 import { blocksOfDay } from "@/core/today/select";
@@ -666,33 +660,4 @@ function AiBudgetNotice() {
       Bu ayın yapay zeka bütçesi doldu; girişler ay sonuna kadar elle yönlendirilir.
     </p>
   );
-}
-
-/**
- * Rutin 1: tonight's bedtime written by a scene's "Yatıyorum", while it can be taken back: the
- * session it closed, with its work, and until when. Null otherwise (or when the rows are not in).
- */
-function sceneBedtime(
-  date: string,
-  rows: PlanRows | undefined,
-  now: Date,
-): { state: Extract<NowState, { kind: "running" }>; at: Date; until: Date } | null {
-  const day = rows?.days.find((row) => row.date === date);
-  if (!rows || !day?.bed_session_id || !day.bed_at) return null;
-  const until = new Date(Date.parse(day.bed_at) + BED_UNDO_MINUTES * 60_000);
-  if (now >= until) return null;
-  const session = rows.sessions.find((row) => row.id === day.bed_session_id);
-  if (!session?.ended_at) return null;
-  return {
-    state: {
-      kind: "running",
-      session,
-      task: session.task_id ? (rows.tasks.find((row) => row.id === session.task_id) ?? null) : null,
-      rhythm: session.rhythm_id
-        ? (rows.rhythms.find((row) => row.id === session.rhythm_id) ?? null)
-        : null,
-    },
-    at: new Date(day.bed_at),
-    until,
-  };
 }

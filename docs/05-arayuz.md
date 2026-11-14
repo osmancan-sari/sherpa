@@ -137,6 +137,7 @@ Uyanışa ve yatışa bağlı işler bir dizidir (`docs/06-modul-sozlesmesi.md`,
 - **Standart kartta dizi satırı.** Dizideki iş çalışırken (sahnesi yoksa ya da sahneden çıkıldıysa) ya da önerilirken (akşam kartı dahil) Şimdi kartında modül satırının altında tek satır: "Sabah dizisi 2/3 · sırada Duş ve hazırlık" (yatışta "Akşam dizisi"; son işte "son iş"). Sayı yapılmış ve çalışan işlerle birlikte sıradır; geçilenler sayılmaz. **Görüşün gerek** (metin).
 - **Kendiliğinden devam.** Dizideki çalışan iş Bitti ya da Ertele ile kapanınca sıradaki iş aynı cihazda hemen başlar; ekran sıradaki işin sahnesine (yoksa standart karta) aynı solmayla geçer. Son iş bitince standart ekran.
 - **Sahneden kapanış.** Sahne akşam kapanışını isteyince kapanış sahnenin yerinde açılır; çekirdeğin şeridi üstte durur, oturum sürer. Onaylayınca ya da "Vazgeç"le sahneye dönülür; bu kapanışta "Onayla ve yat" yoktur.
+- **Yatıştan sonra sahne (Rutin 1).** Sahnenin "Yatıyorum"u (`controls.bed()`) yatışı yazınca, geri alınabildiği 10 dakika boyunca gece ekranının yerinde o sahne durur (her cihazda, sayfa yenilense de): şerit ve "Çık" yoktur, iş çalışmıyor. Sahne "İyi geceler" ve "Geri al" gösterir (`SceneProps.bedtime`). "Geri al" sahneyi kaldığı yerde yeniden açar; 10 dakika geçince olağan gece ekranı gelir. **Görüşün gerek:** bu sürede çekirdeğin gece ekranına (yarının uyanışı, ilk işi) dönüş yolu yok.
 - **Ayarlar → Günün çerçevesi:** "Dizide sıradaki iş kendiliğinden başlasın" (başlangıçta açık). **Görüşün gerek** (başlangıç değeri, ertelemeden sonra devam).
 
 ### Günün çerçevesi (Ç3c)

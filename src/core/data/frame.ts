@@ -1,5 +1,5 @@
 import { type FrameSettings, toStoredFrame } from "@/core/contract/frame";
-import type { DayFrameRecord } from "@/core/contract/types";
+import type { BedUndo, DayFrameRecord } from "@/core/contract/types";
 import { check, type Db, type DayRow, toJson, unwrap } from "@/core/types";
 
 // The day's frame in the data (docs/03-veri-modeli.md, `days`, `settings.day_frame`): waking
@@ -55,8 +55,6 @@ export async function recordBed(
   );
 }
 
-export type BedUndo = "undone" | "expired" | "changed";
-
 /**
  * Rutin 1: takes back the bedtime a scene's "Yatıyorum" wrote, within 10 minutes: the bedtime is
  * gone and the session runs again. "expired" and "changed" (written another way since, or
@@ -70,9 +68,6 @@ export async function undoSceneBed(db: Db, sessionId: string): Promise<BedUndo> 
   }
   return data;
 }
-
-/** How long a scene's bedtime can be taken back (the database holds the same 10 minutes). */
-export const BED_UNDO_MINUTES = 10;
 
 /**
  * The user's own value for one day only: "yarın erken kalkacağım" (`wake`, on tomorrow's row),

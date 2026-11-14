@@ -199,14 +199,23 @@ function FacetScene({
           <Button
             variant="outline"
             className="h-11"
-            onClick={() => void bedtime.undo().then((result) => setUndo(result))}
+            onClick={() =>
+              void bedtime
+                .undo()
+                .then((result) => setUndo(result))
+                .catch(() => setUndo("failed"))
+            }
           >
             Geri al
           </Button>
         </div>
         {undo && undo !== "undone" ? (
           <p role="status" className="text-muted-foreground text-sm">
-            {undo === "expired" ? "Geri almak için geç." : "Yatış başka yoldan değişti."}
+            {undo === "expired"
+              ? "Geri almak için geç."
+              : undo === "changed"
+                ? "Yatış başka yoldan değişti."
+                : "Geri alınamadı."}
           </p>
         ) : null}
       </div>

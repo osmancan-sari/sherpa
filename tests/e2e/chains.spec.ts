@@ -422,9 +422,11 @@ test("a scene opens the evening closing inside it, comes back to it, and ends th
   );
   expect(await open()).toHaveLength(1);
 
-  // The scene's last step: the bedtime is recorded, the work is done, night comes.
+  // The scene's last step: the bedtime is recorded, the work is done, night comes. Rutin 1: for
+  // the ten minutes it can be taken back, the night screen is the scene's own page.
   await scene.getByRole("button", { name: "Yatıyorum" }).click();
   await expect(scene).toBeHidden();
+  await expect(page.getByTestId("deneme-gece-bed")).toBeVisible();
   const [day] = await waitFor(
     () => rows("days"),
     (list) => list.some((row) => row.date === DAY && row.bed_at !== null),

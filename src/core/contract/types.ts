@@ -250,7 +250,9 @@ export type SceneProps = {
    * back (10 minutes). Meanwhile the scene stays on the night screen, on every screen and after a
    * reload, with no strip (nothing runs). `undo` takes it back ("Geri al"): the bedtime is gone,
    * the session runs again and the scene goes on where it stood. "expired" and "changed" (the
-   * bedtime was written another way, or another work started) change nothing. Null otherwise.
+   * bedtime was written another way, or another work started since) change nothing. Meanwhile
+   * there is no running work: `finish`, `stop`, `stuck`, `exit` and `closing` do nothing (the
+   * session is closed; a second `bed()` writes the bedtime again). Null otherwise.
    */
   bedtime: { at: Date; until: Date; undo: () => Promise<BedUndo> } | null;
 };

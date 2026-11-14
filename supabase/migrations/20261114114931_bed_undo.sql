@@ -33,7 +33,10 @@ begin
     return 'changed';
   end if;
 
-  if d.bed_at is null or now() - d.bed_at > interval '10 minutes' then
+  if d.bed_at is null then
+    return 'changed';
+  end if;
+  if now() - d.bed_at > interval '10 minutes' then
     return 'expired';
   end if;
 
@@ -41,7 +44,12 @@ begin
   if s.id is null or s.ended_at is null then
     return 'changed';
   end if;
-  if exists (select 1 from public.sessions where ended_at is null) then
+  -- Another work running now, or started (and maybe ended) since the bedtime's session ended:
+  -- reopening it would lay two sessions over each other.
+  if exists (
+    select 1 from public.sessions
+     where id <> s.id and (ended_at is null or started_at >= s.ended_at)
+  ) then
     return 'changed';
   end if;
 

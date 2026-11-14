@@ -4,7 +4,7 @@ import type { ModuleDefinition } from "@/core/contract/types";
 import { recordBed, undoSceneBed } from "@/core/data/frame";
 import { loadPlanRows } from "@/core/data/keep";
 import { endSessionClosing, startSessionTold, tellBedUndone } from "@/core/data/session-events";
-import { createRhythm, createTask } from "@/core/data/work";
+import { createRhythm, createTask, createWorkItem } from "@/core/data/work";
 import { buildPlan, planInput } from "@/core/planner";
 import type { AppEvent } from "@/core/types";
 import { dayKey } from "@/lib/date";
@@ -114,7 +114,14 @@ describe("taking back a scene's bedtime", () => {
 
   it("puts a task back to running, its minutes off its work item", async () => {
     const mod = await makeModule(db);
-    const task = await createTask(db, { module_id: mod.id, title: "Akşam", est_minutes: 10 });
+    const item = await createWorkItem(db, { module_id: mod.id, title: "Kalem" });
+    const task = ok(
+      await db
+        .from("tasks")
+        .insert({ module_id: mod.id, title: "Akşam", est_minutes: 30, work_item_id: item.id })
+        .select()
+        .single(),
+    );
     const date = dayKey(new Date());
     const session = ok(
       await db
@@ -129,6 +136,10 @@ describe("taking back a scene's bedtime", () => {
     ok(await db.from("tasks").update({ status: "doing" }).eq("id", task.id).select());
     await endSessionClosing(told, session.id, "done");
     await recordBed(db, date, new Date(), session.id);
+    const spent = async () =>
+      ok(await db.from("work_items").select("effort_done_minutes").eq("id", item.id).single())
+        .effort_done_minutes;
+    expect(await spent()).toBe(20);
     expect(ok(await db.from("tasks").select("status").eq("id", task.id).single()).status).toBe(
       "done",
     );
@@ -137,6 +148,8 @@ describe("taking back a scene's bedtime", () => {
       status: "doing",
       done_at: null,
     });
+    // The minutes come off: the session runs again and adds them when it ends.
+    expect(await spent()).toBe(0);
   });
 
   it("changes nothing after 10 minutes", async () => {
@@ -166,6 +179,22 @@ describe("taking back a scene's bedtime", () => {
     expect(await undoSceneBed(db, session.id)).toBe("changed");
     expect((await day(date)).bed_session_id).toBe(session.id);
     expect((await logs()).map((row) => row.rhythm_id)).toEqual([rhythm.id]);
+  });
+
+  it("changes nothing when another work started and ended after the bedtime", async () => {
+    const { session, date, mod } = await bedded();
+    const other = await createTask(db, { module_id: mod.id, title: "Telefonda", est_minutes: 10 });
+    const started = await startSessionTold(told, { taskId: other.id });
+    await endSessionClosing(told, started.id, "done");
+    expect(await undoSceneBed(db, session.id)).toBe("changed");
+    expect((await day(date)).bed_session_id).toBe(session.id);
+    expect(await open()).toEqual([]);
+  });
+
+  it("calls a bedtime removed by hand changed, not late", async () => {
+    const { session, date } = await bedded();
+    ok(await db.from("days").update({ bed_at: null }).eq("date", date).select());
+    expect(await undoSceneBed(db, session.id)).toBe("changed");
   });
 
   it("gives one result when two screens take it back at once", async () => {
