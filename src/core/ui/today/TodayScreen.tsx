@@ -38,6 +38,7 @@ import { AlertBar, DayStrip, isTyping, MinutesDialog, TopBar } from "./DayParts"
 import { NowCard, sessionTargetOf, travelText } from "./NowCard";
 import { briefOf, chainLook, SceneFrame, sceneFor, useSceneExit } from "./Scene";
 import { briefLine } from "./frame-text";
+import { useWakeChainStart } from "./wake-chain";
 
 // The Today screen (docs/05-arayuz.md): drawn from the planner's plan, re-made on every change
 // and every minute. The "now" card, the next things, the day as a strip, at most two warnings,
@@ -96,6 +97,9 @@ function TodayBody() {
       ? sceneChain(chain, runningModule, chainLook(moduleMap, colors))
       : null;
   }, [chains, runningWork, runningModule, moduleMap, colors]);
+
+  // Ç3f: a waking told from outside starts the wake chain when the app comes to the front.
+  useWakeChainStart(input, plan, chains.wake);
 
   // Ç3f: the chain's next work after `id`, when the setting is on (Bitti and Ertele start it).
   const chainAuto = input?.settings.frame?.chainAuto ?? false;

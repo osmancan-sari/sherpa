@@ -267,3 +267,25 @@ export function chainLine(chain: Chain, id: string): string | null {
     next ? `sırada ${next.title}` : "son iş"
   }`;
 }
+
+/**
+ * Ç3f: what to start when the app comes to the front after a waking told from outside
+ * (docs/06-modul-sozlesmesi.md, "Diziler" rule 5): the wake chain's first work, if "Uyandım
+ * kendiliğinden başlatsın" is on, the waking is recorded (not estimated from a touch) and came
+ * before the app came to the front (a "Uyandım" said on this screen starts its own way), nothing
+ * runs, the chain has not begun today (nothing in it done or running) and it is still offered
+ * (an hour after its end at most: then its work is passed). Null otherwise.
+ */
+export function wakeChainStart(
+  input: PlanInput,
+  wake: Chain | null,
+  frontAt: Date,
+): { target: Pick<Candidate, "type" | "id">; since: Date } | null {
+  const frame = input.frame;
+  if (!frame || !input.settings.frame?.startOnWake) return null;
+  if (!frame.woke || frame.estimated || frame.wake.getTime() > frontAt.getTime()) return null;
+  if (input.openSession || !wake) return null;
+  if (wake.rows.some((row) => row.state === "done" || row.state === "running")) return null;
+  const first = wake.rows.find((row) => row.state === "next" && row.target);
+  return first?.target ? { target: first.target, since: frame.wake } : null;
+}

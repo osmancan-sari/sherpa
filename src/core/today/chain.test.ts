@@ -12,7 +12,15 @@ import {
 } from "@/core/testing/factories";
 import type { DayRow, Rhythm, Task } from "@/core/types";
 import { istanbulInstant } from "@/lib/date";
-import { type ChainLook, chainLine, chainOf, chainsOf, nextInChain, sceneChain } from "./chain";
+import {
+  type ChainLook,
+  chainLine,
+  chainOf,
+  chainsOf,
+  nextInChain,
+  sceneChain,
+  wakeChainStart,
+} from "./chain";
 
 // The anchored chains (docs/06-modul-sozlesmesi.md, "Diziler"; Ç3f): wake-bound and bed-bound
 // work of the day, from the plan's anchored slots and the day's records. Pure.
@@ -383,5 +391,70 @@ describe("the planner", () => {
     chainsOf(input, before);
     expect(input).toEqual(copy);
     expect(buildPlan(input)).toEqual(before);
+  });
+});
+
+describe("the wake chain after a waking told from outside", () => {
+  const startOn = settingsRow({
+    day_frame: {
+      wake: ["06:00", "09:00"],
+      bed: ["22:00", "01:00"],
+      sleep_minutes: 480,
+      start_on_wake: true,
+    },
+  });
+
+  it("starts the chain's first work when the app comes to the front", () => {
+    const { teeth, data } = morning({ settings: startOn });
+    const { input, plan } = setup(data, "07:05");
+    expect(wakeChainStart(input, chainOf(input, plan, "wake"), at("07:05"))).toEqual({
+      target: { type: "task", id: teeth.id },
+      since: at("07:00"),
+    });
+  });
+
+  it("does nothing with the setting off, an estimated or a later waking, or something running", () => {
+    const { teeth, data } = morning();
+    const off = setup(data, "07:05");
+    expect(wakeChainStart(off.input, chainOf(off.input, off.plan, "wake"), at("07:05"))).toBeNull();
+    const on = { ...data, settings: startOn };
+    // Estimated from the first touch.
+    const touched = setup({ ...on, days: [today({ woke_estimated: true })] }, "07:05");
+    expect(
+      wakeChainStart(touched.input, chainOf(touched.input, touched.plan, "wake"), at("07:05")),
+    ).toBeNull();
+    // Said on this screen after it came to the front ("Uyandım"): its own start.
+    const said = setup(on, "07:05");
+    expect(
+      wakeChainStart(said.input, chainOf(said.input, said.plan, "wake"), at("06:59")),
+    ).toBeNull();
+    const busy = setup(
+      { ...on, openSession: session({ title: "Başka iş", started_at: iso("07:03") }) },
+      "07:05",
+    );
+    expect(
+      wakeChainStart(busy.input, chainOf(busy.input, busy.plan, "wake"), at("07:05")),
+    ).toBeNull();
+    expect(teeth.id).toBeTruthy();
+  });
+
+  it("does nothing once the chain has begun, or when it is no longer offered", () => {
+    const { teeth, data } = morning({ settings: startOn });
+    const begun = setup(
+      { ...data, tasks: [{ ...teeth, status: "done", done_at: iso("07:04") }, data.tasks[0]] },
+      "07:05",
+    );
+    expect(
+      wakeChainStart(begun.input, chainOf(begun.input, begun.plan, "wake"), at("07:05")),
+    ).toBeNull();
+    // The line ends at 07:45; an hour later it is no longer offered.
+    const late = setup(data, "08:46");
+    expect(
+      wakeChainStart(late.input, chainOf(late.input, late.plan, "wake"), at("08:46")),
+    ).toBeNull();
+    const inTime = setup(data, "08:44");
+    expect(
+      wakeChainStart(inTime.input, chainOf(inTime.input, inTime.plan, "wake"), at("08:44")),
+    ).not.toBeNull();
   });
 });

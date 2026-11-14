@@ -25,6 +25,7 @@ import {
   dropTaskTold,
   endSessionClosing,
   goOnInChain,
+  startSessionIfIdleTold,
   startSessionTold,
 } from "@/core/data/session-events";
 import {
@@ -204,6 +205,21 @@ export function useStartSession() {
   return useCoreMutation({
     mutate: (db, target: SessionTarget) => startSessionTold({ db, registry }, target),
     optimistic: (target, queryClient) => startedDraft(target, queryClient),
+    onError,
+  });
+}
+
+/**
+ * Ç3f: the chain's own start (after a waking told from outside): only if nothing is open and
+ * nothing started since `since`; another screen doing the same at once starts nothing more.
+ */
+export function useStartChain() {
+  const onError = useFailureNotice();
+  const registry = useRegistry();
+  return useCoreMutation({
+    mutate: (db, args: { since: string; target: PlannedTarget }) =>
+      startSessionIfIdleTold({ db, registry }, args.since, args.target),
+    optimistic: ({ target }, queryClient) => startedDraft(target, queryClient),
     onError,
   });
 }

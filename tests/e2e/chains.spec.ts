@@ -296,3 +296,86 @@ test("Space ends the running work and goes on in the chain, as Bitti does", asyn
   await expect(card(page).getByRole("heading", { name: "Boyun" })).toBeVisible();
   await runningOn(neck.id);
 });
+
+// --- A waking told from outside (core/wake) ------------------------------------------------------
+
+const START_ON_WAKE = { start_on_wake: true };
+
+/** The chain with no waking yet; `woke` writes it as the ingest endpoint does. */
+async function morningUnwoken(frame: Record<string, unknown> = START_ON_WAKE) {
+  const seeded = await morning(frame);
+  const [day] = (await rows("days")).filter((row) => row.date === DAY);
+  await update("days", day.id as string, { woke_at: null });
+  const woke = (time: string) =>
+    update("days", day.id as string, { woke_at: dayAt(time).toISOString() });
+  return { ...seeded, woke };
+}
+
+test("after a waking told from outside, the app coming to the front starts the chain once, on one device", async ({
+  page,
+  browser,
+}) => {
+  const { teeth } = await morning(START_ON_WAKE);
+  const phone = await browser.newPage({ storageState: "playwright/.auth/user.json" });
+  await page.clock.setFixedTime(dayAt("07:05"));
+  await phone.clock.setFixedTime(dayAt("07:05"));
+  // Both screens come to the front at the same moment.
+  await Promise.all([page.goto("/"), phone.goto("/")]);
+  await runningOn(teeth.id);
+  await expect(page.getByTestId("deneme-gunes")).toBeVisible();
+  await expect(phone.getByTestId("deneme-gunes")).toBeVisible();
+  await page.waitForTimeout(1500);
+  expect(await rows("sessions")).toHaveLength(1);
+  // Once a day on a device: back to the front after the work was stopped, nothing more starts.
+  await page.getByTestId("deneme-gunes").getByRole("button", { name: "Takıldım" }).click();
+  await page.reload();
+  await phone.reload();
+  await nothingStarts(page);
+  await phone.close();
+});
+
+test("after a waking told from outside nothing starts with the setting off", async ({ page }) => {
+  await morning();
+  await page.clock.setFixedTime(dayAt("07:05"));
+  await page.goto("/");
+  await expect(card(page).getByRole("heading", { name: "Diş ve su" })).toBeVisible();
+  await nothingStarts(page);
+});
+
+test("a chain an hour past its end is not started by the waking told from outside", async ({
+  page,
+}) => {
+  await morning(START_ON_WAKE);
+  // The line runs 07:00–07:35; it is offered until 08:35.
+  await page.clock.setFixedTime(dayAt("08:40"));
+  await page.goto("/");
+  await expect(page.getByRole("region", { name: "Şimdi" })).toBeVisible();
+  await nothingStarts(page);
+});
+
+test("'Uyandım' said on the screen works as before: one start", async ({ page }) => {
+  const { teeth } = await morningUnwoken();
+  await page.clock.setFixedTime(dayAt("07:30"));
+  await page.goto("/");
+  await card(page).getByRole("button", { name: "Uyandım" }).click();
+  await runningOn(teeth.id);
+  await page.waitForTimeout(1500);
+  expect(await rows("sessions")).toHaveLength(1);
+});
+
+test("a screen that stays open does not start the chain; coming back to the front does", async ({
+  page,
+}) => {
+  const { teeth, woke } = await morningUnwoken();
+  await page.clock.install({ time: dayAt("06:50") });
+  await page.goto("/");
+  await expect(card(page).getByRole("heading", { name: "Günaydın" })).toBeVisible();
+  // Long after the page came to the front, the phone's automation records the waking.
+  await page.clock.fastForward("00:30");
+  await woke("06:50");
+  await expect(card(page).getByRole("heading", { name: "Diş ve su" })).toBeVisible();
+  await nothingStarts(page);
+  // The app comes back to the front.
+  await page.evaluate(() => document.dispatchEvent(new Event("visibilitychange")));
+  await runningOn(teeth.id);
+});
