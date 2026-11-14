@@ -1,8 +1,15 @@
 "use client";
 
 import type { FrameSettings } from "@/core/contract/frame";
-import { recordBed, recordWake, saveDayFrame, setExpected } from "@/core/data/frame";
-import { tellDayClosed, tellDayStarted } from "@/core/data/session-events";
+import {
+  type BedUndo,
+  recordBed,
+  recordWake,
+  saveDayFrame,
+  setExpected,
+  undoSceneBed,
+} from "@/core/data/frame";
+import { tellBedUndone, tellDayClosed, tellDayStarted } from "@/core/data/session-events";
 import { useRegistry } from "./CoreProvider";
 import type { DayRow } from "@/core/types";
 import { SAVE_FAILED, useNotify } from "@/core/ui/Notices";
@@ -43,6 +50,7 @@ function patchDay(date: string, patch: Partial<DayRow>) {
       woke_at: null,
       woke_estimated: false,
       bed_at: null,
+      bed_session_id: null,
       planned_wake: null,
       planned_bed: null,
       expected_wake: null,
@@ -84,18 +92,40 @@ export function useRecordBed() {
   const onError = useFailureNotice();
   const registry = useRegistry();
   return useCoreMutation({
-    mutate: async (db, args: { date: string; at: Date }) => {
-      const row = await recordBed(db, args.date, args.at);
+    mutate: async (db, args: { date: string; at: Date; sessionId?: string | null }) => {
+      const row = await recordBed(db, args.date, args.at, args.sessionId ?? null);
       await tellDayClosed(
         { db, registry },
         { date: args.date, bedAt: row.bed_at ?? args.at.toISOString() },
       );
       return row;
     },
-    optimistic: ({ date, at }) => [
-      { key: keys.days, update: patchDay(date, { bed_at: at.toISOString() }) },
+    optimistic: ({ date, at, sessionId }) => [
+      {
+        key: keys.days,
+        update: patchDay(date, { bed_at: at.toISOString(), bed_session_id: sessionId ?? null }),
+      },
     ],
     invalidate: [keys.days],
+    onError,
+  });
+}
+
+/**
+ * Rutin 1: "Geri al" on a scene's bedtime (docs/06-modul-sozlesmesi.md, "Diziler" rule 6): within
+ * 10 minutes the bedtime is gone and the session runs again; the modules hear it. The answer says
+ * whether it happened ("expired", "changed": nothing changed).
+ */
+export function useUndoBed() {
+  const onError = useFailureNotice();
+  const registry = useRegistry();
+  return useCoreMutation({
+    mutate: async (db, args: { date: string; sessionId: string }): Promise<BedUndo> => {
+      const result = await undoSceneBed(db, args.sessionId);
+      if (result === "undone") await tellBedUndone({ db, registry }, args);
+      return result;
+    },
+    invalidate: [keys.days, keys.openSession, keys.sessions, keys.rhythmLogs, keys.tasks],
     onError,
   });
 }

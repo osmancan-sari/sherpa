@@ -35,12 +35,44 @@ export async function estimateWake(db: Db, date: string, at: Date): Promise<DayR
   return data?.[0] ?? null;
 }
 
-/** "Yatıyorum": tonight's bedtime. Not said, nothing is written: the app never makes one up. */
-export async function recordBed(db: Db, date: string, at: Date): Promise<DayRow> {
+/**
+ * "Yatıyorum": tonight's bedtime. Not said, nothing is written: the app never makes one up.
+ * `sessionId`: the scene's "Yatıyorum" (`controls.bed()`) that closed this session; only such a
+ * bedtime can be taken back (`undoSceneBed`). Any other way clears the link.
+ */
+export async function recordBed(
+  db: Db,
+  date: string,
+  at: Date,
+  sessionId: string | null = null,
+): Promise<DayRow> {
   return unwrap(
-    await db.from("days").upsert({ date, bed_at: at.toISOString() }, onDay).select().single(),
+    await db
+      .from("days")
+      .upsert({ date, bed_at: at.toISOString(), bed_session_id: sessionId }, onDay)
+      .select()
+      .single(),
   );
 }
+
+export type BedUndo = "undone" | "expired" | "changed";
+
+/**
+ * Rutin 1: takes back the bedtime a scene's "Yatıyorum" wrote, within 10 minutes: the bedtime is
+ * gone and the session runs again. "expired" and "changed" (written another way since, or
+ * another session started) change nothing. Two screens at once get one result.
+ */
+export async function undoSceneBed(db: Db, sessionId: string): Promise<BedUndo> {
+  const { data, error } = await db.rpc("undo_scene_bed", { p_session_id: sessionId });
+  if (error) throw new Error(error.message);
+  if (data !== "undone" && data !== "expired" && data !== "changed") {
+    throw new Error(`undo_scene_bed answered ${String(data)}`);
+  }
+  return data;
+}
+
+/** How long a scene's bedtime can be taken back (the database holds the same 10 minutes). */
+export const BED_UNDO_MINUTES = 10;
 
 /**
  * The user's own value for one day only: "yarın erken kalkacağım" (`wake`, on tomorrow's row),

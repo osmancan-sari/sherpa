@@ -217,6 +217,14 @@ export const listeners: Record<string, (event: AppEvent, ctx: ModuleContext) => 
     const payload = event.payload as { date?: string };
     await ctx.saveSettings({ ...settingsOf(ctx), last_bed_day: payload.date ?? null });
   },
+  // Rutin 1: a scene's bedtime was taken back; the night it heard is open again.
+  "core.bed_undone": async (event, ctx) => {
+    const payload = event.payload as { date?: string };
+    const settings = settingsOf(ctx);
+    if (settings.last_bed_day === payload.date) {
+      await ctx.saveSettings({ ...settings, last_bed_day: null });
+    }
+  },
   // The answer to the question asked in onOutcome.
   "core.prompt_answered": async (event, ctx) => {
     const payload = event.payload as {

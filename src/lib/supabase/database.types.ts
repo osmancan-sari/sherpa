@@ -312,6 +312,7 @@ export type Database = {
       days: {
         Row: {
           bed_at: string | null;
+          bed_session_id: string | null;
           closed_at: string | null;
           closing_note: string | null;
           created_at: string;
@@ -337,6 +338,7 @@ export type Database = {
         ComputedFields: never;
         Insert: {
           bed_at?: string | null;
+          bed_session_id?: string | null;
           closed_at?: string | null;
           closing_note?: string | null;
           created_at?: string;
@@ -361,6 +363,7 @@ export type Database = {
         };
         Update: {
           bed_at?: string | null;
+          bed_session_id?: string | null;
           closed_at?: string | null;
           closing_note?: string | null;
           created_at?: string;
@@ -383,7 +386,15 @@ export type Database = {
           woke_at?: string | null;
           woke_estimated?: boolean;
         };
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: "days_bed_session_fk";
+            columns: ["bed_session_id", "user_id"];
+            isOneToOne: false;
+            referencedRelation: "sessions";
+            referencedColumns: ["id", "user_id"];
+          },
+        ];
       };
       deneme_items: {
         Row: {
@@ -1860,6 +1871,7 @@ export type Database = {
           isSetofReturn: false;
         };
       };
+      undo_scene_bed: { Args: { p_session_id: string }; Returns: string };
       valid_facet_colors: { Args: { p_colors: Json }; Returns: boolean };
     };
     Enums: {

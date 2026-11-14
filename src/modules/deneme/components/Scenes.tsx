@@ -180,6 +180,7 @@ function FacetScene({
   facet,
   chain,
   today,
+  bedtime,
   testId,
   greeting,
   sky,
@@ -187,6 +188,30 @@ function FacetScene({
 }: SceneProps & { testId: string; greeting: string; sky: string; evening?: boolean }) {
   const title = subject.kind === "task" ? subject.task.title : subject.rhythm.title;
   const color = facet?.color ?? "currentColor";
+  const [undo, setUndo] = useState<string | null>(null);
+  // Rutin 1: after "Yatıyorum" the scene stays for a while; "Geri al" takes the bedtime back.
+  if (bedtime) {
+    return (
+      <div className="flex flex-1 flex-col justify-center gap-4" data-testid={`${testId}-bed`}>
+        <h2 className="text-3xl font-semibold md:text-5xl">İyi geceler</h2>
+        <p className="text-muted-foreground">Yatış kaydedildi.</p>
+        <div>
+          <Button
+            variant="outline"
+            className="h-11"
+            onClick={() => void bedtime.undo().then((result) => setUndo(result))}
+          >
+            Geri al
+          </Button>
+        </div>
+        {undo && undo !== "undone" ? (
+          <p role="status" className="text-muted-foreground text-sm">
+            {undo === "expired" ? "Geri almak için geç." : "Yatış başka yoldan değişti."}
+          </p>
+        ) : null}
+      </div>
+    );
+  }
   return (
     <div
       className="flex flex-1 flex-col justify-between gap-8"

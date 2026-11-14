@@ -245,7 +245,18 @@ export type SceneProps = {
   facet: { key: string; name: string; color: string } | null;
   /** Ç3f: the chain the running work is part of; null when it is in none. */
   chain: SceneChain | null;
+  /**
+   * Rutin 1: tonight's bedtime this scene's `controls.bed()` wrote, while it can still be taken
+   * back (10 minutes). Meanwhile the scene stays on the night screen, on every screen and after a
+   * reload, with no strip (nothing runs). `undo` takes it back ("Geri al"): the bedtime is gone,
+   * the session runs again and the scene goes on where it stood. "expired" and "changed" (the
+   * bedtime was written another way, or another work started) change nothing. Null otherwise.
+   */
+  bedtime: { at: Date; until: Date; undo: () => Promise<BedUndo> } | null;
 };
+
+/** Rutin 1: what taking back a scene's bedtime did. */
+export type BedUndo = "undone" | "expired" | "changed";
 
 /** Ç3e: a part of a module with its own colour and scene on the main screen (docs/06, "Bölümler"). */
 export type ModuleFacet = {

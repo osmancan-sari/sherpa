@@ -220,6 +220,8 @@ type SceneProps = {
   ctx: ModuleUiContext
   facet: { key: string; name: string; color: string } | null   // Ç3e: çalışan işin bölümü; color çözülmüş renk
   chain: SceneChain | null           // Ç3f: çalışan iş bir çapalı dizinin parçasıysa o dizi
+  bedtime: { at: Date; until: Date; undo: () => Promise<'undone' | 'expired' | 'changed'> } | null
+                                     // Rutin 1: bu sahnenin bed()'i yatışı yazdı ve hâlâ geri alınabiliyor (aşağıda "Diziler", kural 6)
 }
 ```
 
@@ -260,6 +262,7 @@ type SceneChain = {
 4. **Kendiliğinden devam.** `settings.day_frame.chain_auto` açıkken (başlangıçta açık) dizideki çalışan iş "Bitti" ile kapanınca ya da çalışırken ertelenince dizinin sıradaki işi aynı cihazda hemen başlar; başka modülün işiyse onun sahnesi (yoksa standart kart) gelir. Durdur, Takıldım ve cevapsız kapanıştan sonra başlamaz; son iş bitince standart ekran döner. Başlatma çekirdeğin oturum yolundandır; kendiliğinden başlayan oturum her oturum gibidir ("Devam ediyor musun?" ve 30 dakika kuralı aynı). İki cihaz aynı anda bitirse de tek oturum başlar.
 5. **Dışarıdan gelen uyanış.** Uyanış dışarıdan kaydedildiyse (`core/wake`) ve o gün uyanış dizisi hiç başlamadıysa, `start_on_wake` açıkken uygulama o cihazda ilk öne geldiğinde, dizi hâlâ önerilirken (bitişinden 60 dakika sonrasına kadar), dizinin ilk işi başlar. Elle "Uyandım"ın davranışı değişmez.
 6. **Sahneden kapanış.** `controls.closing()` akşam kapanışını sahnenin içinde açar: çekirdeğin şeridi durur, oturum sürer; kapanış onaylanınca ya da vazgeçilince sahneye dönülür. Bu kapanışta "Onayla ve yat" yoktur: yatışı sahnenin kendi son adımı kaydeder, `controls.bed()` ile (çekirdeğin "Yatıyorum"u: yatışı şimdi olarak yazar, çalışan oturumu "Bitti" ile kapatır, ekran geceye geçer). Kapanışın yapıldığı `today.closed` ile okunur.
+   **Yatışın geri alınması (Rutin 1, 14 Kas 2026).** `bed()` gün kaydına yatışı yazan oturumu da yazar (`days.bed_session_id`). Yatıştan sonraki 10 dakika boyunca gece ekranı o oturumun sahnesidir (her cihazda, sayfa yenilense de; şerit yoktur, iş çalışmıyor): sahne `SceneProps.bedtime` alır (`at`, `until`, `undo`). `undo()` ("Geri al") yatışı hiç yazılmamış gibi kaldırır: yatış ve işaret silinir, oturumun "Bitti"sinin yaptığı geri alınır (ritim kaydı silinir; iş yeniden "yapılıyor", dakikaları kalemden düşülür), oturum kendi başlangıcıyla yeniden açılır ("Devam ediyor musun?" o andan sayılır). Uyku planı, yarının beklenen uyanışı ve planın kendisi gün kaydından türediği için kendiliğinden yeniden hesaplanır; ekran yeniden çalışan işin sahnesidir ve modül kendi tablosundaki yerden sürer. Çekirdek bütün modüllere `core.bed_undone` (`{ date }`), işin modülüne aynı `session_id` ile yeniden `core.session_started` söyler. 10 dakika geçtiyse `expired`, yatış başka yoldan yazıldıysa (çekirdeğin "Yatıyorum"u, kapanışın "Onayla ve yat"ı, `core/bed`: hepsi işareti siler) ya da başka bir iş başladıysa `changed` döner ve hiçbir şey değişmez. İki cihaz aynı anda geri alırsa tek sonuç olur (veritabanı fonksiyonu `undo_scene_bed`, gün satırını kilitler). Test: `tests/db/bed-undo.test.ts`; örnek: `deneme`'nin gece sahnesi.
 7. **Standart kart.** Sahnesi olmayan ya da sahneden çıkılmış çapalı işte Şimdi kartı dizideki yeri tek satırla gösterir.
 
 **Adım yürütücü (`StepRunner`, bileşen takımında).** Sıralı adımlı sahneler (rutin, pişirme, antrenman) için: adım listesi (ad, süre ya da tekrar sayısı, açıklama), geri sayım, "Sonraki", "Atla", her adım bitince ve liste bitince geri çağrı. Yalnızca arayüzdür; hangi adımda olunduğunu modül saklar (`step` ve `onStep` ile denetimli kullanılır).
@@ -422,6 +425,7 @@ Akış:
 | `core.session_ended` (Ç3c) | Oturum kapandı | aynısı + `{ ended_at, result, minutes, measured }`; `result`: `done`, `stopped`, `deferred`, `stuck`, `unanswered` | Yalnızca işin modülüne |
 | `core.day_started` (Ç3c) | Uyanış kaydedildi | `{ date, woke_at, estimated }` | Etkin bütün modüllere |
 | `core.day_closed` (Ç3c) | Yatış kaydedildi | `{ date, bed_at }` | Etkin bütün modüllere |
+| `core.bed_undone` (Rutin 1) | Sahnenin yazdığı yatış geri alındı ("Diziler", kural 6) | `{ date }` | Etkin bütün modüllere |
 
 Olaylar yayınlandıkları yerde teslim edilir: tarayıcıdaki eylemin olayı tarayıcıda, giriş ucunun ve zamanlanmış işlerin olayı sunucuda (Ç3d). Dinleyici iki yerde de aynı bağlamı alır; sunucuda dinleyicinin `ctx`'i sunucu bağlamıdır (aşağıda).
 

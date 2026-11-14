@@ -266,3 +266,16 @@ export async function tellDayClosed(
 ): Promise<void> {
   await tell(told, CORE_EVENTS.dayClosed, { date: day.date, bed_at: day.bedAt });
 }
+
+/**
+ * Rutin 1: a scene's bedtime was taken back. Every module hears the day open again, and the
+ * work's module hears its session start again (the same `session_id`: it goes on where it was).
+ */
+export async function tellBedUndone(
+  told: Told,
+  day: { date: string; sessionId: string },
+): Promise<void> {
+  await tell(told, CORE_EVENTS.bedUndone, { date: day.date });
+  const session = await sessionRow(told.db, day.sessionId);
+  if (session && !session.ended_at) await tellStarted(told, session);
+}

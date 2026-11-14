@@ -19,6 +19,8 @@ export const CORE_EVENTS = {
   dayStarted: "core.day_started",
   /** Ç3c: tonight's bedtime was recorded; to every active module. */
   dayClosed: "core.day_closed",
+  /** Rutin 1: a scene's bedtime was taken back ("Geri al"): { date }; to every active module. */
+  bedUndone: "core.bed_undone",
   /** Ç3d: a context came from outside (the ingest endpoint `core/context`); to every module. */
   contextReported: "core.context_reported",
 } as const;

@@ -3,7 +3,7 @@
 import { Component, type ReactNode, useEffect, useState, useSyncExternalStore } from "react";
 import { Button } from "@/components/ui/button";
 import { useEndSession } from "@/core/app/actions";
-import { useRecordBed } from "@/core/app/frame-actions";
+import { useRecordBed, useUndoBed } from "@/core/app/frame-actions";
 import { ClosingInScene } from "../closing/ClosingScreen";
 import type { KnownModule } from "@/core/app/hooks";
 import { facetColor, moduleColor } from "@/core/contract/colors";
@@ -177,6 +177,7 @@ export function SceneFrame({
   next = null,
   date,
   brief,
+  bedtime = null,
   onExit,
   onStuck,
   onFailed,
@@ -194,6 +195,11 @@ export function SceneFrame({
   /** The planning day (the bedtime is tonight's). */
   date: string;
   brief: TodayBrief;
+  /**
+   * Rutin 1: the session ended with the scene's "Yatıyorum" and its bedtime can still be taken
+   * back: the scene stays, without the strip (`SceneProps.bedtime`).
+   */
+  bedtime?: { at: Date; until: Date } | null;
   onExit: () => void;
   onStuck: () => void;
   onFailed: () => void;
@@ -202,6 +208,7 @@ export function SceneFrame({
   const end = useEndSession();
   const say = useSay();
   const recordBed = useRecordBed();
+  const undoBed = useUndoBed();
   // Ç3f: the evening closing opened by the scene, in its place (this device only).
   const [closing, setClosing] = useState(false);
   const device = useDevice();
@@ -213,7 +220,9 @@ export function SceneFrame({
     const timer = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(timer);
   }, []);
-  const elapsedSeconds = Math.max(0, Math.floor((now - startedAt.getTime()) / 1000));
+  // After the bedtime the clock stops where the session ended.
+  const until = session.ended_at ? Date.parse(session.ended_at) : now;
+  const elapsedSeconds = Math.max(0, Math.floor((until - startedAt.getTime()) / 1000));
   const title = state.task?.title ?? state.rhythm?.title ?? session.title ?? "";
   // Ç3e: the facet's tone and colour come before the scene's and the module's.
   const tone = sceneTone(scene, facet);
@@ -235,9 +244,10 @@ export function SceneFrame({
       exit: onExit,
       closing: () => setClosing(true),
       bed: async () => {
-        // "Yatıyorum" ends the day: the work is done, no chain goes on from it.
+        // "Yatıyorum" ends the day: the work is done, no chain goes on from it. The day keeps
+        // which session did it, so that it can be taken back for a while (Rutin 1).
         await end.mutateAsync({ session, outcome: "done" });
-        await recordBed.mutateAsync({ date, at: new Date() });
+        await recordBed.mutateAsync({ date, at: new Date(), sessionId: session.id });
       },
     },
     say,
@@ -245,11 +255,19 @@ export function SceneFrame({
     ctx,
     facet: facet ? { key: facet.key, name: facet.name, color } : null,
     chain,
+    bedtime: bedtime
+      ? {
+          at: bedtime.at,
+          until: bedtime.until,
+          undo: () => undoBed.mutateAsync({ date, sessionId: session.id }),
+        }
+      : null,
   };
 
   return (
     <div
       data-testid="scene"
+      data-bedtime={bedtime ? "" : undefined}
       data-tone={tone}
       data-facet={facet?.key}
       className={cn(
@@ -262,28 +280,30 @@ export function SceneFrame({
           : undefined
       }
     >
-      <header
-        aria-label="Sahne şeridi"
-        className="border-border bg-background/80 flex items-center gap-3 border-b px-4 py-2 text-sm md:px-6"
-      >
-        <span className="tabular-nums">{formatTime(new Date(now))}</span>
-        <span
-          aria-hidden
-          data-testid="work-dot"
-          className="size-2 rounded-full"
-          style={{ backgroundColor: color }}
-        />
-        <span className="min-w-0 flex-1 truncate">
-          <span className="font-medium">{title}</span>
-          <span className="text-muted-foreground tabular-nums">
-            {" "}
-            · {formatMinutes(Math.floor(elapsedSeconds / 60))}
+      {bedtime ? null : (
+        <header
+          aria-label="Sahne şeridi"
+          className="border-border bg-background/80 flex items-center gap-3 border-b px-4 py-2 text-sm md:px-6"
+        >
+          <span className="tabular-nums">{formatTime(new Date(now))}</span>
+          <span
+            aria-hidden
+            data-testid="work-dot"
+            className="size-2 rounded-full"
+            style={{ backgroundColor: color }}
+          />
+          <span className="min-w-0 flex-1 truncate">
+            <span className="font-medium">{title}</span>
+            <span className="text-muted-foreground tabular-nums">
+              {" "}
+              · {formatMinutes(Math.floor(elapsedSeconds / 60))}
+            </span>
           </span>
-        </span>
-        <Button variant="ghost" className="h-11 md:h-8" onClick={onExit}>
-          Çık
-        </Button>
-      </header>
+          <Button variant="ghost" className="h-11 md:h-8" onClick={onExit}>
+            Çık
+          </Button>
+        </header>
+      )}
       <section aria-label="Sahne" className="flex flex-1 flex-col p-5 md:p-10">
         {closing ? (
           <div data-scene-closing="">
