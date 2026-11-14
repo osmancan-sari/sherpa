@@ -5,8 +5,8 @@ Bu dosyayı Claude Code günceller. Yeni bir oturum yalnızca bu dosyayı ve `pr
 ## Durum
 
 - Faz: **Ç3g. Sahnenin çekirdek eksikleri** (14 Kas 2026; istem `prompts/c3g-sahne-eksikleri.md`). Rutin 1 (`rutin-1-tamam`) ve Ç3f yayında
-- Adım: 8 (kapanış) bitti: faz denetimi iki tur, GEÇTİ; `c3g-tamam`. Yayın ve 14 Kas temizliği senin izninle
-- Son commit: Ç3g faz denetimi 2. tur
+- Adım: 8 (kapanış) bitti: faz denetimi iki tur, GEÇTİ; `c3g-tamam`; yayında (14 Kas); 14 Kas'ın deneme kayıtları temizlendi
+- Son commit: Ç3g yayın ve temizlik kaydı
 
 ### Ç3g planı
 
@@ -778,7 +778,7 @@ Testler: 413 birim, 207 veritabanı, 166 uçtan uca (`npm run check:full` yeşil
 
 ## Sıradaki adım
 
-Ç4 (`prompts/BASLA.md`); önce Ç3g'nin yayını ve 14 Kas temizliği ("Senden bekleyenler" → Ç3g). Rutin 2. adım (Kestirmeler bağlantısı, Düzenlilik, sürelerin öğrenilmesi, akşam hatırlatması) tasarıma göre iki hafta beklemeden de kurulabilir; sırasını sen belirlersin.
+Ç4 (`prompts/BASLA.md`). Rutin 2. adım (Kestirmeler bağlantısı, Düzenlilik, sürelerin öğrenilmesi, akşam hatırlatması) tasarıma göre iki hafta beklemeden de kurulabilir; sırasını sen belirlersin.
 
 Ç4 (Pano ve telefon cilası): yeni oturumda `docs/05-arayuz.md` ve `docs/11-yayin-ve-cihazlar.md` okunarak başlanır. Önce Ç3'ün ve Ç3b'nin "Görüşün gerek" satırları. Ç2'nin "Sunum slaytları cuma" ölçütü açık: Okul modülü kurulunca yeniden denenecek (D3, karar 5). Rutin'in çekirdek notları 14 ve 16–21 Ç4'e ya da Rutin 3. adıma girdidir.
 
@@ -790,7 +790,7 @@ Bir migration var, yalnızca ekleme yapar; kod onu ister (`woke_source` yazar): 
 
 - `20261114170000_wake_source.sql`: `days.woke_source` (kontrol: `screen`, `outside`, `estimate`); var olan tahmini uyanışlar `estimate` yapılır.
 
-Sıra (senin iznini bu sohbette ister): 1) `sherpa-dev`; 2) `sherpa-prod`; 3) `git push origin main` ve `c3g-tamam`.
+Sıra: 1) ~~`sherpa-dev`~~ **yapıldı**; 2) ~~`sherpa-prod`~~ **yapıldı** (ardından "up to date"); 3) ~~`git push origin main`, `git push origin c3g-tamam`~~ **yapıldı** (14 Kas, senin izninle). Üretim yayını hazır (`sherpa-private-qulmlrv00`).
 
 Yayından sonra, **ayrıca senin açık iznine bağlı**, üretimde yalnızca 14 Kas'ın deneme kayıtları silinir (adım listesi, ayarlar ve başka günler değişmez):
 
@@ -800,6 +800,8 @@ Yayından sonra, **ayrıca senin açık iznine bağlı**, üretimde yalnızca 14
 - `rhythm_logs`: 14 Kas'ın 8 satırı (Sabah 6, Akşam kapanışı 1, Duş ve hazırlık 1).
 - `sessions`: 14 Kas'ın 5 oturumu (16:33:21, 16:33:24, 16:33:24–16:34:45, 16:48:56, 16:58:56).
 - `events` günlüğüne dokunulmaz.
+
+**Temizlik yapıldı** (14 Kas, yayından sonra, senin izninle). Önce üretim yeniden okundu ve 19:00'daki okumayla birebir aynı olduğu doğrulandı; sonra kimlikleriyle silindi: `days` 1 satırda yatış ve işaret boşaltıldı, `rutin_run_steps` 11, `rutin_runs` 3, `rhythm_logs` 8, `sessions` 5 satır silindi. Ardından okunarak doğrulandı: 14 Kas'ta yatış yok, o güne yapılış, kayıt, ritim kaydı ve oturum yok; üç ritim, adım listesi ve ayarlar yerinde. Tek seferlik düzeltmeyle yapıldı ("Yatışı sil" yolu gizli anahtarla kullanıcı adına çalışmadığı için); bu yolun yayacağı `core.bed_undone` olayı yazılmadı, onu dinleyen gerçek modül yok.
 
 ### Rutin 1 yayını ve telefon denemeleri
 
