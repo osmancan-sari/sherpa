@@ -765,6 +765,66 @@ test("rutin screens", async ({ page }, testInfo) => {
   await shot("rutin-adim-duzenle");
 });
 
+// Ç3g: the evening card with the bed-bound work still to come, the bed question, the records in
+// Ayarlar, Rutin's morning tab with another module's work as its own group.
+test("c3g screens", async ({ page }, testInfo) => {
+  test.setTimeout(120_000);
+  await page.addInitScript(() => localStorage.setItem("theme", "dark"));
+  const shotDay = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Istanbul" }).format(
+    new Date(Date.now() - 86_400_000),
+  );
+  const at = (time: string) => new Date(`${shotDay}T${time}:00+03:00`);
+  const phone = testInfo.project.use.isMobile === true;
+  const shot = async (name: string) => {
+    await page.mouse.move(0, 0);
+    await page.screenshot({
+      path: path.join(folder, `${testInfo.project.name}-${name}-dark.png`),
+      fullPage: !phone,
+      animations: "disabled",
+    });
+  };
+  await page.goto("/ayarlar/moduller");
+  await page.getByRole("button", { name: "Rutin: etkinleştir" }).click();
+  await waitFor(
+    () => rows("rhythms"),
+    (list) => list.length === 3,
+  );
+  const [settings] = await rows("settings");
+  await update("settings", settings.id as string, {
+    day_frame: { wake: ["06:00", "09:00"], bed: ["22:00", "01:00"], sleep_minutes: 480 },
+    day_start_default: "08:00",
+    finish_line_default: "19:00",
+  });
+  await insert("days", { date: shotDay, woke_at: at("07:00").toISOString() });
+  const [deneme] = await insert("modules", { slug: "deneme", name: "Deneme", color: "#7c3aed" });
+  await insert("tasks", {
+    module_id: deneme.id,
+    title: "Boyun hareketleri",
+    est_minutes: 10,
+    timing: { anchor: "wake", order: 20 },
+  });
+  const now = page.getByRole("region", { name: "Şimdi" });
+
+  await page.clock.setFixedTime(at("07:02"));
+  await page.goto("/m/rutin");
+  await expect(page.getByTestId("rutin-other-group")).toBeVisible();
+  await shot("rutin-modul-sabah-diger");
+
+  await page.clock.setFixedTime(at("19:30"));
+  await page.goto("/");
+  await expect(now.getByTestId("evening-later")).toBeVisible();
+  await shot("bugun-aksam-sirada");
+  await now.getByRole("button", { name: "Yatıyorum" }).click();
+  await expect(page.getByRole("dialog", { name: /Şimdi yatıyor musun/ })).toBeVisible();
+  await shot("bugun-yatis-sorusu");
+  await page.getByRole("button", { name: "Vazgeç" }).click();
+
+  await page.goto("/ayarlar#kayitlar");
+  await expect(page.getByTestId("day-records")).toBeVisible();
+  await page.getByTestId("day-records").scrollIntoViewIfNeeded();
+  await shot("ayarlar-kayitlar");
+});
+
 base("login screens", async ({ browser }, testInfo) => {
   const { viewport, deviceScaleFactor, isMobile, hasTouch } = testInfo.project.use;
   const context = await browser.newContext({
