@@ -168,7 +168,9 @@ test("switched on in the afternoon: the morning is not offered then, the evening
     day_start_default: "08:00",
     finish_line_default: "19:00",
   });
-  await insert("days", { date: DAY, woke_at: dayAt("07:00").toISOString() });
+  const known = (await rows("days")).find((row) => row.date === DAY);
+  if (known) await update("days", known.id as string, { woke_at: dayAt("07:00").toISOString() });
+  else await insert("days", { date: DAY, woke_at: dayAt("07:00").toISOString() });
   await page.clock.setFixedTime(dayAt("21:00"));
   await page.goto("/");
   await expect(card(page).getByRole("heading", { name: "Akşam", exact: true })).toBeVisible();
@@ -389,6 +391,11 @@ test("Yatıyorum writes the bedtime, İyi geceler stays after a reload, Geri al 
   await expect(scene(page)).toContainText("Işık kapalı.");
   await expect(scene(page).getByRole("button", { name: "Atla" })).toBeHidden();
   await scene(page).getByRole("button", { name: "Yatıyorum" }).click();
+  // Ç3g: on the real clock before 20:00 (two hours before the 22:00 range) it asks once.
+  const yes = page.getByRole("button", { name: "Evet, yatıyorum" });
+  const goodNight = scene(page).getByRole("heading", { name: "İyi geceler" });
+  await expect(yes.or(goodNight)).toBeVisible();
+  if (await yes.isVisible()) await yes.click();
 
   await expect(scene(page)).toHaveAttribute("data-screen", "iyi-geceler");
   await expect(scene(page).getByRole("heading", { name: "İyi geceler" })).toBeVisible();

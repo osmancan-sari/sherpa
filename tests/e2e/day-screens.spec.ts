@@ -162,6 +162,11 @@ test("work that may go after the finish line is the evening's; Onayla ve yat clo
     await page.getByRole("button", { name: "İleri" }).click();
   }
   await page.getByRole("button", { name: "Onayla ve yat" }).click();
+  // Ç3g: 19:30 is more than two hours before the bedtime range (22:00): asked once.
+  await page
+    .getByRole("dialog", { name: "Saat 19:30. Şimdi yatıyor musun?" })
+    .getByRole("button", { name: "Evet, yatıyorum" })
+    .click();
   await page.waitForURL("/");
   const day = await waitFor(
     () => dayRow(),
