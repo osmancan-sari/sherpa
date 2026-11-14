@@ -135,7 +135,7 @@ Geniş ekranda tek sayfa, kaydırma yok:
 Uyanışa ve yatışa bağlı işler bir dizidir (`docs/06-modul-sozlesmesi.md`, "Diziler"):
 
 - **Standart kartta dizi satırı.** Dizideki iş çalışırken (sahnesi yoksa ya da sahneden çıkıldıysa) ya da önerilirken (akşam kartı dahil) Şimdi kartında modül satırının altında tek satır: "Sabah dizisi 2/3 · sırada Duş ve hazırlık" (yatışta "Akşam dizisi"; son işte "son iş"). Sayı yapılmış ve çalışan işlerle birlikte sıradır; geçilenler sayılmaz. **Görüşün gerek** (metin).
-- **Kendiliğinden devam.** Dizideki iş Bitti ya da Ertele ile kapanınca sıradaki iş aynı cihazda hemen başlar; ekran sıradaki işin sahnesine (yoksa standart karta) aynı solmayla geçer. Son iş bitince standart ekran.
+- **Kendiliğinden devam.** Dizideki çalışan iş Bitti ya da Ertele ile kapanınca sıradaki iş aynı cihazda hemen başlar; ekran sıradaki işin sahnesine (yoksa standart karta) aynı solmayla geçer. Son iş bitince standart ekran.
 - **Sahneden kapanış.** Sahne akşam kapanışını isteyince kapanış sahnenin yerinde açılır; çekirdeğin şeridi üstte durur, oturum sürer. Onaylayınca ya da "Vazgeç"le sahneye dönülür; bu kapanışta "Onayla ve yat" yoktur.
 - **Ayarlar → Günün çerçevesi:** "Dizide sıradaki iş kendiliğinden başlasın" (başlangıçta açık). **Görüşün gerek** (başlangıç değeri, ertelemeden sonra devam).
 

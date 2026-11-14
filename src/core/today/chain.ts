@@ -285,7 +285,9 @@ export function wakeChainStart(
   if (!frame || !input.settings.frame?.startOnWake) return null;
   if (!frame.woke || frame.estimated || frame.wake.getTime() > frontAt.getTime()) return null;
   if (input.openSession || !wake) return null;
-  if (wake.rows.some((row) => row.state === "done" || row.state === "running")) return null;
+  // Begun: something in it was done, runs, or was put off today (on another screen, say).
+  // The wake line is offered or dropped as a whole, so "passed" next to "next" is put off.
+  if (wake.rows.some((row) => row.state !== "next")) return null;
   const first = wake.rows.find((row) => row.state === "next" && row.target);
   return first?.target ? { target: first.target, since: frame.wake } : null;
 }

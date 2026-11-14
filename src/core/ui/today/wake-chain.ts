@@ -74,7 +74,11 @@ export function useWakeChainStart(
     const chosen = wakeChainStart(input, wake, front);
     if (!chosen) return;
     tried.current = true;
-    markStarted(input.date);
-    start.mutate({ since: chosen.since.toISOString(), target: sessionTargetOf(chosen.target) });
+    const date = input.date;
+    // Marked once the start is written: after a failure the next coming to the front tries again.
+    start.mutate(
+      { since: chosen.since.toISOString(), target: sessionTargetOf(chosen.target) },
+      { onSuccess: () => markStarted(date) },
+    );
   }, [front, input, plan, wake, start]);
 }

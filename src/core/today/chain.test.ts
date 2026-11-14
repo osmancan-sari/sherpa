@@ -438,6 +438,13 @@ describe("the wake chain after a waking told from outside", () => {
     expect(teeth.id).toBeTruthy();
   });
 
+  it("does nothing when the first work was put off before the app came to the front", () => {
+    const { teeth, data } = morning({ settings: startOn });
+    const putOff = { ...teeth, planned_date: NEXT, defer_count: 1, updated_at: iso("07:03") };
+    const { input, plan } = setup({ ...data, tasks: [putOff, data.tasks[0]] }, "07:05");
+    expect(wakeChainStart(input, chainOf(input, plan, "wake"), at("07:05"))).toBeNull();
+  });
+
   it("does nothing once the chain has begun, or when it is no longer offered", () => {
     const { teeth, data } = morning({ settings: startOn });
     const begun = setup(
