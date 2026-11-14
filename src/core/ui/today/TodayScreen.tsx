@@ -80,11 +80,21 @@ function TodayBody() {
     return tomorrow.slots.find((slot) => slot.assignment)?.assignment?.candidate ?? null;
   }, [plan, rows, now, input]);
 
-  // Ç3f: the day's anchored chains, from the plan and the day's records.
+  // Ç3f: the day's anchored chains, from the plan and the day's records; the running work's,
+  // as its scene gets it (kept while nothing changes: a scene may depend on it).
   const chains = useMemo(
     () => (input && plan ? chainsOf(input, plan) : { wake: null, bed: null }),
     [input, plan],
   );
+  const runningWork =
+    plan?.now.kind === "running" ? (plan.now.task?.id ?? plan.now.rhythm?.id ?? null) : null;
+  const runningModule = plan?.now.kind === "running" ? plan.now.session.module_id : null;
+  const runningChain = useMemo(() => {
+    const chain = chainWith(chains, runningWork);
+    return chain && runningModule
+      ? sceneChain(chain, runningModule, chainLook(moduleMap, colors))
+      : null;
+  }, [chains, runningWork, runningModule, moduleMap, colors]);
 
   const state = plan?.now;
   const doReplan = () => {
@@ -172,10 +182,7 @@ function TodayBody() {
           scene={scene.scene}
           subject={scene.subject}
           facet={scene.facet}
-          chain={(() => {
-            const chain = chainWith(chains, running.task?.id ?? running.rhythm?.id);
-            return chain ? sceneChain(chain, sceneMod.row.id, chainLook(moduleMap, colors)) : null;
-          })()}
+          chain={runningChain}
           brief={briefOf(input, plan, moduleMap)}
           onExit={() => setExitedScene(running.session.id)}
           onStuck={() => {
@@ -195,7 +202,9 @@ function TodayBody() {
       ? (state.task?.id ?? state.rhythm?.id ?? null)
       : state.kind === "suggest"
         ? state.assignment.candidate.id
-        : null;
+        : state.kind === "evening"
+          ? (state.next?.candidate.id ?? null)
+          : null;
   // Ç3f: where the current work stands in its chain, on the standard card.
   const currentChain = chainWith(chains, currentId);
   const chainText = currentChain && currentId ? chainLine(currentChain, currentId) : null;

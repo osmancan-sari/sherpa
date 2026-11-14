@@ -121,6 +121,7 @@ function CardFor({
         next={state.next}
         closed={state.closed}
         modules={modules}
+        chainLine={chainLine ?? null}
       />
     );
   }

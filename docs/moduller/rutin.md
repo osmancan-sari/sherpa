@@ -12,7 +12,7 @@ Kapsam kararı (13 Kas 2026, `docs/09-kararlar.md`): Rutin günün açılışı 
 - **Amaç:** Uyanıştan sonraki ve yatıştan önceki bakım adımlarını sırayla yürütmek ve kaydını kendiliğinden tutmak.
 - **Bölümler:** Sabah (`sabah`), Akşam (`aksam`). Her birinin kendi rengi ve sahnesi vardır; modül sayfasında birer sekmedir.
 - **Başarı ölçütü:** iki hafta sonunda sabah ve akşam adımları Sherpa'nın sahnesinden yapılıyor ve ayrıca hiçbir giriş yapılmıyor.
-- **"Tamam" kuralı (araştırmadan):** bir yapılışta asgari adımların hepsi yapıldıysa o rutin o gün tamamdır; öbür adımlar fazladan sayılır.
+- **"Tamam" kuralı (araştırmadan):** bir yapılışta temel adımların hepsi yapıldıysa o rutin o gün tamamdır; öbür adımlar fazladan sayılır.
 
 ## 2. Yaşam döngüsü
 
@@ -37,7 +37,7 @@ rutin_steps
   hint text null              -- ekranda yazan ipucu
   parts jsonb null            -- alt adımlar: [{ title, note?, seconds? }]; `seconds` taşıyan sayaçla ilerler; ayrı ayrı kaydedilmez
   cue text null               -- tetikleyici: 'Fırçayı bırakınca'
-  minimum boolean             -- asgari adım mı
+  minimum boolean             -- temel adım mı
   active boolean              -- açık mı (aşamalı açılış)
   phase smallint null         -- araştırmadaki faz (bilgi)
   every_days int null         -- boş: her yapılışta; dolu: son yapılıştan bu kadar gün geçince
@@ -50,13 +50,14 @@ rutin_runs
   session_id uuid null        -- çekirdeğin oturumu
   step_position int           -- kaldığı adım (iki cihazda aynı)
   part_position int default 0 -- adımın içinde kaldığı alt adım
-  minimum_done boolean        -- asgari adımların hepsi yapıldı mı
+  minimum_done boolean        -- temel adımların hepsi yapıldı mı
   finished_at timestamptz null
 
 rutin_run_steps
   run_id -> rutin_runs
   step_id -> rutin_steps
   result text                 -- 'done' | 'skipped'
+  seconds int null              -- adımda geçen süre; süre önerisi için
 ```
 
 Uyanış, yatış ve uyku modülde saklanmaz; `ctx.days` ile çekirdekten okunur. Adımlar kodda değil veridedir: kullanıcı ekler, çıkarır, sıralar, süresini ve sıklığını değiştirir, açıp kapatır. İlk liste kurulumda 8. bölümdeki tablolardan yazılır.
@@ -78,7 +79,7 @@ Modülün kendi `ingest` türü ve zamanlanmış işi yoktur: dışarıdan gelen
 
 - `core.session_started` ile yapılış açılır, `core.session_ended` ile kapanır.
 - **Sıklıklı adım.** `every_days` taşıyan adım, son yapılışından o kadar gün geçtiyse o günün listesine girer; kaçırılırsa ertesi gün yine görünür. Sabit hafta günü yoktur (ürün ilkesi).
-- **Aşamalı açılış.** Araştırmadaki üç faz, adımların "etkin" anahtarıyla uygulanır: kurulumda yalnızca 1. faz adımları etkindir. Modül sayfası bir sonraki fazın adımlarının yanında "asgari adımlar son 7 günün 5'inde yapıldı" bilgisini gösterir; açma kararı kullanıcınındır.
+- **Aşamalı açılış.** Araştırmadaki üç faz, adımların "etkin" anahtarıyla uygulanır: kurulumda yalnızca 1. faz adımları etkindir. Modül sayfası bir sonraki fazın adımlarının yanında "temel adımlar son 7 günün 5'inde yapıldı" bilgisini gösterir; açma kararı kullanıcınındır.
 - **Kaçan gün.** Ekranda seri, sayaç ya da "kaçırdın" uyarısı yoktur. Dün yapılmayan rutin için ek bir şey yapılmaz: ritim zaten her gün önerilir.
 - **Akşam hatırlatması.** Planlanan yatıştan 3 saat önce tek satırlık modül uyarısı (`alerts`): "Işıkları kıs; son büyük öğün." (A1, A2). Takip edilmez.
 - Yayınlayacağı olay: belirlenmedi (dinleyeni yok).
@@ -115,7 +116,7 @@ Günlük giriş yok. Adım düzenleme modül sayfasında yapılır.
 
 ### Sabah (güneşli tema)
 
-| Sıra | Adım | Tür | Asgari | Başlangıçta etkin | Araştırma |
+| Sıra | Adım | Tür | Temel | Başlangıçta etkin | Araştırma |
 | --- | --- | --- | --- | --- | --- |
 | 1 | Diş bakımı. Alt adımlar: su jeti (kullanıcı ekledi, 14 Kas) · fırçala, 2 dk (sayaç) · dil, 20–30 sn · tükür, suyla çalkalama | süreli (2 dk) | evet | evet | S1 |
 | 2 | Bir bardak su; günün özeti ekranda | dokunuşla | hayır | evet | S2 |
@@ -138,7 +139,7 @@ Kapanış ekranı (takip edilmez): "Sırada: hareketler." (Spor kurulana kadar: 
 
 Araştırma duşu akşama koymuştu (uykuya dalmayı hızlandırdığı için); kullanıcı uykuya dalmakta sorun yaşamadığı için duşu sabaha, hareketlerden sonraya aldı (13 Kas 2026).
 
-| Sıra | Adım | Tür | Asgari | Başlangıçta etkin | Araştırma |
+| Sıra | Adım | Tür | Temel | Başlangıçta etkin | Araştırma |
 | --- | --- | --- | --- | --- | --- |
 | 1 | Duş: ılık, 5–10 dk; parmak aralarını kurula | dokunuşla | evet | evet | A3 |
 | — | ek: Dercos, köpüğü 3–5 dk beklet | 1. adımın içinde; `every_days` 3 | hayır | evet | A3 |
@@ -155,7 +156,7 @@ Sabahın son adımı yürüyüştür, SPF değil (kullanıcının düzeltmesi, 1
 
 Duş sabaha alındığı için günün güneş kremi, teri ve kiri yüzden akşam lavaboda temizlenir (3. adım).
 
-| Sıra | Adım | Tür | Asgari | Başlangıçta etkin | Araştırma |
+| Sıra | Adım | Tür | Temel | Başlangıçta etkin | Araştırma |
 | --- | --- | --- | --- | --- | --- |
 | 1 | Antiperspirant, kuru cilde | dokunuşla | evet | evet | A4 |
 | 2 | Diş bakımı. Alt adımlar: ara fırça ya da ağız duşu · fırçala, 2 dk (sayaç) · dil · tükür, çalkalama; sonrasında yalnızca su | süreli (2 dk) | evet | evet | A6 |
@@ -193,12 +194,22 @@ Kapanış ekranı (takip edilmez): "Yatakta: gece plağını tak. Işık kapalı
 - **Adım ekleme.** Kullanıcı modül sayfasından yeni adım ve alt adım ekler, var olanı düzenler ya da kapatır; sahne ve süre hesabı listede ne varsa onu kullanır.
 - **Ses.** Günün özeti ve adım adları sesli söylenir; ipuçları yalnızca ekranda yazar. Süreli adımda süre bitince kısa bir sözle haber verilir.
 - **Çip:** günün rutinlerinin durumu.
+- **Kullanıcının kararları (14 Kas 2026, tasarımın son turu).**
+  - *Sözcük:* arayüzde "asgari" geçmez; "temel adım" denir (etiket "temel", anahtar "Temel adım"). Veride sütun adı `minimum` kalır. Başlangıç listesi: Sabah Diş bakımı; Duş ve hazırlık Duş, SPF; Akşam Antiperspirant, Diş bakımı, Telefon. Kullanıcı sonradan değiştirir.
+  - *Düzenlilikte iki satır:* Sabah ve Akşam. "Hazırlık" ayrı satır olmaz; sabahın iki bloğu (Sabah, Duş ve hazırlık) kullanıcı için tek sabahtır ve kare ikisinin temel adımlarının hepsi yapıldıysa dolar. Durum satırındaki "sabah 6/7" de aynı hesaptır. Hareketleri Spor modülü izler; burada sayılmaz. Karelerin altında "Dolu: o günün temel adımları yapıldı." yazar.
+  - *Süreli alt adım:* süre bitince kendiliğinden sıradaki alt adıma geçer ve adını söyler (eller ıslakken dokunmak gerekmez); kullanıcı sayaca dokunarak durdurabilir. "Süre dolmadan geçme" açıksa (varsayılan açık) süre dolana kadar ana düğme "Sonraki" yerine soluk "Erken geç · basılı tut" olur; yanlışlıkla ya da aceleyle geçilmez, isteyen basılı tutarak geçer. Süresi olmayan alt adım dokunuş bekler; el değmeden akması istenen alt adıma süre verilir. "Bitince kendiliğinden geç" diye ayrı bir anahtar yoktur.
+  - *Telefon:* duşta banyoda kenarda, giyinirken yanında durur; kullanıcı çıkarken "Sonraki"ye basar. Bu adımlar için özel düzenek yoktur.
+  - *Sabahın bitişi:* "Bitti"den sonra sahne tek bir yazı gösterir: "İyi günler" (Günaydın'ın karşılığı; sayı, süre, övgü yok). Yazı solarken Bugün ekranı belirir; gökyüzü aynı kaldığı için geçiş kesintisizdir (yaklaşık 0,6 sn, cihazda ayarlanır). "Bu sabah tamam" yazısı kaldırıldı.
+  - *Akşamın başlaması:* kendiliğinden açılmaz. Günün işleri bitince ya da saati gelince "Şimdi" kartına gelir; kullanıcı "Başla"ya basar.
+  - *"İyi geceler" ekranı:* kalır. "Yarın" kutusu iki satırdır: Uyanış (saat), Uyku (yaklaşık süre).
+  - *Sıralama:* adımlar listede kendi grubunun içinde sürüklenerek sıralanır.
+  - *Sürelerin öğrenilmesi (kullanıcının kararı, 14 Kas 2026: onay düğmesi yok, kendiliğinden).* İki katman vardır. (1) Çekirdek zaten öğrenir: `docs/04-planlayici.md` "Öğrenme" bölümündeki tahmin çarpanı (`(modül, iş türü)` başına son 20 oturumun gerçek ÷ tahmin ortancası, en az 5 örnek) planlayıcının girdisini kendiliğinden düzeltir; günlük ve haftalık plan Rutin'in gerçek süresine böyle uyar. (2) Modül adım sürelerini kendisi günceller ki listede yazan süre de doğru olsun: her adımda geçen süre kaydedilir (`rutin_run_steps.seconds`; adım ekrana geldiği andan "Sonraki"ye kadar), en az 7 geçerli kayıt olunca adımın plandaki süresi son 14 kaydın ortancasına çekilir (dakikaya yuvarlanır; haftada bir, haftanın kurulmasından önce). Arka arkaya birkaç saniyede geçilen (toplu basılan) adımlar ve atlananlar hesaba girmez. Değişiklik onay istemez; Düzenlilik'te "Son değişenler" altında tek satır bilgi olarak görünür ("Duş artık planda 14 dk (10 dk idi)"). Kullanıcı bir süreyi elle değiştirirse o adım kullanıcınındır: otomatik güncelleme o adımda durur (düzenleme sayfasında "Süre · otomatik" yerine "Süre · elle" ve "Otomatiğe dön"). Yapay zeka çağrısı yoktur. Süresiz alt adımlar (Su jeti, Tükür) dokunuşla geçilir; onların süresi adımın toplamından öğrenilir.
 - **Modül sayfası (cam dili; çizimler tuvalde "Modül sayfası", dört kare; 14 Kas 2026, kullanıcının görüşünü bekliyor).** Çekirdeğin beş bölgeli iskeletini kullanır; zemin günün saatine göre gökyüzüdür.
   - *Başlık ve durum:* modülün rengi, ad, alan (Sağlık), "Adım ekle". Durum satırı: son 7 günde sabahın ve akşamın tamam olduğu gün sayısı; panoda ayrıca ortalama uyanış, yatış ve uyku.
   - *Sekmeler:* Sabah, Akşam, Düzenlilik (cam hap; telefonda tam genişlik).
-  - *Sabah sekmesi:* sabahın tamamı tek listede, üç grup halinde ve sahnedeki sırayla numaralı: Sabah (Diş bakımı, Bir bardak su), Hareketler (Spor'dan gelen satır; anahtarı yoktur, dokununca Spor modülüne gider), Duş ve hazırlık (Duş, SPF, Giyin, Yürüyüş). Ekler (Dercos) ve kapalı faz adımları (Nasır kremi) numarasız, girintili durur. Her satırda ad, tek satır özet (tür, alt adım sayısı, sıklık), varsa "asgari" etiketi ve açık/kapalı anahtarı. Akşam sekmesi aynı düzendedir.
-  - *Adımı düzenle (kullanıcının yorumu, 14 Kas 2026: her şey ayarlanabilir olmalı):* satıra dokununca alttan cam sayfa açılır: ad, plandaki süre (− / +), sıklık (her gün / N günde bir), asgari, açık, "Adımı sil". Altında alt adımlar: her biri sürüklenerek sıralanır, adına dokununca yeniden adlandırılır, süre hapına dokununca süresi ve sayaç olup olmadığı ayarlanır ("süre ekle" boş haptır), çarpıyla çıkarılır; "Alt adım ekle" yeni satır açar. "Kaydet". "Adım ekle" aynı sayfayı boş açar. Listede her adımın süresi satırında yazar; grup başlığındaki süre ("toplam 4 dk") elle girilmez, açık adımların sürelerinin toplamıdır ve planlayıcıya giden süre de budur.
-  - *Düzenlilik sekmesi:* son 14 günün uyanış ve yatış saatleri nokta olarak, hedef aralıklar açık şerit; ortalama uyanış, yatış, uyku. Altında asgari adımların 14 günlük karesi (Sabah, Hazırlık, Akşam) ve haftalık rapordaki tek öneri ("en çok atlanan adım: küçült ya da tetikleyicisini değiştir"). Boş gün gri kalır; seri, puan, rozet yok.
+  - *Sabah sekmesi:* sabahın tamamı tek listede, üç grup halinde ve sahnedeki sırayla numaralı: Sabah (Diş bakımı, Bir bardak su), Hareketler (Spor'dan gelen satır; anahtarı yoktur, dokununca Spor modülüne gider), Duş ve hazırlık (Duş, SPF, Giyin, Yürüyüş). Ekler (Dercos) ve kapalı faz adımları (Nasır kremi) numarasız, girintili durur. Her satırda ad, tek satır özet (tür, alt adım sayısı, sıklık), varsa "temel" etiketi ve açık/kapalı anahtarı. Akşam sekmesi aynı düzendedir.
+  - *Adımı düzenle (kullanıcının yorumu, 14 Kas 2026: her şey ayarlanabilir olmalı):* satıra dokununca alttan cam sayfa açılır: ad, plandaki süre (− / +), sıklık (her gün / N günde bir), temel adım, açık, "Adımı sil". Altında alt adımlar: her biri sürüklenerek sıralanır, adına dokununca yeniden adlandırılır, süre hapına dokununca süresi ve sayaç olup olmadığı ayarlanır ("süre ekle" boş haptır), çarpıyla çıkarılır; "Alt adım ekle" yeni satır açar. "Kaydet". "Adım ekle" aynı sayfayı boş açar. Listede her adımın süresi satırında yazar; grup başlığındaki süre ("toplam 4 dk") elle girilmez, açık adımların sürelerinin toplamıdır ve planlayıcıya giden süre de budur.
+  - *Düzenlilik sekmesi:* son 14 günün uyanış ve yatış saatleri nokta olarak, hedef aralıklar açık şerit; ortalama uyanış, yatış, uyku. Altında temel adımların 14 günlük karesi (Sabah, Hazırlık, Akşam) ve haftalık rapordaki tek öneri ("en çok atlanan adım: küçült ya da tetikleyicisini değiştir"). Boş gün gri kalır; seri, puan, rozet yok.
   - *Yaklaşanlar (panoda sağ sütun, telefonda sekmelerin altında kaydırınca):* çekirdeğin doldurduğu liste; sıradaki ritimler.
   - *Çizilen ekranların tamamı (tuvalde "Modül sayfası", on üç kare; 14 Kas 2026).* Telefon: 1 Sabah sekmesi, 2 aynı sekme aşağı kaydırınca (Yaklaşanlar, "Bu hafta" satırı), 3 Akşam sekmesi (altında "Yatakta · kaydedilmez" notu), 4 Düzenlilik, 5 Adımı düzenle, 6 Alt adımın süresi (süre, sayaç göster, bitince kendiliğinden geç, not, "Süreyi kaldır"), 7 Kapalı faz adımı ve "N günde bir" (faz notu, "Şunun eki", "Kaç günde bir"), 8 Adım ekle ("Nereye": Sabah / Hazırlık / Akşam, "Sırası"), 9 Adımı sil onayı ("Kapat" seçeneğiyle). Pano: 10 Sabah, 11 Akşam, 12 Düzenlilik (öneri kartında "Adımı düzenle"), 13 Adımı düzenle (sağdan açılan yan panel). Modüle özel ayrı bir ayar ekranı yoktur; renkler çekirdeğin Ayarlar'ındadır.
 
@@ -212,7 +223,7 @@ Araştırmadaki haftalık gözden geçirmenin yerini tutar; ayrı bir iş açıl
 
 ## 11. Açık sorular
 
-1. Antiperspirant adımı (A4) ürünün alüminyum içermesine bağlı; etiket kontrol edilecek.
+1. ~~Antiperspirant adımı (A4) ürünün alüminyum içermesine bağlı; etiket kontrol edilecek.~~ Kapandı (14 Kas 2026): kurulumu etkilemez. Soru yalnızca adımın notu içindi (alüminyumlu antiperspirant gece sürülünce daha iyi tutar; ürün yalnızca deodorantsa saatin önemi yoktur). Adım sıradan bir adımdır; kullanıcı isterse kapatır ya da sabaha taşır.
 2. Gece plağı henüz yok; diş hekiminden sonra kapanış ekranındaki cümle geçerli olur.
 
 ### Kapsam dışı bırakılanlar (13 Kas 2026)
@@ -236,4 +247,4 @@ Tasarım sırasında görülen eksikler. 2, 7 ve 11 numaralılar Ç3f adımına 
 9. **Dokunuşsuz anlatım.** iPhone'da web uygulaması dokunuş olmadan konuşamaz. Planın alarm kapanır kapanmaz, dokunmadan okunması istenirse Kestirmeler'in özet metnini Sherpa'dan alması gerekir; cihaz anahtarları bugün yalnızca yazabilir, okuma ucu yok.
 10. **"Şundan hemen sonra" kısıtı.** Kullanıcının isteği: plana salon antrenmanı girdiği gün duş kendiliğinden onun ardına gelsin; antrenman yoksa sabah dizisindeki yerinde kalsın. Bugünkü `timing` yalnızca saate, uyanışa ve yatışa bağlar; başka bir işe (hele başka modülün işine) bağlayamaz. `depends_on` yalnızca kalemler arasında ve "bitmeden başlamaz" anlamındadır. Gereken genel yapı: bir iş "şu işareti taşıyan iş o gün plandaysa onun hemen ardına" diyebilmeli (işaret, öbür işin kendi beyanı; modüller birbirini tanımaz), yoksa kendi öbür kısıtlarına dönmeli; ayak izi ve çapalı diziler buna göre hesaplanmalı. Spor modülü kurulmadan önce çekirdek kararı olarak ele alınmalı. Sabah hareketleri için bu kısıt gerekmez: duş uyanış dizisinde hareketlerden sonraki sıradadır.
 11. **Çapalı dizinin tek akış olması.** Kullanıcının isteği: uyanışa bağlı işler (Rutin'in Sabah bloğu, Spor'un hareketleri, Rutin'in Duş ve hazırlık bloğu) ekranda tek bir sabah olarak görünsün ve aralarında "Başla"ya basmak gerekmesin. İki eksik: (a) sahne, parçası olduğu dizinin öbür işlerini bilmiyor (`today` yalnızca günün 3 işini ve blokları taşır; başka modülün çapalı işi gelmez); (b) bir çapalı iş bitince sıradaki kendiliğinden başlamıyor (`start_on_wake` yalnızca ilkini başlatır). Gereken genel yapı: çekirdek sahneye diziyi versin (her işin adı, modülü, süresi, durumu) ya da diziyi kendi şeridinde göstersin, ve dizideki sıradaki işi kendiliğinden başlatsın (ayarla). Yatışa bağlı dizi için de aynısı geçerli. Spor modülü kurulmadan önce çekirdek kararı olarak ele alınmalı.
-12. **Sağlık alanı sayfasına veri (kullanıcının sorusu, 14 Kas 2026).** Kullanıcı sağlıkla ilgili bütün trendleri tek yerde görmek istiyor: uyku (çekirdeğin uyanış ve yatış kaydı), Rutin'in düzenliliği, Spor'un ve Beslenme'nin sayıları, ayrıca bunlardan türetilen metrikler (uyku düzenliliği, uyku açığı, modüller arası ilişkiler). Yeri alan sayfasıdır (`/a/saglik`). Denetlenecek: sözleşmede bir modülün alan sayfasına zaman serisi ve seçilmiş görünüm vermesinin karşılığı var mı; modüller arası türetilmiş metrik nerede hesaplanır (çekirdek mi, alan mı). Tek bir "sağlık puanı" önerilmedi (keyfi olur, suçluluk üretir). Sağlık sayfası Spor tasarlandıktan sonra ayrı bir oturumda çizilir. Rutin'in vereceği: Düzenlilik sekmesindeki uyku grafiği ve asgari adım kareleri. **Erişim (öneri, 14 Kas 2026; çizim tuvalde "Modül sayfası" sayfası, 5. kare).** Alan sayfasına iki yerden girilir, yeni menü öğesi açılmaz: (a) Modüller ekranı modülleri alanlarına göre gruplar; her grubun başlığı alanın tek satırlık özetini ve "Alan sayfası ›" düğmesini taşır; (b) modül sayfasının başlığındaki alan adı ("Sağlık ›") bağlantıdır. Bugün ekranına alan girişi konmaz (tek odak). `docs/ILERLEME.md` alan sayfasının hiçbir fazda olmadığını ve kodda bulunmadığını yazıyor; hangi faza gireceği açık.
+12. **Sağlık alanı sayfasına veri (kullanıcının sorusu, 14 Kas 2026).** Kullanıcı sağlıkla ilgili bütün trendleri tek yerde görmek istiyor: uyku (çekirdeğin uyanış ve yatış kaydı), Rutin'in düzenliliği, Spor'un ve Beslenme'nin sayıları, ayrıca bunlardan türetilen metrikler (uyku düzenliliği, uyku açığı, modüller arası ilişkiler). Yeri alan sayfasıdır (`/a/saglik`). Denetlenecek: sözleşmede bir modülün alan sayfasına zaman serisi ve seçilmiş görünüm vermesinin karşılığı var mı; modüller arası türetilmiş metrik nerede hesaplanır (çekirdek mi, alan mı). Tek bir "sağlık puanı" önerilmedi (keyfi olur, suçluluk üretir). Sağlık sayfası Spor tasarlandıktan sonra ayrı bir oturumda çizilir. Rutin'in vereceği: Düzenlilik sekmesindeki uyku grafiği ve temel adım kareleri. **Erişim (öneri, 14 Kas 2026; çizim tuvalde "Modül sayfası" sayfası, 5. kare).** Alan sayfasına iki yerden girilir, yeni menü öğesi açılmaz: (a) Modüller ekranı modülleri alanlarına göre gruplar; her grubun başlığı alanın tek satırlık özetini ve "Alan sayfası ›" düğmesini taşır; (b) modül sayfasının başlığındaki alan adı ("Sağlık ›") bağlantıdır. Bugün ekranına alan girişi konmaz (tek odak). `docs/ILERLEME.md` alan sayfasının hiçbir fazda olmadığını ve kodda bulunmadığını yazıyor; hangi faza gireceği açık.

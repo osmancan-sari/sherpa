@@ -62,6 +62,8 @@ export function useDefer() {
                 planned_date: shiftDay(date, 1),
                 defer_count: candidate.task.defer_count + 1,
                 status: "todo",
+                // The chain reads "put off today" from it (src/core/today/chain.ts).
+                updated_at: new Date().toISOString(),
               }),
             },
           ]

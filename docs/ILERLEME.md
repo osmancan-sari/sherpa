@@ -5,8 +5,8 @@ Bu dosyayı Claude Code günceller. Yeni bir oturum yalnızca bu dosyayı ve `pr
 ## Durum
 
 - Faz: **Ç3f (Çapalı diziler) sürüyor** (14 Kas 2026). Ç3e bitti ve yayında (`c3e-tamam`, 13 Kas)
-- Adım: 1 (dizi) bitti; 2'nin bir kısmı (sahneye `chain`, `today.closed`, kartta satır) yazıldı, testi sırada
-- Son commit: C3f: chainOf
+- Adım: 2 (sahneye verme) bitti; sırada 3 (kendiliğinden devam)
+- Son commit: C3f: the chain in the scene and on the card
 
 ### Ç3f planı
 
@@ -16,7 +16,7 @@ Bu dosyayı Claude Code günceller. Yeni bir oturum yalnızca bu dosyayı ve `pr
 | --- | --- | --- |
 | 0 | Bölüm G numaralı dokümanlara işlendi; tasarım oturumunun commit edilmemiş dokümanları (`docs/01`, `07`, `09`, `12`, `docs/moduller/`, istem) aynı commit'te | bitti |
 | 1 | Dizi: `chainOf` (saf, `src/core/today/chain.ts`, önce testler): planın çapalı yuvaları, bugün yapılanlar, bugün geçilenler; başka modülün satırında yalnızca izinli alanlar; planlayıcının çıktısının değişmediği testi | bitti: `chainOf`, `chainsOf`, `chainWith`, `nextInChain`, `sceneChain` (yalnızca `SceneChain` alanları), `chainLine`; `SceneChain` sözleşmede. `done`: bugün biten iş ve oturum işi, bugün kaydı düşen ritim; `passed`: planın artık önermediği çapalı aday, bugün atlanan kalem ve ritim, bugün yarına ertelenen iş (`planned_date` yarın, `defer_count > 0`, bugün güncellendi); çalışan çapalı iş satırı kalmamış olsa da `running`. Sıra `order` (yoksa sonda), eşitse yapılanlar, yuvalar, geçilenler. Testler: `src/core/today/chain.test.ts` 12 (aynı girdi aynı plan dahil) |
-| 2 | Sahneye verme: `SceneProps.chain`, `today.closed`; standart kartta dizi satırı | |
+| 2 | Sahneye verme: `SceneProps.chain`, `today.closed`; standart kartta dizi satırı | bitti: `SceneFrame` dizeyi `sceneChain` ile verir (değişmedikçe aynı nesne), `briefOf` `closed`'ı, Şimdi kartında dizi satırı çalışan işte, öneride ve akşam kartında (`chain-line`); `deneme`'nin güneş ve gece sahnesi diziyi çizer (`scene-chain`: ad, başka modülse modülün adı, süre, durum). Adım denetimi (1–2): GEÇTİ, 4 önemli: (1) iki yapay zeka uçtan uca testi tam koşuda "Target page closed" ile düştü, tek başına geçiyor (bu aralığın dokunmadığı dosyada; kapanışta yeniden bakılır, "Bilinen sorunlar"); (2) gece yarısından sonra yatış dizisinde yapılan ve ertelenen iş takvim gününe göre düşüyordu: "bugün" artık planlama gününün gece yarısından beri, ritim kaydı takvimin ertesi gününde de olur, yapılan iş planın yuvasından önce gelir (testli); (3) akşam kartında satır yoktu: eklendi; (4) 2. adımın testi yoktu: `tests/e2e/chains.spec.ts` 2. Notlar: süreler planınkiyle aynı (öğrenilmiş çarpan, `round5`, `nextSessionMinutes`; testli), ertelemenin iyimser yaması `updated_at`'i de yazar, dizi `useMemo`'da, `docs/06`'da `id` "iş, kalem ya da ritim", yapılan ritimde `active` denetimi. Ertelemenin tahmini (yarına planlı, `defer_count > 0`, bugün güncellenmiş) "Bilinen sorunlar"da |
 | 3 | Kendiliğinden devam: `day_frame.chain_auto` (migration yok: değer uygulamada doğrulanır), `start_session_if_idle` (migration: kilitli, "o andan beri oturum başlamadıysa" `start_session`), Bitti ve Ertele'den sonra başlatma, öbür sonuçlardan sonra başlatmama, iki çapa, iki cihaz yarışı | |
 | 4 | Dışarıdan uyanış: uygulama öne gelince dizinin ilk işi (`start_on_wake`, 60 dakika, çift başlatma yok) | |
 | 5 | Sahneden kapanış: `controls.closing()`, `controls.bed()`, `today.closed`, "Onayla ve yat"ın gizlenmesi | |
@@ -1051,6 +1051,12 @@ Süre sapmasındaki artış çoğunlukla `enrich`'in kendi tahminlerinin çalı�
 | 11 Kas 2026 | D1: giriş kodu bulutta Resend SMTP ile gider (gönderen `onboarding@resend.dev`, ad "Sherpa"); SMTP yalnızca `[remotes.*]` bloklarında, yerel Mailpit'te kalır; bulutta saatte en çok 10 kod e-postası. Alan adı doğrulanmadığı için Resend yalnızca hesabın kendi adresine gönderir; `ALLOWED_EMAIL` o adres olmalı | Ücretsiz katman hazır göndericiyle şablon değiştirmeye izin vermiyordu; hazır sınır (saatte 2) iki cihazda giriş için dar | `supabase/config.toml`, `docs/11-yayin-ve-cihazlar.md` |
 
 ## Bilinen sorunlar
+
+- Ç3f: dizide "bugün ertelendi" bir tahmindir: yarına planlı, en az bir kez ertelenmiş ve bugün değişmiş çapalı iş. Daha önce ertelenmiş bir iş bugün elle yarına taşınırsa da "geçildi" görünür. Gün kaydında ertelenen işlerin listesi yok; gerekirse sonra eklenir.
+
+- Ç3f: gece yarısından sonra (gece bitmeden) kaydı düşen çapalı ritim takvimin ertesi gününe yazılır (`rhythm_logs.done_on`); planlayıcı bugünü takvim gününe göre saydığı için o ritmi yeniden önerebilir (eski davranış, Ç3c'den). Dizi onu "yapıldı" gösterir ve sıradakine geçerken atlar.
+
+- Ç3f, adım denetimi (1–2): tam `check:full` koşusunda `yapay-zeka.ai.spec.ts`'in iki testi (127. ve 206. satır) "Target page, context or browser has been closed" ile düştü; dosya tek başına koşunca 16'sı da geçti. Bu fazın dokunmadığı dosya; neden bulunamadı. Kapanışta yeniden bakılacak.
 
 - Ç3e: `setFacetColor` (bölüm rengi) satırı okuyup birleştirip yazar; iki cihazda aynı anda iki ayrı bölümün rengi değiştirilirse biri kaybolabilir. Tek kullanıcıda olasılık düşük; gerekirse jsonb birleştiren tek bir veritabanı fonksiyonu.
 

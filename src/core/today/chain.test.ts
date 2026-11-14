@@ -257,6 +257,62 @@ describe("chainOf", () => {
     expect(chainOf(input, plan, "wake")).toBeNull();
   });
 
+  it("past midnight the bed chain is still the evening's: done and put off by the planning day", () => {
+    const teeth = anchored("bed", { title: "Akşam diş" }, { order: 20 });
+    const face = anchored("bed", { title: "Yüz" }, { order: 30 });
+    const cream = anchored("bed", { title: "Krem" }, { order: 40 });
+    const stretch = anchoredRhythm("bed", {
+      title: "Esneme",
+      timing: { anchor: "bed", order: 10 },
+    });
+    // The log of 00:10 carries the calendar day (the 13th); the planning day is the 12th.
+    const log = { ...rhythmLog(stretch.id, NEXT), created_at: iso("00:10", NEXT) };
+    const data = rows({
+      tasks: [
+        { ...teeth, status: "done", done_at: iso("00:20", NEXT) },
+        face,
+        // "Ertele" at 00:25: tomorrow is the 13th, the day after the planning day.
+        { ...cream, planned_date: NEXT, defer_count: 1, updated_at: iso("00:25", NEXT) },
+      ],
+      rhythms: [stretch],
+      rhythmLogs: [log],
+      days: [today()],
+    });
+    const { input, plan } = setup(data, "00:30", NEXT);
+    expect(input.date).toBe(DATE);
+    expect(states(chainOf(input, plan, "bed"))).toEqual([
+      "Esneme:done",
+      "Akşam diş:done",
+      "Yüz:next",
+      "Krem:passed",
+    ]);
+    expect(chainLine(chainOf(input, plan, "bed")!, face.id)).toBe("Akşam dizisi 3/3 · son iş");
+  });
+
+  it("shows each work with the plan's minutes, whatever its state", () => {
+    const { teeth, neck, data } = morning();
+    const odd = { ...neck, est_minutes: 12 };
+    const learned = rows({
+      ...data,
+      rhythms: [odd],
+      stats: [{ key: "est_multiplier:bakim:task", value: 1.5, sample_size: 20 } as never],
+    });
+    const before = setup(learned, "07:02");
+    const planned = chainOf(before.input, before.plan, "wake")!;
+    const after = setup(
+      {
+        ...learned,
+        tasks: [{ ...teeth, status: "done", done_at: iso("07:12") }, data.tasks[0]],
+        rhythmLogs: [rhythmLog(odd.id, DATE)],
+      },
+      "07:20",
+    );
+    const finished = chainOf(after.input, after.plan, "wake")!;
+    const minutes = (chain: typeof planned) =>
+      chain.rows.filter((row) => row.id !== data.tasks[0].id).map((row) => row.minutes);
+    expect(minutes(finished)).toEqual(minutes(planned));
+  });
+
   it("is null without the frame and without anchored work", () => {
     const { data } = morning();
     const off = setup({ ...data, settings: settingsRow({ day_frame: null }) }, "07:02");

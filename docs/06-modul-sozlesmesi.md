@@ -242,7 +242,7 @@ Uyanışa ve yatışa bağlı işler (`timing.anchor`) o gün birer **dizi** olu
 type SceneChain = {
   anchor: 'wake' | 'bed'
   items: {
-    id: string                         // iş ya da ritim kimliği (kalemin oturum işi: işin kimliği)
+    id: string                         // iş, kalem ya da ritim kimliği (kalemin oturum işi açıksa o iş)
     title: string
     module: { slug: string; name: string }
     facet: { key: string; name: string } | null

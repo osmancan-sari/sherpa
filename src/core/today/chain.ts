@@ -1,9 +1,10 @@
 import type { SceneChain } from "@/core/contract/types";
 import type { Candidate, Plan, PlanInput } from "@/core/planner";
-import { candidatesOf } from "@/core/planner/candidates";
+import { nextSessionMinutes } from "@/core/contract/envelope";
+import { candidatesOf, estimateMultiplier } from "@/core/planner/candidates";
 import { effectiveTiming, rhythmTiming } from "@/core/planner/timing";
 import type { Rhythm, Task, WorkItem } from "@/core/types";
-import { dayKey, shiftDay } from "@/lib/date";
+import { istanbulInstant, shiftDay } from "@/lib/date";
 
 // The anchored chains (docs/06-modul-sozlesmesi.md, "Diziler"; docs/04-planlayici.md, "Diziler
 // (Ç3f)"): the day's wake-bound and bed-bound work as one list each, built from the plan's
@@ -45,6 +46,9 @@ export type ChainLook = {
 
 const RANK: Record<ChainState, number> = { running: 3, next: 2, done: 1, passed: 0 };
 
+/** The planner's rounding of a length (candidates.ts): the same minutes as the plan shows. */
+const round5 = (minutes: number) => Math.max(5, Math.round(minutes / 5) * 5);
+
 /** The day's chain on one anchor; null when the frame is off or nothing is bound to it. */
 export function chainOf(input: PlanInput, plan: Plan, anchor: Anchor): Chain | null {
   if (!input.frame) return null;
@@ -54,6 +58,11 @@ export function chainOf(input: PlanInput, plan: Plan, anchor: Anchor): Chain | n
     task.work_item_id ? input.workItems.find((row) => row.id === task.work_item_id) : undefined;
   const taskAnchor = (task: Task) => effectiveTiming(task, itemOf(task))?.anchor ?? null;
   const taskOrder = (task: Task) => effectiveTiming(task, itemOf(task))?.order ?? null;
+  // "Today" is the planning day, not the calendar day: past midnight, until the night ends, the
+  // bed chain is still the evening's (docs/04-planlayici.md, `planningDay`). From the day's
+  // midnight on; nothing is recorded ahead of the clock.
+  const dayFrom = istanbulInstant(input.date).getTime();
+  const today = (instant: string | null) => instant !== null && Date.parse(instant) >= dayFrom;
 
   const found = new Map<string, ChainRow & { seq: number }>();
   let seq = 0;
@@ -77,7 +86,7 @@ export function chainOf(input: PlanInput, plan: Plan, anchor: Anchor): Chain | n
     id: task.id,
     title: task.title,
     moduleId: task.module_id,
-    minutes: task.est_minutes,
+    minutes: round5(task.est_minutes * estimateMultiplier(input, task.module_id, task.kind)),
     state,
     target: state === "running" ? { type: "task", id: task.id } : null,
     work: { type: "task", id: task.id, task, item: itemOf(task) ?? null },
@@ -87,7 +96,7 @@ export function chainOf(input: PlanInput, plan: Plan, anchor: Anchor): Chain | n
     id: rhythm.id,
     title: rhythm.title,
     moduleId: rhythm.module_id,
-    minutes: Math.min(90, rhythm.est_minutes),
+    minutes: Math.min(90, round5(rhythm.est_minutes)),
     state,
     target: state === "running" ? { type: "rhythm", id: rhythm.id } : null,
     work: { type: "rhythm", id: rhythm.id, rhythm },
@@ -102,26 +111,34 @@ export function chainOf(input: PlanInput, plan: Plan, anchor: Anchor): Chain | n
     .filter(
       (task) =>
         task.status === "done" &&
-        task.done_at !== null &&
-        dayKey(new Date(task.done_at)) === input.date &&
+        today(task.done_at) &&
         active.has(task.module_id) &&
         taskAnchor(task) === anchor,
     )
     .sort((a, b) => Date.parse(a.done_at!) - Date.parse(b.done_at!));
   for (const task of doneTasks) add(fromTask(task, "done"));
+  // A log carries the calendar day; past midnight the evening's log is on the next one.
+  const tomorrow = shiftDay(input.date, 1);
   const loggedToday = new Set(
-    input.rhythmLogs.filter((log) => log.done_on === input.date).map((log) => log.rhythm_id),
+    input.rhythmLogs
+      .filter(
+        (log) => log.done_on === input.date || (log.done_on === tomorrow && today(log.created_at)),
+      )
+      .map((log) => log.rhythm_id),
   );
   for (const rhythm of input.rhythms) {
-    if (!loggedToday.has(rhythm.id) || !active.has(rhythm.module_id)) continue;
+    if (!loggedToday.has(rhythm.id) || !rhythm.active || !active.has(rhythm.module_id)) continue;
     if (rhythmTiming(rhythm)?.anchor === anchor) add(fromRhythm(rhythm, "done"));
   }
+  const done = new Set(found.keys());
 
   // The plan's anchored slots: running or next.
   for (const slot of plan.slots) {
     if (slot.part !== anchor || !slot.assignment) continue;
     const { candidate } = slot.assignment;
     const running = runningIds.has(candidate.id);
+    // What is done today is done, even where the plan (by its calendar day) still offers it.
+    if (!running && done.has(candidate.id)) continue;
     add(fromCandidate(candidate, running ? "running" : "next"));
   }
   // A running anchored work whose line is no longer offered is still the chain's.
@@ -136,7 +153,9 @@ export function chainOf(input: PlanInput, plan: Plan, anchor: Anchor): Chain | n
   // Passed today: anchored work the plan no longer offers (its time went by), and work put off
   // today with "Ertele" (a task moved to tomorrow today, an item or a rhythm skipped).
   for (const candidate of candidatesOf(input).anchored) {
-    if (candidate.timing?.anchor === anchor) add(fromCandidate(candidate, "passed"));
+    if (candidate.timing?.anchor === anchor && !done.has(candidate.id)) {
+      add(fromCandidate(candidate, "passed"));
+    }
   }
   const skipped = new Set(input.skipped ?? []);
   for (const rhythm of input.rhythms) {
@@ -156,18 +175,19 @@ export function chainOf(input: PlanInput, plan: Plan, anchor: Anchor): Chain | n
       id: item.id,
       title: item.title,
       moduleId: item.module_id,
-      minutes: item.session_minutes ?? 30,
+      minutes: nextSessionMinutes(item),
       state: "passed",
       target: null,
       work: { type: "item", id: item.id, item },
       order: timing.order ?? null,
     });
   }
-  const tomorrow = shiftDay(input.date, 1);
+  // A task put off today ("Ertele" moves it to tomorrow): planned for tomorrow, put off at least
+  // once, changed today. A task moved to tomorrow by hand after an earlier "Ertele" reads the
+  // same (known limit, docs/ILERLEME.md).
   for (const task of input.tasks) {
     if (task.status !== "todo" || !active.has(task.module_id) || task.defer_count === 0) continue;
-    if (task.planned_date !== tomorrow || dayKey(new Date(task.updated_at)) !== input.date)
-      continue;
+    if (task.planned_date !== tomorrow || !today(task.updated_at)) continue;
     if (taskAnchor(task) === anchor) add(fromTask(task, "passed"));
   }
 

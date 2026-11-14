@@ -146,6 +146,7 @@ export function EveningCard({
   next,
   closed,
   modules,
+  chainLine = null,
 }: {
   date: string;
   now: Date;
@@ -153,6 +154,8 @@ export function EveningCard({
   next: Assignment | null;
   closed: boolean;
   modules: Map<string, KnownModule>;
+  /** Ç3f: the next work's place in the bed chain. */
+  chainLine?: string | null;
 }) {
   const bed = useRecordBed();
   const expected = useSetExpected();
@@ -169,6 +172,11 @@ export function EveningCard({
             {mod ? (
               <p className="text-muted-foreground text-sm">
                 <WorkModule mod={mod} candidate={next.candidate} />
+              </p>
+            ) : null}
+            {chainLine ? (
+              <p data-testid="chain-line" className="text-muted-foreground text-sm tabular-nums">
+                {chainLine}
               </p>
             ) : null}
             <h2 className={TITLE}>{next.candidate.title}</h2>

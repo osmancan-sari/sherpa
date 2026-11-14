@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useRefreshAll } from "@/core/app/actions";
 import { useModuleQuery } from "@/core/app/hooks";
-import type { SceneProps } from "@/core/contract/types";
+import type { SceneChain, SceneProps } from "@/core/contract/types";
 import { type Step, StepRunner } from "@/core/ui/kit";
 import { useNotify } from "@/core/ui/Notices";
 import { SAVE_FAILED } from "@/core/ui/Notices";
@@ -121,15 +121,64 @@ function WorkoutScene({ subject, controls, say, ctx }: SceneProps) {
   );
 }
 
+const STATE_LABEL: Record<SceneChain["items"][number]["state"], string> = {
+  done: "yapıldı",
+  running: "şimdi",
+  next: "sırada",
+  passed: "geçildi",
+};
+
+/**
+ * Ç3f: the whole chain the running work is part of, other modules' work included (name, module,
+ * colour, minutes, state: all a scene gets of them). The example of drawing `chain`.
+ */
+function ChainList({ chain }: { chain: SceneChain }) {
+  return (
+    <ol
+      aria-label={chain.anchor === "wake" ? "Bu sabah" : "Bu akşam"}
+      data-testid="scene-chain"
+      className="flex flex-col gap-1 text-sm md:text-base"
+    >
+      {chain.items.map((item) => (
+        <li
+          key={item.id}
+          data-state={item.state}
+          data-mine={item.mine ? "true" : "false"}
+          aria-current={item.state === "running" ? "step" : undefined}
+          className={
+            item.state === "done" || item.state === "passed"
+              ? "text-muted-foreground flex items-center gap-2"
+              : "flex items-center gap-2"
+          }
+        >
+          <span
+            aria-hidden
+            className="size-2 shrink-0 rounded-full"
+            style={{ backgroundColor: item.color }}
+          />
+          <span className={item.state === "running" ? "font-medium" : undefined}>{item.title}</span>
+          <span className="text-muted-foreground tabular-nums">
+            {[item.mine ? null : item.module.name, `${item.minutes} dk`, STATE_LABEL[item.state]]
+              .filter(Boolean)
+              .join(" · ")}
+          </span>
+        </li>
+      ))}
+    </ol>
+  );
+}
+
 /**
  * Ç3e: the morning facet's scene, sunny, and the evening facet's, a night sky. One component
  * each, drawn with the facet the core hands over (`facet`: its name and the user's colour).
+ * Ç3f: with the chain the work is part of beside it.
  */
 function FacetScene({
   subject,
   session,
   controls,
   facet,
+  chain,
   testId,
   greeting,
   sky,
@@ -158,6 +207,7 @@ function FacetScene({
         <p className="text-5xl font-semibold tabular-nums md:text-8xl" aria-label="Geçen süre">
           {clock(session.elapsedSeconds)}
         </p>
+        {chain ? <ChainList chain={chain} /> : null}
       </div>
       <div className="flex flex-wrap gap-2">
         <Button className="h-12 px-6 text-base" onClick={() => void controls.finish()}>
