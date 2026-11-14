@@ -217,6 +217,74 @@ describe("a run", () => {
     expect(ok(await db.from("rutin_runs").select("*").single()).finished_at).toBe(ended.ended_at);
   });
 
+  it("started again after Bitti begins at its first step; its bedtime taken back goes on where it stood", async () => {
+    const { ctx, row } = await setup();
+    await rutin.onActivate!(ctx);
+    const rhythm = ok(
+      await db
+        .from("rhythms")
+        .select("*")
+        .eq("module_id", row.id)
+        .eq("key", "rutin:sabah")
+        .single(),
+    );
+    const told = { db, registry };
+    const first = await startSessionTold(told, { rhythmId: rhythm.id });
+    const run = ok(await db.from("rutin_runs").select("*").single());
+    const teeth = (await listSteps(ctx)).find((step) => step.ref === "S1")!;
+    await saveRecords(ctx, [
+      { run_id: run.id, step_id: teeth.id, result: "done", seconds: 170, bulk: false },
+    ]);
+    ok(
+      await db
+        .from("rutin_runs")
+        .update({ step_position: 2, minimum_done: true })
+        .eq("id", run.id)
+        .select(),
+    );
+    const ended = await endSessionTold(told, first.id, "done");
+
+    // The same session told as started again (its bedtime was taken back): reopened, in place.
+    await openRun(
+      ctx,
+      event("core.session_started", {
+        session_id: first.id,
+        source: { type: "rutin.routine", id: rhythm.source_id },
+        started_at: first.started_at,
+      }),
+    );
+    expect(ok(await db.from("rutin_runs").select("*").single())).toMatchObject({
+      session_id: first.id,
+      step_position: 2,
+      finished_at: null,
+    });
+    await closeRun(
+      ctx,
+      event("core.session_ended", {
+        session_id: first.id,
+        result: "done",
+        ended_at: ended.ended_at,
+      }),
+    );
+
+    // Started again later that day: a new pass from the first step, in the same row. What was
+    // done that day stays done (a step passed again writes over its own record).
+    const second = await startSessionTold(told, { rhythmId: rhythm.id });
+    expect(ok(await db.from("rutin_runs").select("*"))).toMatchObject([
+      {
+        id: run.id,
+        session_id: second.id,
+        step_position: 0,
+        part_position: 0,
+        finished_at: null,
+        minimum_done: true,
+      },
+    ]);
+    expect(ok(await db.from("rutin_run_steps").select("*"))).toMatchObject([
+      { step_id: teeth.id, result: "done" },
+    ]);
+  });
+
   it("belongs to the core's day: Yatıyorum after midnight closes the evening's run (criterion 7)", async () => {
     const day = "2026-11-13";
     const { ctx } = await setup();
@@ -329,6 +397,29 @@ describe("a run", () => {
     ]);
     expect(ok(await strangerDb().from("rutin_runs").select("*"))).toEqual([]);
     expect(ok(await strangerDb().from("rutin_steps").select("*"))).toEqual([]);
+  });
+
+  it("hangs an add-on only on a step of the same routine, never on another add-on", async () => {
+    const { ctx } = await setup();
+    await rutin.onActivate!(ctx);
+    const steps = await listSteps(ctx);
+    const dercos = steps.find((step) => step.title === "Dercos şampuan")!;
+    const evening = await routineByKey(ctx, "aksam");
+    const teeth = steps.find((step) => step.ref === "S1")!;
+    const shower = steps.find((step) => step.title === "Duş")!;
+    const otherRoutine = await db
+      .from("rutin_steps")
+      .insert({ routine_id: evening.id, parent_id: shower.id, title: "Yanlış ek" });
+    expect(otherRoutine.error?.message).toMatch(/routine/);
+    const nested = await db
+      .from("rutin_steps")
+      .insert({ routine_id: dercos.routine_id, parent_id: dercos.id, title: "Ekin eki" });
+    expect(nested.error?.message).toMatch(/add-on/);
+    const withAddOns = await db
+      .from("rutin_steps")
+      .update({ parent_id: teeth.id })
+      .eq("id", shower.id);
+    expect(withAddOns.error).not.toBeNull();
   });
 
   it("refuses sub-steps that are not a list and a frequency out of range", async () => {

@@ -143,6 +143,8 @@ describe("the deneme module", () => {
     expect(fresh.DEMO_MODULE_ENABLED).toBe(expected);
     expect(fresh.registry.get("deneme") !== undefined).toBe(expected);
     expect(fresh.registry.get("sablon-kopya") !== undefined).toBe(expected);
+    // Rutin is a real module: registered whatever the switch says (production too).
+    expect(fresh.registry.get("rutin")).toBeDefined();
   });
 });
 

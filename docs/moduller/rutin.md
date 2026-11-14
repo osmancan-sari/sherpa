@@ -106,7 +106,7 @@ Modülün kendi `ingest` türü ve zamanlanmış işi yoktur: dışarıdan gelen
 
 | Alan | `rutin:sabah` | `rutin:hazirlik` | `rutin:aksam` |
 | --- | --- | --- | --- |
-| `source` | `{ type: 'routine', id: <sabah satırı> }` | `{ type: 'routine', id: <hazirlik satırı> }` | `{ type: 'routine', id: <aksam satırı> }` |
+| `source` | `{ type: 'rutin.routine', id: <sabah satırı> }` | `{ type: 'rutin.routine', id: <hazirlik satırı> }` | `{ type: 'rutin.routine', id: <aksam satırı> }` |
 | `title` | Sabah | Duş ve hazırlık | Akşam kapanışı |
 | `when.recurrence` | günde 1, taban 1 | günde 1, taban 1 | günde 1, taban 1 |
 | `effort.session_minutes` | açık adımların sürelerinin toplamı | açık adımların sürelerinin toplamı | açık adımların sürelerinin toplamı |
@@ -276,7 +276,7 @@ Modül kâğıt üzerinde on bir durumdan geçirildi. "Bulgu" tasarımda değiş
 
 - **B1 · Atlanan adımın gürültüsü.** Evde geçen günlerde yürüyüş hep atlanır; "şunu küçült" türü bir öneri her hafta çıkardı. Çözüm: öneri tümüyle kaldırıldı; "En az yapılanlar" yalnızca sayı gösterir ve sayım bloğun çalıştığı günler üzerinden yapılır.
 - **B2 · Yarım kalan sabahın ne zaman düştüğü.** Uyanışa bağlı iş günün "tamam"ını bekletmez (`docs/04-planlayici.md`), ama öğleden sonra hâlâ "Şimdi"de ya da sırada görünüp görünmediği denenmedi. Beklenen: sabah blokları öğleden sonra sessizce düşer. Kurulumun 1. adımında denenir; düşmüyorsa çekirdek notu 13.
-- **B3 · Günün hangi güne yazıldığı.** `rutin_runs.day` saat diliminden hesaplanmaz; çekirdeğin gün kaydından alınır (`ctx.days`; 12:00'den önceki yatış önceki günün gecesidir). Kabul ölçütüne girer.
+- **B3 · Günün hangi güne yazıldığı.** `rutin_runs.day` takvim gününden değil, çekirdeğin gününden alınır: akşamın 12:00'den önce başlayan yapılışı önceki günün gecesidir (çekirdeğin yatış kuralı); sabahınki, o takvim gününün uyanışı kayıtlıysa (`ctx.days`) ve yapılıştan önceyse o gündür, uyanış yokken 05:00'ten önce önceki gündür. Çekirdeğin gecesi "05:00 ya da uyanış aralığının başı, hangisi erkense" biter; modül çerçeve ayarını okuyamadığı için yalnızca 05:00'i kullanır (uyanış aralığı 05:00'ten erken başlarsa ve uyanış kaydı yoksa ayrışır; çekirdek notu 16). Kabul ölçütü 7.
 - **B4 · Aradan sonra "N günde bir".** Vadesi geçen ek, dönüşün ilk gününde bir kez gelir; kaçan günler için tekrar etmez. Sayaç son yapıldığı günden işler, takvimden değil.
 - **B5 · İki cihazda ses.** Günün planı iki cihazda birden okunmamalı. Beklenen: yalnızca "Kalktım"a basılan cihaz okur. Çekirdeğin `say` davranışı bu durumda denenmedi; kabul ölçütüne girer.
 - **B6 · Kilitli ekranda kendiliğinden geçiş.** Süre bitince sıradaki alt adımın adı söylenir; iOS'ta ana ekrandaki web uygulaması ekran kilitliyken ses çıkaramaz. Çözüm: süreli alt adım boyunca ekran açık tutulur (Screen Wake Lock). iPhone'da ana ekran uygulamasında çalışıp çalışmadığı denenmedi; kabul ölçütüne girer. Çalışmazsa sayaç yine doğru işler, yalnızca sesli geçiş olmaz.
@@ -349,3 +349,4 @@ Tasarım sırasında görülen eksikler. 2, 7 ve 11 numaralılar Ç3f adımına 
 14. **Cam dili ve gökyüzü bileşeni çekirdekte yok.** Cam paneller, günün saatine göre gökyüzü (güneş yüksekliği hesabıyla), telefonun alt menüsü ve geçiş kuralları çekirdek ekranları için `docs/09-kararlar.md` "Fikirler"de duruyor ve Ç4'e aday. Rutin Ç4'ten önce kurulursa sahnenin camını ve gökyüzünü kendi içinde taşır (1. kurulum adımı); çekirdek bunları sağlayınca modül kendi kopyasını bırakıp çekirdeğinkini kullanır (3. kurulum adımı). Güneş yüksekliği hesabı saf fonksiyondur; taşınırken testleriyle birlikte taşınır.
 
 15. **Yatış kaydının geri alınması.** "İyi geceler" ekranındaki "Geri al" yatış kaydını silip günü yeniden açmalı. Çekirdeğin bunu bir sahneden yapmaya izin verip vermediği denetlenmedi (`controls` ve gün kaydı); 1. kurulum adımında bakılır.
+16. **Sahneye ve olaylara çekirdeğin günü gelmiyor (Rutin 1. adımda görüldü).** Modül bir yapılışın hangi güne ait olduğunu bilmek zorunda (B3), ama `SceneProps`, `TodayBrief` ve `core.session_started` yükü planlama gününü taşımıyor ve modül `settings.day_frame`'i okuyamıyor. Rutin çekirdeğin kuralını kendi içinde kopyalıyor (`server/flow.ts`, `runDay`: akşamda 12:00, sabahta uyanış kaydı ya da 05:00). Gereken: `TodayBrief.date` (planlama günü) ya da oturum olaylarında `day`; çekirdek değişince modül kopyasını bırakır.

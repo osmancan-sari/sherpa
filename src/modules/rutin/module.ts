@@ -4,6 +4,7 @@ import { EveningTab, MorningTab } from "./components/StepsTab";
 import { listRoutines, listRuns } from "./queries";
 import { listeners, proposeAll, writeStartList } from "./rules";
 import { rutinScene } from "./scene";
+import { runDay } from "./server/flow";
 
 // Rutin (docs/moduller/rutin.md): the morning's and the evening's care steps, one by one on the
 // scene, and their record kept without a single entry. The steps are data (the module page edits
@@ -28,13 +29,20 @@ export const rutin: ModuleDefinition = {
 
   // 1. Main screen: the day's routines.
   async chip(ctx) {
-    const today = dayKey(ctx.now());
-    const [routines, runs] = await Promise.all([listRoutines(ctx), listRuns(ctx, today)]);
+    // The core's day: after midnight the evening is still the night before's (B3).
+    const now = ctx.now();
+    const morningDay = dayKey(now);
+    const eveningDay = runDay(now, "aksam", []);
+    const [routines, runs] = await Promise.all([
+      listRoutines(ctx),
+      listRuns(ctx, eveningDay < morningDay ? eveningDay : morningDay),
+    ]);
     if (routines.length === 0) return { text: "liste yok", health: "ok" };
     const finished = (key: string) => {
       const routine = routines.find((row) => row.key === key);
-      return Boolean(
-        routine && runs.some((run) => run.routine_id === routine.id && run.finished_at),
+      const day = key === "aksam" ? eveningDay : morningDay;
+      return runs.some(
+        (run) => run.routine_id === routine?.id && run.day === day && run.finished_at !== null,
       );
     };
     const morning = finished("sabah") && finished("hazirlik");

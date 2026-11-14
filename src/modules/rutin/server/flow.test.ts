@@ -10,6 +10,7 @@ import {
   routineSeconds,
   runDay,
   type Step,
+  unitsOf,
 } from "./flow";
 
 // The routine's pure rules (docs/moduller/rutin.md, "Kurallar"). The current day is a parameter.
@@ -189,5 +190,76 @@ describe("the day a run belongs to (B3)", () => {
     ];
     expect(runDay(at("2026-11-14", "04:35"), "hazirlik", early)).toBe("2026-11-14");
     expect(runDay(at("2026-11-14", "04:35"), "sabah", [])).toBe("2026-11-13");
+  });
+});
+
+describe("the morning as one list", () => {
+  const teeth = step({ routine_id: "sabah", title: "Diş bakımı", position: 0 });
+  const water = step({ routine_id: "sabah", title: "Bir bardak su", position: 1 });
+  const ready = ["Duş", "SPF", "Giyin", "Yürüyüş"].map((title, position) =>
+    step({ routine_id: "hazirlik", title, position }),
+  );
+  const steps = [teeth, water, ...ready];
+  const stepsOf = (routineId: string) => dayStepsOf(steps, routineId, "2026-11-14", new Map());
+  const routineOf = (rhythmId: string) =>
+    (({ r1: "sabah", r3: "hazirlik" }) as Record<string, string>)[rhythmId] ?? null;
+  const item = (id: string, state: "done" | "running" | "next" | "passed", mine = true) => ({
+    id,
+    title: mine ? id : "Boyun hareketleri",
+    module: { name: mine ? "Rutin" : "Spor" },
+    minutes: 12,
+    state,
+    mine,
+  });
+
+  it("counts the routines' steps and every other module's work: 6 alone, 7 with one", () => {
+    const alone = unitsOf({
+      chain: { items: [item("r1", "running"), item("r3", "next")] },
+      running: { rhythmId: "r1", routineId: "sabah", position: 0 },
+      routineOf,
+      stepsOf,
+    });
+    expect(alone.map((unit) => unit.title)).toEqual([
+      "Diş bakımı",
+      "Bir bardak su",
+      "Duş",
+      "SPF",
+      "Giyin",
+      "Yürüyüş",
+    ]);
+    const withNeck = unitsOf({
+      chain: { items: [item("r1", "done"), item("x", "running", false), item("r3", "next")] },
+      running: { rhythmId: "r3", routineId: "hazirlik", position: 1 },
+      routineOf,
+      stepsOf,
+    });
+    expect(withNeck).toHaveLength(7);
+    expect(withNeck.map((unit) => unit.state)).toEqual([
+      "done",
+      "done",
+      "next",
+      "done",
+      "current",
+      "next",
+      "next",
+    ]);
+    expect(withNeck[2]).toMatchObject({ mine: false, note: "Spor · 12 dk" });
+  });
+
+  it("leaves out what was passed today, and is the routine alone without a chain", () => {
+    const passed = unitsOf({
+      chain: { items: [item("r1", "running"), item("x", "passed", false), item("r3", "next")] },
+      running: { rhythmId: "r1", routineId: "sabah", position: 1 },
+      routineOf,
+      stepsOf,
+    });
+    expect(passed).toHaveLength(6);
+    const lone = unitsOf({
+      chain: null,
+      running: { rhythmId: "r1", routineId: "sabah", position: 1 },
+      routineOf,
+      stepsOf,
+    });
+    expect(lone.map((unit) => unit.state)).toEqual(["done", "current"]);
   });
 });

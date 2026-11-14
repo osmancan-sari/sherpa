@@ -206,3 +206,93 @@ export function minimumDone(daySteps: DayStep[], results: Map<string, string>): 
 
 /** A run that closes steps faster than this did not really do them one by one ("bulk"). */
 export const BULK_SECONDS = 3;
+
+// --- The morning (or the evening) as one list ----------------------------------------------------
+
+/** One row of the morning or the evening: a step of this module, or another module's work. */
+export type Unit = {
+  key: string;
+  title: string;
+  /** A step of one of this module's routines (false: another module's work in the chain). */
+  mine: boolean;
+  routineId: string | null;
+  stepId: string | null;
+  state: "done" | "current" | "next";
+  /** Another module's work: its module and minutes ("Spor · 12 dk"); an add-on's day. */
+  note: string | null;
+};
+
+type ChainItem = {
+  id: string;
+  title: string;
+  module: { name: string };
+  minutes: number;
+  state: "done" | "running" | "next" | "passed";
+  mine: boolean;
+};
+
+/**
+ * The scene's list (8.2 "Sıradaki", the board's "Bu sabah"): the chain's work in its order, each
+ * of this module's routines opened into its steps of the day, every other module's work one row;
+ * work passed today is left out. Without a chain, the running routine alone. The count
+ * "bu sabah n / m" is the current row's place in this list, so it follows the chain (6 without
+ * another module's work, 7 with one).
+ */
+export function unitsOf(args: {
+  chain: { items: ChainItem[] } | null;
+  /** The running rhythm and its routine. */
+  running: { rhythmId: string; routineId: string; position: number };
+  /** This module's rhythm → its routine. */
+  routineOf: (rhythmId: string) => string | null;
+  stepsOf: (routineId: string) => DayStep[];
+}): Unit[] {
+  const items: ChainItem[] = args.chain?.items ?? [
+    {
+      id: args.running.rhythmId,
+      title: "",
+      module: { name: "" },
+      minutes: 0,
+      state: "running",
+      mine: true,
+    },
+  ];
+  const units: Unit[] = [];
+  for (const item of items) {
+    if (item.state === "passed") continue;
+    const running = item.id === args.running.rhythmId;
+    const routineId = running ? args.running.routineId : item.mine ? args.routineOf(item.id) : null;
+    if (routineId) {
+      for (const [index, step] of args.stepsOf(routineId).entries()) {
+        const state: Unit["state"] = running
+          ? index < args.running.position
+            ? "done"
+            : index === args.running.position
+              ? "current"
+              : "next"
+          : item.state === "done"
+            ? "done"
+            : "next";
+        units.push({
+          key: step.id,
+          title: step.title,
+          mine: true,
+          routineId,
+          stepId: step.id,
+          state,
+          note: null,
+        });
+      }
+      continue;
+    }
+    units.push({
+      key: item.id,
+      title: item.title,
+      mine: false,
+      routineId: null,
+      stepId: null,
+      state: item.state === "done" ? "done" : "next",
+      note: `${item.module.name} · ${item.minutes} dk`,
+    });
+  }
+  return units;
+}

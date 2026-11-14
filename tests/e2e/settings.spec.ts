@@ -3,6 +3,8 @@ import { CORE_EXPORT_TABLES } from "@/core/data/export";
 import { insert, rows, seedModule, waitFor } from "./data";
 import { expect, test } from "./fixtures";
 
+const RUTIN_TABLES = ["rutin_routines", "rutin_steps", "rutin_runs", "rutin_run_steps"];
+
 // Settings: fixed blocks (weekly series and one-off blocks) and the export of everything.
 // The modules part of Settings is walked in deneme-module.spec.ts.
 
@@ -177,8 +179,9 @@ test("everything the account holds is exported as one JSON file", async ({ page 
   };
   expect(document).toMatchObject({ app: "sherpa", format: 1 });
   expect(Math.abs(Date.parse(document.exported_at) - Date.now())).toBeLessThan(60_000);
+  // Every registered module's tables: the test module's and Rutin's (registered everywhere).
   expect(Object.keys(document.tables).sort()).toEqual(
-    [...CORE_EXPORT_TABLES, "deneme_items"].sort(),
+    [...CORE_EXPORT_TABLES, "deneme_items", ...RUTIN_TABLES].sort(),
   );
   expect(document.tables.modules.map((row) => row.slug)).toEqual([mod.slug]);
   expect(document.tables.tasks.map((row) => row.title)).toEqual(["Dışa aktarılacak iş"]);
