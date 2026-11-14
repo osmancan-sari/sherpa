@@ -4,8 +4,8 @@ Bu dosyayı Claude Code günceller. Yeni bir oturum yalnızca bu dosyayı ve `pr
 
 ## Durum
 
-- Faz: **Ç3f (Çapalı diziler) bitti** (14 Kas 2026, `c3f-tamam`; faz denetimi üç tur, üçü de GEÇTİ). Yayını senin onayını bekliyor ("Senden bekleyenler" → Ç3f). Ç3e yayında (13 Kas)
-- Adım: 7 (kapanış) bitti; `sherpa-dev` ve `sherpa-prod` migration'ları ve `git push` senin onayınla
+- Faz: **Ç3f (Çapalı diziler) bitti** (14 Kas 2026, `c3f-tamam`; faz denetimi üç tur, üçü de GEÇTİ). Yayında (14 Kas: migration'lar `sherpa-dev` ve `sherpa-prod`'da, kod üretimde, fonksiyonlar `fra1`'de). Ç3e yayında (13 Kas)
+- Adım: 7 (kapanış) bitti ve yayınlandı; sırada Rutin 1. adım
 - Son commit: C3f: phase report, tag
 
 ### Ç3f planı
@@ -655,9 +655,9 @@ Rutin 1. adım (`prompts/rutin-1-temel.md`), sonra Ç4.
 
 Sıra:
 
-1. `sherpa-dev`: `npm run db:push` (ya da bana izin ver). Deneme çalıştırmasında yalnızca bu iki migration görünmeli.
-2. `sherpa-prod`: `npx supabase db push --remote=jqqvfdjrkpxbklocsqvq --dry-run`, yalnızca bu ikisi görünürse aynısı `--yes` ile (ya da bana izin ver).
-3. `git push origin main`, sonra `git push origin c3f-tamam`. Vercel üretimi yayınlar.
+1. ~~`sherpa-dev`~~: **yapıldı** (14 Kas, senin izninle; deneme çalıştırmasında yalnızca bu iki migration).
+2. ~~`sherpa-prod`~~: **yapıldı** (14 Kas, senin izninle; deneme çalıştırması yalnızca bu ikisini gösterdi, sonra "up to date").
+3. ~~`git push origin main`, `git push origin c3f-tamam`~~: **yapıldı** (14 Kas). Üretim yayını hazır (`sherpa-private-f18ryn5ow`), fonksiyonlar `[fra1]`; `/giris` 200, `X-Vercel-Id: fra1::…`; oturumsuz `/api/ingest/core/wake` 401.
 4. Senin denemen (üretimde gerçek modül yok; çapalı işi elle kurarsın): Bugün'de iki iş ekle, her birinin düzenleme formunda Zaman → "Uyanışa bağlı", sıra 10 ve 20. Ayarlar → Günün çerçevesi'nde "Dizide sıradaki iş kendiliğinden başlasın" açık (başlangıçta açık), "Uyandım'dan sonra ilk rutin kendiliğinden başlasın"ı aç. Ertesi sabah:
    - Kestirmeler'in uyanış otomasyonu ("Ç3d yayını ve elle denemeler", 3) uyanışı yazsın, sonra Sherpa'yı aç: ilk iş kendiliğinden başlamalı; kartta "Sabah dizisi 1/2 · sırada …".
    - "Bitti": ikinci iş kendiliğinden başlamalı. Pano açıksa orada da aynı oturum görünmeli, ikinci bir oturum başlamamalı.
