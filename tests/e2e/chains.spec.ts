@@ -284,3 +284,15 @@ test("Ayarlar: the chain setting is on at first and can be switched off", async 
   await page.reload();
   await expect(box).not.toBeChecked();
 });
+
+test("Space ends the running work and goes on in the chain, as Bitti does", async ({ page }) => {
+  const { teeth, neck } = await morning();
+  await page.clock.setFixedTime(dayAt("07:02"));
+  await page.goto("/");
+  await card(page).getByRole("button", { name: "Başla", exact: true }).click();
+  await runningOn(teeth.id);
+  await expect(page.getByTestId("deneme-gunes")).toBeVisible();
+  await page.keyboard.press(" ");
+  await expect(card(page).getByRole("heading", { name: "Boyun" })).toBeVisible();
+  await runningOn(neck.id);
+});

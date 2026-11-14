@@ -23,8 +23,8 @@ import type { PlannedTarget, SessionTarget } from "@/core/data/sessions";
 import {
   completeTaskTold,
   dropTaskTold,
-  endSessionTold,
-  startSessionIfIdleTold,
+  endSessionClosing,
+  goOnInChain,
   startSessionTold,
 } from "@/core/data/session-events";
 import {
@@ -222,11 +222,10 @@ export function useEndSession() {
       args: { session: Session; outcome: "done" | "stopped"; next?: PlannedTarget | null },
     ) => {
       const told = { db, registry };
-      const ended = await endSessionTold(told, args.session.id, args.outcome);
-      if (args.next && ended.ended_at) {
-        await startSessionIfIdleTold(told, ended.ended_at, args.next);
-      }
-      return ended;
+      const ended = await endSessionClosing(told, args.session.id, args.outcome);
+      // Only a Bitti that closed the session goes on (one ended elsewhere was not this one's).
+      if (args.outcome === "done") await goOnInChain(told, ended, args.next);
+      return ended.session;
     },
     optimistic: ({ session, outcome, next }, queryClient) => [
       { key: keys.openSession, update: () => null },

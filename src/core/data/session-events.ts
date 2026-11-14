@@ -163,10 +163,43 @@ export async function endSessionTold(
   outcome: "done" | "stopped",
   result: SessionResult = outcome,
 ): Promise<Session> {
+  return (await endSessionClosing(told, sessionId, outcome, result)).session;
+}
+
+/**
+ * The same, saying whether this call closed it (Ç3f): a session already ended elsewhere (Durdur
+ * on the phone, then a Bitti from a screen that had not caught up) is not this Bitti's, and the
+ * chain does not go on from it.
+ */
+export async function endSessionClosing(
+  told: Told,
+  sessionId: string,
+  outcome: "done" | "stopped",
+  result: SessionResult = outcome,
+): Promise<{ session: Session; closed: boolean }> {
   const before = await sessionRow(told.db, sessionId);
   const ended = await endSession(told.db, sessionId, outcome);
-  if (before && !before.ended_at) await tellEnded(told, ended, result);
-  return ended;
+  const closed = Boolean(before && !before.ended_at);
+  if (closed) await tellEnded(told, ended, result);
+  return { session: ended, closed };
+}
+
+/**
+ * Ç3f: the chain's next work after one that ended here. A failure to start it is not the end's:
+ * the end is written, the screen re-reads what is true (another screen may have started or
+ * closed the next work).
+ */
+export async function goOnInChain(
+  told: Told,
+  ended: { session: Session; closed: boolean },
+  next: PlannedTarget | null | undefined,
+): Promise<Session | null> {
+  if (!next || !ended.closed || !ended.session.ended_at) return null;
+  try {
+    return await startSessionIfIdleTold(told, ended.session.ended_at, next);
+  } catch {
+    return null;
+  }
 }
 
 /** "Devam ediyor musun?" went unanswered: closed at its estimate, unmeasured. */

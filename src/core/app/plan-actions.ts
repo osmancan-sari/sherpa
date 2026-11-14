@@ -12,7 +12,7 @@ import {
 } from "@/core/data/planning";
 import { postAi } from "@/core/ai/client";
 import { confirmSession, type PlannedTarget } from "@/core/data/sessions";
-import { endSessionTold, startSessionIfIdleTold } from "@/core/data/session-events";
+import { endSessionClosing, endSessionTold, goOnInChain } from "@/core/data/session-events";
 import type { ModuleRegistry } from "@/core/contract/types";
 import type { Db } from "@/core/types";
 import { useRegistry } from "./CoreProvider";
@@ -48,9 +48,9 @@ async function stopFirst(
   db: Db,
   registry: ModuleRegistry,
   session?: Session | null,
-): Promise<Session | null> {
+): Promise<{ session: Session; closed: boolean } | null> {
   if (session && session.id !== "pending") {
-    return endSessionTold({ db, registry }, session.id, "stopped", "deferred");
+    return endSessionClosing({ db, registry }, session.id, "stopped", "deferred");
   }
   return null;
 }
@@ -67,9 +67,7 @@ export function useDefer() {
       if (candidate.type === "task" && candidate.task) await deferTask(db, candidate.task, date);
       else await skipToday(db, date, candidate.id);
       // Ç3f: the chain goes on with its next work, as after Bitti (only if nothing started).
-      if (next && ended?.ended_at) {
-        await startSessionIfIdleTold({ db, registry }, ended.ended_at, next);
-      }
+      if (ended) await goOnInChain({ db, registry }, ended, next);
     },
     optimistic: ({ candidate, date, session, next }, queryClient) => [
       ...(candidate.type === "task" && candidate.task

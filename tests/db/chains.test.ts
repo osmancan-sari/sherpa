@@ -1,4 +1,6 @@
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
+import { createRegistry } from "@/core/contract/registry";
+import { endSessionClosing, goOnInChain } from "@/core/data/session-events";
 import { endSession, startSession, startSessionIfIdle } from "@/core/data/sessions";
 import { createRhythm, createTask } from "@/core/data/work";
 import { anonDb, makeModule, ok, ownerDb, wipe } from "./helpers";
@@ -107,6 +109,48 @@ describe("start_session_if_idle", () => {
       p_task_id: teeth.id,
     });
     expect(anon.error).not.toBeNull();
+    expect(await openSessions()).toEqual([]);
+  });
+});
+
+describe("going on from an end (Ç3f step audit)", () => {
+  const told = { db, registry: createRegistry([]) };
+
+  it("goes on only from an end this call made: not from a session stopped on the other screen", async () => {
+    const { teeth, shower } = await chain();
+    const session = await startSession(db, { taskId: teeth.id });
+    // The phone stops it; the second screen, not caught up yet, then says Bitti.
+    await endSession(phone, session.id, "stopped");
+    const late = await endSessionClosing(told, session.id, "done");
+    expect(late.closed).toBe(false);
+    expect(await goOnInChain(told, late, { taskId: shower.id })).toBeNull();
+    expect(await openSessions()).toEqual([]);
+    // The stop stands: the task went back to the pool, it is not done.
+    expect(ok(await db.from("tasks").select("status").eq("id", teeth.id).single()).status).toBe(
+      "todo",
+    );
+
+    const again = await startSession(db, { taskId: teeth.id });
+    const own = await endSessionClosing(told, again.id, "done");
+    expect(own.closed).toBe(true);
+    expect(await goOnInChain(told, own, { taskId: shower.id })).toMatchObject({
+      task_id: shower.id,
+    });
+  });
+
+  it("a next work that cannot start leaves the end standing, without an error", async () => {
+    const { teeth, shower } = await chain();
+    const session = await startSession(db, { taskId: teeth.id });
+    // The next one was finished on the other screen meanwhile.
+    await db
+      .from("tasks")
+      .update({ status: "done", done_at: new Date().toISOString() })
+      .eq("id", shower.id);
+    const ended = await endSessionClosing(told, session.id, "done");
+    await expect(goOnInChain(told, ended, { taskId: shower.id })).resolves.toBeNull();
+    expect(ok(await db.from("tasks").select("status").eq("id", teeth.id).single()).status).toBe(
+      "done",
+    );
     expect(await openSessions()).toEqual([]);
   });
 });
