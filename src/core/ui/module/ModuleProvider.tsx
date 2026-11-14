@@ -5,11 +5,17 @@ import { createContext, type ReactNode, useContext, useMemo } from "react";
 import { useDb, useRegistry } from "@/core/app/CoreProvider";
 import type { KnownModule } from "@/core/app/hooks";
 import { postAi } from "@/core/ai/client";
-import type { ExtractResult, ModuleDefinition, ModuleUiContext } from "@/core/contract/types";
+import type {
+  ExtractResult,
+  ModuleDefinition,
+  ModuleUiContext,
+  SceneChain,
+} from "@/core/contract/types";
 import { createModuleContext } from "@/core/data/context";
 import type { ModuleRow } from "@/core/types";
 import { useSay } from "@/core/voice";
 import { useQuickAdd } from "../QuickAdd";
+import { useDayChains } from "../today/chains";
 
 // What a module's own screens stand in: its row, its definition and its context.
 // A module component calls `useModule()` and has everything the contract gives it.
@@ -22,6 +28,16 @@ export type ModuleScope = {
 };
 
 const ModuleScopeContext = createContext<ModuleScope | null>(null);
+
+/**
+ * Ç3g: today's wake and bed chains, read only, as this module's page sees them: every module's
+ * work in the chain's order with only the fields of `SceneChain` (another module's row carries
+ * its name, module, facet, colour, minutes and state, nothing else); `mine` marks this module's.
+ */
+export function useModuleChains(): { wake: SceneChain | null; bed: SceneChain | null } {
+  const { row } = useModule();
+  return useDayChains(row.id);
+}
 
 export function useModule(): ModuleScope {
   const scope = useContext(ModuleScopeContext);

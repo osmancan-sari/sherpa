@@ -279,7 +279,31 @@ export type SceneProps = {
    * session is closed; a second `bed()` writes the bedtime again). Null otherwise.
    */
   bedtime: { at: Date; until: Date; undo: () => Promise<BedUndo> } | null;
+  /**
+   * Ç3g: what the core's strip above the scene says, set by the scene for the screen it shows
+   * (`SceneStrip`); null puts it back as the core has it (the work's name, the session's minutes).
+   * A scene that never calls it keeps the core's strip. Called again whenever the screen changes.
+   */
+  strip: (strip: SceneStrip | null) => void;
+  /**
+   * Ç3g: the Today screen's keys, when the scene says it takes them (`ModuleScene.keys`): the core
+   * leaves Space, Enter, E, X and R to the scene and hands each to the listeners here (not while
+   * typing, while a dialog is open, or while the closing opened from the scene is). Null when the
+   * scene does not take them: then the core's keys work as on the standard card.
+   */
+  keys: { listen: (handler: (key: SceneKey) => void) => () => void } | null;
 };
+
+/**
+ * Ç3g: the strip as a scene wants it on one of its screens. `title` replaces the work's name
+ * ("Sabah" for the whole morning); `since` counts the minutes from another moment (the waking)
+ * and null shows none; `hidden` leaves the strip out (an opening or closing screen: it has no
+ * "Çık" then, so only for a screen that goes by itself or has its own way on).
+ */
+export type SceneStrip = { title?: string; since?: Date | null; hidden?: boolean };
+
+/** Ç3g: a key of the Today screen handed to a scene that takes them. */
+export type SceneKey = "space" | "enter" | "e" | "x" | "r";
 
 /** Rutin 1: what taking back a scene's bedtime did. */
 export type BedUndo = "undone" | "expired" | "changed";
@@ -304,6 +328,12 @@ export type ModuleScene = {
   component: ComponentType<SceneProps>;
   /** The tone of the core's transition and background. */
   look?: { tone: "calm" | "focus" | "energy" };
+  /**
+   * Ç3g: "scene": the scene takes the Today screen's keys while it is shown (`SceneProps.keys`);
+   * Space is then its own (a step scene's "Sonraki"), not the core's "Bitti". Without it the
+   * core's keys work as on the standard card.
+   */
+  keys?: "scene";
 };
 
 // ---------------------------------------------------------------------------------------------

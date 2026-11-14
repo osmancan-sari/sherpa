@@ -12,7 +12,7 @@ import {
 } from "react";
 import { useRefreshAll } from "@/core/app/actions";
 import { useModuleQuery } from "@/core/app/hooks";
-import type { SceneProps } from "@/core/contract/types";
+import type { SceneKey, SceneProps } from "@/core/contract/types";
 import { SAVE_FAILED, useNotify } from "@/core/ui/Notices";
 import { dayKey, formatDayLabel, formatTime, shiftDay } from "@/lib/date";
 import { briefLines, briefText, nextOfDay } from "../brief";
@@ -137,7 +137,20 @@ export function RutinScene(props: SceneProps) {
 type Screen = "steps" | "goodbye";
 
 function Scene(props: SceneProps) {
-  const { subject, session, controls, say, today, ctx, device, chain, bedtime, facet } = props;
+  const {
+    subject,
+    session,
+    controls,
+    say,
+    today,
+    ctx,
+    device,
+    chain,
+    bedtime,
+    facet,
+    strip,
+    keys,
+  } = props;
   const refreshAll = useRefreshAll();
   const notify = useNotify();
   const reduceMotion = useMedia("(prefers-reduced-motion: reduce)");
@@ -441,22 +454,32 @@ function Scene(props: SceneProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [missingStart, view?.id, stepIndex, partIndex]);
 
-  // The board's keys: Space and Enter are this scene's "Sonraki" (the core's would end the work).
+  // The board's keys (Ç3g: the scene takes them, `keys: "scene"`): Space and Enter are this
+  // scene's "Sonraki" (or "Kalktım"); a held sub-step is not passed by them.
+  const onKey = useRef<(key: SceneKey) => void>(() => undefined);
   useEffect(() => {
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key !== " " && event.key !== "Enter") return;
-      const target = event.target as HTMLElement | null;
-      if (target?.closest("button, a, input, textarea, select, [role='dialog']")) return;
-      if (document.querySelector('[role="dialog"], [data-scene-closing]')) return;
-      event.preventDefault();
-      event.stopImmediatePropagation();
+    onKey.current = (key) => {
+      if (key !== "space" && key !== "enter") return;
       if (bedtime) return;
       if (greeting) wake();
       else if (screen === "steps") next();
     };
-    window.addEventListener("keydown", onKey, { capture: true });
-    return () => window.removeEventListener("keydown", onKey, { capture: true });
   });
+  useEffect(() => keys?.listen((key) => onKey.current(key)), [keys]);
+
+  // The core's strip (Ç3g, `strip`): the whole morning is "Sabah", counted from the waking (none
+  // on Günaydın); the evening is its routine's name from its first step; no strip on "İyi günler".
+  const stripTitle = evening ? (routine?.title ?? "Akşam kapanışı") : (facet?.name ?? "Sabah");
+  const stripSince = evening ? session.startedAt : (today.wokeAt ?? session.startedAt);
+  const stripHidden = screen === "goodbye";
+  const stripTime = greeting ? null : stripSince.getTime();
+  useEffect(() => {
+    strip(
+      stripHidden
+        ? { hidden: true }
+        : { title: stripTitle, since: stripTime === null ? null : new Date(stripTime) },
+    );
+  }, [strip, stripHidden, stripTitle, stripTime]);
 
   function wake() {
     setGreeted(true);

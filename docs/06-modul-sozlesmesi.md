@@ -28,7 +28,7 @@ Modül yalnızca kendi klasörünü, dış paketleri (`react`, `next/link`, `luc
 | --- | --- |
 | `@/core/contract/types` | Sözleşmenin tipleri (`ModuleDefinition`, `ModuleContext`, `WorkProposal`…) |
 | `@/core/types` | Satır tipleri (`Task`, `WorkItem`, `AppEvent`…) |
-| `@/core/ui/module/ModuleProvider` | `useModule()`: ekran bileşeninin bağlamı (`row`, `definition`, `ctx`) |
+| `@/core/ui/module/ModuleProvider` | `useModule()`: ekran bileşeninin bağlamı (`row`, `definition`, `ctx`); `useModuleChains()` (Ç3g): bugünün dizileri, salt okunur |
 | `@/core/app/hooks` | `useModuleQuery(row, anahtar, fn)`: modülün bağlamıyla hesaplanan ve her veri değişiminde tazelenen sorgu; `useNow()`: ortak saat |
 | `@/core/app/actions` | `useRefreshAll()`: modül kendi bağlamıyla bir şey yazdıktan sonra ekranı hemen tazeler |
 | `@/core/ui/Notices` | `useNotify()`, `SAVE_FAILED`: ekranın altındaki tek satırlık bildirim |
@@ -197,6 +197,7 @@ type ModuleScene = {
   when: (subject: SceneSubject) => boolean     // bu iş için sahne var mı (türüne, kaynağına, meta'sına göre)
   component: ComponentType<SceneProps>
   look?: { tone: 'calm' | 'focus' | 'energy' } // çekirdeğin geçiş ve arka plan tonu
+  keys?: 'scene'                               // Ç3g: sahne açıkken Bugün'ün tuşları (Boşluk ve öbürleri) sahnenindir
 }
 
 type SceneSubject =
@@ -223,13 +224,22 @@ type SceneProps = {
   chain: SceneChain | null           // Ç3f: çalışan iş bir çapalı dizinin parçasıysa o dizi
   bedtime: { at: Date; until: Date; undo: () => Promise<'undone' | 'expired' | 'changed'> } | null
                                      // Rutin 1: bu sahnenin bed()'i yatışı yazdı ve hâlâ geri alınabiliyor (aşağıda "Diziler", kural 6)
+  strip: (strip: SceneStrip | null) => void
+                                     // Ç3g: şeridin bu ekrandaki hali (kural 2); null çekirdeğinkine döndürür
+  keys: { listen: (handler: (key: SceneKey) => void) => () => void } | null
+                                     // Ç3g: sahne tuşları devraldıysa (ModuleScene.keys) Bugün'ün tuşları buraya gelir; yoksa null
 }
+
+type SceneStrip = { title?: string; since?: Date | null; hidden?: boolean }
+                                     // title: işin adı yerine; since: süre bu andan (null: süre yok); hidden: şerit yok
+type SceneKey = 'space' | 'enter' | 'e' | 'x' | 'r'
 ```
 
 Kurallar:
 
 1. **Ne zaman.** `plan.now` `running` ise, çalışan işin (iş ya da ritim; plansız oturumda sahne yoktur) modülü `scene` tanımlamışsa ve `when` doğru dönerse Bugün ekranı sahneyi çizer. Öneri durumunda standart kart kalır. İş bitince, durunca ya da ertelenince standart ekran döner. `when` hata verirse sahne yok sayılır.
-2. **Çekirdeğin şeridi.** Sahnenin üstünde her zaman ince bir şerit durur: saat, işin adı, geçen süre, "Çık". Şerit çekirdeğindir, sahne onu gizleyemez. "Çık" standart ekrana döner; oturum sürer, kartta "Sahneye dön" çıkar. Çıkış cihaza özgüdür (öbür cihaz sahnede kalır) ve o oturum için hatırlanır.
+2. **Çekirdeğin şeridi.** Sahnenin üstünde ince bir şerit durur: saat, işin adı, geçen süre, "Çık". Şerit çekirdeğindir: "Çık" standart ekrana döner; oturum sürer, kartta "Sahneye dön" çıkar. Çıkış cihaza özgüdür (öbür cihaz sahnede kalır) ve o oturum için hatırlanır. **Ç3g:** sahne gösterdiği ekran için şeridin içeriğini verebilir (`strip`): işin adı yerine başka bir ad (bütün sabah "Sabah"), sürenin başka bir andan sayılması (uyanıştan) ya da hiç süre yazılmaması (`since: null`); açılış ve kapanış gibi kendiliğinden geçen ya da kendi çıkış yolu olan ekranlarda şeridi gizleyebilir (`hidden`: "Çık" da yoktur). Ekran değişince yeniden çağırır; `strip(null)` çekirdeğin haline döner, yeni oturum çekirdeğin haliyle başlar. Hiç çağırmayan sahnede şerit bugünkü gibidir.
+3a. **Tuşlar (Ç3g).** Sahne `keys: 'scene'` bildirirse sahne açıkken Bugün'ün tuşları (`Space`, `Enter`, `E`, `X`, `R`; `docs/05` "Klavye") çekirdeğin değil sahnenindir: çekirdek onları yalnızca `SceneProps.keys.listen` ile verdiği dinleyicilere iletir (yazarken, pencere açıkken, sahneden açılan kapanışta ve odakta bir düğme ya da bağlantı varken `Space`/`Enter` iletilmez). Adımlı sahne `Space`'i "Sonraki" yapar; işi bitirmek sahnenin `controls.finish()`'idir. Bildirmeyen sahnede tuşlar standart karttaki gibidir (`Space` "Bitti"). Sahne `window`'da kendi tuş yakalamasını kurmaz.
 3. **Oturum çekirdeğindir.** Başlatma, bitirme, ölçme, "Devam ediyor musun?" ve 30 dakika kuralı değişmez; sahne oturumu yalnızca `controls` ile etkiler.
 4. **Sahne serbesttir** ama çekirdeğin tasarım dilini ve temasını kullanır, hareket azaltma tercihine uyar. Pano ve telefon aynı sahneyi kendi yerleşimiyle çizer (`device`). Sahnenin kalıcı durumu (hangi adımdayım) modülün kendi tablosundadır; ekranda tutulan durum öbür cihaza taşınmaz.
 5. **Hata.** Sahne bileşeni hata verirse çekirdek standart kartı gösterir ve tek satırla bildirir ("Sahne açılamadı; iş sürüyor."); oturum etkilenmez.
@@ -265,6 +275,8 @@ type SceneChain = {
 6. **Sahneden kapanış.** `controls.closing()` akşam kapanışını sahnenin içinde açar: çekirdeğin şeridi durur, oturum sürer; kapanış onaylanınca ya da vazgeçilince sahneye dönülür. Bu kapanışta "Onayla ve yat" yoktur: yatışı sahnenin kendi son adımı kaydeder, `controls.bed()` ile (çekirdeğin "Yatıyorum"u: yatışı şimdi olarak yazar, çalışan oturumu "Bitti" ile kapatır, ekran geceye geçer). Kapanışın yapıldığı `today.closed` ile okunur.
    **Yatışın geri alınması (Rutin 1, 14 Kas 2026).** `bed()` gün kaydına yatışı yazan oturumu da yazar (`days.bed_session_id`). Yatıştan sonraki 10 dakika boyunca gece ekranı o oturumun sahnesidir (her cihazda, sayfa yenilense de; şerit yoktur, iş çalışmıyor): sahne `SceneProps.bedtime` alır (`at`, `until`, `undo`). `undo()` ("Geri al") yatışı hiç yazılmamış gibi kaldırır: yatış ve işaret silinir, oturumun "Bitti"sinin yaptığı geri alınır (ritim kaydı silinir; iş yeniden "yapılıyor", dakikaları kalemden düşülür), oturum kendi başlangıcıyla yeniden açılır ("Devam ediyor musun?" o andan sayılır). Uyku planı, yarının beklenen uyanışı ve planın kendisi gün kaydından türediği için kendiliğinden yeniden hesaplanır; ekran yeniden çalışan işin sahnesidir ve modül kendi tablosundaki yerden sürer. Çekirdek bütün modüllere `core.bed_undone` (`{ date }`), işin modülüne aynı `session_id` ile yeniden `core.session_started` söyler. 10 dakika geçtiyse `expired`; yatış başka yoldan yazıldıysa ya da silindiyse (çekirdeğin "Yatıyorum"u, kapanışın "Onayla ve yat"ı, `core/bed`: hepsi işareti siler) ya da yatıştan sonra başka bir iş başladıysa (bitmiş olsa da) `changed` döner ve hiçbir şey değişmez. Bu sürede çalışan iş yoktur: `finish`, `stop`, `stuck`, `exit`, `closing` etkisizdir; ikinci bir `bed()` yatışı yeniden yazar. Sınır: geç bir yatışın yarının kapasitesini düşürüp tetiklediği haftanın yeniden taahhüdü (`capacity_lost`) geri alınmaz; taahhüt kapasite artınca yeniden kurulmadığı için (plan istikrarı, `docs/04` "Hafta") hafta düşürülmüş taahhütle kalır, günün planı ise kendiliğinden düzelir. İki cihaz aynı anda geri alırsa tek sonuç olur (veritabanı fonksiyonu `undo_scene_bed`, gün satırını kilitler). Test: `tests/db/bed-undo.test.ts`; örnek: `deneme`'nin gece sahnesi.
 7. **Standart kart.** Sahnesi olmayan ya da sahneden çıkılmış çapalı işte Şimdi kartı dizideki yeri tek satırla gösterir.
+
+**Modül sayfasında dizi (Ç3g).** Modülün kendi ekranları bugünün uyanış ve yatış dizilerini `useModuleChains()` ile salt okunur alır: `{ wake: SceneChain | null; bed: SceneChain | null }`, sahnedeki `chain` ile aynı alanlar (kural 2: başka modülün satırında yalnızca ad, modül, bölüm, renk, süre, durum; `mine` bu modülün işidir). Dizi yoksa (çerçeve kapalı, çapaya bağlı iş yok) `null`. Modül başka modülün işini kendi listesinde gösterebilir ama düzenleyemez; satır o modülün sayfasına (`/m/<slug>`) götürür. Örnek: `deneme`'nin Kayıtlar sekmesi; Rutin'in Sabah sekmesinde başka modülün işi kendi grubu olarak, sıradaki yerinde.
 
 **Adım yürütücü (`StepRunner`, bileşen takımında).** Sıralı adımlı sahneler (rutin, pişirme, antrenman) için: adım listesi (ad, süre ya da tekrar sayısı, açıklama), geri sayım, "Sonraki", "Atla", her adım bitince ve liste bitince geri çağrı. Yalnızca arayüzdür; hangi adımda olunduğunu modül saklar (`step` ve `onStep` ile denetimli kullanılır).
 

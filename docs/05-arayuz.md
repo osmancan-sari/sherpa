@@ -111,6 +111,8 @@ Geniş ekranda tek sayfa, kaydırma yok:
 | `G` sonra `B` / `H` / `G` | Bugün / Hafta / Gelen kutusu |
 | `1`–`9` | n. modülün sayfası |
 
+Sahne açıkken `Space`, `Enter`, `E`, `X` ve `R`, sahne tuşları devraldığını bildirdiyse (`ModuleScene.keys`, Ç3g) sahnenindir: adımlı bir sahnede `Space` adımı geçirir ("Sonraki"), işin tamamını bitirmez. Bildirmeyen sahnede tuşlar standart karttaki gibidir. Yazarken, pencere açıkken ve sahneden açılan kapanışta sahneye tuş gitmez.
+
 ### Sahne (Ç3c)
 
 Çalışan işin modülü bir sahne veriyorsa (`docs/06-modul-sozlesmesi.md`, "Sahne") Bugün ekranı ona bırakılır:
@@ -124,7 +126,7 @@ Geniş ekranda tek sayfa, kaydırma yok:
 └──────────────────────────────────────────────────────────────────────┘
 ```
 
-- Şerit: saat, modülün rengi ve işin adı, geçen süre, "Çık". Telefonda da tek satır.
+- Şerit: saat, modülün rengi ve işin adı, geçen süre, "Çık". Telefonda da tek satır. Ç3g: sahne şeridin adını ve sürenin başlangıcını verebilir (`SceneProps.strip`: Rutin'de sabahın bütün karelerinde "Sabah · uyanıştan beri n dk", Günaydın'da süresiz) ve açılış ya da kapanış ekranında şeridi gizleyebilir ("İyi günler"); vermezse şerit böyledir. **Görüşün gerek:** gizli şeritte "Çık"ın da olmaması (yalnızca kendiliğinden geçen ekranlar için).
 - **Telefonda sahne ekranı kaplar** (Rutin 1, 14 Kas 2026): alt menü ve hızlı giriş düğmesi (+) sahne açıkken görünmez, sahnenin altında kalır; şerit en üstte, güvenli alanın altında durur. Pencereler (soru, düzenleme) sahnenin üstünde açılır. Panoda sahne sayfanın içindedir, yan menü görünür kalır.
 - Geçiş kısa bir solmadır; hareket azaltma tercihinde hiç yoktur. `look.tone` arka planın tonunu verir: `calm` sakin, `focus` koyu ve düz, `energy` modülün rengine çalan. Son hali Ç4'te.
 - "Çık"tan sonra standart ekran; kartın altında "Sahneye dön". Çıkış o cihazda, o oturum için hatırlanır.

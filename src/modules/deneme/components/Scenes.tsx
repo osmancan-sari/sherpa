@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useRefreshAll } from "@/core/app/actions";
 import { useModuleQuery } from "@/core/app/hooks";
-import type { SceneChain, SceneProps } from "@/core/contract/types";
+import type { SceneChain, SceneKey, SceneProps } from "@/core/contract/types";
 import { type Step, StepRunner } from "@/core/ui/kit";
 import { useNotify } from "@/core/ui/Notices";
 import { SAVE_FAILED } from "@/core/ui/Notices";
@@ -33,14 +33,30 @@ export function DenemeScene(props: SceneProps) {
   );
 }
 
+/**
+ * Ç3g: the Today keys this scene takes (`keys: "scene"` in scene.ts): the handler sees the latest
+ * render's state; the listener is the core's.
+ */
+function useSceneKeys(keys: SceneProps["keys"], handle: (key: SceneKey) => void) {
+  const latest = useRef(handle);
+  useEffect(() => {
+    latest.current = handle;
+  });
+  useEffect(() => keys?.listen((key) => latest.current(key)), [keys]);
+}
+
 const clock = (seconds: number) =>
   `${String(Math.floor(seconds / 60)).padStart(2, "0")}:${String(seconds % 60).padStart(2, "0")}`;
 
 /** A free scene: the work, the time, a line said aloud (and shown), the core's buttons. */
-function FocusScene({ subject, session, controls, say, today, device }: SceneProps) {
+function FocusScene({ subject, session, controls, say, today, device, keys }: SceneProps) {
   const title = subject.kind === "task" ? subject.task.title : subject.rhythm.title;
-  if (title.includes("[hata]")) throw new Error("deneme: the scene fails on purpose");
   const [said, setSaid] = useState<string | null>(null);
+  // Ç3g: Space is still "Bitti" here, now the scene's own.
+  useSceneKeys(keys, (key) => {
+    if (key === "space") void controls.finish();
+  });
+  if (title.includes("[hata]")) throw new Error("deneme: the scene fails on purpose");
   const tell = () => {
     const next = today.top.find((row) => row.title !== title);
     const text = next ? `${title} sürüyor. Sonra sırada ${next.title} var.` : `${title} sürüyor.`;
@@ -79,7 +95,7 @@ function FocusScene({ subject, session, controls, say, today, device }: ScenePro
 }
 
 /** A step scene: the workout's steps; which one it is on lives in the module's row. */
-function WorkoutScene({ subject, controls, say, ctx }: SceneProps) {
+function WorkoutScene({ subject, controls, say, ctx, keys }: SceneProps) {
   const refreshAll = useRefreshAll();
   const notify = useNotify();
   const id = sourceOf(subject);
@@ -102,6 +118,10 @@ function WorkoutScene({ subject, controls, say, ctx }: SceneProps) {
     say(step ? `Sıradaki: ${step.title}.` : "Antrenman tamam.", { interrupt: true });
   };
   const done = current >= WORKOUT_STEPS.length;
+  // Ç3g: Space is the workout's next step (not the core's "Bitti" of the whole workout).
+  useSceneKeys(keys, (key) => {
+    if (key === "space" && !done) onStep(current);
+  });
   return (
     <div className="flex flex-1 flex-col justify-between gap-8" data-testid="deneme-workout">
       <StepRunner steps={WORKOUT_STEPS} current={current} onStep={onStep} />
@@ -224,6 +244,15 @@ function FacetScene(
   const title = subject.kind === "task" ? subject.task.title : subject.rhythm.title;
   const color = facet?.color ?? "currentColor";
   const [undo, setUndo] = useState<string | null>(null);
+  // Ç3g: the strip as the scene wants it: the morning names its facet and counts from the
+  // waking; the evening can leave the strip out ("Şeridi gizle").
+  const [plain, setPlain] = useState(false);
+  const wokeAt = today.wokeAt?.getTime() ?? null;
+  const { strip } = props;
+  useEffect(() => {
+    if (evening) strip(plain ? { hidden: true } : null);
+    else strip({ title: facet?.name ?? title, since: wokeAt === null ? null : new Date(wokeAt) });
+  }, [strip, evening, plain, facet?.name, title, wokeAt]);
   // Rutin 1: after "Yatıyorum" the scene stays for a while; "Geri al" takes the bedtime back.
   if (bedtime) {
     return (
@@ -302,6 +331,16 @@ function FacetScene(
             onClick={() => void controls.bed()}
           >
             Yatıyorum
+          </Button>
+        ) : null}
+        {evening ? (
+          <Button
+            variant="ghost"
+            className="h-12 px-5 text-base"
+            aria-pressed={plain}
+            onClick={() => setPlain(!plain)}
+          >
+            {plain ? "Şeridi göster" : "Şeridi gizle"}
           </Button>
         ) : null}
       </div>

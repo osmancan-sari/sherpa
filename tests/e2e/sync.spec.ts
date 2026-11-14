@@ -277,11 +277,10 @@ test("Rutin: Sonraki on one screen brings the other to the same sub-step within 
   const day = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Istanbul" }).format(
     new Date(Date.now() - 5 * 3_600_000),
   );
-  await insert("days", {
-    date: day,
-    woke_at: new Date(Date.now() - 2 * 60_000).toISOString(),
-    woke_source: "outside",
-  });
+  const woke = { woke_at: new Date(Date.now() - 2 * 60_000).toISOString(), woke_source: "outside" };
+  const known = (await rows("days")).find((row) => row.date === day);
+  if (known) await update("days", known.id as string, woke);
+  else await insert("days", { date: day, ...woke });
   await insert("sessions", { rhythm_id: morning.id, module_id: mod.id });
   await Promise.all([desktop.goto("/"), hand.goto("/")]);
   const desk = desktop.getByTestId("rutin-scene");

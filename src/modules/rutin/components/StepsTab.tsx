@@ -1,6 +1,7 @@
 "use client";
 
 import { GripVertical, Minus, Plus, X } from "lucide-react";
+import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   type CSSProperties,
@@ -14,9 +15,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useRefreshAll } from "@/core/app/actions";
 import { useModuleQuery } from "@/core/app/hooks";
-import type { ModuleContext } from "@/core/contract/types";
+import type { ModuleContext, SceneChain } from "@/core/contract/types";
 import { SAVE_FAILED, useNotify } from "@/core/ui/Notices";
-import { useModule } from "@/core/ui/module/ModuleProvider";
+import { useModule, useModuleChains } from "@/core/ui/module/ModuleProvider";
 import { dayKey, shiftDay } from "@/lib/date";
 import { cn } from "@/lib/utils";
 import {
@@ -69,18 +70,30 @@ export function EveningTab() {
   return <StepsTab facet="aksam" />;
 }
 
-type Data = { routines: Routine[]; steps: Step[]; lastDone: Map<string, string> };
+type Data = {
+  routines: Routine[];
+  steps: Step[];
+  lastDone: Map<string, string>;
+  /** This module's rhythm -> its routine (the chain names rhythms). */
+  rhythms: { id: string; routineId: string | null }[];
+};
 
 function useList() {
   const { row } = useModule();
   return useModuleQuery(row, ["list"], async (ctx): Promise<Data> => {
     const today = dayKey(ctx.now());
-    const [routines, steps, records] = await Promise.all([
+    const [routines, steps, records, rhythms] = await Promise.all([
       listRoutines(ctx),
       listSteps(ctx),
       listRecords(ctx, shiftDay(today, -370)),
+      ctx.work.rhythms(),
     ]);
-    return { routines, steps, lastDone: lastDoneDays(records) };
+    return {
+      routines,
+      steps,
+      lastDone: lastDoneDays(records),
+      rhythms: rhythms.map(({ rhythm }) => ({ id: rhythm.id, routineId: rhythm.source_id })),
+    };
   });
 }
 
@@ -103,8 +116,44 @@ function useWrite() {
   };
 }
 
+type Own = {
+  kind: "own";
+  group: (typeof GROUPS)["sabah"][number];
+  routine: Routine;
+  mains: Step[];
+};
+type Section = Own | { kind: "other"; item: SceneChain["items"][number] };
+
+/**
+ * The tab's blocks in the scene's order (Ç3g): today's chain on the tab's anchor, this module's
+ * routines as their groups and every other module's work as a group of its own (read only, from
+ * `useModuleChains`); routines the chain does not hold today come after, in their own order.
+ */
+function sectionsOf(
+  own: Own[],
+  chain: SceneChain | null,
+  routineOf: (rhythmId: string) => string | null,
+): Section[] {
+  const placed = new Set<string>();
+  const sections: Section[] = [];
+  for (const item of chain?.items ?? []) {
+    if (!item.mine) {
+      sections.push({ kind: "other", item });
+      continue;
+    }
+    const section = own.find((row) => row.routine.id === routineOf(item.id));
+    if (section && !placed.has(section.routine.id)) {
+      placed.add(section.routine.id);
+      sections.push(section);
+    }
+  }
+  for (const section of own) if (!placed.has(section.routine.id)) sections.push(section);
+  return sections;
+}
+
 function StepsTab({ facet }: { facet: "sabah" | "aksam" }) {
   const list = useList();
+  const chains = useModuleChains();
   const params = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
@@ -125,29 +174,41 @@ function StepsTab({ facet }: { facet: "sabah" | "aksam" }) {
       .sort((a, b) => a.position - b.position);
   const counted = (list: Step[]) => list.filter((row) => row.active && row.kind === "tap").length;
   // The list is numbered across the tab's blocks, as the scene goes through them.
-  const groups = GROUPS[facet].flatMap((group) => {
+  const own: Own[] = GROUPS[facet].flatMap((group) => {
     const routine = routines.find((row) => row.key === group.key);
-    return routine ? [{ group, routine, mains: mainsOf(routine) }] : [];
+    return routine ? [{ kind: "own" as const, group, routine, mains: mainsOf(routine) }] : [];
   });
-  const starts = groups.map((_, index) =>
-    groups.slice(0, index).reduce((sum, row) => sum + counted(row.mains), 0),
+  const sections = sectionsOf(
+    own,
+    facet === "sabah" ? chains.wake : chains.bed,
+    (id) => list.data.rhythms.find((row) => row.id === id)?.routineId ?? null,
+  );
+  const size = (section: Section) => (section.kind === "own" ? counted(section.mains) : 1);
+  const starts = sections.map((_, index) =>
+    sections.slice(0, index).reduce((sum, row) => sum + size(row), 0),
   );
   return (
     <div className="flex flex-col gap-5" data-testid={`rutin-${facet}`}>
-      {groups.map(({ group, routine, mains }, index) => (
-        <StepGroup
-          key={group.key}
-          label={group.label}
-          context={`${group.context} · toplam ${formatSeconds(routineSeconds(steps, routine.id))}`}
-          routine={routine}
-          mains={mains}
-          steps={steps}
-          first={starts[index]}
-          lastDone={list.data.lastDone}
-          facet={facet}
-          onOpen={(id) => open(`adim=${id}`)}
-        />
-      ))}
+      {sections.map((section, index) =>
+        section.kind === "own" ? (
+          <StepGroup
+            key={section.group.key}
+            label={section.group.label}
+            context={`${section.group.context} · toplam ${formatSeconds(
+              routineSeconds(steps, section.routine.id),
+            )}`}
+            routine={section.routine}
+            mains={section.mains}
+            steps={steps}
+            first={starts[index]}
+            lastDone={list.data.lastDone}
+            facet={facet}
+            onOpen={(id) => open(`adim=${id}`)}
+          />
+        ) : (
+          <OtherGroup key={section.item.id} item={section.item} number={starts[index] + 1} />
+        ),
+      )}
       {facet === "aksam" ? (
         <section className="border-border rounded-2xl border px-4 py-3 text-sm">
           <p className="text-muted-foreground text-xs font-semibold tracking-wider">
@@ -315,6 +376,46 @@ function StepGroup({
           );
         })}
       </ol>
+    </section>
+  );
+}
+
+/**
+ * Another module's work in the morning (or the evening): its own group, one row, no switch; it is
+ * edited on that module's page (degerler.md, section 8: "Spor modülünden gelir, orada düzenlenir").
+ */
+function OtherGroup({ item, number }: { item: SceneChain["items"][number]; number: number }) {
+  const label = (item.facet?.name ?? item.title).toLocaleUpperCase("tr");
+  return (
+    <section
+      aria-label={label}
+      data-testid="rutin-other-group"
+      className="border-border overflow-hidden rounded-2xl border"
+    >
+      <div className="flex items-center gap-2 px-4 pt-3 pb-1.5">
+        <span aria-hidden className="size-2 rounded-full" style={{ backgroundColor: item.color }} />
+        <span className="text-xs font-semibold tracking-wider">{label}</span>
+        <span className="text-muted-foreground ml-auto text-[13px]">
+          {item.module.name} modülü · toplam {item.minutes} dk
+        </span>
+      </div>
+      <Link
+        href={`/m/${item.module.slug}`}
+        className="border-border flex min-h-[54px] items-center gap-2 border-t pr-4 pl-1"
+        data-testid="rutin-other-row"
+      >
+        <span className="w-2" />
+        <span className="w-6 shrink-0 text-center text-sm font-semibold tabular-nums">
+          {number}
+        </span>
+        <span className="flex min-w-0 flex-1 flex-col py-2">
+          <span className="truncate text-[15px] font-semibold">{item.title}</span>
+          <span className="text-muted-foreground truncate text-[13px]">
+            {item.module.name} modülünden gelir, orada düzenlenir
+          </span>
+        </span>
+        <span className="text-muted-foreground shrink-0 text-sm">{item.module.name} ›</span>
+      </Link>
     </section>
   );
 }

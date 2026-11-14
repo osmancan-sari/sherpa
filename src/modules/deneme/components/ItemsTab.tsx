@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { useRefreshAll } from "@/core/app/actions";
 import { useModuleQuery } from "@/core/app/hooks";
 import { type Column, DataTable, EmptyState, ErrorState } from "@/core/ui/kit";
-import { useModule } from "@/core/ui/module/ModuleProvider";
+import type { SceneChain } from "@/core/contract/types";
+import { useModule, useModuleChains } from "@/core/ui/module/ModuleProvider";
 import { SAVE_FAILED, useNotify } from "@/core/ui/Notices";
 import { type DenemeItem, type DenemeKind, KIND_LABEL, listItems } from "../queries";
 import { changeItem, removeItem } from "../rules";
@@ -31,15 +32,22 @@ export function ItemsTab() {
   if (items.isLoading) return null;
   if ((items.data ?? []).length === 0) {
     return (
-      <EmptyState
-        action={
-          <Button variant="outline" className="h-11 md:h-9" onClick={() => ctx.openIntake("kayit")}>
-            Kayıt ekle
-          </Button>
-        }
-      >
-        Henüz kayıt yok.
-      </EmptyState>
+      <div className="flex flex-col gap-5">
+        <EmptyState
+          action={
+            <Button
+              variant="outline"
+              className="h-11 md:h-9"
+              onClick={() => ctx.openIntake("kayit")}
+            >
+              Kayıt ekle
+            </Button>
+          }
+        >
+          Henüz kayıt yok.
+        </EmptyState>
+        <DayChains />
+      </div>
     );
   }
 
@@ -114,12 +122,64 @@ export function ItemsTab() {
   ];
 
   return (
-    <DataTable
-      caption="Deneme kayıtları"
-      columns={columns}
-      rows={items.data ?? []}
-      rowKey={(item) => item.id}
-      filterLabel="Kayıtlarda ara"
-    />
+    <div className="flex flex-col gap-5">
+      <DataTable
+        caption="Deneme kayıtları"
+        columns={columns}
+        rows={items.data ?? []}
+        rowKey={(item) => item.id}
+        filterLabel="Kayıtlarda ara"
+      />
+      <DayChains />
+    </div>
+  );
+}
+
+const CHAIN_NAME = { wake: "Bugünün uyanış dizisi", bed: "Bugünün yatış dizisi" } as const;
+
+/**
+ * Ç3g: today's chains on the module's page, read only (`useModuleChains`): this module's work and
+ * every other module's, each row only its name, module, minutes and state; another module's row
+ * leads to that module's page.
+ */
+function DayChains() {
+  const chains = useModuleChains();
+  const list = [chains.wake, chains.bed].filter(Boolean) as SceneChain[];
+  if (list.length === 0) return null;
+  return (
+    <div className="flex flex-col gap-3" data-testid="deneme-chains">
+      {list.map((chain) => (
+        <section key={chain.anchor} aria-label={CHAIN_NAME[chain.anchor]} className="text-sm">
+          <h3 className="mb-1 font-medium">{CHAIN_NAME[chain.anchor]}</h3>
+          <ol className="flex flex-col gap-1">
+            {chain.items.map((item) => (
+              <li
+                key={item.id}
+                data-mine={item.mine ? "true" : "false"}
+                className="flex items-center gap-2"
+              >
+                <span
+                  aria-hidden
+                  className="size-2 shrink-0 rounded-full"
+                  style={{ backgroundColor: item.color }}
+                />
+                {item.mine ? (
+                  <span>{item.title}</span>
+                ) : (
+                  <Link href={`/m/${item.module.slug}`} className="underline underline-offset-4">
+                    {item.title}
+                  </Link>
+                )}
+                <span className="text-muted-foreground">
+                  {[item.mine ? null : item.module.name, `${item.minutes} dk`, item.state]
+                    .filter(Boolean)
+                    .join(" · ")}
+                </span>
+              </li>
+            ))}
+          </ol>
+        </section>
+      ))}
+    </div>
   );
 }

@@ -200,6 +200,34 @@ describe("the scene (Ç3c)", () => {
       ]),
     ).toThrow(/scene needs/);
   });
+
+  it('takes the Today keys only by saying "scene" (Ç3g)', () => {
+    const view = () => null;
+    const scene = { when: () => true, component: view };
+    expect(() =>
+      createRegistry([
+        definition({
+          ui: {
+            ...definition().ui,
+            scene: { ...scene, keys: "scene" },
+            scenes: { gunes: { ...scene, keys: "scene" } },
+          },
+        }),
+      ]),
+    ).not.toThrow();
+    expect(() =>
+      createRegistry([
+        definition({ ui: { ...definition().ui, scene: { ...scene, keys: "all" as never } } }),
+      ]),
+    ).toThrow(/keys can only be "scene"/);
+    expect(() =>
+      createRegistry([
+        definition({
+          ui: { ...definition().ui, scenes: { gece: { ...scene, keys: true as never } } },
+        }),
+      ]),
+    ).toThrow(/scene "gece": keys can only be "scene"/);
+  });
 });
 
 describe("facets and named scenes (Ç3e)", () => {

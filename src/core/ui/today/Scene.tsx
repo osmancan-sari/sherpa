@@ -1,6 +1,15 @@
 "use client";
 
-import { Component, type ReactNode, useEffect, useState, useSyncExternalStore } from "react";
+import {
+  Component,
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
 import { Button } from "@/components/ui/button";
 import { useEndSession } from "@/core/app/actions";
 import { useRecordBed, useUndoBed } from "@/core/app/frame-actions";
@@ -12,18 +21,19 @@ import type {
   ModuleFacet,
   ModuleScene,
   SceneChain,
+  SceneKey,
   SceneProps,
+  SceneStrip,
   SceneSubject,
   TodayBrief,
 } from "@/core/contract/types";
 import { type NowState, type PlanInput, planningDay } from "@/core/planner";
-import type { Colors } from "@/core/app/facets";
 import type { PlannedTarget } from "@/core/data/sessions";
-import type { ChainLook } from "@/core/today/chain";
 import { useSay } from "@/core/voice";
 import { formatMinutes, formatTime } from "@/lib/date";
 import { cn } from "@/lib/utils";
 import { useModuleScope } from "../module/ModuleProvider";
+import { isTyping } from "./DayParts";
 
 // The scene (docs/06-modul-sozlesmesi.md, "Sahne"; docs/05-arayuz.md, "Sahne"): while a
 // module's work runs, the Today screen is the module's, under a thin strip that stays the
@@ -113,21 +123,6 @@ export function useDevice(): SceneProps["device"] {
   );
 }
 
-/** How a chain's rows look on this screen: the module, the resolved colour, the facet (Ç3f). */
-export function chainLook(modules: Map<string, KnownModule>, colors: Colors): ChainLook {
-  return {
-    module: (moduleId) => {
-      const mod = modules.get(moduleId);
-      return mod ? { slug: mod.row.slug, name: mod.row.name } : null;
-    },
-    color: (row) => colors.of(row.moduleId, row.work),
-    facet: (row) => {
-      const facet = colors.facetOf(row.moduleId, row.work);
-      return facet ? { key: facet.key, name: facet.name } : null;
-    },
-  };
-}
-
 const TONE: Record<"calm" | "focus" | "energy", string> = {
   calm: "bg-muted/40",
   focus: "bg-card",
@@ -193,7 +188,60 @@ export function SceneFrame({
   // After the bedtime the clock stops where the session ended.
   const until = session.ended_at ? Date.parse(session.ended_at) : now;
   const elapsedSeconds = Math.max(0, Math.floor((until - startedAt.getTime()) / 1000));
-  const title = state.task?.title ?? state.rhythm?.title ?? session.title ?? "";
+  const workTitle = state.task?.title ?? state.rhythm?.title ?? session.title ?? "";
+  // Ç3g: the strip as the scene sets it for the screen it shows; a new session starts plain.
+  const [stripOf, setStripOf] = useState<{ session: string; strip: SceneStrip | null }>({
+    session: session.id,
+    strip: null,
+  });
+  const strip = stripOf.session === session.id ? stripOf.strip : null;
+  const setStrip = useCallback(
+    (next: SceneStrip | null) =>
+      setStripOf((before) =>
+        before.session === session.id && sameStrip(before.strip, next)
+          ? before
+          : { session: session.id, strip: next },
+      ),
+    [session.id],
+  );
+  const title = strip?.title ?? workTitle;
+  // The strip's minutes: from the session's start, or the moment the scene names, or none.
+  const stripSince = strip?.since === undefined ? startedAt : strip.since;
+  const stripMinutes =
+    stripSince === null ? null : Math.max(0, Math.floor((until - stripSince.getTime()) / 60_000));
+  // Ç3g: the Today keys, handed to the scene that takes them.
+  const takesKeys = scene.keys === "scene";
+  const keyListeners = useRef(new Set<(key: SceneKey) => void>());
+  const keys = useMemo(
+    () =>
+      takesKeys
+        ? {
+            listen: (handler: (key: SceneKey) => void) => {
+              keyListeners.current.add(handler);
+              return () => void keyListeners.current.delete(handler);
+            },
+          }
+        : null,
+    [takesKeys],
+  );
+  useEffect(() => {
+    if (!takesKeys || closing) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.ctrlKey || event.metaKey || event.altKey || isTyping(event.target)) return;
+      if (document.querySelector('[role="dialog"], [data-scene-closing]')) return;
+      const key = sceneKeyOf(event.key);
+      if (!key) return;
+      // Space and Enter on a focused button or link are that button's: the browser presses it.
+      const target = event.target instanceof Element ? event.target : null;
+      if ((key === "space" || key === "enter") && target?.closest("button, a, [role='button']")) {
+        return;
+      }
+      if (key === "space" || key === "enter") event.preventDefault();
+      keyListeners.current.forEach((handler) => handler(key));
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [takesKeys, closing]);
   // Ç3e: the facet's tone and colour come before the scene's and the module's.
   const tone = sceneTone(scene, facet);
   const color = facet ? facetColor(mod.row, facet) : moduleColor(mod);
@@ -230,6 +278,8 @@ export function SceneFrame({
     ctx,
     facet: facet ? { key: facet.key, name: facet.name, color } : null,
     chain,
+    strip: setStrip,
+    keys,
     bedtime: bedtime
       ? {
           at: bedtime.at,
@@ -243,6 +293,7 @@ export function SceneFrame({
     <div
       data-testid="scene"
       data-bedtime={bedtime ? "" : undefined}
+      data-scene-keys={takesKeys ? "" : undefined}
       data-tone={tone}
       data-facet={facet?.key}
       data-device={device}
@@ -261,7 +312,7 @@ export function SceneFrame({
           : undefined
       }
     >
-      {bedtime ? null : (
+      {bedtime || strip?.hidden ? null : (
         <header
           aria-label="Sahne şeridi"
           className="border-border bg-background/80 flex items-center gap-3 border-b px-4 py-2 text-sm md:px-6"
@@ -274,11 +325,15 @@ export function SceneFrame({
             style={{ backgroundColor: color }}
           />
           <span className="min-w-0 flex-1 truncate">
-            <span className="font-medium">{title}</span>
-            <span className="text-muted-foreground tabular-nums">
-              {" "}
-              · {formatMinutes(Math.floor(elapsedSeconds / 60))}
+            <span className="font-medium" data-testid="strip-title">
+              {title}
             </span>
+            {stripMinutes === null ? null : (
+              <span className="text-muted-foreground tabular-nums" data-testid="strip-minutes">
+                {" "}
+                · {formatMinutes(stripMinutes)}
+              </span>
+            )}
           </span>
           <Button variant="ghost" className="h-11 md:h-8" onClick={onExit}>
             Çık
@@ -298,6 +353,26 @@ export function SceneFrame({
       </section>
     </div>
   );
+}
+
+/** Ç3g: whether two strips say the same (a scene sets its strip on every render it likes). */
+function sameStrip(a: SceneStrip | null, b: SceneStrip | null): boolean {
+  if (a === null || b === null) return a === b;
+  const time = (since: Date | null | undefined) =>
+    since === undefined ? "default" : since === null ? "none" : since.getTime();
+  return (
+    a.title === b.title &&
+    Boolean(a.hidden) === Boolean(b.hidden) &&
+    time(a.since) === time(b.since)
+  );
+}
+
+/** Ç3g: the Today keys a scene may take (docs/05-arayuz.md, "Klavye"). */
+function sceneKeyOf(key: string): SceneKey | null {
+  if (key === " ") return "space";
+  if (key === "Enter") return "enter";
+  const lower = key.toLowerCase();
+  return lower === "e" || lower === "x" || lower === "r" ? lower : null;
 }
 
 /** A scene that throws gives the standard card back; the session is untouched. */

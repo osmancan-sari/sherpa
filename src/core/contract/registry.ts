@@ -1,5 +1,5 @@
 import { PART } from "./ingest";
-import type { ModuleDefinition, ModuleRegistry } from "./types";
+import type { ModuleDefinition, ModuleRegistry, ModuleScene } from "./types";
 
 /** Path segments under /m/<slug>/ the core keeps for itself. */
 export const RESERVED_SEGMENTS = ["tam"] as const;
@@ -20,6 +20,18 @@ export function definitionProblems(def: ModuleDefinition): string[] {
   if (def.ui.tabs.length === 0) say("at least one tab is needed");
   if (def.ui.scene && (typeof def.ui.scene.when !== "function" || !def.ui.scene.component)) {
     say("a scene needs `when` and a component");
+  }
+  // Ç3g: a scene takes the Today keys only by saying "scene".
+  const named: [string, ModuleScene | undefined][] = [
+    ["the scene", def.ui.scene],
+    ...Object.entries(def.ui.scenes ?? {}).map(
+      ([key, value]): [string, ModuleScene | undefined] => [`scene "${key}"`, value],
+    ),
+  ];
+  for (const [name, scene] of named) {
+    if (scene && scene.keys !== undefined && scene.keys !== "scene") {
+      say(`${name}: keys can only be "scene"`);
+    }
   }
   // Ç3e: named scenes for the facets. The facet list itself is computed with the module's
   // context, so it is checked every time it is computed (src/core/contract/facets.ts).

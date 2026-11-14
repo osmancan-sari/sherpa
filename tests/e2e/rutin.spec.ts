@@ -230,6 +230,31 @@ test("holding the main button passes a timed sub-step early", async ({ page }) =
   await expect(scene(page)).toHaveAttribute("data-part", "2");
 });
 
+test("the scene takes the keys: Space is Sonraki, it never ends the whole routine, and a held sub-step waits (Ç3g)", async ({
+  page,
+}) => {
+  await setUp(page);
+  await page.clock.setFixedTime(dayAt("07:20"));
+  await page.goto("/");
+  await card(page).getByRole("button", { name: "Başla", exact: true }).click();
+  await expect(scene(page)).toHaveAttribute("data-part", "0");
+  // The whole morning is "Sabah" on the strip, counted from the waking (07:00).
+  await expect(page.getByTestId("strip-title")).toHaveText("Sabah");
+  await expect(page.getByTestId("strip-minutes")).toHaveText("· 20 dk");
+  await scene(page).getByRole("heading", { name: "Diş bakımı" }).click();
+  await page.keyboard.press(" ");
+  await expect(scene(page)).toHaveAttribute("data-part", "1");
+  // "Fırçala" is held: Space does not pass it, and the session goes on.
+  await page.keyboard.press(" ");
+  await page.keyboard.press("Enter");
+  await page.waitForTimeout(500);
+  await expect(scene(page)).toHaveAttribute("data-part", "1");
+  expect(await open()).toHaveLength(1);
+  // X (the core's "X dk'm var") is the scene's now: no window opens.
+  await page.keyboard.press("x");
+  await expect(page.getByRole("dialog")).toBeHidden();
+});
+
 test("the morning's last step says Bitti; then İyi günler, then the Today screen", async ({
   page,
 }) => {
@@ -252,6 +277,8 @@ test("the morning's last step says Bitti; then İyi günler, then the Today scre
   await scene(page).getByRole("button", { name: "Bitti" }).click();
   await expect(scene(page)).toHaveAttribute("data-screen", "iyi-gunler");
   await expect(scene(page).getByRole("heading", { name: "İyi günler" })).toBeVisible();
+  // Ç3g: no strip on "İyi günler".
+  await expect(page.locator('header[aria-label="Sahne şeridi"]')).toHaveCount(0);
   await waitFor(open, (list) => list.length === 0);
   await expect(scene(page)).toBeHidden();
   const records = (await rows("rutin_run_steps")).filter((row) => row.run_id === run!.id);
@@ -281,9 +308,14 @@ test("a waking told from outside shows Günaydın; Kalktım brings the teeth and
   await page.goto("/");
   await expect(scene(page)).toHaveAttribute("data-screen", "gunaydin");
   await expect(scene(page).getByRole("heading", { name: "Günaydın" })).toBeVisible();
+  // Ç3g: the strip says "Sabah", without minutes, on Günaydın.
+  await expect(page.getByTestId("strip-title")).toHaveText("Sabah");
+  await expect(page.getByTestId("strip-minutes")).toBeHidden();
   expect(await spoken(page)).toEqual([]);
   await scene(page).getByRole("button", { name: "Kalktım" }).click();
   await expect(scene(page).getByRole("heading", { name: "Diş bakımı" })).toBeVisible();
+  // From the waking (06:58), not from the session.
+  await expect(page.getByTestId("strip-minutes")).toHaveText("· 2 dk");
   await expect.poll(async () => (await spoken(page)).join(" ")).toContain("Günaydın.");
 });
 
@@ -310,6 +342,9 @@ test("Yatıyorum writes the bedtime, İyi geceler stays after a reload, Geri al 
   await page.goto("/");
   await expect(scene(page)).toHaveAttribute("data-routine", "aksam");
   await expect(scene(page).getByRole("heading", { name: "Antiperspirant" })).toBeVisible();
+  // Ç3g: the evening's strip is its routine's name, counted from its first step.
+  await expect(page.getByTestId("strip-title")).toHaveText("Akşam kapanışı");
+  await expect(page.getByTestId("strip-minutes")).toHaveText("· 5 dk");
   await expect(page.getByTestId("rutin-count")).toHaveText(/1 \/ 4$/);
   const run = await waitFor(
     () => runOf("aksam"),
@@ -350,6 +385,42 @@ test("Yatıyorum writes the bedtime, İyi geceler stays after a reload, Geri al 
     (list) => list.every((row) => row.bed_at === null),
   );
   await expect.poll(async () => (await runOf("aksam"))?.finished_at ?? null).toBeNull();
+});
+
+test("the module page's morning holds another module's work as its own group, in the chain's order, with no switch and a link to its page (Ç3g)", async ({
+  page,
+}) => {
+  await setUp(page);
+  const [deneme] = await insert<Row>("modules", {
+    slug: "deneme",
+    name: "Deneme",
+    color: "#7c3aed",
+  });
+  await insert<Row>("tasks", {
+    module_id: deneme.id,
+    title: "Boyun hareketleri",
+    est_minutes: 10,
+    timing: { anchor: "wake", order: 20 },
+  });
+  await page.clock.setFixedTime(dayAt("07:02"));
+  await page.goto("/m/rutin");
+  const morning = page.getByTestId("rutin-sabah");
+  const blocks = morning.locator(":scope > section");
+  await expect(blocks).toHaveCount(3);
+  await expect(blocks.nth(0)).toHaveAttribute("aria-label", "SABAH");
+  await expect(blocks.nth(1)).toHaveAttribute("aria-label", "BOYUN HAREKETLERİ");
+  await expect(blocks.nth(2)).toHaveAttribute("aria-label", "DUŞ VE HAZIRLIK");
+  const other = morning.getByTestId("rutin-other-group");
+  await expect(other).toContainText("Deneme modülü · toplam 10 dk");
+  await expect(other).toContainText("Deneme modülünden gelir, orada düzenlenir");
+  await expect(other.getByRole("switch")).toHaveCount(0);
+  // Numbered across the morning: Sabah 1–2, the neck 3, the shower 4.
+  await expect(other.getByTestId("rutin-other-row")).toContainText("3");
+  await expect(
+    morning.getByRole("region", { name: "DUŞ VE HAZIRLIK" }).getByTestId("rutin-step-row").first(),
+  ).toContainText("4");
+  await other.getByTestId("rutin-other-row").click();
+  await expect(page).toHaveURL(/\/m\/deneme$/);
 });
 
 test("the module page: a step is renamed, lengthened, made every other day and basic; one is added, closed and deleted; the rhythm follows", async ({

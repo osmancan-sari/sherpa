@@ -10,6 +10,8 @@ export const denemeScene: ModuleScene = {
   when: (subject) => kindOf(subject) === "odak" || kindOf(subject) === "antrenman",
   component: DenemeScene,
   look: { tone: "focus" },
+  // Ç3g: the scene takes the Today keys: Space is the workout's next step, the focus's "Bitti".
+  keys: "scene",
 };
 
 // Ç3e: the scenes the fixed facets name (module.ts, `facets`): any running work of the morning

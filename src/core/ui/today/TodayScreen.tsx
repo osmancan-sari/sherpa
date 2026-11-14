@@ -38,7 +38,8 @@ import { useNotify } from "../Notices";
 import { QuickAddButton } from "../QuickAdd";
 import { AlertBar, DayStrip, isTyping, MinutesDialog, TopBar } from "./DayParts";
 import { NowCard, sessionTargetOf, travelText } from "./NowCard";
-import { chainLook, SceneFrame, sceneFor, useSceneExit } from "./Scene";
+import { chainLook } from "./chains";
+import { SceneFrame, sceneFor, useSceneExit } from "./Scene";
 import { briefLine } from "./frame-text";
 import { useWakeChainStart } from "./wake-chain";
 
@@ -126,6 +127,8 @@ function TodayBody() {
       if (document.querySelector('[role="dialog"]')) return;
       // Ç3f: the closing opened inside a scene has its own keys (Enter, Escape).
       if (document.querySelector("[data-scene-closing]")) return;
+      // Ç3g: a scene that takes the keys has them (SceneProps.keys).
+      if (document.querySelector("[data-scene-keys]")) return;
       if (!state || !input) return;
       const key = event.key.toLowerCase();
       if (event.key === " ") {

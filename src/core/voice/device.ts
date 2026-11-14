@@ -52,7 +52,11 @@ export const deviceVoice: VoiceProvider = {
       }
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.lang = voice.lang;
-      utterance.voice = voice;
+      try {
+        utterance.voice = voice;
+      } catch {
+        // Not the engine's own voice object (a stand-in): the language picks it.
+      }
       utterance.rate = options.rate;
       // Ended, cut off or refused ("not-allowed" without a tap): the queue goes on either way.
       // Some engines never say they are done: the queue goes on after a generous while anyway.

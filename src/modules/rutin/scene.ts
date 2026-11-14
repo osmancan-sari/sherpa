@@ -12,4 +12,6 @@ export const rutinScene: ModuleScene = {
     isRoutineKey((subject.rhythm.meta as Record<string, unknown> | null)?.routine),
   component: RutinScene,
   look: { tone: "calm" },
+  // Ç3g: Space and Enter are the scene's "Sonraki", not the core's "Bitti" of the whole routine.
+  keys: "scene",
 };
