@@ -732,6 +732,7 @@ test("rutin screens", async ({ page }, testInfo) => {
     eveningRun.find((row) => row.routine_id === evening.id)!.id as string,
     { step_position: 3, part_position: 1 },
   );
+  await page.reload();
   await expect(scene.getByRole("button", { name: "Yatıyorum" })).toBeVisible();
   await shot("rutin-aksam-son");
   await scene.getByRole("button", { name: "Yatıyorum" }).click();

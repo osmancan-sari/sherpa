@@ -243,6 +243,8 @@ test("the morning's last step says Bitti; then İyi günler, then the Today scre
     (row) => Boolean(row),
   );
   await update("rutin_runs", run!.id, { step_position: 3, part_position: 0 });
+  // Written from outside the app: read again (the live sync has its own test, sync.spec.ts).
+  await page.reload();
   await expect(scene(page).getByRole("heading", { name: "Yürüyüş" })).toBeVisible();
   await expect(scene(page).getByRole("button", { name: "Hepsini yaptım" })).toBeHidden();
   await scene(page).getByRole("button", { name: "Bitti" }).click();
@@ -308,6 +310,8 @@ test("Yatıyorum writes the bedtime, İyi geceler stays after a reload, Geri al 
     (row) => Boolean(row),
   );
   await update("rutin_runs", run!.id, { step_position: 3, part_position: 1 });
+  // Written from outside the app: read again (the live sync has its own test, sync.spec.ts).
+  await page.reload();
   await expect(scene(page).getByRole("heading", { name: "Telefonu salona bırak" })).toBeVisible();
   await expect(scene(page)).toContainText("Işık kapalı.");
   await expect(scene(page).getByRole("button", { name: "Atla" })).toBeHidden();
