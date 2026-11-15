@@ -3,7 +3,7 @@
 import { useId } from "react";
 import { Landscape, type Sky, token } from "@/core/ui/kit";
 
-// The scene's background (docs/tasarim/ekranlar/rutin-sahne.md): the core's full landscape, which
+// The scene's background (docs/tasarim/ekranlar/rutin.md): the core's full landscape, which
 // Rutin dresses with its own figures: in the evening the moon on the right and the owl on its
 // branch (the core's sun stays off then). Drawing data lives here; every colour is a token.
 

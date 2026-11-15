@@ -1,6 +1,6 @@
 import { token, type TokenName } from "@/core/ui/tokens";
 
-// The scene's glass (docs/tasarim/ekranlar/rutin-sahne.md; the dark tone of the morning and the
+// The scene's glass (docs/tasarim/ekranlar/rutin.md; the dark tone of the morning and the
 // evening), as values the components draw with and the contrast test measures. The morning has the
 // dawn's warm glass, the evening the night's cool one. Every value is a token (--color-warm-*,
 // --color-cool-*, --color-scene-*, --shadow-*).

@@ -14,7 +14,7 @@ import { GLASS, type Tone } from "@/modules/rutin/look";
 
 // Rutin's scene: its text stays readable on the sky, at least 4.5:1 on the dawn, the day and the
 // night (rutin.md, criterion 10). Measured on the colours the scene draws with (look.ts, the core's
-// sky), where each text sits on the phone's 390 × 844 frame (docs/tasarim/ekranlar/rutin-sahne.md).
+// sky), where each text sits on the phone's 390 × 844 frame (docs/tasarim/ekranlar/rutin.md).
 
 const rgb = (hex: string): Rgb => hexToRgb(hex);
 
