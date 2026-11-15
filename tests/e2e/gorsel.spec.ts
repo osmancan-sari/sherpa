@@ -110,6 +110,16 @@ for (const device of DEVICES) {
       await shot(page, `rutin-adim-duzenle-${device.name}`);
     });
 
+    test(`the Sağlık area's page (${device.name})`, async ({ page }) => {
+      await page.goto("/ayarlar/moduller");
+      await page.getByRole("button", { name: "Rutin: etkinleştir" }).click();
+      await expect(page.getByRole("link", { name: "Rutin ayarları" })).toBeVisible();
+      await page.goto("/a/saglik");
+      await expect(page.getByRole("region", { name: "Son 14 gün · temel adımlar" })).toBeVisible();
+      await expect(page.getByRole("list", { name: "Üyeler" })).toContainText("Sabah yapılan gün");
+      await shot(page, `alan-${device.name}`);
+    });
+
     test(`settings (${device.name})`, async ({ page }) => {
       await page.goto("/ayarlar");
       await expect(page.getByRole("heading", { level: 1, name: "Ayarlar" })).toBeVisible();
@@ -143,10 +153,44 @@ for (const device of DEVICES) {
     test(`today, an empty day (${device.name})`, async ({ page }) => {
       await page.goto("/");
       await expect(page.getByText("Bugün için planlanan bir şey yok.")).toBeVisible();
-      // Its layout is Ç4c's; the date line and the strip's hours follow the clock: masked.
-      await shot(page, `bugun-bos-${device.name}`, {
-        mask: [page.locator("main header"), page.getByRole("region", { name: "Günün akışı" })],
+      // Ç4c: the layout as drawn (XT7, XP3); the date line follows the fixed moment.
+      await shot(page, `bugun-bos-${device.name}`);
+    });
+
+    test(`today with work, Sıradakiler open, Takvim (${device.name})`, async ({ page }) => {
+      const okul = await seedModule("okul-ornek", "Okul", "#5b8cff");
+      const [ev] = await insert("modules", { slug: "ev-ornek", name: "Ev", color: "#5fd6c6" });
+      await insert("tasks", [
+        {
+          module_id: okul.id,
+          title: "Proje önerisi taslağı",
+          est_minutes: 90,
+          importance: 4,
+          due_at: "2026-11-14T20:59:00Z",
+        },
+        { module_id: okul.id, title: "İstatistik ödevi", est_minutes: 60, importance: 3 },
+        { module_id: ev.id as string, title: "Süpürme", est_minutes: 15 },
+        { module_id: ev.id as string, title: "Ampul al", est_minutes: 15 },
+      ]);
+      await insert("blocks", {
+        title: "Diş hekimi",
+        starts_at: "2026-11-13T15:30:00Z",
+        ends_at: "2026-11-13T16:15:00Z",
       });
+      await page.goto("/");
+      const now = page.getByRole("region", { name: "Şimdi" });
+      await expect(now.getByRole("heading", { name: "Proje önerisi taslağı" })).toBeVisible();
+      await expect(page.getByRole("region", { name: "Günün akışı" })).toBeVisible();
+      await shot(page, `bugun-${device.name}`);
+      await page.getByRole("button", { name: "Hepsini göster" }).click();
+      await expect(page.getByRole("button", { name: "Küçült" })).toBeVisible();
+      await shot(page, `bugun-sirada-acik-${device.name}`);
+
+      await page.goto("/takvim");
+      await expect(page.getByRole("region", { name: "Bu hafta" })).toContainText(
+        "Proje önerisi taslağı",
+      );
+      await shot(page, `takvim-${device.name}`);
     });
   });
 }

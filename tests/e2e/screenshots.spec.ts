@@ -83,19 +83,13 @@ function screensFor(itemId: string): Screen[] {
       },
     },
     {
-      name: "hafta",
-      path: "/hafta",
+      // Ç4c: Takvim (the closing has no page of its own: its shots are taken in the scene).
+      name: "takvim",
+      path: "/takvim",
       ready: async (page) => {
         await expect(
-          page.getByRole("region", { name: "Haftanın kalemleri" }).getByRole("listitem").first(),
+          page.getByRole("region", { name: "Bu hafta" }).getByRole("listitem").first(),
         ).toBeVisible();
-      },
-    },
-    {
-      name: "kapanis",
-      path: "/kapanis",
-      ready: async (page) => {
-        await expect(page.getByRole("region", { name: "Sorular" })).toBeVisible();
       },
     },
     {
@@ -355,12 +349,42 @@ for (const look of LOOKS) {
     await shot("x-dk");
     await page.keyboard.press("Escape");
 
-    await page.goto("/kapanis");
-    await page.getByRole("button", { name: "İleri" }).click();
-    await shot("kapanis-bugun");
-    await page.getByRole("button", { name: "İleri" }).click();
-    await expect(page.getByRole("region", { name: "Yarın" })).toBeVisible();
-    await shot("kapanis-yarin");
+    // Ç4c: "Sıradakiler" opened; on the phone a piece of the day's flow touched (its balloon).
+    await page
+      .getByRole("region", { name: "Sıradakiler" })
+      .getByRole("button", {
+        name: "Hepsini göster",
+      })
+      .click();
+    await shot("bugun-sirada-acik");
+    await page.getByRole("button", { name: "Küçült" }).click();
+    if (phone) {
+      const piece = page.getByTestId("strip-work").last();
+      await piece.scrollIntoViewIfNeeded();
+      await piece.tap();
+      await expect(page.getByTestId("strip-balloon")).toBeVisible();
+      await shot("bugun-balon");
+    }
+
+    // Ç4c: Takvim's day detail: today, a coming day, a past day.
+    await page.goto("/takvim");
+    const days = page.getByRole("region", { name: "Haftanın günleri" });
+    await days.locator('[aria-current="date"]').click();
+    await expect(page.getByRole("region", { name: "Günün ayrıntısı" })).toBeVisible();
+    await shot("takvim-bugun");
+    const boxes = days.getByRole("button");
+    const todayIndex = await boxes.evaluateAll((list) =>
+      list.findIndex((box) => box.getAttribute("aria-current") === "date"),
+    );
+    const other = todayIndex < 6 ? todayIndex + 1 : todayIndex - 1;
+    await boxes.nth(other).click();
+    await expect(page.getByRole("region", { name: "Günün ayrıntısı" })).toBeVisible();
+    await shot(todayIndex < 6 ? "takvim-gelecek" : "takvim-gecmis");
+    if (todayIndex > 0 && todayIndex < 6) {
+      await boxes.nth(todayIndex - 1).click();
+      await shot("takvim-gecmis");
+    }
+    await page.goto("/");
 
     // The night: the day was closed (Ç4a: no finish line).
     const [today] = (await rows("days")).filter((row) => row.plan_source !== null);
@@ -421,9 +445,9 @@ for (const look of LOOKS) {
       "Bugün uygun saat kalmadı",
     );
     await shot("bugun-zaman");
-    await page.goto("/hafta");
+    await page.goto("/takvim");
     await expect(page.getByRole("region", { name: "Uygun saat" })).toBeVisible();
-    await shot("hafta-zaman");
+    await shot("takvim-zaman");
 
     // Ç3c: the day's frame. On, with an ordinary day (08:00–19:00) and last week's nights.
     const [settings] = await rows("settings");
@@ -466,9 +490,6 @@ for (const look of LOOKS) {
     await page.goto("/");
     await expect(page.getByTestId("sleep-line")).toBeVisible();
     await shot("bugun-aksam");
-    await page.goto("/hafta");
-    await expect(page.getByTestId("sleep-summary")).toBeVisible();
-    await shot("hafta-uyku");
 
     // The night after "Yatıyorum".
     await page.goto("/");
@@ -683,6 +704,17 @@ for (const look of LOOKS) {
       page.getByRole("region", { name: "Sahne" }).getByRole("heading", { name: "Kapanış" }),
     ).toBeVisible();
     await shot("bugun-sahne-kapanis");
+    // Ç4c: the closing's steps inside the scene (KS*, KSP*).
+    const closing = page.getByRole("region", { name: "Sahne" });
+    await closing.getByRole("button", { name: "İleri" }).click();
+    await shot("kapanis-bugun");
+    await closing.getByRole("button", { name: "İleri" }).click();
+    await expect(closing.getByRole("region", { name: "Yarın" })).toBeVisible();
+    await shot("kapanis-yarin");
+    await closing.getByRole("button", { name: "İleri" }).click();
+    await shot("kapanis-bosalt");
+    await closing.getByRole("button", { name: "İleri" }).click();
+    await shot("kapanis-onay");
   });
 }
 
@@ -785,6 +817,13 @@ test("rutin screens", async ({ page }, testInfo) => {
   await page.goto("/m/rutin/aksam");
   await expect(page.getByTestId("rutin-aksam")).toBeVisible();
   await shot("rutin-modul-aksam");
+  // Ç4c: the Sağlık area's page (its shell; Rutin's view) and Modüller's area panel.
+  await page.goto("/a/saglik");
+  await expect(page.getByRole("region", { name: "Son 14 gün · temel adımlar" })).toBeVisible();
+  await shot("alan-saglik");
+  await page.goto("/m");
+  await expect(page.getByRole("link", { name: "Alan sayfası" })).toBeVisible();
+  await shot("moduller-alan");
   await page.goto("/m/rutin/sabah");
   await page
     .getByTestId("rutin-sabah")
