@@ -88,7 +88,10 @@ function ModulesList() {
         </div>
       )}
       <p className="px-1 pt-1.5">
-        <Link href="/ayarlar/moduller" className="link-quiet text-note font-semibold">
+        <Link
+          href="/ayarlar/moduller"
+          className="link-quiet text-note min-h-touch inline-flex items-center font-semibold"
+        >
           Modülleri aç, duraklat ya da arşivle
         </Link>
       </p>
@@ -146,7 +149,10 @@ function Message({
       <Panel variant="dense" className="items-start gap-3 p-4 md:p-4.5">
         <p className="text-base">{sentence}</p>
         {link ? (
-          <Link href={link.href} className="link-quiet text-note font-semibold">
+          <Link
+            href={link.href}
+            className="link-quiet text-note min-h-touch inline-flex w-fit items-center font-semibold"
+          >
             {link.label}
           </Link>
         ) : null}

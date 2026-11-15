@@ -284,6 +284,7 @@ export const TOKENS = {
   "motion-base": "250ms",
   "motion-slow": "600ms",
   "motion-sky": "60s",
+  "motion-twinkle": "7s",
   "toast-time": "4s",
   "underline-offset": "3px",
   "stroke-step": "1.5px",

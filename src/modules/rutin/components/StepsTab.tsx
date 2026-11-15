@@ -473,10 +473,12 @@ function StepRow({
                 facet === "aksam"
                   ? {
                       borderColor: "var(--color-cool-tag-edge)",
+                      color: "var(--color-cool-label)",
                       background: "var(--color-cool-tag)",
                     }
                   : {
                       borderColor: "var(--color-warm-tag-edge)",
+                      color: "var(--color-warm-tag-ink)",
                       background: "var(--color-warm-tag)",
                     }
               }

@@ -92,7 +92,10 @@ test("one colour system; the look switches of this device are kept", async ({ pa
 
 test("Settings links the design gallery", async ({ page }) => {
   await page.goto("/ayarlar");
-  await page.getByRole("link", { name: "Tasarım galerisi" }).click();
+  const link = page.getByRole("link", { name: "Tasarım galerisi" });
+  // A text link standing alone is a 44 px touch target too.
+  expect((await link.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+  await link.click();
   await expect(page).toHaveURL(/\/tasarim$/);
   await expect(page.getByRole("heading", { name: "Tasarım" })).toBeVisible();
 });

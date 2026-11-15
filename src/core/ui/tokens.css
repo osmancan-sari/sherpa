@@ -357,6 +357,7 @@
   --motion-base: 250ms;
   --motion-slow: 600ms; /* the scene's fade, the backdrop's cross-fade */
   --motion-sky: 60s; /* the sky moves once a minute */
+  --motion-twinkle: 7s; /* a star's twinkle on the phone */
   --toast-time: 4s;
   --underline-offset: 3px;
   --stroke-step: 1.5px; /* the ring of a step not reached */

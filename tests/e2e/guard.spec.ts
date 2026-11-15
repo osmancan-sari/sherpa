@@ -10,6 +10,8 @@ const pages = [
   "/gelen",
   "/kapanis",
   "/ayarlar",
+  "/ayarlar/gorunum",
+  "/tasarim",
   "/ayarlar/moduller",
   "/ayarlar/moduller/deneme",
   "/ayarlar/bloklar",

@@ -13,6 +13,9 @@ import { openQuickAdd } from "./helpers";
 /** 13 November 2026, 14:10 in Istanbul: the day sky of frames Hava_acik and HavaSakin_acik. */
 const MOMENT = new Date("2026-11-13T14:10:00+03:00");
 
+// Both run in the board's browser project at scale 1, so the images stay small and the same on
+// every run; the phone's own viewport behaviour (isMobile, the keyboard, safe areas) is the
+// "telefon" project's, and the real device's (docs/ILERLEME.md, "Senden bekleyenler").
 const DEVICES = [
   { name: "telefon", viewport: { width: 390, height: 844 }, hasTouch: true },
   { name: "pano", viewport: { width: 1440, height: 900 }, hasTouch: false },

@@ -52,7 +52,10 @@ function Aside() {
           </form>
         </div>
       </Panel>
-      <Link href="/tasarim" className="link-quiet text-note text-ink-2 w-fit px-1">
+      <Link
+        href="/tasarim"
+        className="link-quiet text-note text-ink-2 min-h-touch inline-flex w-fit items-center px-1"
+      >
         Tasarım galerisi
       </Link>
     </>

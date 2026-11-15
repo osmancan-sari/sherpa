@@ -17,7 +17,7 @@ Sakin zemin, yoğun cam. Alanlar ve metinler koddaki gibidir (`src/app/(app)/aya
 - **Renkler:** "Bu renk açık ya da koyu temada zor seçilir." uyarısı tek temayla "koyu zeminde zor seçilir" anlamına iner; çizilmedi, metni kurulumda yazılır.
 - Günün çerçevesindeki gün tipleri (Ev, Ofis, Kampüs günü) ve Bağlantılar'daki "Bağlam" ucu durur: bunlar elle bağlam seçimi değildir.
 
-**Ortak kalıplar.** Anahtarlı satır (yazı solda, anahtar sağda, en az `spacing-row`). Saat aralığı iki küçük kutu ve aradaki çizgi; geçersizse kutular mercan kenarlı, altında tek cümle ve "Kaydet" soluk. Satır eylemleri sessiz yazı ("Düzenle", "Bitir", "İptal et", "Değiştir"); bölümün ana eylemi ikincil düğme, kaydetme birincil. Açıklamalar panelin başında, 15 px.
+**Ortak kalıplar.** Anahtarlı satır (yazı solda, anahtar sağda, en az `spacing-row`). Saat aralığı iki küçük kutu ve aradaki çizgi; geçersizse kutular mercan kenarlı, altında tek cümle ve "Kaydet" soluk. Satır eylemleri sessiz yazı ("Düzenle", "Bitir", "İptal et", "Değiştir"); bölümün ana eylemi ikincil düğme, kaydetme birincil. Açıklamalar panelin başında, `text-note`.
 
 | Bölüm | Çizimdeki hali |
 | --- | --- |

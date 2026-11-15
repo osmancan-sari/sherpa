@@ -416,7 +416,7 @@ function EntryAndSettings({ mod }: { mod: KnownModule }) {
       </div>
       <Link
         href={`/ayarlar/moduller/${row.slug}`}
-        className="link-quiet text-note mx-4 w-fit font-semibold md:mx-4.5"
+        className="link-quiet text-note min-h-touch mx-4 inline-flex w-fit items-center font-semibold md:mx-4.5"
       >
         Modül ayarları
       </Link>

@@ -195,7 +195,10 @@ function ModuleSettingsRoute() {
     return (
       <SettingsSection title="Modül ayarları" back="/ayarlar/moduller">
         <p className="text-base">Bu modül etkin değil.</p>
-        <Link href="/ayarlar/moduller" className="link-quiet w-fit font-semibold">
+        <Link
+          href="/ayarlar/moduller"
+          className="link-quiet min-h-touch inline-flex w-fit items-center font-semibold"
+        >
           Modüller
         </Link>
       </SettingsSection>

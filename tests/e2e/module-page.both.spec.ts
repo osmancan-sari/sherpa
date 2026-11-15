@@ -42,6 +42,10 @@ test("the module page, its tabs, sub page, full-screen view and settings fit the
     expect(box.x + box.width).toBeLessThanOrEqual(viewport!.width);
   }
 
+  // A text link standing alone ("Modül ayarları") is a 44 px touch target too.
+  const settings = page.getByRole("link", { name: "Modül ayarları" });
+  expect((await settings.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+
   // The component kit tab.
   const tabs = page.getByRole("navigation", { name: "Sekmeler" });
   await tabs.getByRole("link", { name: "Bileşenler" }).click();
