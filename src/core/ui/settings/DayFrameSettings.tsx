@@ -1,8 +1,10 @@
 "use client";
 
 import { Stepper } from "@/core/ui/kit/Stepper";
+import { FieldError } from "@/core/ui/kit/Field";
 import { SwitchRow } from "@/core/ui/kit/Switch";
-import { useState } from "react";
+import { ChevronRight } from "lucide-react";
+import { type ReactNode, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   checkFrame,
@@ -129,35 +131,45 @@ function DayFrameForm({ stored }: { stored: FrameSettings | null }) {
       JSON.stringify(toStoredFrame(frame)) !==
         JSON.stringify(stored ? toStoredFrame(stored) : null));
 
-  const pair = (value: Pair, onChange: (next: Pair) => void, label: string) => (
-    <span className="flex items-center gap-1">
+  const bad = issues[0]?.path[0] ?? null;
+  const pair = (value: Pair, onChange: (next: Pair) => void, label: string, invalid = false) => (
+    <span className="flex items-center gap-1.5">
       <TimeInput
         aria-label={`${label} başlangıç`}
+        aria-invalid={invalid || undefined}
         value={value[0]}
-        className="h-11 w-20 text-center tabular-nums"
+        className="h-12 w-19 px-2 text-center tabular-nums"
         onChange={(next) => onChange([next, value[1]])}
       />
-      –
+      <span aria-hidden>–</span>
       <TimeInput
         aria-label={`${label} bitiş`}
+        aria-invalid={invalid || undefined}
         value={value[1]}
-        className="h-11 w-20 text-center tabular-nums"
+        className="h-12 w-19 px-2 text-center tabular-nums"
         onChange={(next) => onChange([value[0], next])}
       />
     </span>
+  );
+  /** A row of the panel (AP2, AT03): the name at the left, its control at the right. */
+  const row = (label: string, control: ReactNode) => (
+    <div className="min-h-row flex flex-wrap items-center justify-between gap-x-4 gap-y-2 py-2.5">
+      <span className="text-base">{label}</span>
+      {control}
+    </div>
   );
 
   return (
     <form
       aria-label="Günün çerçevesi"
-      className="flex flex-col gap-4"
+      className="flex flex-col"
       onSubmit={(event) => {
         event.preventDefault();
         if (draft.on && !frame) return;
         save.mutate(draft.on ? frame : null, { onSuccess: () => notify("Kaydedildi.") });
       }}
     >
-      <p className="text-muted-foreground text-sm">
+      <p className="text-note text-ink-2 pb-2">
         Gün uyanışla başlar, yatışla biter. Planlayıcı bu aralıkların içinde bir uyanış ve yatış
         seçer; uykuyu iş yüküne feda etmez. Uygulama uyandırmaz.
       </p>
@@ -168,46 +180,59 @@ function DayFrameForm({ stored }: { stored: FrameSettings | null }) {
       />
       {draft.on ? (
         <>
-          <div className="grid grid-cols-[auto_1fr] items-center gap-x-4 gap-y-3 text-sm">
-            <span>Uyanış</span>
-            {pair(draft.wake, (wake) => setDraft({ ...draft, wake }), "Uyanış")}
-            <span>Yatış</span>
-            {pair(draft.bed, (bed) => setDraft({ ...draft, bed }), "Yatış")}
-            <span>Uyku hedefi</span>
-            <Stepper
-              label="Uyku hedefi"
-              value={draft.sleepMinutes}
-              min={SLEEP_MIN}
-              max={SLEEP_MAX}
-              step={30}
-              format={(minutes) => String(minutes / 60).replace(".", ",")}
-              unit="saat"
-              onChange={(sleepMinutes) => setDraft({ ...draft, sleepMinutes })}
-            />
+          <div className="border-line-soft border-t pt-1.5">
+            {row(
+              "Uyanış",
+              pair(draft.wake, (wake) => setDraft({ ...draft, wake }), "Uyanış", bad === "wake"),
+            )}
+            {bad === "wake" && problem ? <FieldError>{problem}</FieldError> : null}
+            {row(
+              "Yatış",
+              pair(draft.bed, (bed) => setDraft({ ...draft, bed }), "Yatış", bad === "bed"),
+            )}
+            {bad === "bed" && problem ? <FieldError>{problem}</FieldError> : null}
+            {row(
+              "Uyku hedefi",
+              <Stepper
+                label="Uyku hedefi"
+                value={draft.sleepMinutes}
+                min={SLEEP_MIN}
+                max={SLEEP_MAX}
+                step={30}
+                format={(minutes) => String(minutes / 60).replace(".", ",")}
+                unit="saat"
+                onChange={(sleepMinutes) => setDraft({ ...draft, sleepMinutes })}
+              />,
+            )}
           </div>
-          <details className="text-sm">
-            <summary className="text-muted-foreground hover:text-foreground flex min-h-11 cursor-pointer items-center">
+          <details className="group border-line-soft border-t">
+            <summary className="min-h-row flex cursor-pointer list-none items-center gap-2 text-base font-semibold [&::-webkit-details-marker]:hidden">
+              <ChevronRight
+                aria-hidden
+                className="size-4 transition-transform duration-(--motion-fast) group-open:rotate-90"
+              />
               Gün tipine göre (isteğe bağlı)
             </summary>
-            <div className="grid grid-cols-[auto_1fr] items-center gap-x-4 gap-y-3 pt-2">
+            <div className="flex flex-col pb-2">
               {DAY_TYPES.map(({ type, label }) => {
                 const own = draft.byDayType[type];
                 const set = (next: { wake: Pair; bed: Pair }) =>
                   setDraft({ ...draft, byDayType: { ...draft.byDayType, [type]: next } });
                 return (
-                  <div key={type} className="contents">
-                    <span>{label}</span>
-                    <span className="flex flex-wrap items-center gap-x-4 gap-y-2">
-                      <span className="flex items-center gap-2">
-                        uyanış {pair(own.wake, (wake) => set({ ...own, wake }), `${label} uyanış`)}
-                      </span>
-                      <span className="flex items-center gap-2">
-                        yatış {pair(own.bed, (bed) => set({ ...own, bed }), `${label} yatış`)}
-                      </span>
-                    </span>
+                  <div key={type} className="flex flex-col gap-1 py-2">
+                    <span className="text-ink-2 text-sm font-semibold">{label}</span>
+                    {row(
+                      "Uyanış",
+                      pair(own.wake, (wake) => set({ ...own, wake }), `${label} uyanış`),
+                    )}
+                    {row(
+                      "Yatış",
+                      pair(own.bed, (bed) => set({ ...own, bed }), `${label} yatış`),
+                    )}
                   </div>
                 );
               })}
+              {bad === "by_day_type" && problem ? <FieldError>{problem}</FieldError> : null}
             </div>
           </details>
           <SwitchRow
@@ -217,22 +242,22 @@ function DayFrameForm({ stored }: { stored: FrameSettings | null }) {
             onChange={(startOnWake) => setDraft({ ...draft, startOnWake })}
           />
           <SwitchRow
+            className="border-line-soft border-t"
             label="Dizide sıradaki iş kendiliğinden başlasın"
             checked={draft.chainAuto}
             onChange={(chainAuto) => setDraft({ ...draft, chainAuto })}
           />
         </>
       ) : null}
-      {draft.on && problem ? (
+      {draft.on && problem && bad !== "wake" && bad !== "bed" && bad !== "by_day_type" ? (
         <p role="alert" className="text-sm">
           {problem}
         </p>
       ) : null}
-      <div>
+      <div className="pt-3">
         <Button
           type="submit"
-          variant="outline"
-          className="h-11"
+          variant="primary"
           disabled={!changed || (draft.on && !frame) || save.isPending}
         >
           Kaydet

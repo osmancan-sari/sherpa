@@ -8,7 +8,10 @@ import { DEFAULT_MONTHLY_BUDGET_USD } from "@/core/ai/budget";
 import type { AiStatus } from "@/core/ai/status";
 import { useSaveAiSettings } from "@/core/app/actions";
 import { useAiStatus, useAiUsage, useSettings } from "@/core/app/hooks";
+import { cn } from "@/lib/utils";
 import { ClientOnly } from "../ClientOnly";
+import { ProgressBar } from "../kit/Feedback";
+import { token } from "../tokens";
 
 // Settings → Yapay zeka: the switch, the monthly limit, whether the AI answers now, and what
 // this month's calls cost (docs/10-yapay-zeka.md, rule 9).
@@ -59,6 +62,7 @@ function AiSettingsBody() {
   const budgetValid = budgetText.trim() !== "" && Number.isFinite(budgetValue) && budgetValue >= 0;
 
   const state = status.data?.state;
+  const full = state === "budget";
   const line = state ? STATE[state] : null;
   const fake = status.data?.provider === "fake" ? " Sahte sağlayıcı (yerel)." : "";
   const model =
@@ -106,8 +110,7 @@ function AiSettingsBody() {
         </label>
         <Button
           type="submit"
-          variant="outline"
-          className="h-11"
+          variant="secondary"
           disabled={!budgetValid || draft === null || budgetValue === budget}
         >
           Kaydet
@@ -115,12 +118,21 @@ function AiSettingsBody() {
       </form>
 
       <div className="flex flex-col gap-2">
-        <p className="text-sm">
-          <span className="text-muted-foreground">Bu ay:</span>{" "}
-          <span className="tabular-nums">
+        <p className={cn("text-sm", full && "text-attention")}>
+          <span className={full ? undefined : "text-ink-2"}>Bu ay:</span>{" "}
+          <span className="font-semibold tabular-nums">
             {usd(status.data?.spentUsd ?? 0)} / {usd(budget)}
           </span>
         </p>
+        {/* Ç4c (AT14, AT15): the same numbers as a thin bar; the attention colour when used up. */}
+        {budget > 0 ? (
+          <ProgressBar
+            label="Bu ayın bütçesi"
+            value={(status.data?.spentUsd ?? 0) / budget}
+            color={token(full ? "color-attention" : "color-ink")}
+            className="mb-1"
+          />
+        ) : null}
         {(usage.data ?? []).length > 0 ? (
           <div>
             {/* On a phone: call, count and cost; the rest from the small breakpoint up. */}

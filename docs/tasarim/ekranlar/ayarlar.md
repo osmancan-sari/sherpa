@@ -49,3 +49,9 @@ Sakin zemin, yoğun cam. Alanlar ve metinler koddaki gibidir (`src/app/(app)/aya
 ## Kurulum (Ç4b)
 
 `src/app/(app)/ayarlar/layout.tsx` ve `src/core/ui/settings/SettingsShell.tsx`: bölümler adresle açılır (`/ayarlar/gorunum`, `cerceve`, `kayitlar`, `ses`, `moduller`, `bloklar`, `yapay-zeka`, `baglantilar`); eski `/ayarlar#<bölüm>` bağlantıları bölüm sayfasına yönlenir. Panoda `/ayarlar` Görünüm'ü açık gösterir. Açık/kapalı satırları kit'in `SwitchRow`'u. Yeni metinler: Görünüm'ün iki anahtarı ve açıklamaları; "Bu renk koyu zeminde zor seçilir."
+
+## Ç4c'de kalanlar (16 Kas 2026)
+
+- **Günün çerçevesi** karedeki satır düzeninde (`AP2`, `AT03`): ad solda, saat kutuları (`h-12`, iki kutu ve arada çizgi) ve uyku hedefinin sayacı sağda; bölümler arasında ince çizgi; "Gün tipine göre (isteğe bağlı)" oklu açılır başlık, içinde gün tipi başına uyanış ve yatış satırı; geçersiz aralıkta o satırın kutuları mercan kenarlı ve altında simgeli tek cümle (`AT05`); "Kaydet" birincil (değişiklik yokken soluk).
+- **Yapay zeka:** "Bu ay: 1,84 $ / 5,00 $" altında ince çubuk (`AT14`); bütçe dolunca satır ve çubuk dikkat renginde (`AT15`). "Kaydet" ikincil.
+- Kalan küçük farklar: kayıtlarda gün başlığı uzun tarih ("Cumartesi 14 Kasım"; karede "Cum 13 Kas") ve günler arasında çizgi yok; Hesap satırında e-posta ile "Çıkış yap" genişlik yettiğinde aynı satırda (karede alt alta).
