@@ -5,7 +5,7 @@ Bu dosyayı Claude Code günceller. Yeni bir oturum yalnızca bu dosyayı ve `pr
 ## Durum
 
 - Faz: **Ç4a. Sadeleşen çekirdek** (15 Kas 2026; istem `prompts/c4a-sade-cekirdek.md`). Ç3g (`c3g-tamam`) yayında
-- Adım: 5 (kapanış) bitti: adım denetimi ve faz denetimi (2 tur, ikisi de GEÇTİ), `check:full` yeşil, `c4a-tamam` etiketi; yayın senin iznini bekliyor ("Senden bekleyenler")
+- Adım: 5 (kapanış) bitti: adım denetimi ve faz denetimi (2 tur, ikisi de GEÇTİ), `check:full` yeşil, `c4a-tamam` etiketi; yayında (15 Kas, senin izninle)
 - Son commit: Ç4a faz raporu
 
 ### Çekirdek ekranlarının cam tasarım oturumu (14–15 Kas 2026)
@@ -850,7 +850,7 @@ Testler: 413 birim, 207 veritabanı, 166 uçtan uca (`npm run check:full` yeşil
 
 ## Sıradaki adım
 
-Ç4b (`prompts/c4b-cam-temeli.md`). Önce Ç4a'nın yayını (aşağıda); Rutin 2 araya alınabilir.
+Ç4b (`prompts/c4b-cam-temeli.md`); Rutin 2 araya alınabilir. Ç4a yayında. Ayrı iş (15 Kas, senin isteğin): uçtan uca testlerin sabit saatle koşması ve 20:30–24:00 sınırının kalkması.
 
 ## Senden bekleyenler
 
@@ -860,7 +860,7 @@ Bir migration var, yalnızca ekleme yapar; kod onu ister (`core/context` ucu `se
 
 - `20261115100000_reported_context.sql`: `settings.reported_context`, `reported_context_at` (ikisi birlikte dolu ya da boş).
 
-Sıra (senin izninle): 1) `sherpa-dev`; 2) `sherpa-prod`; 3) `git push origin main`, `git push origin c4a-tamam`. Üretim verisi silinmez: kalkan alanlar yalnızca okunmuyor (`docs/03` "kullanılmıyor (Ç4a)"; temizlik Ç4d).
+Sıra: 1) ~~`sherpa-dev`~~ **yapıldı**; 2) ~~`sherpa-prod`~~ **yapıldı** (ardından ikisi de "up to date"); 3) ~~`git push origin main`, `git push origin c4a-tamam`~~ **yapıldı** (15 Kas, senin izninle). Üretim yayını hazır (`sherpa-private-d1bibdys2`). Üretim verisi silinmez: kalkan alanlar yalnızca okunmuyor (`docs/03` "kullanılmıyor (Ç4a)"; temizlik Ç4d).
 
 Yayından sonra bakılacaklar:
 
