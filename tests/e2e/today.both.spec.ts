@@ -136,3 +136,34 @@ test("the day's fixed blocks: listed on the phone with the running one marked, i
     await expect(blocks).toHaveCount(0);
   }
 });
+
+test("the day's flow: a touch on the phone or the pointer on the board shows a piece's balloon (Ç4c)", async ({
+  page,
+  viewport,
+}) => {
+  await page.clock.setFixedTime(NOW);
+  const okul = await seedModule("okul-ornek", "Okul");
+  await insert("tasks", [
+    { module_id: okul.id, title: "Birinci", est_minutes: 60, importance: 4 },
+    { module_id: okul.id, title: "İstatistik ödevi", est_minutes: 60 },
+  ]);
+  await page.goto("/");
+  const flow = page.getByRole("region", { name: "Günün akışı" });
+  const piece = flow.getByRole("button", { name: /İstatistik ödevi$/ });
+  const balloon = flow.getByTestId("strip-balloon");
+  await expect(balloon).toHaveCount(0);
+  if (viewport!.width < 768) {
+    await piece.tap();
+    await expect(balloon).toHaveText(/^\d\d:\d\d–\d\d:\d\d · İstatistik ödevi$/);
+    await expect(piece).toHaveAttribute("aria-pressed", "true");
+    // A touch elsewhere puts it away.
+    await page.getByRole("heading", { level: 1, name: "Bugün" }).tap();
+    await expect(balloon).toHaveCount(0);
+  } else {
+    // On the board the name is inside the piece, and the balloon comes with the pointer.
+    await piece.hover();
+    await expect(balloon).toHaveText(/İstatistik ödevi$/);
+    await page.mouse.move(0, 0);
+    await expect(balloon).toHaveCount(0);
+  }
+});

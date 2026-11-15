@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildPlan, type PlanRows, planInput } from "@/core/planner";
+import { buildPlan, type Plan, type PlanRows, planInput, type Slot } from "@/core/planner";
 import { block, dayRow, moduleRow, session, settingsRow, task } from "@/core/testing/factories";
 import { istanbulInstant } from "@/lib/date";
 import { breakText, closedUpNext, dayFlowOf, upNextOf } from "./flow";
@@ -44,6 +44,11 @@ function setup(data: PlanRows, time: string) {
 const work = (title: string, minutes: number, extra = {}) =>
   task({ module_id: SCHOOL.id, title, est_minutes: minutes, energy: "light", ...extra });
 
+/** The planner's own plan with its slots replaced: the cases are written out, not hoped for. */
+function withSlots(plan: Plan, slots: Slot[]): Plan {
+  return { ...plan, slots };
+}
+
 describe("dayFlowOf", () => {
   it("runs from the waking to the expected bedtime, with the day's parts", () => {
     const { input, plan } = setup(rows({ tasks: [work("Ödev", 60)] }), "10:00");
@@ -54,32 +59,11 @@ describe("dayFlowOf", () => {
     expect(flow.pieces.some((piece) => piece.label === "Ödev" && piece.kind === "work")).toBe(true);
   });
 
-  it("draws the done sessions of the day and the running one up to now", () => {
+  it("draws the day's sessions, the running one up to now; another day's are left out", () => {
     const done = work("Okuma", 30, { status: "done" });
-    const { input, plan } = setup(
-      rows({
-        tasks: [done],
-        sessions: [
-          session({
-            task_id: done.id,
-            module_id: SCHOOL.id,
-            started_at: iso("08:00"),
-            ended_at: iso("08:30"),
-          }),
-          // Yesterday's session is not today's.
-          session({
-            task_id: done.id,
-            module_id: SCHOOL.id,
-            started_at: istanbulInstant("2026-11-11", "15:00").toISOString(),
-            ended_at: istanbulInstant("2026-11-11", "15:30").toISOString(),
-          }),
-        ],
-      }),
-      "10:00",
-    );
-    // Without sessions there is nothing done to draw.
+    const { input, plan } = setup(rows({ tasks: [done] }), "10:00");
     expect(dayFlowOf(input, plan, []).pieces).toEqual([]);
-    const withSessions = dayFlowOf(input, plan, [
+    const flow = dayFlowOf(input, plan, [
       session({
         task_id: done.id,
         module_id: SCHOOL.id,
@@ -87,34 +71,52 @@ describe("dayFlowOf", () => {
         ended_at: iso("08:30"),
       }),
       session({ title: "Plansız", started_at: iso("09:30"), ended_at: null }),
+      session({
+        task_id: done.id,
+        module_id: SCHOOL.id,
+        started_at: istanbulInstant("2026-11-11", "15:00").toISOString(),
+        ended_at: istanbulInstant("2026-11-11", "15:30").toISOString(),
+      }),
     ]);
-    const sessionPieces = withSessions.pieces.filter((piece) => piece.key.startsWith("session"));
-    expect(sessionPieces.map((piece) => piece.label)).toEqual(["Okuma", "Plansız"]);
-    expect(sessionPieces[0].work.task?.id).toBe(done.id);
-    expect(sessionPieces[1].end.getTime()).toBe(at("10:00").getTime());
+    const pieces = flow.pieces.filter((piece) => piece.key.startsWith("session"));
+    expect(pieces.map((piece) => piece.label)).toEqual(["Okuma", "Plansız"]);
+    expect(pieces[0].work.task?.id).toBe(done.id);
+    expect(pieces[1].end.getTime()).toBe(at("10:00").getTime());
   });
 
-  it("hatches the travel around work and lays the fixed blocks over the strip", () => {
-    const trip = work("Kütüphane", 60, {
-      context: "out",
-      timing: { place: "Kütüphane", travelBefore: 20, travelAfter: 15 },
+  it("hatches the travel around work and lays the fixed blocks over the strip, in time order", () => {
+    const trip = work("Kütüphane", 60);
+    const lecture = block({ title: "Ders", starts_at: iso("13:00"), ends_at: iso("14:00") });
+    const gone = block({
+      title: "İptal",
+      status: "cancelled",
+      starts_at: iso("15:00"),
+      ends_at: iso("16:00"),
     });
-    const lecture = block({
-      title: "Ders",
-      starts_at: iso("13:00"),
-      ends_at: iso("14:00"),
-    });
-    const { input, plan } = setup(rows({ tasks: [trip], blocks: [lecture] }), "09:00");
-    const flow = dayFlowOf(input, plan, []);
-    const blockPiece = flow.pieces.find((piece) => piece.kind === "block");
-    expect(blockPiece?.label).toBe("Ders");
-    const travel = flow.pieces.filter((piece) => piece.kind === "travel");
-    if (plan.slots.some((slot) => slot.assignment?.travelBefore)) {
-      expect(travel.map((piece) => piece.label)).toContain("yol 20 dk");
-    }
-    // In time order.
-    const times = flow.pieces.map((piece) => piece.start.getTime());
-    expect(times).toEqual([...times].sort((a, b) => a - b));
+    const { input, plan } = setup(rows({ tasks: [trip], blocks: [lecture, gone] }), "09:00");
+    const candidate = plan.candidates.find((row) => row.id === trip.id)!;
+    const flow = dayFlowOf(
+      input,
+      withSlots(plan, [
+        {
+          start: at("10:00"),
+          end: at("11:00"),
+          minutes: 60,
+          kind: "deep",
+          assignment: { candidate, minutes: 60, travelBefore: 20, travelAfter: 15, reasons: [] },
+        },
+      ]),
+      [],
+    );
+    expect(flow.pieces.map((piece) => [piece.kind, piece.label])).toEqual([
+      ["travel", "yol 20 dk"],
+      ["work", "Kütüphane"],
+      ["travel", "yol 15 dk"],
+      ["block", "Ders"],
+    ]);
+    const [before, , after] = flow.pieces;
+    expect(before.start.getTime()).toBe(at("09:40").getTime());
+    expect(after.end.getTime()).toBe(at("11:15").getTime());
   });
 
   it("has no waking and no parts without the day's frame", () => {
@@ -141,6 +143,7 @@ describe("upNextOf", () => {
       "10:00",
     );
     const currentId = plan.now.kind === "suggest" ? plan.now.assignment.candidate.id : null;
+    expect(currentId).not.toBeNull();
     const list = upNextOf(input, plan, currentId);
     const titles = list.map((row) =>
       row.kind === "work"
@@ -151,38 +154,52 @@ describe("upNextOf", () => {
     );
     expect(titles).toContain("Diş hekimi");
     expect(titles).not.toContain("Sabah dersi");
+    expect(list.filter((row) => row.kind === "work")).toHaveLength(2);
     expect(
       list.some((row) => row.kind === "work" && row.assignment.candidate.id === currentId),
     ).toBe(false);
     const times = list.map((row) => row.start.getTime());
     expect(times).toEqual([...times].sort((a, b) => a - b));
     // Closed: only work rows, at most the count.
-    const closed = closedUpNext(list, 2);
-    expect(closed.length).toBeLessThanOrEqual(2);
-    expect(closed.every((row) => row.kind === "work")).toBe(true);
+    expect(closedUpNext(list, 1).map((row) => row.kind)).toEqual(["work"]);
   });
 
   it("keeps a break only between two pieces of work", () => {
-    const tasks = Array.from({ length: 6 }, (_, index) => work(`İş ${index + 1}`, 90));
-    const { input, plan } = setup(rows({ tasks }), "09:00");
-    const list = upNextOf(input, plan, null);
-    list.forEach((row, index) => {
-      if (row.kind !== "break") return;
-      expect(list.slice(0, index).some((other) => other.kind === "work")).toBe(true);
-      expect(list.slice(index + 1).some((other) => other.kind === "work")).toBe(true);
+    const a = work("A", 60);
+    const b = work("B", 60);
+    const { input, plan } = setup(rows({ tasks: [a, b] }), "09:00");
+    const assign = (id: string) => ({
+      candidate: plan.candidates.find((row) => row.id === id)!,
+      minutes: 60,
+      reasons: [],
     });
-    expect(list[0]?.kind).not.toBe("break");
-    expect(list[list.length - 1]?.kind).not.toBe("break");
+    const slot = (start: string, end: string, assignment: Slot["assignment"]): Slot => ({
+      start: at(start),
+      end: at(end),
+      minutes: assignment ? 60 : 15,
+      kind: assignment ? "deep" : "break",
+      assignment,
+    });
+    const list = upNextOf(
+      input,
+      withSlots(plan, [
+        slot("09:00", "09:15", null),
+        slot("09:15", "10:15", assign(a.id)),
+        slot("10:15", "10:30", null),
+        slot("10:30", "11:30", assign(b.id)),
+        slot("11:30", "11:45", null),
+      ]),
+      null,
+    );
+    expect(list.map((row) => (row.kind === "break" ? breakText(row.minutes) : row.kind))).toEqual([
+      "work",
+      "mola · 15 dk",
+      "work",
+    ]);
   });
 
   it("is empty when nothing is left", () => {
     const { input, plan } = setup(rows(), "10:00");
     expect(upNextOf(input, plan, null)).toEqual([]);
-  });
-});
-
-describe("breakText", () => {
-  it("says the break's minutes", () => {
-    expect(breakText(15)).toBe("mola · 15 dk");
   });
 });

@@ -105,7 +105,8 @@ export function TimeStrip({
 
   const hours: number[] = [];
   for (let time = start; time <= end; time += HOUR) {
-    const hour = new Date(time).getHours();
+    // The hour in Istanbul, whatever the device's zone (CLAUDE.md).
+    const hour = Number(formatTime(new Date(time)).slice(0, 2));
     if (board) hours.push(time);
     else if (time > start && time < end && hour % 3 === 0) hours.push(time);
   }
@@ -196,7 +197,10 @@ export function TimeStrip({
                   "text-meta absolute flex items-center overflow-hidden font-semibold whitespace-nowrap outline-none",
                   "focus-visible:shadow-focus",
                   // The touch area: at least the touch target, centred on a narrow piece.
-                  "after:absolute after:-inset-y-2 after:left-1/2 after:w-[max(100%,var(--spacing-touch))] after:-translate-x-1/2",
+                  "after:absolute after:left-1/2 after:w-[max(100%,var(--spacing-touch))] after:-translate-x-1/2",
+                  // ...and at least the touch target high: travel is the thinnest (20 px on the
+                  // phone), so its area reaches 12 px above and below.
+                  piece.kind === "travel" ? "after:-inset-y-3" : "after:-inset-y-2",
                   piece.kind === "work" && "text-ink-dark inset-y-1.25 rounded-md px-1.5",
                   piece.kind === "block" && "bg-fill-step text-ink inset-y-0 px-1.5",
                   piece.kind === "travel" && "inset-y-2.5 rounded-sm",
