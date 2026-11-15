@@ -343,7 +343,7 @@ test("without any provider every feature works: lines wait in the inbox, efforts
   const errors: string[] = [];
   page.on("pageerror", (error) => errors.push(error.message));
   await activateDeneme(page, WITHOUT_AI);
-  await page.goto(`${WITHOUT_AI}/ayarlar`);
+  await page.goto(`${WITHOUT_AI}/ayarlar/yapay-zeka`);
   await expect(page.getByTestId("ai-state")).toHaveText(/API anahtarı yok/);
 
   await page.goto(`${WITHOUT_AI}/`);

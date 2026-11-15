@@ -33,7 +33,12 @@ test("the module page, its tabs, sub page, full-screen view and settings fit the
   const actions = page.getByRole("toolbar", { name: "Hızlı eylemler" });
   for (const button of await actions.getByRole("button").all()) {
     const box = (await button.boundingBox())!;
-    if (viewport!.width < 768) expect(box.height).toBeGreaterThanOrEqual(44);
+    // A small button (38 px) reaches past its edges to a 44 px touch area (docs/tasarim/parcalar.md).
+    const reach = await button.evaluate((el) => {
+      const after = getComputedStyle(el, "::after");
+      return -(parseFloat(after.top) || 0) - (parseFloat(after.bottom) || 0);
+    });
+    if (viewport!.width < 768) expect(box.height + reach).toBeGreaterThanOrEqual(44);
     expect(box.x + box.width).toBeLessThanOrEqual(viewport!.width);
   }
 

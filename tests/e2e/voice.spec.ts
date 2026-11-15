@@ -49,6 +49,10 @@ test("taps, keys, pages and minutes open make no sound: only say() reaches the e
   await page.getByRole("link", { name: "Takvim" }).first().click();
   await page.mouse.click(5, 5);
   await page.getByRole("link", { name: "Ayarlar" }).first().click();
+  await page
+    .getByRole("navigation", { name: "Ayarlar bölümleri" })
+    .getByRole("link", { name: "Sesli anlatım (bu cihaz)" })
+    .click();
   await expect(page.getByRole("group", { name: "Sesli anlatım" })).toBeVisible();
   await page.getByRole("link", { name: "Bugün" }).first().click();
   await page.mouse.click(5, 5);

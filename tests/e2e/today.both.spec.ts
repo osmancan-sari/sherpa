@@ -61,11 +61,13 @@ test("long titles do not push the Today screen wider than the screen", async ({
   await expectInsideScreen(page, "Şimdi", viewport!.width);
   await expectInsideScreen(page, "Sıradakiler", viewport!.width);
 
-  // The bar at the bottom of the phone stays on the bottom edge, as wide as the screen.
+  // The glass bar at the bottom of the phone stays near the bottom edge, within the screen
+  // (docs/tasarim/ekranlar/menu.md).
   const nav = (await page.getByRole("navigation", { name: "Ana gezinme" }).boundingBox())!;
   if (viewport!.width < 768) {
-    expect(nav.width).toBeCloseTo(viewport!.width, 0);
-    expect(nav.y + nav.height).toBeCloseTo(viewport!.height, 0);
+    expect(nav.x).toBeGreaterThanOrEqual(0);
+    expect(nav.x + nav.width).toBeLessThanOrEqual(viewport!.width);
+    expect(viewport!.height - (nav.y + nav.height)).toBeLessThanOrEqual(30);
   }
 
   // The same while a session runs, and with quick add open.
