@@ -70,6 +70,18 @@
   backdrop-filter: blur(var(--blur-toast)) saturate(var(--glass-saturate-strong));
 }
 
+/*
+ * The board over the full landscape (Today, sign-in): the sun or the moon can stand behind a panel,
+ * and through clear glass it showed as a sharp grey disc where the frames draw a soft glow (K3A,
+ * XP2). There the panels blur on the board too; the landscape is still (it changes once a minute),
+ * so the blur is drawn again only then. On the calm backdrop the board's panels stay clear.
+ */
+@media (width >= 48rem) {
+  :root[data-landscape="full"] :is(.glass-main, .glass-dense, .glass-soft) {
+    backdrop-filter: blur(var(--blur-panel)) saturate(var(--glass-saturate));
+  }
+}
+
 /* "Saydamlığı azalt": every glass flat and opaque, no blur. */
 :root[data-transparency="reduced"] {
   & .glass-main,

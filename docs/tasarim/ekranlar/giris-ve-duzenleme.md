@@ -12,7 +12,7 @@ Alanlar ve metinler koddaki gibidir (`src/core/ui/QuickAdd.tsx`, `EditDialog.tsx
 
 **Düzenleme.** "İşi düzenle": Ad, Bölüm (modülün bölümü varsa), Son tarih ve Süre yan yana, Önem ve Durum yan yana, "Neyi bekliyor (isteğe bağlı)", Zaman. "İş kalemini düzenle": Ad, Bölüm, Son tarih, Toplam efor ve Oturum, Önem, Zaman, "Adımlara böl". "Ritmi düzenle": Ad; Hedef, Dönem ve Süre tek satırda; Zaman (dinlenme ile); "Durdur".
 
-**Zaman bölümü.** Kapalıyken tek satır: ok, "Zaman" ve varsa özeti. Açıkken: kaynağı söyleyen tek cümle; "Yalnızca şu saatlerde", "Tercih edilen saatler", "Kaçınılan saatler" (her aralık: gün seçimi, başlangıç, bitiş, kaldır; altında "+ aralık ekle"); "Yol" (gidiş, dönüş); ritimde "Dinlenme". Geçersiz aralıkta iki saat kutusu mercan kenar alır, altında simgeyle tek cümle. "Bitiş çizgisinden sonra" uyarısı çizilmedi (karar: saatle belirlenen bitiş kalktı).
+**Zaman bölümü.** Kapalıyken tek satır: ok, "Zaman" ve varsa özeti. Açıkken: kaynağı söyleyen tek cümle; "Yalnızca şu saatlerde", "Tercih edilen saatler", "Kaçınılan saatler" (her aralık: gün seçimi, başlangıç, bitiş, kaldır; altında "+ aralık ekle"); "Yol" (gidiş, dönüş); ritimde "Dinlenme". Geçersiz aralıkta iki saat kutusu mercan kenar alır, altında simgeyle tek cümle. "Bitiş çizgisinden sonra" uyarısı çizilmedi (karar: saatle belirlenen bitiş kalktı). Kurulum (Ç4b faz denetimi): `src/core/ui/work/TimingSection.tsx` kit'le: kutu `color-fill-field`/`color-edge`, başında ok; aralık satırı kit'in `Select`'i, iki saat alanı ve sessiz kaldır düğmesi; "+ aralık ekle" sessiz küçük düğme; "Zaman" satırı 44 px.
 
 **Yapay zekanın koyduğu değer.** Alanın kenarı kesiklidir; altında simgeyle gerekçesi yazar. Kullanıcı alanı değiştirince kenar düz olur ve gerekçe kalkar.
 

@@ -6,7 +6,7 @@ Yeni bir parça önce buraya ve galeriye girer, sonra kullanılır.
 
 | Parça | Kural ve haller | Kod | Token'lar |
 | --- | --- | --- | --- |
-| **Ana panel** | Tam manzaranın üstünde; 1 px açık kenar, üstte ışık çizgisi. Tam manzarada gökyüzü parlaksa opaklığı büyür. | `Panel variant="main"` (`Panel.tsx`), `glass-main` | `color-glass-main`, `color-edge`, `shadow-panel`, `radius-panel`, `blur-panel` |
+| **Ana panel** | Tam manzaranın üstünde; 1 px açık kenar, üstte ışık çizgisi. Tam manzarada (ana, yoğun ve ikincil panelin üçü de) arkası parlaksa opaklığı büyür (`Backdrop`, `landscapeAlpha`); panoda tam manzarada bulanıktır (`ilkeler.md`, karar 3'ün istisnası). | `Panel variant="main"` (`Panel.tsx`), `glass-main` | `color-glass-main`, `color-edge`, `shadow-panel`, `radius-panel`, `blur-panel` |
 | **Yoğun panel** | Liste, tablo, form. | `Panel variant="dense"`, `glass-dense` | `color-glass-dense`, `radius-dense` |
 | **İkincil panel** | Not, özet, küçük kutu, sekme hapı, uyarı satırı. | `Panel variant="soft"`, `glass-soft` | `color-glass-soft`, `color-edge-soft`, `shadow-soft`, `radius-soft`, `blur-soft` |
 | **Panel etiketi** | "ŞİMDİ", "YAKLAŞANLAR": küçük, büyük harf, aralıklı, ikincil renk. | `PanelLabel`, `panel-label` | `text-xs`, `tracking-label`, `color-ink-2` |

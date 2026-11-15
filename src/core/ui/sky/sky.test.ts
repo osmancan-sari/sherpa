@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { istanbulInstant } from "@/lib/date";
 import { token, type TokenName } from "@/core/ui/tokens";
+import { LANDSCAPE_GLASSES, landscapeReadings } from "./Backdrop";
 import {
   calmStops,
   colorAt,
@@ -8,6 +9,8 @@ import {
   glassAlpha,
   hexToRgb,
   LANDSCAPE_PANELS,
+  landscapeAlpha,
+  landscapeColors,
   over,
   parseColor,
   type Rgb,
@@ -197,6 +200,39 @@ describe("text on the glass stays at least 4.5:1 in the four states", () => {
         const behind = over(hexToRgb(skyColorAt(sky, p)), rgb, deep);
         for (const text of TEXTS) {
           expect(contrast(rgbOf(text).rgb, behind), `${text} at ${p}%`).toBeGreaterThanOrEqual(4.5);
+        }
+      }
+    });
+  }
+
+  // Ç4b phase audit: a page scrolls over the full landscape, so anything can come over the bright
+  // band at the horizon or a light hill. Every glass a page lays there, and the secondary button
+  // and the chip inside it, stays readable over every colour that can stand behind.
+  for (const [name, sky] of STATES) {
+    it(`on the full landscape at ${name}: every glass, its buttons and chips, over the whole landscape`, () => {
+      const behind = landscapeColors(sky);
+      for (const layer of LANDSCAPE_GLASSES) {
+        const { rgb, alpha } = rgbOf(layer);
+        const deep = landscapeAlpha(sky, { rgb, alpha }, landscapeReadings());
+        expect(deep, layer).toBeGreaterThanOrEqual(alpha);
+        expect(deep, `${layer} never needs to be solid`).toBeLessThan(0.95);
+        for (const color of behind) {
+          const panel = over(color, rgb, deep);
+          for (const text of TEXTS) {
+            expect(contrast(rgbOf(text).rgb, panel), `${text} on ${layer}`).toBeGreaterThanOrEqual(
+              4.5,
+            );
+          }
+          const button = through(panel, "color-fill-button");
+          expect(
+            contrast(rgbOf("color-ink").rgb, button),
+            `button in ${layer}`,
+          ).toBeGreaterThanOrEqual(4.5);
+          const chip = through(panel, "color-fill-chip");
+          expect(
+            contrast(rgbOf("color-ink-soft").rgb, chip),
+            `chip in ${layer}`,
+          ).toBeGreaterThanOrEqual(4.5);
         }
       }
     });

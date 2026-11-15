@@ -18,9 +18,9 @@ import { cn } from "@/lib/utils";
 import { type Device, Landscape } from "./Landscape";
 import {
   calmStops,
-  glassAlpha,
+  type GlassReading,
   gradient,
-  LANDSCAPE_PANELS,
+  landscapeAlpha,
   parseColor,
   type Sky,
   skyAt,
@@ -32,6 +32,23 @@ import {
 // tone instead (focus: dark and flat; energy: the module's colour fading to dark); a module may
 // give its own backdrop (decision 4), used on its page and its scenes. On the board the sky
 // moves once a minute and nothing else moves; at night the board dims (38%) and may sleep.
+
+/** The glasses a page lays over the full landscape. */
+export const LANDSCAPE_GLASSES = [
+  "color-glass-main",
+  "color-glass-dense",
+  "color-glass-soft",
+] as const;
+
+/** What those glasses carry: text, secondary text, a secondary button's and a chip's text. */
+export function landscapeReadings(): GlassReading[] {
+  return [
+    { text: token("color-ink") },
+    { text: token("color-ink-2") },
+    { text: token("color-ink"), fill: token("color-fill-button") },
+    { text: token("color-ink-soft"), fill: token("color-fill-chip") },
+  ];
+}
 
 export type BackdropKind =
   | { kind: "full" }
@@ -151,21 +168,25 @@ export function Backdrop({
   const key = keyOf(kind);
   const full = kind.kind === "full";
 
-  // Over the full landscape the main glass deepens where the sky behind it is too bright for its
-  // text (docs/tasarim/ilkeler.md: at least 4.5:1); the value is the token's, only its opacity
-  // grows. The page's own backdrop sets it; a contained one leaves it alone.
+  // Over the full landscape the glasses deepen where what stands behind them (the bright band at
+  // the horizon, a light hill) is too bright for their text, a button's or a chip's
+  // (docs/tasarim/ilkeler.md: at least 4.5:1); the value is the token's, only its opacity grows.
+  // The page's own backdrop sets it; a contained one leaves it alone.
   useEffect(() => {
     if (contained) return;
-    const style = document.documentElement.style;
-    const base = parseColor(token("color-glass-main"));
-    const alpha =
-      sky && full
-        ? glassAlpha(sky, base, [token("color-ink"), token("color-ink-2")], ...LANDSCAPE_PANELS)
-        : base.alpha;
-    if (alpha > base.alpha) {
-      style.setProperty("--color-glass-main", `rgba(${base.rgb.join(", ")}, ${alpha})`);
-    } else {
-      style.removeProperty("--color-glass-main");
+    const root = document.documentElement;
+    // The page stands on the full landscape: on the board its panels blur too (glass.css).
+    if (full) root.dataset.landscape = "full";
+    else delete root.dataset.landscape;
+    const style = root.style;
+    for (const layer of LANDSCAPE_GLASSES) {
+      const base = parseColor(token(layer));
+      const alpha = sky && full ? landscapeAlpha(sky, base, landscapeReadings()) : base.alpha;
+      if (alpha > base.alpha) {
+        style.setProperty(`--${layer}`, `rgba(${base.rgb.join(", ")}, ${alpha})`);
+      } else {
+        style.removeProperty(`--${layer}`);
+      }
     }
   }, [sky, full, contained]);
 

@@ -54,6 +54,10 @@ test("structured use: one sentence, Tab, Enter makes a task with its date and le
   // The words at the end of the line were read as the date and the length.
   await expect(dialog.getByLabel("Süre (dk)")).toHaveValue("45");
   await expect(dialog.getByLabel("Tarih")).not.toHaveValue("");
+  // The date reads as Turkish writes it, whatever the browser's language (Ç4b, DateInput).
+  const iso = await dialog.getByLabel("Tarih").inputValue();
+  const [y, m, d] = iso.split("-");
+  await expect(dialog.locator("[data-slot=input][type=date] + span")).toHaveText(`${d}.${m}.${y}`);
   await page.keyboard.press("Enter");
 
   await expect(dialog).toBeHidden();

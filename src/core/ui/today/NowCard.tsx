@@ -258,7 +258,7 @@ function Why({ reasons }: { reasons: string[] }) {
       <button
         type="button"
         aria-expanded={open}
-        className="text-muted-foreground hover:text-foreground w-fit text-sm underline-offset-4 hover:underline"
+        className="text-muted-foreground hover:text-foreground min-h-touch flex w-fit items-center text-sm underline-offset-4 hover:underline"
         onClick={() => setOpen(!open)}
       >
         Neden?

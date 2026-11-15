@@ -330,5 +330,48 @@ export function glassAlpha(
  */
 export const LANDSCAPE_PANELS = [6, 72] as const;
 
+/**
+ * Everything that can stand behind a glass on the full landscape of a page (Today, sign-in): the
+ * sky from under the title down to its foot, the bright band at the horizon included, and the
+ * three hills. A page scrolls, so any of it can come under any panel.
+ */
+export function landscapeColors(sky: Sky): Rgb[] {
+  const colors: Rgb[] = [];
+  for (let p = LANDSCAPE_PANELS[0]; p <= 100; p += 1) colors.push(hexToRgb(skyColorAt(sky, p)));
+  for (const hill of [sky.far, sky.mid, sky.near, sky.nearBottom]) colors.push(hexToRgb(hill));
+  return colors;
+}
+
+/** One reading a glass must carry: a text colour, straight on the glass or on a fill over it. */
+export type GlassReading = { text: string; fill?: string };
+
+/**
+ * The glass's opacity on the full landscape: its own value, or more until every reading stays at
+ * 4.5:1 over every colour that can stand behind it (only the opacity grows; the colour is the
+ * token's). A secondary button or a chip over the glass is a reading with its fill.
+ */
+export function landscapeAlpha(
+  sky: Sky,
+  glass: { rgb: Rgb; alpha: number },
+  readings: GlassReading[],
+): number {
+  const behind = landscapeColors(sky);
+  const fills = readings.map(({ text, fill }) => ({
+    text: hexToRgb(text),
+    fill: fill ? parseColor(fill) : null,
+  }));
+  const enough = (alpha: number) =>
+    behind.every((color) => {
+      const panel = over(color, glass.rgb, alpha);
+      return fills.every(({ text, fill }) => {
+        const under = fill ? over(panel, fill.rgb, fill.alpha) : panel;
+        return contrast(text, under) >= 4.5;
+      });
+    });
+  let alpha = glass.alpha;
+  while (alpha < 0.95 && !enough(alpha)) alpha = Math.round((alpha + 0.02) * 100) / 100;
+  return alpha;
+}
+
 /** Where a scene's panels sit on the phone's frame, in percent of its height (degerler.md, 2). */
 export const PANEL_RANGE = { big: [32, 56], small: [56, 68] } as const;

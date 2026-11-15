@@ -30,7 +30,8 @@ import type { PlannedTarget } from "@/core/data/sessions";
 import { chainLine, chainsOf, chainWith, nextInChain, sceneChain } from "@/core/today/chain";
 import { blocksOfDay } from "@/core/today/select";
 import type { Block, Task } from "@/core/types";
-import { dayKey, formatDue, formatMinutes, formatTime } from "@/lib/date";
+import { dayKey, formatDayLabel, formatDue, formatMinutes, formatTime } from "@/lib/date";
+import { ConnectionPill } from "../look/Connection";
 import { cn } from "@/lib/utils";
 import { AiBadge } from "../ai/AiMarks";
 import { ReadError } from "../kit/Feedback";
@@ -159,9 +160,16 @@ function TodayBody() {
   });
 
   if (failed) {
+    // XP1: the title with the day and the hour, the panel in the card's place.
     return (
       <>
-        <h1 className="text-xl font-semibold tracking-tight md:text-2xl">Bugün</h1>
+        <header className="flex flex-wrap items-baseline gap-x-3">
+          <h1 className="text-xl font-semibold tracking-tight md:text-2xl">Bugün</h1>
+          <p className="text-ink-2 text-sm tabular-nums md:text-base">
+            {formatDayLabel(now)} · {formatTime(now)}
+          </p>
+          <ConnectionPill />
+        </header>
         <LoadFailed onRetry={retry} />
       </>
     );
@@ -327,7 +335,7 @@ function TodayBody() {
         <section
           aria-label="Sıradakiler"
           hidden={state.kind === "evening" || (state.kind === "night" && input.frame !== undefined)}
-          className="flex min-w-0 flex-col gap-3 lg:col-span-2"
+          className={cn("flex min-w-0 flex-col gap-3 lg:col-span-2", PHONE_GLASS)}
         >
           <h2 className="text-muted-foreground text-xs font-medium tracking-widest uppercase">
             Sıradakiler
@@ -352,36 +360,38 @@ function TodayBody() {
       </div>
 
       {quiet ? null : (
-        <>
+        <div className={cn("flex flex-col gap-5", LANDSCAPE_GLASS)}>
           <DayStrip input={input} plan={plan} now={now} modules={moduleMap} />
           <DayBlocks blocks={blocksOfDay(input.blocks, input.date)} now={now} />
-        </>
+        </div>
       )}
 
-      <footer className="flex flex-wrap items-center gap-2">
-        <ModuleChips modules={modules.filter(({ row }) => row.status === "active")} />
-        <div className="ml-auto flex flex-wrap gap-2">
-          <Button variant="outline" className="h-11" onClick={() => setMinutesOpen(true)}>
-            X dk&apos;m var
-          </Button>
-          <Button variant="outline" className="h-11" onClick={doReplan}>
-            Yeniden planla
-          </Button>
-          {/* The evening's card has its own "Günü kapat" (Ç3c). */}
-          {state.kind === "evening" ? null : (
-            <Link
-              href="/kapanis"
-              className="border-border hover:bg-muted flex h-11 items-center rounded-lg border px-3 text-sm"
-            >
-              Günü kapat
-            </Link>
-          )}
-          <QuickAddButton />
-        </div>
-      </footer>
+      <div className={cn("flex flex-col gap-4", LANDSCAPE_GLASS)}>
+        <footer className="flex flex-wrap items-center gap-2">
+          <ModuleChips modules={modules.filter(({ row }) => row.status === "active")} />
+          <div className="ml-auto flex flex-wrap gap-2">
+            <Button variant="outline" className="h-11" onClick={() => setMinutesOpen(true)}>
+              X dk&apos;m var
+            </Button>
+            <Button variant="outline" className="h-11" onClick={doReplan}>
+              Yeniden planla
+            </Button>
+            {/* The evening's card has its own "Günü kapat" (Ç3c). */}
+            {state.kind === "evening" ? null : (
+              <Link
+                href="/kapanis"
+                className="border-border hover:bg-muted flex h-11 items-center rounded-lg border px-3 text-sm"
+              >
+                Günü kapat
+              </Link>
+            )}
+            <QuickAddButton />
+          </div>
+        </footer>
 
-      {/* At the end of the screen, under its bottom line (XT6, XP3). */}
-      <AiBudgetNotice />
+        {/* At the end of the screen, under its bottom line (XT6, XP3). */}
+        <AiBudgetNotice />
+      </div>
 
       <MinutesDialog
         open={minutesOpen}
@@ -396,7 +406,12 @@ function TodayBody() {
 /** Shown when the data could not be read. One plain sentence and a way to try again. */
 /** "Veri okunamadı": the screen's main panel in its place (docs/tasarim/ekranlar/bos-ve-hata.md). */
 export function LoadFailed({ onRetry }: { onRetry: () => void }) {
-  return <ReadError onRetry={onRetry} className="min-h-56 justify-between md:p-6" />;
+  return (
+    <ReadError
+      onRetry={onRetry}
+      className="md:max-w-read min-h-56 justify-between md:p-8 md:[&>p]:text-xl"
+    />
+  );
 }
 
 function CandidateRow({
@@ -614,6 +629,16 @@ export function ModuleChip({ mod }: { mod: KnownModule }) {
     </Link>
   );
 }
+
+/**
+ * The lower parts of the screen come over the bright band at the horizon and the hills (on the
+ * phone as the page scrolls; on the board where they stand): they stand in the secondary glass,
+ * which deepens there until their text reads at 4.5:1 (Backdrop, landscapeAlpha). "Sıradakiler"
+ * is in it on the phone; on the board it stands high in the dark sky. Ç4c redraws this part of
+ * Today (BT31, BT32, BP01).
+ */
+const LANDSCAPE_GLASS = "glass-soft rounded-soft p-4";
+const PHONE_GLASS = "max-md:glass-soft max-md:rounded-soft max-md:p-4";
 
 /** Rule 9: when the month's AI budget is used up, the screen says so in one quiet line. */
 function AiBudgetNotice() {

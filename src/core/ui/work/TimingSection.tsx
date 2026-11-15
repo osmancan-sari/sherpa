@@ -2,10 +2,10 @@
 
 import { normalizeClock } from "@/lib/clock-input";
 import { TimeInput } from "../TimeInput";
-import { X } from "lucide-react";
+import { ChevronDown, X } from "lucide-react";
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Button } from "@/core/ui/kit/Button";
+import { Input, Select } from "@/core/ui/kit/Field";
 import {
   checkTiming,
   daysLabel,
@@ -202,21 +202,27 @@ export function TimingSection({
   const rhythm = form.kind === "recurrence";
 
   return (
-    <details className="border-border w-full rounded-lg border px-3 py-2 text-sm">
-      <summary className="cursor-pointer select-none">
-        <span className="font-medium">Zaman</span>
+    // A box of its own in the form (frame ET2): the chevron, "Zaman" and its summary; open, the
+    // ranges in rows of the kit's fields.
+    <details className="group border-edge bg-fill-field rounded-alert w-full border px-3.5 pb-1 text-sm">
+      <summary className="min-h-touch flex cursor-pointer flex-wrap items-center gap-x-1 select-none [&::-webkit-details-marker]:hidden">
+        <ChevronDown
+          aria-hidden
+          className="text-ink-2 size-4 -rotate-90 transition-transform duration-(--motion-fast) group-open:rotate-0"
+        />
+        <span className="text-base font-semibold">Zaman</span>
         {summary ? (
-          <span className="text-muted-foreground" data-testid="timing-summary">
+          <span className="text-ink-2" data-testid="timing-summary">
             {" "}
             · {summary}
           </span>
         ) : null}
       </summary>
-      <div className="mt-3 flex flex-col gap-3">
-        {note ? <p className="text-muted-foreground text-xs">{note}</p> : null}
+      <div className="flex flex-col gap-3 pt-1 pb-3">
+        {note ? <p className="text-ink-2 text-note">{note}</p> : null}
         {LISTS.map((list) => (
           <fieldset key={list.name} className="flex flex-col gap-2">
-            <legend className="text-muted-foreground mb-1">{list.label}</legend>
+            <legend className="text-ink-2 mb-1">{list.label}</legend>
             {draft[list.name].map((range, index) => {
               const name = `${list.label} ${index + 1}`;
               const update = (patch: Partial<DraftRange>) =>
@@ -226,12 +232,12 @@ export function TimingSection({
                 );
               const known = DAY_OPTIONS.some((option) => option.value === range.days);
               return (
-                <div key={index} className="flex flex-wrap items-center gap-2">
-                  <select
+                <div key={index} className="flex flex-wrap items-center gap-1.5">
+                  <Select
                     aria-label={`${name}: günler`}
                     value={range.days}
                     onChange={(event) => update({ days: event.target.value })}
-                    className="border-input bg-background h-11 rounded-lg border px-2"
+                    className="w-auto max-w-40 [&_select]:pr-9 [&_svg]:right-3"
                   >
                     {known ? null : (
                       <option value={range.days}>
@@ -243,26 +249,26 @@ export function TimingSection({
                         {option.label}
                       </option>
                     ))}
-                  </select>
+                  </Select>
                   {/* The two times and the remove button wrap together on a narrow screen. */}
-                  <span className="flex items-center gap-2">
+                  <span className="flex items-center gap-1.5">
                     <TimeInput
                       aria-label={`${name}: başlangıç`}
                       value={range.from}
                       onChange={(from) => update({ from })}
-                      className="h-11 w-24"
+                      className="w-18 px-2 text-center tabular-nums"
                     />
                     <span aria-hidden>–</span>
                     <TimeInput
                       aria-label={`${name}: bitiş`}
                       value={range.to}
                       onChange={(to) => update({ to })}
-                      className="h-11 w-24"
+                      className="w-18 px-2 text-center tabular-nums"
                     />
                     <Button
                       type="button"
-                      variant="ghost"
-                      className="size-11"
+                      variant="quiet"
+                      size="icon"
                       aria-label={`${name}: kaldır`}
                       onClick={() =>
                         setList(
@@ -280,8 +286,9 @@ export function TimingSection({
             <div>
               <Button
                 type="button"
-                variant="outline"
-                className="h-11"
+                variant="quiet"
+                size="sm"
+                className="-ml-3.75"
                 aria-label={`${list.label}: aralık ekle`}
                 onClick={() =>
                   setList(list.name, [
@@ -296,7 +303,7 @@ export function TimingSection({
           </fieldset>
         ))}
         <fieldset className="flex flex-wrap items-center gap-2">
-          <legend className="text-muted-foreground mb-1">Yol</legend>
+          <legend className="text-ink-2 mb-1">Yol</legend>
           <span>gidiş</span>
           <Input
             inputMode="numeric"
@@ -305,7 +312,7 @@ export function TimingSection({
             onChange={(event) =>
               onChange({ ...draft, before: event.target.value.replace(/\D/g, "") })
             }
-            className="h-11 w-20"
+            className="w-16 px-2 text-center tabular-nums"
           />
           <span>dk</span>
           <span className="ml-2">dönüş</span>
@@ -316,13 +323,13 @@ export function TimingSection({
             onChange={(event) =>
               onChange({ ...draft, after: event.target.value.replace(/\D/g, "") })
             }
-            className="h-11 w-20"
+            className="w-16 px-2 text-center tabular-nums"
           />
           <span>dk</span>
         </fieldset>
         {rhythm ? (
           <fieldset className="flex flex-wrap items-center gap-2">
-            <legend className="text-muted-foreground mb-1">Dinlenme</legend>
+            <legend className="text-ink-2 mb-1">Dinlenme</legend>
             <span>iki yapılış arasında en az</span>
             <Input
               inputMode="numeric"
@@ -331,7 +338,7 @@ export function TimingSection({
               onChange={(event) =>
                 onChange({ ...draft, rest: event.target.value.replace(/\D/g, "") })
               }
-              className="h-11 w-16"
+              className="w-16 px-2 text-center tabular-nums"
             />
             <span>gün</span>
           </fieldset>

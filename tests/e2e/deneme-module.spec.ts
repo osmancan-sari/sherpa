@@ -280,6 +280,15 @@ test("tabs, a sub page and a full-screen view are the module's own, under its ad
   await expect(page.getByRole("button", { name: "Yeni giriş" })).toHaveCount(0);
   await page.getByRole("button", { name: "Dakika: azalt" }).click();
   await expect(page.getByRole("timer")).toContainText("20:00");
+  // The kit's counter stops at its least: the "−" fades and does nothing (Ç4b).
+  const less = page.getByRole("button", { name: "Dakika: azalt" });
+  for (let i = 0; i < 3; i += 1) await less.click();
+  await expect(page.getByRole("group", { name: "Dakika" }).getByRole("status")).toHaveText("5 dk");
+  await expect(less).toBeDisabled();
+  await page.getByRole("button", { name: "Dakika: artır" }).click();
+  await page.getByRole("button", { name: "Dakika: artır" }).click();
+  await page.getByRole("button", { name: "Dakika: artır" }).click();
+  await expect(page.getByRole("timer")).toContainText("20:00");
   await page.getByRole("button", { name: "Başlat" }).click();
   await expect(page.getByRole("timer")).toContainText(/19:5\d/, { timeout: 5000 });
   await page.getByRole("link", { name: "Kapat" }).click();

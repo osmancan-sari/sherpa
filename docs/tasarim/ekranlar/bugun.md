@@ -73,3 +73,7 @@ Kullanıcının seçimi (15 Kas 2026): bütün günü gösteren saatli yatay şe
 | `ZP3` | Pano, imleç yolun üstünde |
 
 1. grubun kareleri bu liste ve şeritle yeniden çizildi (yer tutucu kalmadı). Örnek gün her karede aynıdır; kartın saati değişse de şeritteki işler değişmez (örnek veri).
+
+## Ara kurulum (Ç4b faz denetimi, 15 Kas 2026)
+
+Bugün'ün yerleşimi Ç4c'de karelere göre kurulur. O zamana kadar: alt kısımlar (günün akışı ve sabit bloklar; modül hapları, alt satır ve bütçe satırı) ikincil camda, telefonda "Sıradakiler" de; cam tam manzarada gerektiği kadar koyulaşır (4,5:1, `sky.test.ts`). "Veri okunamadı" hali `XP1` gibi: başlık, tarih ve saat; kartın yerinde, okuma genişliğinde panel. Bütçe satırı sayfanın sonunda (`XT6`, `XP3`). **Görüşün gerek** (karelerde alt satır panelsiz, koyu gökte).

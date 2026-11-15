@@ -9,6 +9,7 @@ import { propose } from "@/core/data/propose";
 import { keepWeek } from "@/core/data/keep";
 import { createTask } from "@/core/data/work";
 import { check, type Db, type ModuleRow, unwrap } from "@/core/types";
+import { token } from "@/core/ui/tokens";
 import { dayKey, END_OF_DAY, istanbulInstant, shiftDay, weekStart } from "@/lib/date";
 
 // Sample data for trying the core without real modules (docs/07-yol-haritasi.md, Ç1): a few
@@ -68,7 +69,7 @@ export async function seedDemo(db: Db, now: Date): Promise<DemoSummary> {
             slug: "okul-ornek",
             name: "Okul",
             kind: "term",
-            color: "#2563eb",
+            color: token("color-swatch-blue"),
             sort: 1,
             weight: 1.5,
             starts_on: day(-45),
@@ -78,7 +79,7 @@ export async function seedDemo(db: Db, now: Date): Promise<DemoSummary> {
             slug: "ev-ornek",
             name: "Ev",
             kind: "lifelong",
-            color: "#16a34a",
+            color: token("color-swatch-teal"),
             sort: 2,
             area_id: area.id,
             weekly_floor_minutes: 60,
@@ -87,12 +88,18 @@ export async function seedDemo(db: Db, now: Date): Promise<DemoSummary> {
             slug: "saglik-ornek",
             name: "Sağlık",
             kind: "lifelong",
-            color: "#d97706",
+            color: token("color-swatch-orange"),
             sort: 3,
             area_id: area.id,
             weekly_floor_minutes: 90,
           },
-          { slug: "is-ornek", name: "İş", kind: "lifelong", color: "#7c3aed", sort: 4 },
+          {
+            slug: "is-ornek",
+            name: "İş",
+            kind: "lifelong",
+            color: token("color-swatch-violet"),
+            sort: 4,
+          },
         ],
         // Rows with different columns: the ones left out take the column default, not null.
         { defaultToNull: false },
