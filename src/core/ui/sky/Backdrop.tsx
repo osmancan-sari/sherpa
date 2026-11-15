@@ -4,8 +4,10 @@ import {
   type ComponentType,
   createContext,
   type ReactNode,
+  useCallback,
   useContext,
   useEffect,
+  useId,
   useLayoutEffect,
   useState,
   useSyncExternalStore,
@@ -78,22 +80,26 @@ export function useSky(): Sky | null {
   return minute === null ? null : skyAt(new Date(minute));
 }
 
-const BackdropContext = createContext<((kind: BackdropKind | null) => void) | null>(null);
+type Ask = (id: string, kind: BackdropKind | null) => void;
+
+const BackdropContext = createContext<Ask | null>(null);
 
 /**
- * A screen asks for its backdrop while it is shown; when it leaves, the shell's default comes
- * back. Without a provider (a screen outside the app shell) it does nothing.
+ * A screen asks for its backdrop while it is shown; when it leaves, what was asked before comes
+ * back (Today asks for the full landscape, its scene for its tone on top). Without a provider (a
+ * screen outside the app shell) it does nothing.
  */
 export function useBackdrop(kind: BackdropKind | null) {
-  const set = useContext(BackdropContext);
+  const ask = useContext(BackdropContext);
+  const id = useId();
   const key = kind ? keyOf(kind) : "";
   useLayoutEffect(() => {
-    if (!set || !kind) return;
-    set(kind);
-    return () => set(null);
+    if (!ask) return;
+    ask(id, kind);
+    return () => ask(id, null);
     // The kind is compared by its key: a new object of the same backdrop does not redraw.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [set, key]);
+  }, [ask, id, key]);
 }
 
 function keyOf(kind: BackdropKind): string {
@@ -102,7 +108,7 @@ function keyOf(kind: BackdropKind): string {
   return kind.kind;
 }
 
-/** The app's backdrop with the default the shell gives (`full` on Today, `calm` elsewhere). */
+/** The app's backdrop: the latest request still shown, else the shell's default. */
 export function BackdropProvider({
   fallback,
   children,
@@ -110,10 +116,16 @@ export function BackdropProvider({
   fallback: BackdropKind;
   children: ReactNode;
 }) {
-  const [asked, setAsked] = useState<BackdropKind | null>(null);
+  const [asks, setAsks] = useState<{ id: string; kind: BackdropKind }[]>([]);
+  const ask = useCallback<Ask>((id, kind) => {
+    setAsks((list) => {
+      const rest = list.filter((entry) => entry.id !== id);
+      return kind ? [...rest, { id, kind }] : rest;
+    });
+  }, []);
   return (
-    <BackdropContext.Provider value={setAsked}>
-      <Backdrop kind={asked ?? fallback} />
+    <BackdropContext.Provider value={ask}>
+      <Backdrop kind={asks.at(-1)?.kind ?? fallback} />
       {children}
     </BackdropContext.Provider>
   );
