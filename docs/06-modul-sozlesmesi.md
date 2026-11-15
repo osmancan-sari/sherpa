@@ -203,7 +203,7 @@ type ModuleBackdropProps = {
 }
 ```
 
-Kurallar: zemin durağandır (sürekli hareket yok; panoda gün boyu açık kalır), renklerini token'lardan ya da kendi renginden alır (`CLAUDE.md` "Tasarım"; sabit renk kodu yazmaz), üstündeki cam ve metin çekirdeğindir: zemin metni okutmayacak kadar parlarsa modül zeminini koyulaştırır (en az 4,5:1). Panellerin, düğmelerin ve satırların görünüşü değişmez; modül yalnızca zemini verir. Çekirdek ekranlarında (Bugün, Takvim) modül yine yalnızca renk noktasıyla görünür. `deneme` örneği: kendi renginin bir köşede parladığı koyu zemin (`src/modules/deneme/components/Backdrop.tsx`).
+Kurallar: zemin durağandır (sürekli hareket yok; panoda gün boyu açık kalır) ve yalnızca çizimdir (yan etkisiz; çekirdek onu telefonda saat şeridinin yerinde, ekranın tam boyunda bir kez daha çizer: `docs/tasarim/ekranlar/menu.md`, "Saat şeridi ve ada"), renklerini token'lardan ya da kendi renginden alır (`CLAUDE.md` "Tasarım"; sabit renk kodu yazmaz), üstündeki cam ve metin çekirdeğindir: zemin metni okutmayacak kadar parlarsa modül zeminini koyulaştırır (en az 4,5:1). Panellerin, düğmelerin ve satırların görünüşü değişmez; modül yalnızca zemini verir. Çekirdek ekranlarında (Bugün, Takvim) modül yine yalnızca renk noktasıyla görünür. `deneme` örneği: kendi renginin bir köşede parladığı koyu zemin (`src/modules/deneme/components/Backdrop.tsx`).
 
 Zemin vermeyen modülün sayfası sakin zemindedir; sahnesi tonunun zeminindedir: `calm` saatin tam manzarası, `focus` koyu ve düz, `energy` işin renginden koyuya geçiş (`docs/tasarim/ekranlar/sahne.md`).
 

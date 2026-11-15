@@ -49,6 +49,7 @@ Kod: `src/core/ui/sky/` (`sky.ts` saf hesap, `Landscape.tsx` tam manzara, `Backd
 Kareler masaüstü tarayıcıda çizilip bakıldı; şunlar gerçek telefonda ve panoda denenir (ayrıntılı adımlar `docs/ILERLEME.md` "Senden bekleyenler"de):
 
 - Cam bulanıklığının iPhone'daki görünüşü ve kaydırma akıcılığı; panoda gün boyu yükü.
+- Saat şeridi ve ada: içerik altına girmiyor, gökyüzü arkasına uzanıyor. Sayfa kayınca içerik saatin arkasından geçmez, şeridin altında solarak kaybolur (`ekranlar/menu.md`, "Saat şeridi ve ada"; tarayıcıda iPhone'un güvenli alanı verilerek denetlenir: `tests/e2e/safe-area.spec.ts`).
 - Gündüz gökyüzünün açık ufkunda (ekranın alt yarısı) panelsiz yazıların okunurluğu.
 - Zaman şeridinde telefonda dokunma: dar parçalara parmakla isabet (Ç4c).
 - Telefonda alttan açılan sayfanın klavye açıkken davranışı (hızlı girişte kutu klavyenin üstünde kalmalı).

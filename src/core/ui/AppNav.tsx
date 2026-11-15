@@ -43,7 +43,7 @@ function AppNavView({ pathname }: { pathname: string | null }) {
   return (
     <>
       {/* The board: a glass rail on the left, standing beside the page. */}
-      <div className="hidden shrink-0 md:sticky md:top-0 md:block md:h-dvh md:py-4 md:pl-4">
+      <div className="hidden shrink-0 md:sticky md:top-0 md:block md:h-dvh md:pt-[calc(--spacing(4)+env(safe-area-inset-top))] md:pb-4 md:pl-4">
         <nav
           aria-label="Ana gezinme"
           className="glass-rail rounded-rail w-rail flex h-full flex-col gap-1 px-2 py-4.5 text-sm"

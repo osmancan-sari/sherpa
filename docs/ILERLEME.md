@@ -961,6 +961,7 @@ Kareler masaüstü tarayıcıda çizildi ve ben de yalnızca tarayıcıda (Chrom
 5. **Gece karartması.** Gece (güneş battıktan bir buçuk saat sonra) panoya bak: zemin karartılmış mı, yeterli mi?
 6. **"Saydamlığı azalt".** Ayarlar → Görünüm → "Saydamlığı azalt"ı aç; bütün ekranları (Bugün, Gelen kutusu, Modüller, modül sayfası, Ayarlar, hızlı giriş) dolaş: paneller düz ve opak, yazılar okunur mu? Sonra kapat. "Hareketi azalt"ı da aynı şekilde dene: geçişler anlık olmalı.
 7. **Görüşün gerek** (faz raporunda "Verdiğim kararlar"): öğleden sonra güneşin yolu, tek gün batımı karesinin bütün alacakaranlığı temsil etmesi, modül sayfasında "Geçmiş" düğmesinin paneli gizlemek yerine ona götürmesi, `deneme`'nin kendi zemini, Ayarlar'da panoda bölüm seçilmeden açılan Görünüm.
+8. **Saat şeridi ve ada** (Ç4b sonrası düzeltme). Ana ekrandaki uygulamada Bugün, Takvim, Modüller, Gelen ve Ayarlar'ı aç: başlık saatin altında başlamalı, gökyüzü saatin arkasına kadar uzanmalı. Bir sayfayı aşağı kaydır: kartlar saatin arkasından geçmemeli, şeridin altında solarak kaybolmalı. "+" ile hızlı girişi ve bir işin düzenlemesini aç: sayfanın üstü adanın altında kalmalı. Bir işi başlatıp sahneyi aç: şerit saatin altında.
 
 ### Ç4b yayını
 
@@ -1259,6 +1260,14 @@ Süre sapmasındaki artış çoğunlukla `enrich`'in kendi tahminlerinin çalı�
 - Ekran görüntüleri: `docs/ekran-goruntuleri/c1/`.
 
 ## Verdiğim kararlar
+
+**Ç4b sonrası düzeltme: saat şeridi ve ada (15 Kas 2026)**
+
+- **Sorun:** iPhone'da ana ekrana eklenmiş uygulamada (`black-translucent`) içerik saat şeridinin ve adanın altına giriyordu; Bugün'ün başlığı saatin üstüne biniyordu. Yeni faz değil, küçük düzeltme.
+- **Boşluk tek yerde:** kabuğun `main`'i `env(safe-area-inset-top)` kadar aşağıdan başlar (`src/app/(app)/layout.tsx`); ekranlar bir şey eklemez. Panoda yan menü de aynı boşluğu bırakır (iPad'de ana ekran). Modülün tam ekran görünümü (`(tam)`, kabuksuz) bu boşluğu zaten kendisi bırakıyordu; sahne de.
+- **Kayınca:** kareler üstte bir şey çizmez (gökyüzü en üste uzanır). Bu yüzden perde ya da bulanık bant yerine kabuk zeminin aynısını şeride kırpılmış olarak içeriğin üstüne bir kez daha çizer (`SafeTopBand` `src/core/ui/sky/Backdrop.tsx`; alt %40'ı solar). Sayfa en üstteyken görünmez, kayınca içerik saatin arkasından geçmez. Yüksekliği güvenli alanın kendisi: güvenli alanı olmayan ekranda sıfır, o zaman içindeki zemin hiç çizilmez (ölçülür). Sahne telefonda kendi zemininin aynısını taşır. **Görüşün gerek:** solan alt kenar (sert kenar da olabilirdi).
+- **Alttan açılan sayfa:** en çok `min(%94, ekran − güvenli alan − --spacing(2))`; eskiden 844 px'lik iPhone'da %94 adanın altına giriyordu (51 < 59 px).
+- **Test:** `tests/e2e/safe-area.spec.ts`, Chromium'a DevTools ile iPhone'un güvenli alanı verilir (`Emulation.setSafeAreaInsetsOverride`, üst 59, alt 34): kabuğun bütün ekranları ve alt sayfaları (Bugün, Takvim, Modüller, Gelen, Ayarlar ve dokuz bölümü, modül sayfası, sekmesi ve alt sayfası, kapanış, galeri) ilk öğeleriyle güvenli alanın altında ve hemen altında başlar; zemin ekranın tamamını kaplar; kayınca saatin yeri aynı görünür; hızlı giriş ve en yüksek alttan sayfa, sahnenin şeridi ve tam ekran görünüm adanın altında. Testler düzeltmeden önceki kodda kırmızıydı (üçü de). Dosya `.both` değil: telefon görünümünü kendisi kurar (`test.use`), `pano` projesinde koşar.
 
 **Ç4b: Cam temeli (15 Kas 2026)**
 

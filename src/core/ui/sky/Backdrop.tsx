@@ -9,6 +9,7 @@ import {
   useEffect,
   useId,
   useLayoutEffect,
+  useRef,
   useState,
   useSyncExternalStore,
 } from "react";
@@ -146,7 +147,7 @@ export function BackdropProvider({
   }, []);
   return (
     <BackdropContext.Provider value={ask}>
-      <Backdrop kind={asks.at(-1)?.kind ?? fallback} />
+      <Backdrop kind={asks.at(-1)?.kind ?? fallback} band />
       {children}
     </BackdropContext.Provider>
   );
@@ -154,22 +155,24 @@ export function BackdropProvider({
 
 /**
  * The fixed layer itself. `contained`: drawn inside its parent instead of behind the page (a
- * scene that covers the phone's screen carries its own).
+ * scene that covers the phone's screen carries its own). `band`: the same backdrop is drawn once
+ * more over the page under the phone's clock and island (`SafeTopBand`).
  */
 export function Backdrop({
   kind,
   contained = false,
+  band = false,
   sky: fixed,
 }: {
   kind: BackdropKind;
   contained?: boolean;
+  band?: boolean;
   /** A given hour's sky instead of this minute's (the gallery). */
   sky?: Sky;
 }) {
   const now = useSky();
   const sky = fixed ?? now;
   const device = useLayoutDevice();
-  const key = keyOf(kind);
   const full = kind.kind === "full";
 
   // Over the full landscape the glasses deepen where what stands behind them (the bright band at
@@ -195,32 +198,73 @@ export function Backdrop({
   }, [sky, full, contained]);
 
   return (
-    <div
-      aria-hidden
-      data-testid={contained ? "scene-backdrop" : "backdrop"}
-      data-backdrop={kind.kind}
-      data-phase={sky?.phase}
-      className={cn(
-        "bg-solid pointer-events-none inset-0 overflow-hidden",
-        contained ? "absolute" : "fixed -z-10",
-      )}
-    >
-      {sky ? (
-        <>
-          {/* The calm sky is always under: a module's backdrop or a tone fades in over it. */}
-          <div className="absolute inset-0" style={{ background: gradient(calmStops(sky)) }} />
-          <div key={key} className="animate-fade-in absolute inset-0">
-            <Layer kind={kind} sky={sky} device={device} />
-          </div>
-          {/* The board's night: dimmed, and nothing keeps it awake. */}
-          <div
-            className={cn(
-              "bg-night-dim absolute inset-0 hidden",
-              sky.phase === "night" && "md:block",
-            )}
-          />
-        </>
+    <>
+      <div
+        aria-hidden
+        data-testid={contained ? "scene-backdrop" : "backdrop"}
+        data-backdrop={kind.kind}
+        data-phase={sky?.phase}
+        className={cn(
+          "bg-solid pointer-events-none inset-0 overflow-hidden",
+          contained ? "absolute" : "fixed -z-10",
+        )}
+      >
+        {sky ? <Layers kind={kind} sky={sky} device={device} /> : null}
+      </div>
+      {band && sky ? (
+        <SafeTopBand>
+          <Layers kind={kind} sky={sky} device={device} />
+        </SafeTopBand>
       ) : null}
+    </>
+  );
+}
+
+/** The backdrop's drawing, the same wherever it is drawn. */
+function Layers({ kind, sky, device }: { kind: BackdropKind; sky: Sky; device: Device }) {
+  return (
+    <>
+      {/* The calm sky is always under: a module's backdrop or a tone fades in over it. */}
+      <div className="absolute inset-0" style={{ background: gradient(calmStops(sky)) }} />
+      <div key={keyOf(kind)} className="animate-fade-in absolute inset-0">
+        <Layer kind={kind} sky={sky} device={device} />
+      </div>
+      {/* The board's night: dimmed, and nothing keeps it awake. */}
+      <div
+        className={cn("bg-night-dim absolute inset-0 hidden", sky.phase === "night" && "md:block")}
+      />
+    </>
+  );
+}
+
+/**
+ * The band under the phone's clock and island (the app on the home screen draws under them,
+ * black-translucent; docs/tasarim/ilkeler.md, "Gerçek cihazda bakılacaklar"). The page starts
+ * below it (the shell's `main`), the sky reaches up behind it; when the page scrolls, its content
+ * goes behind this band, which draws the same backdrop again, clipped to the band, its lower edge
+ * fading out. So the clock always stands on the sky, as in the phone frames (nothing is drawn
+ * there). Its height is env(safe-area-inset-top): where there is no such band, nothing is drawn.
+ */
+function SafeTopBand({ children }: { children: ReactNode }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [shown, setShown] = useState(false);
+  useLayoutEffect(() => {
+    const band = ref.current;
+    if (!band) return;
+    const measure = () => setShown(band.offsetHeight > 0);
+    measure();
+    window.addEventListener("resize", measure);
+    return () => window.removeEventListener("resize", measure);
+  }, []);
+  return (
+    <div
+      ref={ref}
+      aria-hidden
+      data-testid="safe-top"
+      className="pointer-events-none fixed inset-x-0 top-0 z-20 h-[env(safe-area-inset-top)] overflow-hidden mask-b-from-60%"
+    >
+      {/* The backdrop at the screen's full height, so that the band shows its top exactly. */}
+      {shown ? <div className="bg-solid absolute inset-x-0 top-0 h-dvh">{children}</div> : null}
     </div>
   );
 }

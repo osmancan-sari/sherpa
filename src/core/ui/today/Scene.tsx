@@ -318,7 +318,8 @@ export function SceneFrame({
           : "min-h-[70vh] flex-1",
       )}
     >
-      {device === "telefon" ? <Backdrop kind={backdrop} contained /> : null}
+      {/* Its own backdrop, and the band under the clock that its content scrolls behind. */}
+      {device === "telefon" ? <Backdrop kind={backdrop} contained band /> : null}
       {bedtime || strip?.hidden ? null : (
         <header
           aria-label="Sahne şeridi"

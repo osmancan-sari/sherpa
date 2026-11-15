@@ -9,6 +9,15 @@ Kaynak: `docs/13-cam-dili.md` bölüm 1 ve 4.3 ("Menü"), `docs/moduller/ORTAK.m
 - **Seçili sayfa** öbürlerinden geniş, opak açık hap (`color-light`, `color-ink-dark`, yarı kalın, `shadow-selected`). Ekranda tek opak açık öğe seçili sayfadır.
 - İçerik menünün altından geçer (menü bulanık cam); sayfanın sonunda menü kadar boşluk (`spacing-nav-space`).
 
+### Saat şeridi ve ada
+
+Ana ekrana eklenen uygulama saat şeridinin ve adanın altına da çizer (`black-translucent`, `viewport-fit=cover`). Kareler bu şeridi çizmez: gökyüzü en üste kadar uzanır, üstünde hiçbir şey yoktur.
+
+- **Her ekran güvenli alanın altından başlar** (`env(safe-area-inset-top)`), sonra kendi üst boşluğu gelir. Boşluk tek yerdedir: kabuğun `main`'i (`src/app/(app)/layout.tsx`); ekranlar eklemez. Panoda yan menü de bu boşluğu bırakır (`AppNav`).
+- **Zemin arkasına uzanır:** gökyüzü ekranın tamamını kaplar, şeridin arkası da gökyüzüdür.
+- **Kayınca içerik saatin arkasından geçmez:** kabuk şeridin yerine zeminin aynısını bir kez daha, şeride kırpılmış olarak içeriğin üstüne çizer (`SafeTopBand`, `src/core/ui/sky/Backdrop.tsx`); alt kenarı solar. Sayfa en üstteyken görünmez (aynı gökyüzü), kayınca içerik onun altında kaybolur ve saat hep gökyüzünün üstünde durur. Güvenli alanı olmayan ekranda yüksekliği sıfırdır.
+- **Alttan açılan sayfa** en çok ekranın %94'ü kadar uzar ve her zaman adanın biraz altında (`--spacing(2)`) kalır (hızlı giriş dahil). **Sahne** telefonda ekranın tamamını alır: şeridi güvenli alanın altından başlar ve kendi zeminiyle aynı üst şeridi taşır. Modülün **tam ekran görünümü** de aynı boşlukla başlar.
+
 ## Pano
 
 - Solda, kenarlardan boşlukla duran **cam yan menü** (`glass-rail`, genişlik `spacing-rail`, köşe `radius-rail`): üstte "Sherpa", altında Bugün, Takvim, Modüller, Gelen kutusu, Ayarlar (`text-sm`).

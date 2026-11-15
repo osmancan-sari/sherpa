@@ -49,8 +49,9 @@ export function Sheet({
           data-testid="sheet"
           className={cn(
             "glass-sheet text-ink fixed z-50 flex flex-col outline-none",
-            // Phone: from the bottom edge.
-            "rounded-t-panel inset-x-0 bottom-0 max-h-[94dvh] border-b-0",
+            // Phone: from the bottom edge; at its tallest it stops short of the top as in the
+            // frames (94%), and always under the clock and island.
+            "rounded-t-panel inset-x-0 bottom-0 max-h-[min(94dvh,calc(100dvh-(env(safe-area-inset-top)+--spacing(2))))] border-b-0",
             "ease-glass transition-transform duration-(--motion-base) data-ending-style:translate-y-full data-starting-style:translate-y-full",
             // Board: a 440 px panel from the right edge.
             "md:w-sheet md:rounded-l-panel md:inset-y-0 md:right-0 md:left-auto md:max-h-none md:rounded-tr-none md:border-r-0 md:border-b",
