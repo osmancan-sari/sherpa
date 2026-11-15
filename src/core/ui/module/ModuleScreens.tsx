@@ -9,6 +9,7 @@ import { useRegistry } from "@/core/app/CoreProvider";
 import { type KnownModule, useModuleQuery, useModuleRows, useModules } from "@/core/app/hooks";
 import { moduleColor } from "@/core/contract/colors";
 import type { ChipData } from "@/core/contract/types";
+import { buttonVariants } from "@/core/ui/kit/Button";
 import { ListRow } from "@/core/ui/kit/ListRow";
 import { Panel } from "@/core/ui/kit/Panel";
 import { resolveModulePath } from "@/core/contract/registry";
@@ -42,7 +43,7 @@ function ModulesList() {
   ];
   if (isLoading) return null;
   // Modules of an area together in the area's panel; the others in one panel of their own.
-  const areas = new Map<string, { name: string; modules: KnownModule[] }>();
+  const areas = new Map<string, { slug: string; name: string; modules: KnownModule[] }>();
   const loose: KnownModule[] = [];
   for (const mod of shown) {
     const area = mod.definition?.area;
@@ -50,7 +51,7 @@ function ModulesList() {
       loose.push(mod);
       continue;
     }
-    const group = areas.get(area.slug) ?? { name: area.name, modules: [] };
+    const group = areas.get(area.slug) ?? { slug: area.slug, name: area.name, modules: [] };
     group.modules.push(mod);
     areas.set(area.slug, group);
   }
@@ -69,11 +70,20 @@ function ModulesList() {
               aria-label={area.name}
               className="overflow-hidden md:only:col-span-2"
             >
-              <div className="border-line flex flex-col gap-0.5 border-b px-4 pt-3 pb-2.5">
-                <span className="panel-label text-ink">{area.name}</span>
-                <span className="text-ink-2 text-sm">
-                  {area.modules.map(({ row }) => row.name).join(" · ")}
-                </span>
+              <div className="border-line flex items-center gap-3 border-b py-2.5 pr-2.5 pl-4">
+                <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+                  <span className="panel-label text-ink">{area.name}</span>
+                  <span className="text-ink-2 text-sm">
+                    {area.modules.map(({ row }) => row.name).join(" · ")}
+                  </span>
+                </div>
+                {/* Ç4c: the area's page (MT1). */}
+                <Link
+                  href={`/a/${area.slug}`}
+                  className={buttonVariants({ variant: "secondary", size: "sm" })}
+                >
+                  Alan sayfası
+                </Link>
               </div>
               {area.modules.map((mod) => (
                 <ModuleRow key={mod.row.id} mod={mod} />

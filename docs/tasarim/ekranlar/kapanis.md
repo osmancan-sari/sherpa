@@ -27,4 +27,8 @@ Adımlar ve metinler koddaki gibidir (`src/core/ui/closing/ClosingScreen.tsx`, s
 
 Çizilmeyen: panoda boş haller (panelin içi telefondakiyle aynı metinler).
 
-**Açık (çekirdek ve Rutin):** Rutin kapalıyken ya da akşam sahnesi hiç açılmadan kapanışa nasıl ulaşılacağı; kapanış adımı Rutin'de 2. kurulum adımına yazılı (`kind: closing`), bu kararla öne gelmesi gerekebilir.
+**Kapandı (ilerleme sohbetinin kararı, 15 Kas 2026; Ç4c):** kapanış çekirdeğin yeteneği olarak kalır ve bir sahnenin içinde açılır (`controls.closing()`). Modül kapanışı barındırdığını sözleşmeyle bildirir (`hostsClosing`; `docs/06` "Diziler" kural 6); etkin hiçbir modül barındırmıyorsa akşam kartında ikincil "Kapanış" görünür ve kapanış standart sahne kabuğunda açılır (`ClosingShell`: şerit "Akşam kapanışı", "Çık"; **görüşün gerek**: çizilmedi). Akşam sahnesi hiç açılmazsa kapanış atlanmış olur: sabah plan kendiliğinden kurulur, cevaplanmamış sorular ertesi güne kalır. Rutin'in "Yarının listesi" adımı (`kind: closing`) akşamda Yüz ile Telefonu bırak arasında, açık gelir (kullanıcının kararı; mevcut listede de açılır).
+
+## Kurulum (Ç4c)
+
+Kod: `src/core/ui/closing/ClosingScreen.tsx` (`ClosingInScene`), kabuk `src/core/ui/today/Scene.tsx` (`SceneFrame` içinde ya da `ClosingShell`). Başlık `text-2xl` (panoda `text-3xl`); adım çizgileri 4 px, gelinenler `color-ink`, kalanlar `color-fill-step`; panel yoğun cam, telefonda ekranın en az %40'ı, panoda `max-w-180`; adımların listeleri `color-fill-field` kutuda. "Geri" ikincil, "İleri" / "Onayla" birincil, "Vazgeç" sessiz. Panoda altında "Enter ile ilerle, Escape ile geri dön." Fark: sahnenin içinde kapanış sahnenin iç boşluğuyla başlar (panoda karedekinden biraz içeride).

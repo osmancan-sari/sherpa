@@ -51,3 +51,15 @@ Satır: işaret (iş için renk noktası, sabit için gri kare), ad, altında s�
 Çizilmeyen: başka bir haftaya gidildiğindeki görünüş (geçmiş ve gelecek hafta); kurallar bu haftayla aynıdır, geçmiş haftada işlerin yerinde yapılanlar durur.
 
 **Menü.** Alt menüde ve yan menüde "Hafta" yerine "Takvim"; Bugün'deki uyarının eylemi "Takvime bak". Bütün kareler bu adla yeniden üretildi.
+
+## Kurulum (Ç4c, 16 Kas 2026)
+
+Kod: `src/core/ui/takvim/TakvimScreen.tsx`, adres `/takvim` (eski `/hafta` yönlenir). Veri: `useCalendar(week)` (Ç4a: tahmin ve haftanın işleri), `loadByWeek` (bu haftanın ve önümüzdeki sekiz haftanın iş ve vakti); sözler ve listeler saf `src/core/today/takvim.ts` (`weekLabel`, `dueText`, `horizonNote`, `dueOn`, `doneOn`; testli).
+
+- **Gün kutuları:** yoğun cam, `radius-2xl`, telefonda `h-18`; seçili opak açık (`color-light`, ikincil yazı `color-ink-dark-2`), bugün `color-ink` kenarlı, geçen günler soluk. Panoda kutuda kalan vakit (bugün planın, gelecek günler tahminin vakti) ve ilk teslim.
+- **Bu hafta:** başlıkta haftanın işi ve vakti (`loadByWeek`); yük çubuğu modül renkleriyle, vakit `color-flow-now` çizgisi. Satırlar `weekWork`'ten (teslim tarihine göre); teslim satırı "Teslim Pazar, 15 Kas" (altı gün içinde gün adıyla, sonrası "Teslim 3 Ara"). Bu haftanın "uygun saat yok" uyarıları altında uyarı satırı olarak.
+- **Gün ayrıntısı:** geçmiş gün yapılanları günün oturumlarından toplar (işin oturumları birleşir; bitmemiş iş gösterilmez); okunmamış eski görevlerin adları için `listTasksById`. Bugün: Sıradakiler (planın işleri), Sabit, Yapılanlar, "Bugün'e git". Gelecek: Teslim ve sınav, Planlananlar (tahmin), Sabit, "Plan tahminidir; o sabah yeniden kurulur." Telefonda ayrıntı açıkken "Bu hafta" gizlenir (`TT3`–`TT5`); panoda sağ sütundadır.
+- **Önümüzdeki haftalar:** gelecek haftadan başlayan sekiz hafta; çubuk `color-fill-bar`, vakti aşan hafta `color-attention` ve simgeli; ilk aşan haftanın açıklaması altta. Çubuk o haftaya götürür.
+- **Başka hafta:** hafta seçiciyle; etiket "BU HAFTA" yerine haftanın adı; "Haftayı yeniden kur" yalnızca bu haftada. Geçmiş haftada satırlar o haftada teslimi olan işlerdir (karede çizilmedi; **görüşün gerek**).
+
+Karelerden farklar: geçmiş günlerin sabit blokları gösterilmeyebilir (bloklar bugünden itibaren okunur); "Yetişmeyebilir" listesi haftanın teslimleri ağırlık sırasıyla.

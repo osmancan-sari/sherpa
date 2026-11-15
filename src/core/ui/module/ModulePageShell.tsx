@@ -153,13 +153,26 @@ function StatusStrip({ mod }: { mod: KnownModule }) {
   };
 
   const health = chip.data && chip.data.health !== "ok" ? chip.data.health : null;
-  const line = [
-    definition?.area?.name,
-    row.status === "paused" ? "Duraklatıldı" : null,
-    chip.data?.text,
-  ]
+  // Ç4c: the area's name is a link to its page.
+  const area = definition?.area ?? null;
+  const rest = [row.status === "paused" ? "Duraklatıldı" : null, chip.data?.text]
     .filter(Boolean)
     .join(" · ");
+  const line =
+    area || rest ? (
+      <>
+        {area ? (
+          <Link
+            href={`/a/${area.slug}`}
+            className="link-quiet focus-visible:shadow-focus relative rounded-sm outline-none after:absolute after:inset-x-0 after:-inset-y-3"
+          >
+            {area.name}
+          </Link>
+        ) : null}
+        {area && rest ? " · " : null}
+        {rest}
+      </>
+    ) : null;
 
   return (
     <section aria-label="Durum" className="flex flex-col gap-3.5 md:gap-4">

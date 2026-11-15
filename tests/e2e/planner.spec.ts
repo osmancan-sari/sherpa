@@ -373,7 +373,7 @@ test("a session past twice its estimate asks whether it goes on; unanswered, it 
   await expect(now.getByRole("button", { name: "Başla" })).toBeVisible();
 });
 
-test("the evening closing: what was done, tomorrow's draft, what is on the mind, then night", async ({
+test("the evening closing: what was done, tomorrow's draft, what is on the mind, then the evening goes on", async ({
   page,
 }) => {
   // Ç4c: the closing opens from the evening card (no module holds it), in the scene shell; its
@@ -439,7 +439,10 @@ test("the evening closing: what was done, tomorrow's draft, what is on the mind,
     "annemi ara",
     "perde ölçüsü",
   ]);
-  await expect(page.getByRole("region", { name: "Şimdi" })).toContainText("Yarın ilk iş: Yarın A");
+  // With the frame on the evening stays until bed; it no longer offers the closing.
+  const card = page.getByRole("region", { name: "Şimdi" });
+  await expect(card.getByRole("heading", { name: "Akşam" })).toBeVisible();
+  await expect(card.getByRole("button", { name: "Kapanış" })).toHaveCount(0);
 });
 
 test("Takvim: the days, the week's work and time, the coming weeks (Ç4a: no life mode)", async ({

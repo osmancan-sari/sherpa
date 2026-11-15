@@ -2,7 +2,7 @@ import type { Page } from "@playwright/test";
 import { insert, rows, update, waitFor } from "./data";
 import { expect, test } from "./fixtures";
 import { spoken } from "./scene-helpers";
-import { runAt } from "./clock";
+import { runAt, runDay } from "./clock";
 import { roomInTheDay } from "./helpers";
 
 // Rutin, step 1 (docs/moduller/rutin.md, "Adım 1 · Temel", criteria 1–5 and 8, 10): the three
@@ -735,4 +735,49 @@ test("the scene keeps still with reduced motion", async ({ page }) => {
         .filter((animation) => animation.playState === "running").length,
   );
   expect(animations).toBe(0);
+});
+
+test("the Sağlık area's page: its members, their numbers, Rutin's view; reached from Modüller and the module page (Ç4c)", async ({
+  page,
+}) => {
+  await switchOn(page);
+  // A finished morning and evening yesterday: their squares are filled.
+  const day = runDay(-1);
+  const routines = await rows("rutin_routines");
+  for (const routine of routines) {
+    await insert("rutin_runs", {
+      routine_id: routine.id,
+      day,
+      step_position: 0,
+      minimum_done: true,
+      finished_at: runAt(-24 * 60),
+    });
+  }
+
+  await page.goto("/m");
+  const area = page.getByRole("region", { name: "Sağlık" });
+  await area.getByRole("link", { name: "Alan sayfası" }).click();
+  await page.waitForURL("/a/saglik");
+  await expect(page.getByRole("heading", { level: 1, name: "Sağlık" })).toBeVisible();
+  await expect(page.getByTestId("area-members")).toHaveText("Alan · Rutin");
+  const members = page.getByRole("list", { name: "Üyeler" });
+  await expect(members.getByRole("link", { name: /^Rutin/ })).toBeVisible();
+  await expect(members).toContainText("Sabah yapılan gün");
+
+  const view = page.getByRole("region", { name: "Son 14 gün · temel adımlar" });
+  await expect(view).toContainText("Rutin");
+  await expect(
+    view.getByRole("list", { name: "Sabah: son 14 gün" }).getByRole("listitem"),
+  ).toHaveCount(14);
+  await expect(view.locator("[data-done]")).toHaveCount(2);
+
+  // The member's panel goes to its page; there the area's name goes back to the area.
+  await members.getByRole("link", { name: /^Rutin/ }).click();
+  await page.waitForURL("/m/rutin");
+  await page.getByRole("link", { name: "Sağlık" }).first().click();
+  await page.waitForURL("/a/saglik");
+
+  // An area nobody belongs to.
+  await page.goto("/a/yok");
+  await expect(page.getByText("Böyle bir alan yok.")).toBeVisible();
 });

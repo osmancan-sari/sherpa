@@ -119,7 +119,8 @@ test("the pool is ordered by deadline, then importance", async ({ page }) => {
   // Ç4c: closed, the list shows its first rows; "Hepsini göster" opens all of it.
   const list = page.getByRole("region", { name: "Sıradakiler" });
   await list.getByRole("button", { name: "Hepsini göster" }).click();
-  await expect(list.getByRole("listitem")).toHaveText([
+  // The breaks between them ("mola · 15 dk") are rows of their own.
+  await expect(list.getByRole("listitem").filter({ hasNotText: /^mola · / })).toHaveText([
     /^Bugün düşük/,
     /^Yarın/,
     /^Tarihsiz önemli/,

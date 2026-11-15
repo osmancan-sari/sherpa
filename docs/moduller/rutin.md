@@ -163,8 +163,8 @@ Duş sabaha alındığı için günün güneş kremi ve teri yüzden akşam lava
 | 2 | Diş bakımı | Ara fırça ya da ağız duşu (süresiz) · Fırçala, 2 dk sayaç, süre dolmadan geçilmez · Dil · Tükür, çalkalama; sonra yalnızca su | 3 dk | evet | evet | A6 |
 | 3 | Yüz | Nazik temizleyiciyle yıka · Nemlendirici | 3 dk | hayır | evet | A3, A7 |
 | ek | Azelaik asit (Yüz'ün eki) | `every_days` 2 | — | hayır | hayır (faz 2) | A7 |
-| — | Yarının listesi | çekirdeğin kapanışına geçiş (`kind: closing`); açılınca Yüz ile Telefon arasına girer | — | evet | hayır (faz 2) | A8 |
-| 4 | Telefonu salona bırak | Şarja tak · Çalar saati kontrol et; düğme "Yatıyorum" | 2 dk | evet | evet | A9 |
+| 4 | Yarının listesi | çekirdeğin akşam kapanışı (`kind: closing`): adım gelince sahne kapanışı açar (`controls.closing()`); "Onayla" adımı yapılmış, "Vazgeç" geçilmiş sayar ve sahne "Telefonu salona bırak"a geçer; kapanış o gün yapıldıysa adım kendiliğinden yapılmış sayılır. İpucu "Yarının planına bak; aklında kalanları yaz." | 4 dk | evet | evet (Ç4c; kullanıcının kararı, 15 Kas 2026: kapanış akşam rutininin parçası; mevcut listede de migration ile açılır, modül sayfasından kapatılabilir) | A8 |
+| 5 | Telefonu salona bırak | Şarja tak · Çalar saati kontrol et; düğme "Yatıyorum" | 2 dk | evet | evet | A9 |
 
 ### 8.2 Sahne: adım ekranı
 
@@ -321,7 +321,7 @@ Kabul ölçütleri:
 
 ### Adım 3 · Çekirdeğin cam diline bağlanma ve faz 2 (Ç4'ten sonra)
 
-Kapsam: sahnenin kendi cam ve gökyüzü kopyasının çekirdeğin bileşenleriyle değiştirilmesi; modül sayfasının cam diline geçmesi ("Modül sayfası" çizimleri); "Yarının listesi" adımı (`controls.closing()` ile çekirdeğin kapanışına gidip sahneye dönmek).
+Kapsam: sahnenin kendi cam ve gökyüzü kopyasının çekirdeğin bileşenleriyle değiştirilmesi; modül sayfasının cam diline geçmesi ("Modül sayfası" çizimleri). Görünüş kısmı Ç4b'de, "Yarının listesi" adımı Ç4c'de yapıldı (kabul ölçütü 3: `tests/e2e/rutin.spec.ts`, "Yarının listesi opens the core's closing…"; Rutin `hostsClosing` ile kapanışı barındırdığını söyler, `docs/06` "Diziler" kural 6).
 
 Kabul ölçütleri:
 
@@ -334,7 +334,7 @@ Kabul ölçütleri:
 Tasarım sırasında görülen eksikler. 2, 7 ve 11 numaralılar Ç3f adımına alındı (13 Kas 2026; `docs/12-sahne-ve-otomasyon.md` bölüm G, `prompts/c3f-capali-diziler.md`); Rutin'in ilk kurulum adımı Ç3f'den sonra yapılır. 1 numara Ç3f'te sıra kuralı olarak yazıldı. Ötekiler açık. 14 numara bu dosyanın son halinde eklendi; 16–21 Rutin 1. kurulum adımında görüldü, 13 ve 15 o adımda kapandı; 16–21 Ç3g'de kapandı (14 Kas 2026, `prompts/c3g-sahne-eksikleri.md`).
 
 1. **Modüller arası çapa sırası.** Rutin ve Spor ayrı modüller olarak uyanışa bağlı iş teklif eder. `timing.order` modülün kendi verdiği sayıdır; iki ayrı modülün işlerinin birbirine göre sırasını kimin belirlediği sözleşmede açık değil.
-2. **Sahneden akşam kapanışına geçiş.** Kapanış çekirdeğin ayrı ekranıdır (`/kapanis`); bir modül sahnesinin adımı olarak nasıl açılıp sahneye nasıl dönüleceği tanımlı değil (akşam 4. adım).
+2. ~~**Sahneden akşam kapanışına geçiş.**~~ Kapandı (Ç3f, Ç4c): `controls.closing()` kapanışı sahnenin içinde açar ve nasıl bittiğini döndürür; kapanışın ayrı sayfası yok. Kapanış çekirdeğin ayrı ekranıydı (`/kapanis`); bir modül sahnesinin adımı olarak nasıl açılıp sahneye nasıl dönüleceği tanımlı değildi (akşam 4. adım).
 3. **Alan sayfasının çekirdek verisini okuması.** Sağlık sayfasında uyku gösterilecek; uyku kaydı çekirdektedir. Alan sayfasının veriyi nasıl topladığı Sağlık sayfası tasarlanırken netleşmeli.
 4. ~~**Yatışın ileri saatle kaydı.**~~ Kapandı (14 Kas 2026): kullanıcı "Yatıyorum"a yatağa girmeden hemen önce basacak; pay ve düzeltme gerekmiyor.
 5. **Geç yatılan gecede uyanış.** Çekirdek gerçek yatıştan sonra beklenen uyanışı `yatış + uyku hedefi`ne kaydırır; araştırma kalkışın en çok 1 saat ertelenmesini önerir. Uyanış aralığı 06:00–08:00 olunca olağan durumda sonuç aynıdır; aralık geniş tutulursa ayrışır.

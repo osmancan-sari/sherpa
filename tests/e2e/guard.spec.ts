@@ -7,6 +7,7 @@ const pages = [
   "/",
   "/hafta",
   "/takvim",
+  "/a/saglik",
   "/m",
   "/gelen",
   "/kapanis",

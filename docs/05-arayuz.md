@@ -14,13 +14,13 @@
 | Rota | Ekran |
 | --- | --- |
 | `/` | Bugün |
-| `/hafta` | Takvim (menüde "Takvim"; Ç4b'de yalnızca ad, içi Ç4c'de): haftalık kapasite |
+| `/takvim` | Takvim (Ç4c; `docs/tasarim/ekranlar/takvim.md`): hafta seçici, yedi gün, "Bu hafta", gün ayrıntısı, önümüzdeki haftalar. Eski `/hafta` buraya yönlenir |
 | `/m` | Modüller: etkin ve duraklatılmış modüllerin çipleri |
 | `/m/[slug]` | Modül sayfası; `/m/[slug]/<sekme>` sekmeyi, `/m/[slug]/…` modülün alt sayfalarını açar |
 | `/m/[slug]/tam/[key]` | Modülün tam ekran görünümü (kabuk yok) |
-| `/a/[slug]` | Alan sayfası |
+| `/a/[slug]` | Alan sayfası (Ç4c): alanın üye modülleri ve onların verdiği görünümler |
 | `/gelen` | Gelen kutusu |
-| `/kapanis` | Akşam kapanışı |
+| ~~`/kapanis`~~ | Ç4c: kapanışın sayfası yok; bir sahnenin içinde açılır ("Akşam kapanışı"). Eski adres Bugün'e yönlenir |
 | `/ayarlar` | Ayarlar (Ç4b): bölüm listesi, "Dışa aktarım" ve "Hesap"; her bölüm kendi sayfasında: `/ayarlar/gorunum` ("Saydamlığı azalt", "Hareketi azalt"), `/ayarlar/cerceve` (günün çerçevesi), `/ayarlar/kayitlar` (uyanış ve yatış kayıtları), `/ayarlar/ses` (sesli anlatım, bu cihaz), `/ayarlar/yapay-zeka`, `/ayarlar/baglantilar` (Ç3d). Panoda liste solda, bölüm sağda. Eski `/ayarlar#<bölüm>` bağlantıları bölümün sayfasını açar |
 | `/ayarlar/moduller` | Modülleri etkinleştir, duraklat, arşivle; `/ayarlar/moduller/[slug]` modülün renkleri (Ç3e) ve kendi ayarları |
 | `/ayarlar/bloklar` | Haftalık seriler, tek seferlik bloklar, önümüzdeki 4 haftanın blokları |
@@ -74,7 +74,7 @@ Geniş ekranda tek sayfa, kaydırma yok:
 | `done` | "Bugün tamam", kısa özet (kaç iş, kaç dakika) | Düğme yok (Ç4a) |
 | `night` | Saat, yarının ilk işi (çerçeve açıkken yarının uyanışı da) | Yok |
 | `morning` (Ç3c) | "Günaydın", günün kısa özeti | Uyandım, Biraz önce |
-| `evening` (Ç3c) | "Akşam", sıradaki akşam işi, bu gecenin yatışı, yarının uyanışı, uyku süresi | Başla, Yatıyorum, Günü kapat, geç yatacağım, erken kalkacağım |
+| `evening` (Ç3c) | "Akşam", sıradaki akşam işi, bu gecenin yatışı, yarının uyanışı, uyku süresi | Başla (yalnızca iş geldiğinde, birincil), Yatıyorum (ikincil), geç yatacağım, erken kalkacağım; Ç4c: "Günü kapat" yok; kapanışı barındıran etkin modül yoksa ikincil "Kapanış" |
 | `return` | "Kaldığın yerden devam", sıradaki iş (Ç4a) | Başla |
 | `running` + sahne (Ç3c) | Modülün sahnesi, üstte çekirdeğin şeridi | Çık; sahnenin kendi düğmeleri |
 
@@ -91,12 +91,12 @@ Geniş ekranda tek sayfa, kaydırma yok:
 - **Devam ediyor musun?** Oturum tahminin iki katını geçince kart sorar; "Devam ediyorum" cevabı oturumda saklanır (`sessions.confirmed_at`, her ekran bilir) ve soru bir tahmin süresi sonra yeniden gelir. 30 dakika cevap gelmezse oturum tahmini sürede bitmiş sayılarak kapatılır, ölçülmez (`close_unanswered_session`).
 - **Takıldım → Adımı küçült** aynı modülde (kalemin oturumuysa aynı kalemde) bugüne 15 dakikalık bir iş açar; **Birini bekliyorum** işi (oturumsa kalemiyle birlikte) bekletir, takip üç gün sonra gelir; **Bugün değil** ertelemedir.
 - **Takip** günü gelen bekleyen iş kartta "… bekleniyor. Takip et." olarak çıkar: Cevap geldi, Hâlâ bekliyor.
-- **Sıradakiler** günün kalan planıdır, sırayla (Ç4a: "Vakit kalırsa" yok; sığmayan iş ekranda birikmez). Gün tamamlanınca liste boştur: "Sırada başka iş yok." Açılır liste ("Hepsini göster", "Küçült") Ç4c'dedir.
-- **Gece** büyük saat ve "Yarın ilk iş: …"; **geri dönüş** "Kaldığın yerden devam", sıradaki iş ve Başla (Ç4a). İkisinde de ekran sakindir: sıradakiler, günün şeridi, sabit bloklar ve uyarılar gösterilmez.
+- **Sıradakiler** günün kalan planıdır, sırayla (Ç4a: "Vakit kalırsa" yok; sığmayan iş ekranda birikmez). Gün tamamlanınca liste boştur: "Sırada başka iş yok." Ç4c: kapalıyken ilk işler (telefonda 2, panoda 3) ve "Hepsini göster"; açılınca günün kalanındaki her şey sırayla (işler, aralarındaki molalar "mola · 15 dk", sabit bloklar "18:30–19:15 · sabit"; uyanışa ya da yatışa bağlı işin saati de yazar) ve "Küçült". Veri saf `src/core/today/flow.ts` (`upNextOf`).
+- **Gece** büyük saat ve "Yarın ilk iş: …"; **geri dönüş** "Kaldığın yerden devam", sıradaki iş ve Başla (Ç4a). İkisinde de ekran sakindir: sıradakiler, günün akışı, sabit bloklar ve uyarılar gösterilmez (Ç4c: gece panelsiz, yalnızca saat). Boş gün de liste, akış ve uyarı göstermez.
 - Alt satırda **X dk'm var** (`X`) ve **Yeniden planla** (`R`); Yeniden planla günü şimdiki halinden, sabahın önerisi olmadan yeniden kurar (yapay zeka açıkken 7. adımda `replan`). "X dk'm var" plandaki ve plan dışındaki bütün adaylardan seçer.
-- **TopBar:** tarih ve saat; çerçeve açıkken uyanış ve yatış aralığı. Ç4a: "Bugün n/3", bitiş, hayat modu ve bağlam seçici kalktı; telefonun bağlamı tahmin edilir (`docs/04-planlayici.md`, "Bağlam tahmini"). Yalnızca başlık ve tarihe inmesi Ç4c'dedir (`docs/tasarim/ekranlar/bugun.md` 4.1).
-- **DayStrip:** günün başından yatışa (Ç4a; çerçeve kapalıyken varsayılan yatışa) şerit; sabit bloklar gri, atanan işler işin rengiyle (Ç3e'den beri bölümün rengi; "Renkler ve bölümler"), şimdiki an çizgisi. Telefonda yana kayar.
-- **AlertBar:** en çok iki uyarı; son tarih ve taban uyarısında "Haftaya bak", öbürlerinde "Modüle git".
+- **TopBar (Ç4c):** yalnızca "Bugün" ve tarih; panoda saat de. Uyanış ve yatış yalnızca günün akışının başlığında yazar. Ç4a: "Bugün n/3", bitiş, hayat modu ve bağlam seçici kalktı; telefonun bağlamı tahmin edilir (`docs/04-planlayici.md`, "Bağlam tahmini"). Bugün'de "Günü kapat" yok.
+- **Günün akışı (Ç4c; eski DayStrip):** uyanıştan (çerçeve kapalıyken günün başından) beklenen yatışa saatli şerit (kit'in `TimeStrip`'i): üstte saatler (panoda her saat, telefonda üç saatte bir), işler işin rengiyle (Ç3e'den beri bölümün rengi; "Renkler ve bölümler"), sabit bloklar gri ve tam boy, yol taralı, uyanışa ve yatışa bağlı bölümler bir ton açık; günün yapılan işleri (oturumları) soluk; şimdiki an beyaz çizgi ve "şimdi 14:10". Panoda adlar parçanın içinde, telefonda dokununca balon. Veri saf `src/core/today/flow.ts` (`dayFlowOf`).
+- **AlertBar:** en çok iki uyarı (kit'in uyarı satırı); son tarih ve taban uyarısında "Takvime bak", öbürlerinde "Modüle git".
 
 **Görüşün gerek:** Durdur ve Bugün bitenler'in kalması; 30 dakikalık cevap süresi; uyarı eylemlerinin bağlantı olması.
 
@@ -149,14 +149,14 @@ Uyanışa ve yatışa bağlı işler bir dizidir (`docs/06-modul-sozlesmesi.md`,
 Çerçeve açıkken (`settings.day_frame`, `docs/04-planlayici.md` "Günün çerçevesi"):
 
 - **Günaydın** (`morning`): kartta "Günaydın", büyük "Uyandım" düğmesi, yanında "Biraz önce" (15, 30, 60 dk önce; iki dokunuş), altında günün kısa özeti: ilk sabit blok (Ç4a: günün 3 işi ve bitiş yok). Ekranın geri kalanı (Sıradakiler, şerit) olağan haliyle durur. "Uyandım"dan sonra kart uyanışa bağlı ilk işi önerir.
-- **Akşam** (`evening`; Ç4a: çalışma penceresi bitince, yani yatışa bağlı dizinin başında; kapanıştan sonra; ya da yatış aralığı başlamış ve günün işi bitmişse): sakin kart. Üstte "Akşam"; varsa zamanı gelen yatışa bağlı iş ve Başla; "Bu gece yatış 23:30 · yarın uyanış 07:30 · uyku 8 sa" satırı (uyku hedefin altındaysa nedeniyle: "Yarın 08:30'da Ders; bu gece en çok 7 sa uyku."); "Yatıyorum", "Günü kapat" (kapanış yapılmadıysa); iki küçük düğme: "Bu gece geç yatacağım" ve "Yarın erken kalkacağım" (her biri 30, 60, 90 dk seçer; yalnızca o geceyi ve o sabahı değiştirir). Sıradakiler ve uyarılar gösterilmez. Ç3g: yatışa bağlı iş karta yuvasından en çok 15 dakika önce gelir; o zamana kadar uyku satırının altında "Sırada: Akşam kapanışı · 22:20" ve küçük "Şimdi başla" durur (**görüşün gerek**).
-- **"Yatıyorum"un onayı (Ç3g).** Yatış aralığının başından 2 saatten çok önce basılan "Yatıyorum" (akşam kartı, "Onayla ve yat", sahnenin `controls.bed()`'i) günü tek dokunuşla kapatmaz: pencere "Saat 16:49. Şimdi yatıyor musun?", altında "Yatış aralığının başı: 22:00." (çerçeve kapalıyken "Yatış saati: 22:00."; Ç4a), "Evet, yatıyorum" ve "Vazgeç". Aralıkta ve yakınında tek dokunuş. Dışarıdan gelen yatış (`core/bed`) sorulmaz. **Görüşün gerek:** 2 saatlik eşik ve metin.
+- **Akşam** (`evening`; Ç4a: çalışma penceresi bitince, yani yatışa bağlı dizinin başında; kapanıştan sonra; ya da yatış aralığı başlamış ve günün işi bitmişse): sakin kart. Üstte "Akşam"; varsa zamanı gelen yatışa bağlı iş ve Başla; "Bu gece yatış 23:30 · yarın uyanış 07:30 · uyku 8 sa" satırı (uyku hedefin altındaysa nedeniyle: "Yarın 08:30'da Ders; bu gece en çok 7 sa uyku."); "Yatıyorum" (ikincil); Ç4c: "Günü kapat" yok; kapanışı barındıran etkin modül yoksa (`hostsClosing`) ve kapanış yapılmadıysa ikincil "Kapanış" (kapanışı standart sahne kabuğunda açar); iki küçük düğme: "Bu gece geç yatacağım" ve "Yarın erken kalkacağım" (her biri 30, 60, 90 dk seçer; yalnızca o geceyi ve o sabahı değiştirir). Sıradakiler ve uyarılar gösterilmez. Ç3g: yatışa bağlı iş karta yuvasından en çok 15 dakika önce gelir; o zamana kadar uyku satırının altında "Sırada: Akşam kapanışı · 22:20" ve küçük "Şimdi başla" durur (**görüşün gerek**).
+- **"Yatıyorum"un onayı (Ç3g).** Yatış aralığının başından 2 saatten çok önce basılan "Yatıyorum" (akşam kartı, sahnenin `controls.bed()`'i; Ç4c: "Onayla ve yat" kalktı) günü tek dokunuşla kapatmaz: pencere "Saat 16:49. Şimdi yatıyor musun?", altında "Yatış aralığının başı: 22:00." (çerçeve kapalıyken "Yatış saati: 22:00."; Ç4a), "Evet, yatıyorum" ve "Vazgeç". Aralıkta ve yakınında tek dokunuş. Dışarıdan gelen yatış (`core/bed`) sorulmaz. **Görüşün gerek:** 2 saatlik eşik ve metin.
 - **Kayıtların düzeltilmesi (Ç3g).** Ayarlar → "Uyanış ve yatış kayıtları" (`/ayarlar/kayitlar`): bugünün ve dünün uyanışı ve yatışı saatle düzeltilir ("Kaydet") ya da silinir ("Uyanışı sil", "Yatışı sil"); 12:00'den önceki yatış saati o gecenin, gece yarısından sonrasıdır. Düzeltme sahnenin 10 dakikasından sonra da olur, oturuma dokunmaz; plan gün kaydından yeniden kurulur, modüller olayı duyar. Gece kartında "Yatışı düzelt" bağlantısı oraya götürür. Önceden bunun yolu yoktu (yalnızca sabah "Biraz önce" ve 10 dakikalık "Geri al").
 - **Gece:** büyük saat, altında "Yarın uyanış 07:30" ve "Yarın ilk iş: …" (iki satır).
-- **Üst şerit:** "uyanış 07:40" (tahminiyse "~07:40"; kayıt yoksa "beklenen uyanış 08:00") ve "yatış 22:00–01:00".
+- **Uyanış ve yatış (Ç4c):** yalnızca günün akışının başlığında: "07:02 uyanış · 23:00 yatış" (uyanış kaydı yokken beklenen uyanış; yatış bu gecenin beklenen yatışı). Üst satırda yazmaz.
 - **Zaman çizelgesi** uyanıştan beklenen yatışa uzanır; uyanışa bağlı, çalışma ve yatışa bağlı bölümler zemin tonuyla ayrılır (Ç4a: akşam bölümü ve bitiş çizgisi yok).
-- **Akşam kapanışının sonunda** "Onayla"nın yanında "Onayla ve yat" (kapanışı yazar ve yatışı kaydeder).
-- **Hafta:** en üstte tek satır: son 7 günün ortalama uyanışı, yatışı ve uykusu (kayıt olan günlerden; yoksa satır yok). Seri, puan, rozet yok.
+- ~~**Akşam kapanışının sonunda** "Onayla ve yat"~~: Ç4c'de kalktı; yatışı sahnenin son adımı ya da akşam kartının "Yatıyorum"u yazar.
+- ~~**Hafta:** son 7 günün uyku satırı~~: Ç4c'de Takvim'den kalktı (`docs/tasarim/ekranlar/takvim.md`; Rutin → Düzenlilik'te durur).
 - **Ayarlar → Günün çerçevesi:** "Günün çerçevesi açık" (kapalıyken planlayıcı Ç3b'deki gibi), uyanış ve yatış aralığı, uyku hedefi (saat), gün tipine özel aralıklar (isteğe bağlı), "Uyandım'dan sonra ilk rutin kendiliğinden başlasın" (Ç3f: uyanış telefondan gelince uygulama açılınca da), "Dizide sıradaki iş kendiliğinden başlasın".
 - **Ayarlar → Sesli anlatım (bu cihaz):** açık ya da kapalı, ses (cihazın Türkçe sesleri), hız, "Bu cihaz dokunuş olmadan da konuşsun", "Dene". Cihazda Türkçe ses yoksa "Bu cihazda Türkçe ses yok; anlatım sessiz kalır." yazar ve hiçbir şey söylenmez (Ç3g).
 
@@ -273,9 +273,9 @@ Alan sayfası (`/a/[slug]`) aynı iskeleti kullanır ve üye modüllerin durum �
 
 ## Akşam kapanışı
 
-**15 Kas 2026 kararı (kurulmadı):** kapanış Rutin'in akşam sahnesinin içinde yapılır; ayrı sayfa ve Bugün'deki "Günü kapat" kalkar (`docs/tasarim/ekranlar/kapanis.md`, `docs/09-kararlar.md`). Aşağıdaki metin kurulu olan hali anlatır.
+**15 Kas 2026 kararı, Ç4c'de kuruldu:** kapanış bir sahnenin içinde açılır (`controls.closing()`; Rutin'in akşam sahnesinde "Yarının listesi" adımı); ayrı sayfa (`/kapanis` Bugün'e yönlenir), Bugün'deki iki "Günü kapat" ve "Onayla ve yat" kalktı. Etkin hiçbir modül kapanışı barındırmıyorsa (`hostsClosing`) akşam kartındaki ikincil "Kapanış" kapanışı standart sahne kabuğunda açar (şerit "Akşam kapanışı", "Çık"). "Vazgeç" kapanışı atlar, sahne sürer. Akşam sahnesi hiç açılmazsa kapanış atlanmış olur: sabah plan kendiliğinden kurulur, cevaplanmamış sorular ertesi güne kalır. Görünüşü `docs/tasarim/ekranlar/kapanis.md`.
 
-`/kapanis`, tek akış; her adım tek ekran, klavyeyle geçilir (Enter ilerler, Escape geri döner; metin kutusunda Ctrl+Enter). İçerik `docs/04-planlayici.md` içinde: sorular (en çok 5), "Bugün başka ne yaptın?" (bugün için açık kalan işler ve ritimler, tek dokunuşla "Yaptım"), yarının taslağı (yarının planındaki işler sırayla, "İstemediğini çıkar."; "Çıkar" yarının listesinden alır; Ç4a: işaret kutusu, günün üç işi ve "vakit kalırsa" etiketi yok), aklında kalanlar (her satır gelen kutusuna), onay (yarının işleri sırayla). Onayla yarının kaydını (`plan_source = closing`, çıkarılanlar `skipped`) ve bugünün kapanışını yazar, Bugün'e döner; ekran gece durumundadır. Bugün ekranının alt satırında "Günü kapat". İstenirse hiç yapılmaz. **Görüşün gerek** (adımlar ve metinler).
+Tek akış; her adım tek ekran, klavyeyle geçilir (Enter ilerler, Escape geri döner; metin kutusunda Ctrl+Enter). İçerik `docs/04-planlayici.md` içinde: sorular (en çok 5), "Bugün başka ne yaptın?" (bugün için açık kalan işler ve ritimler, tek dokunuşla "Yaptım"), yarının taslağı (yarının planındaki işler sırayla, "İstemediğini çıkar."; "Çıkar" yarının listesinden alır; Ç4a: işaret kutusu, günün üç işi ve "vakit kalırsa" etiketi yok), aklında kalanlar (her satır gelen kutusuna), onay (yarının işleri sırayla). Onayla yarının kaydını (`plan_source = closing`, çıkarılanlar `skipped`) ve bugünün kapanışını yazar, sahneye döner (sahne sıradaki adımına geçer; standart kabukta Bugün'e). İstenirse hiç yapılmaz. **Görüşün gerek** (adımlar ve metinler).
 
 ## Boş ve hata durumları
 

@@ -56,6 +56,7 @@ export type ModuleDefinition = {
   chip: (ctx: ModuleContext) => Promise<ChipData>          // tek satır durum + sağlık
   nowCard?: (task: Task) => NowCardContent | null           // kendi işleri için özel kart içeriği
   alerts?: (ctx: ModuleContext) => Promise<Alert[]>         // en fazla 1 tanesi gösterilir
+  hostsClosing?: (ctx: ModuleContext) => Promise<boolean>   // Ç4c: akşam kapanışını kendi sahnesinde barındırıyor mu (aşağıda "Diziler", kural 6)
 
   // 2. Hangi girişleri kabul eder
   intake: IntakeType[]
@@ -176,9 +177,25 @@ type ModuleUi = {
   scene?: ModuleScene                // Ç3c: iş çalışırken Bugün ekranını devralan görünüm (aşağıda)
   scenes?: Record<string, ModuleScene>   // Ç3e: adı verilen sahneler; bölümler bunlara başvurur
   backdrop?: ComponentType<ModuleBackdropProps>   // Ç4b: modülün kendi zemini (aşağıda)
+  areaViews?: ModuleAreaView[]       // Ç4c: alanının sayfasına verdiği görünümler (aşağıda "Alan sayfası")
 }
 
 type ModuleViewProps = { params: Record<string, string> }   // alt sayfalarda ':id' gibi parçalar
+
+// Ç4c: alan sayfasına bir görünüm; yoğun camlı panelde, başlığı ve sağında modülün adıyla çizilir
+type ModuleAreaView = {
+  key: string                        // küçük harf, rakam, tire, alt çizgi; modülde tekil
+  title: string                      // panelin etiketi ("Son 14 gün · temel adımlar")
+  component: ComponentType<{ device: 'pano' | 'telefon' }>   // useModule() ile kendi bağlamına ulaşır
+  wide?: boolean                     // panoda geniş sütun
+}
+```
+
+### Alan sayfası (Ç4c)
+
+`/a/<alan>`, alanın (`area.slug`) etkin ve duraklatılmış üye modüllerini toplar: başlıkta alanın adı ve üyeleri; her üye için bir panel (renk noktası, ad, çipin durum metni, haftalık raporun ilk üç sayısı; dokununca modülün sayfası; duraklatılan soluk ve "duraklatıldı"); altında etkin üyelerin `ui.areaViews` görünümleri, her birinin sağ üstünde kaynağı. Girişler: Modüller'deki alan panelinde "Alan sayfası" ve modül sayfasının başlığında alanın adı. Kurallar: görünüm salt okur (yazmaz, eylem düğmesi koymaz), kendi modülünün bağlamıyla okur (`useModule()`, `useModuleQuery`), kit'in parçalarını ve token'ları kullanır; hata verirse yalnızca kendi paneli "Bu görünüm açılamadı." der. Sayfanın metrikleri tasarlanmadı (13 Kas 2026 kararı: en az iki modül iki hafta kullanıldıktan sonra); tek bir "puan" yoktur. Modüller arası türetilmiş metriğin yeri (çekirdek mi, alan mı) o tasarımda belirlenir (`docs/moduller/rutin.md`, çekirdek notu 12). Örnek: Rutin'in "Son 14 gün · temel adımlar" görünümü (sabah ve akşam, gün başına bir kare).
+
+```ts
 
 // Ekran bileşenleri bağlama `useModule()` ile ulaşır (src/core/ui/module/ModuleProvider).
 type ModuleUiContext = ModuleContext & {
@@ -233,7 +250,8 @@ type SceneProps = {
     stop: () => Promise<void>        // "Durdur"
     stuck: () => void                // "Takıldım" akışını açar (sahneden çıkar)
     exit: () => void                 // sahneden çık; oturum sürer
-    closing: () => void              // Ç3f: akşam kapanışını sahnenin içinde açar (aşağıda "Diziler")
+    closing: () => Promise<'confirmed' | 'skipped'>
+                                     // Ç3f: akşam kapanışını sahnenin içinde açar (aşağıda "Diziler"). Ç4c: nasıl bittiğini döndürür ("Onayla": confirmed, "Vazgeç": skipped)
     bed: () => Promise<boolean>      // Ç3f: "Yatıyorum": yatışı kaydeder, oturumu "Bitti" ile kapatır. Ç3g: yatış aralığından 2 saatten çok önceyse önce sorar; "Vazgeç"te false döner, hiçbir şey değişmez
   }
   say: Say
@@ -292,6 +310,7 @@ type SceneChain = {
 4. **Kendiliğinden devam.** `settings.day_frame.chain_auto` açıkken (başlangıçta açık) dizideki çalışan iş "Bitti" ile kapanınca ya da çalışırken ertelenince dizinin sıradaki işi aynı cihazda hemen başlar; başka modülün işiyse onun sahnesi (yoksa standart kart) gelir. Durdur, Takıldım ve cevapsız kapanıştan sonra başlamaz; son iş bitince standart ekran döner. Başlatma çekirdeğin oturum yolundandır; kendiliğinden başlayan oturum her oturum gibidir ("Devam ediyor musun?" ve 30 dakika kuralı aynı). İki cihaz aynı anda bitirse de tek oturum başlar.
 5. **Dışarıdan gelen uyanış.** Uyanış dışarıdan kaydedildiyse (`core/wake`) ve o gün uyanış dizisi hiç başlamadıysa, `start_on_wake` açıkken uygulama o cihazda ilk öne geldiğinde, dizi hâlâ önerilirken (bitişinden 60 dakika sonrasına kadar), dizinin ilk işi başlar. Elle "Uyandım"ın davranışı değişmez.
 6. **Sahneden kapanış.** `controls.closing()` akşam kapanışını sahnenin içinde açar: çekirdeğin şeridi durur, oturum sürer; kapanış onaylanınca ya da vazgeçilince sahneye dönülür. Bu kapanışta "Onayla ve yat" yoktur: yatışı sahnenin kendi son adımı kaydeder, `controls.bed()` ile (çekirdeğin "Yatıyorum"u: yatışı şimdi olarak yazar, çalışan oturumu "Bitti" ile kapatır, ekran geceye geçer). Kapanışın yapıldığı `today.closed` ile okunur.
+   **Kapanışın yeri (Ç4c; kullanıcının kararı, 15 Kas 2026).** Kapanışın ayrı sayfası ve Bugün'deki "Günü kapat" yoktur; kapanış çekirdeğin yeteneği olarak kalır ve yalnızca bir sahnenin içinde açılır. `controls.closing()` kapanış bitince çözülür: "Onayla" ile `confirmed`, "Vazgeç" (kapanışı atlar, sahne sürer) ya da sahnenin kapanması ile `skipped`; sahne buna göre sıradaki adımına geçer (beklemeden çağıran eski sahne de çalışır). Çekirdek modüle bağımlı olmaz: modül kapanışı o an barındırdığını `hostsClosing` ile söyler (ucuz ve salt okuyan; çip gibi her veri değişiminde yeniden sorulur, hata verirse "hayır" sayılır). Etkin hiçbir modül barındırmıyorsa Bugün'ün akşam kartında ikincil "Kapanış" düğmesi görünür ve kapanış standart sahne kabuğunda açılır (çekirdeğin şeridi "Akşam kapanışı" ve "Çık"; oturum yoktur; `ClosingShell`). Akşam sahnesi hiç açılmazsa kapanış atlanmış olur: sabah plan kendiliğinden kurulur, cevaplanmamış sorular ertesi güne kalır. Örnekler: Rutin akşam rutininde "Yarının listesi" adımı açıkken barındırır (adım gelince kapanışı açar); `deneme` açık bir akşam "rutin" kaydı varken (gece sahnesinde "Günü kapat").
    **Yatışın geri alınması (Rutin 1, 14 Kas 2026).** `bed()` gün kaydına yatışı yazan oturumu da yazar (`days.bed_session_id`). Yatıştan sonraki 10 dakika boyunca gece ekranı o oturumun sahnesidir (her cihazda, sayfa yenilense de; şerit yoktur, iş çalışmıyor): sahne `SceneProps.bedtime` alır (`at`, `until`, `undo`). `undo()` ("Geri al") yatışı hiç yazılmamış gibi kaldırır: yatış ve işaret silinir, oturumun "Bitti"sinin yaptığı geri alınır (ritim kaydı silinir; iş yeniden "yapılıyor", dakikaları kalemden düşülür), oturum kendi başlangıcıyla yeniden açılır ("Devam ediyor musun?" o andan sayılır). Uyku planı, yarının beklenen uyanışı ve planın kendisi gün kaydından türediği için kendiliğinden yeniden hesaplanır; ekran yeniden çalışan işin sahnesidir ve modül kendi tablosundaki yerden sürer. Çekirdek bütün modüllere `core.bed_undone` (`{ date }`), işin modülüne aynı `session_id` ile yeniden `core.session_started` söyler. 10 dakika geçtiyse `expired`; yatış başka yoldan yazıldıysa ya da silindiyse (çekirdeğin "Yatıyorum"u, kapanışın "Onayla ve yat"ı, `core/bed`: hepsi işareti siler) ya da yatıştan sonra başka bir iş başladıysa (bitmiş olsa da) `changed` döner ve hiçbir şey değişmez. Bu sürede çalışan iş yoktur: `finish`, `stop`, `stuck`, `exit`, `closing` etkisizdir; ikinci bir `bed()` yatışı yeniden yazar. Sınır: geç bir yatışın yarının kapasitesini düşürüp tetiklediği haftanın yeniden taahhüdü (`capacity_lost`) geri alınmaz; taahhüt kapasite artınca yeniden kurulmadığı için (plan istikrarı, `docs/04` "Hafta") hafta düşürülmüş taahhütle kalır, günün planı ise kendiliğinden düzelir. İki cihaz aynı anda geri alırsa tek sonuç olur (veritabanı fonksiyonu `undo_scene_bed`, gün satırını kilitler). Test: `tests/db/bed-undo.test.ts`; örnek: `deneme`'nin gece sahnesi.
 7. **Standart kart.** Sahnesi olmayan ya da sahneden çıkılmış çapalı işte Şimdi kartı dizideki yeri tek satırla gösterir.
 

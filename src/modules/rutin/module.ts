@@ -1,5 +1,6 @@
 import { token } from "@/core/ui/tokens";
 import type { ModuleDefinition, ModuleFacet } from "@/core/contract/types";
+import { BasicStepsView } from "./components/AreaView";
 import { EveningTab, MorningTab } from "./components/StepsTab";
 import { listRoutines, listRuns, listSteps } from "./queries";
 import { listeners, proposeAll, writeStartList } from "./rules";
@@ -121,5 +122,15 @@ export const rutin: ModuleDefinition = {
       },
     ],
     scenes: { rutin: rutinScene },
+    // Ç4c: on the Sağlık area's page, the last 14 days of the basic steps (an example of the
+    // contract; the page's metrics are designed later).
+    areaViews: [
+      {
+        key: "temel-adimlar",
+        title: "Son 14 gün · temel adımlar",
+        component: BasicStepsView,
+        wide: true,
+      },
+    ],
   },
 };

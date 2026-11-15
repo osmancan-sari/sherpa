@@ -26,7 +26,7 @@ Ana ekrana eklenen uygulama saat şeridinin ve adanın altına da çizer (`black
 
 ## Adlar
 
-"Hafta" yerine **"Takvim"** (yalnızca ad; adres `/hafta` kalır, sayfanın içi Ç4c'de). Telefonda "Gelen kutusu" kısaltılır: "Gelen".
+"Hafta" yerine **"Takvim"** (Ç4c: adres `/takvim`; eski `/hafta` yönlenir). Telefonda "Gelen kutusu" kısaltılır: "Gelen".
 
 ## Sayfa başlığı
 

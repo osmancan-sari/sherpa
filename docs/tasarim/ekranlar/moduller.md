@@ -52,3 +52,7 @@ Kaynak: `docs/moduller/ORTAK.md` bölüm 4 (Rutin oturumu, 13–14 Kas 2026; isk
 - **İçerik veridir, kod değil.** Kullanıcı öğrendikçe adım, ürün, kural ekleyip değiştirir; bunun için kod değişmez.
 
 Kurulumda Yaklaşanlar satırının düğmeleri işin türüne göredir: iş Başla, Bitti, Düzenle; ritim Başla, Yapıldı, Düzenle; iş kalemi Başla, Kalemi bitir, Kalemi bırak, Düzenle (kodda olduğu gibi; karede üç düğme çizildi). Bekleyen iş soluk.
+
+## Alan sayfası: kurulum (Ç4c, 16 Kas 2026)
+
+Kod: `src/core/ui/module/AreaScreen.tsx`, adres `/a/<alan>`; sözleşme `ui.areaViews` (`docs/06-modul-sozlesmesi.md`, "Alan sayfası"). Başlıkta alanın adı ve "Alan · Rutin, Spor, Beslenme"; telefonda geri oku Modüller'e. Üye panelleri yoğun cam (telefonda alt alta, panoda üç sütun): renk noktası, ad (`text-lead`), çipin metni, sağda ok; altında haftalık raporun ilk üç sayısı (etiket `text-sm`, değer `text-lg`); duraklatılan soluk ve "duraklatıldı". Görünümler yoğun camda (panoda on iki sütunluk ızgarada geniş olan 7, öbürü 5), etiketin sağında kaynağı. Rutin'in örneği: "Son 14 gün · temel adımlar" (karedeki `MT8` ikinci görünüm). Karedeki uyku görünümü ("Uyku · son 7 gün") kurulmadı: uyku çekirdeğin kaydıdır ve alan sayfasının metrikleri sonra tasarlanır (**görüşün gerek**). Girişler: Modüller'deki alan panelinin başlığında ikincil "Alan sayfası" (`MT1`) ve modül sayfasının başlık satırında alanın adı (bağlantı). Kodu olmayan ya da üyesi olmayan alan: "Böyle bir alan yok." ve Modüller bağlantısı.
