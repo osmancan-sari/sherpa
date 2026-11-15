@@ -6,7 +6,7 @@ Kaynak: `docs/13-cam-dili.md` bölüm 4.7 (15 Kas 2026, onaylı); kurulduğu faz
 
 Sakin zemin. Çekirdeğin sağladığı kabuklar çizildi; içini modül doldurur. Örnek olarak Okul kullanıldı (`deneme` çizilmedi); örnek veriler uydurmadır. Rutin'in kendi sayfası Rutin tuvalindedir ve bu iskelete uyar.
 
-**Modüller.** Alanı olan modüller alan panelinde toplanır: başlıkta alanın adı, üyeleri ve "Alan sayfası" (ikincil); altında modül satırları. Alansız modüller tek panelde. Satır: renk noktası, ad, modülün durum metni, sağda ok; duraklatılan modül soluk ve "duraklatıldı" etiketiyle. Altta "Modülleri aç, duraklat ya da arşivle". Panoda paneller iki sütun, menünün yanındaki genişliğin tamamında (modül sayfası gibi); tek kalan panel iki sütunu kaplar. Karede (`MP1`) iki 480 px'lik sütun ve sağda boşluk vardı; 1920 px'lik panoda içerik sola yığılıp dar kaldığı için kullanıcının notuyla (15 Kas 2026) genişledi (**görüşün gerek**: tek panelin tam genişlikte duruşu çizilmedi).
+**Modüller.** Alanı olan modüller alan panelinde toplanır: başlıkta alanın adı, üyeleri ve "Alan sayfası" (ikincil); altında modül satırları. Alansız modüller tek panelde. Satır: renk noktası, ad, modülün durum metni, sağda ok; duraklatılan modül soluk ve "duraklatıldı" etiketiyle. Altta "Modülleri aç, duraklat ya da arşivle". Panoda paneller iki sütun, menünün yanındaki genişliğin tamamında (modül sayfası gibi); tek kalan panel iki sütunu kaplar. Karede (`MP1`) iki 480 px'lik sütun ve sağda boşluk vardı; 1920 px'lik panoda içerik sola yığılıp dar kaldığı için kullanıcının notuyla (15 Kas 2026) genişledi. Tek kalan panel de iki sütunu kaplar, tam genişlikte durur (kullanıcının kararı, 15 Kas 2026; karede çizilmedi).
 
 **Modül sayfası: beş bölge.**
 

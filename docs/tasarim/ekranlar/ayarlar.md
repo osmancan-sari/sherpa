@@ -21,7 +21,7 @@ Sakin zemin, yoğun cam. Alanlar ve metinler koddaki gibidir (`src/app/(app)/aya
 
 | Bölüm | Çizimdeki hali |
 | --- | --- |
-| Günün çerçevesi | Açıklama; "Günün çerçevesi açık"; Uyanış, Yatış, Uyku hedefi (kurulumda kit'in sayacı: yarım saatlik adımlarla 4–12 saat, "8 saat"; karede kutu; **görüşün gerek**); açılır "Gün tipine göre (isteğe bağlı)"; iki kendiliğinden başlatma anahtarı; "Kaydet". |
+| Günün çerçevesi | Açıklama; "Günün çerçevesi açık"; Uyanış, Yatış, Uyku hedefi (kurulumda kit'in sayacı: yarım saatlik adımlarla 4–12 saat, "8 saat"; karede kutu; kullanıcının kararı, 15 Kas 2026); açılır "Gün tipine göre (isteğe bağlı)"; iki kendiliğinden başlatma anahtarı; "Kaydet". |
 | Uyanış ve yatış kayıtları | Bugün ve dün; her kayıt: ad, saat kutusu, "Kaydet", silme (telefonda "Sil", panoda "Uyanışı sil" / "Yatışı sil"); kayıt yoksa "kayıt yok". |
 | Sesli anlatım | Açıklama; "Sesli anlatım açık"; Ses; Hız (kaydırıcı); "Bu cihaz dokunuş olmadan da konuşsun (ikinci ekran için)"; "Dene". Türkçe ses yoksa dikkat renginde durum satırı. |
 | Modüller | Her modül: renk noktası, ad, durum; eylemler (etkin: "Ayarlar", "Duraklat", "Arşivle"; duraklatılmış: "Sürdür", "Arşivle"; kapalı: "Etkinleştir"). Arşivleme onayı satırın altında açılır: açıklama, "Arşivle" (tehlikeli), "Vazgeç". |
