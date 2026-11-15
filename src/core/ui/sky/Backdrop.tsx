@@ -244,6 +244,8 @@ function Layers({ kind, sky, device }: { kind: BackdropKind; sky: Sky; device: D
  * goes behind this band, which draws the same backdrop again, clipped to the band, its lower edge
  * fading out. So the clock always stands on the sky, as in the phone frames (nothing is drawn
  * there). Its height is env(safe-area-inset-top): where there is no such band, nothing is drawn.
+ * Over it: the menu's own layer (z-20 too, but at the bottom), an AI mark's open note (z-30, it
+ * belongs to what was touched), overlays (z-40, z-50) and the scene (z-30, with its own band).
  */
 function SafeTopBand({ children }: { children: ReactNode }) {
   const ref = useRef<HTMLDivElement>(null);

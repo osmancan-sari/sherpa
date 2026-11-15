@@ -1,5 +1,6 @@
 import type { Locator, Page } from "@playwright/test";
 import { insert, rows, waitFor } from "./data";
+import { runNow } from "./clock";
 import { expect, test } from "./fixtures";
 import { openQuickAdd, roomInTheDay } from "./helpers";
 import { activateDeneme, addRecord, startFromModule } from "./scene-helpers";
@@ -116,18 +117,69 @@ test("every screen of the shell starts under the clock and the island; the sky r
   }
 });
 
+/**
+ * The largest difference of one colour channel between two screenshots of the same size (0–255),
+ * measured in the page's own canvas. A gradient drawn twice may round a channel by a step or two.
+ */
+function difference(page: Page, a: Buffer, b: Buffer): Promise<number> {
+  return page.evaluate(
+    async ([one, two]) => {
+      const pixels = async (base64: string) => {
+        const image = new Image();
+        image.src = `data:image/png;base64,${base64}`;
+        await image.decode();
+        const canvas = document.createElement("canvas");
+        canvas.width = image.width;
+        canvas.height = image.height;
+        const context = canvas.getContext("2d")!;
+        context.drawImage(image, 0, 0);
+        return context.getImageData(0, 0, image.width, image.height).data;
+      };
+      const [x, y] = [await pixels(one), await pixels(two)];
+      let most = 0;
+      for (let i = 0; i < x.length; i++) most = Math.max(most, Math.abs(x[i] - y[i]));
+      return most;
+    },
+    [a.toString("base64"), b.toString("base64")],
+  );
+}
+
+/** As good as the same: no channel more than this apart. */
+const SAME = 3;
+
 test("what scrolls up goes behind the band: the clock stands on the same sky", async ({ page }) => {
+  // The sky changes once a minute: the page's clock stands still for the comparison.
+  await page.clock.setFixedTime(runNow());
   // A long page on the calm backdrop.
   await page.goto("/tasarim");
   await expect(page.getByRole("heading", { level: 1 }).first()).toBeVisible();
-  // The band's upper part, where the clock is (its lower part fades into the page).
-  const clip = { x: 0, y: 0, width: 390, height: 32 };
-  const before = await page.screenshot({ clip, animations: "disabled" });
+  const band = page.getByTestId("safe-top");
+  await expect(band.locator("> div")).toHaveCount(1);
+  const shot = (clip: { x: number; y: number; width: number; height: number }) =>
+    page.screenshot({ clip, animations: "disabled" });
+  const hide = (hidden: boolean) =>
+    band.evaluate(
+      (el, value) => ((el as HTMLElement).style.visibility = value),
+      hidden ? "hidden" : "",
+    );
+  // The whole band, page at its top: with the band and without it, the same sky (it draws the
+  // backdrop itself, not a strip of its own; no seam, and the fading edge shows only sky).
+  const whole = { x: 0, y: 0, width: 390, height: TOP };
+  const sky = await shot(whole);
+  await hide(true);
+  expect(await difference(page, await shot(whole), sky)).toBeLessThanOrEqual(SAME);
+  await hide(false);
+  // Scrolled: the band's upper part, where the clock is (its lower part fades into the page),
+  // is still that sky; without the band the page would be there.
+  const clock = { x: 0, y: 0, width: 390, height: 32 };
+  const before = await shot(clock);
   await page.evaluate(() => window.scrollTo(0, 600));
   expect(await page.evaluate(() => window.scrollY)).toBeGreaterThan(300);
-  await expect(async () => {
-    expect((await page.screenshot({ clip, animations: "disabled" })).equals(before)).toBe(true);
-  }).toPass({ timeout: 5_000 });
+  await expect(async () =>
+    expect(await difference(page, await shot(clock), before)).toBeLessThanOrEqual(SAME),
+  ).toPass({ timeout: 5_000 });
+  await hide(true);
+  expect(await difference(page, await shot(clock), before)).toBeGreaterThan(30);
 });
 
 test("sheets and quick add stay under the island; so does the scene", async ({ page }) => {

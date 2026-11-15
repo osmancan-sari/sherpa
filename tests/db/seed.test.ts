@@ -120,7 +120,11 @@ describe("sample data", () => {
 
   it("commits this week; no life mode is written (Ç4a)", async () => {
     const db = ownerDb();
-    await seedDemo(db, new Date());
+    // This week's Wednesday morning: the commitment is cut from the week's time left, which
+    // late on Sunday is too little for any sitting (the test was red then; the run's hour must
+    // not matter).
+    const now = istanbulInstant(shiftDay(weekStart(dayKey(new Date())), 2), "10:00");
+    await seedDemo(db, now);
     const [week] = ok(await db.from("week_plans").select("*"));
     expect(week.committed.length).toBeGreaterThan(0);
     expect(ok(await db.from("life_mode_periods").select("id"))).toEqual([]);
