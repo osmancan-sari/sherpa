@@ -6,7 +6,7 @@ Bu dosyayı Claude Code günceller. Yeni bir oturum yalnızca bu dosyayı ve `pr
 
 - Faz: **Ç4b. Cam temeli ve içeriği değişmeyen ekranlar** (15 Kas 2026; istem `prompts/c4b-cam-temeli.md`). Ç4a (`c4a-tamam`) yayında
 - Adım: 8 (kapanış): adım denetimi GEÇTİ ve bulguları düzeltildi; faz denetimi
-- Son commit: Ç4a: uçtan uca testlerin sabit saati
+- Son commit: Ç4b faz denetimi düzeltmeleri
 
 ### Çekirdek ekranlarının cam tasarım oturumu (14–15 Kas 2026)
 
@@ -207,7 +207,7 @@ Her adımın sonunda `npm run check` ve commit; şema, geçit ve zarf adımları
 
 **Tasarımın tek kaynağı depoda:** değerler `src/core/ui/tokens.css` (TypeScript yansısı `tokens.gen.ts`, `npm run tokens`), bileşenler `src/core/ui/kit/` ve galeri `/tasarim`, kurallar `docs/tasarim/` (`README.md`, `ilkeler.md`, `parcalar.md`, `ekranlar/`, `kareler/`). `docs/13-cam-dili.md` ve `docs/moduller/rutin-cizimler/degerler.md` taşındı (eski yerlerinde tek satır); `ORTAK.md` bölüm 2–4 ve `docs/05` görünüş için `docs/tasarim`'i gösterir. `CLAUDE.md`'ye "Tasarım" bölümü, `prompts/BASLA.md` ve `prompts/denetci.md`'ye kuralları eklendi.
 
-**Denetimler:** sabit renk kodu, renk işlevi ve keyfi piksel `src/` içinde yasak (`tests/unit/design-values.test.ts`; istisna yalnızca `tokens.css`, üretilen dosyalar ve manzaranın SVG çizim verisi); koddaki her `var(--…)` bir token (`tests/unit/token-references.test.ts`); yansı güncel (`tests/unit/tokens.test.ts`); görsel denetim `tests/e2e/gorsel.spec.ts` (galeri, Gelen kutusu, Modüller, modül sayfası, Ayarlar, Görünüm, hızlı giriş, Bugün'ün boş günü, giriş; telefon ve pano; 13 Kas 2026 14:10; 22 onaylı görüntü; `test:e2e` ile `check:full`'da).
+**Denetimler:** sabit renk kodu, renk işlevi ve keyfi piksel `src/` içinde yasak (`tests/unit/design-values.test.ts`; istisna yalnızca `tokens.css`, üretilen dosyalar ve manzaranın SVG çizim verisi); koddaki her `var(--…)` bir token (`tests/unit/token-references.test.ts`); yansı güncel (`tests/unit/tokens.test.ts`); görsel denetim `tests/e2e/gorsel.spec.ts` (galeri, Gelen kutusu, Modüller, modül sayfası, Ayarlar, Görünüm, hızlı giriş, Bugün'ün boş günü, giriş; telefon ve pano; 13 Kas 2026 14:10; 17 onaylı görüntü, galeri tam sayfa, eşik %0,2; `test:e2e` ile `check:full`'da).
 
 #### Kabul ölçütleri
 
@@ -219,14 +219,14 @@ Her adımın sonunda `npm run check` ve commit; şema, geçit ve zarf adımları
 | Modüle özel zemin sözleşmesi (karar 4) | sağlandı | `ui.backdrop` (`docs/06` "Modülün zemini"), `moduleBackdrop.test.ts`, `deneme`'nin örneği |
 | Pano kuralları: gerçek bulanıklık yalnızca altından içerik geçen yerde, sürekli hareket yok, gece karartması | sağlandı | `kit/glass.css` (paneller yalnızca telefonda bulanık), yıldız kıpırtısı yalnızca telefonda; `Backdrop` panoda gece `color-night-dim`; görüntü `pano-bugun-gece` |
 | Ortak parçalar kit'te ve galeride; kartta en çok bir birincil | sağlandı | `src/core/ui/kit/*`, `/tasarim` (`gorsel.spec.ts` galeri görüntüsü); `docs/tasarim/parcalar.md` |
-| Kabuklar: telefonda alttan sayfa, panoda 440 px yan panel; menü (alt menü ve ayrı "+", yan menü; "Takvim") | sağlandı | `Sheet`, `Window`, `AppNav`; `shell.both.spec.ts` geometri; görüntüler `*-duzenleme`, `*-hizli-giris` |
+| Kabuklar: telefonda alttan sayfa, panoda 440 px yan panel; menü (alt menü ve ayrı "+", yan menü; "Takvim") | sağlandı | `Sheet`, `Window`, `AppNav`; `shell.both.spec.ts` (menünün ve sayfanın geometrisi, telefon ve pano); görüntüler `*-duzenleme`, `*-hizli-giris` |
 | Ekranlar: Gelen kutusu, hızlı giriş ve düzenleme, Modüller, modül sayfası, sahne kabuğu ve tonlar, Ayarlar bölümleri, giriş, boş ve hata, "bağlantı yok" | sağlandı | aşağıdaki karşılaştırma; görüntüler `docs/ekran-goruntuleri/c4b/` |
 | Rutin'in modül sayfası cam dilinde ve sakin zeminde | sağlandı | `StepsTab.tsx` token'larla; görüntüler `*-rutin-modul-*` |
 | `deneme` örnekleri güncel | sağlandı | `deneme` kit'i kullanır, varsayılan renkleri token, kendi zemini (sözleşme örneği) |
-| Metin–zemin en az 4,5:1, gökyüzünün dört durumunda (ölçülerek) | sağlandı | `sky.test.ts` "text on the glass stays at least 4.5:1 in the four states" (sakin zeminde yoğun/ikincil/ana cam, alan, durum renkleri, menü; tam manzarada ana cam koyulaşarak); Rutin'in sahnesi `rutin-glass.test.ts` |
-| Dokunma alanı en az 44 px | sağlandı (otomatik denetlenen yerlerde) | `IconButton` 44; küçük düğme ve haplar kenarından taşan dokunma alanıyla (`module-page.both.spec.ts` ölçer); menü bağlantıları `shell.both.spec.ts` |
+| Metin–zemin en az 4,5:1, gökyüzünün dört durumunda (ölçülerek) | kit ve sakin zemin için sağlandı; tam manzarada panelsiz yazı ölçülmedi | `sky.test.ts` "text on the glass stays at least 4.5:1 in the four states" (sakin zeminde yoğun/ikincil/ana cam, alan, durum renkleri, menü; tam manzarada ana cam koyulaşarak); Rutin'in sahnesi `rutin-glass.test.ts` |
+| Dokunma alanı en az 44 px | sağlandı (telefon ve pano) | `IconButton` 44; küçük düğme ve haplar kenarından taşan dokunma alanıyla (`module-page.both.spec.ts` ölçer); panodaki küçük boylar (`md:h-9`, `md:size-8`) kalktı (faz denetimi 1); menü bağlantıları her iki düzende 44 (`shell.both.spec.ts`) |
 | Hareket ve saydamlık tercihleri her ekranda | sağlandı | `glass.css` (`:root[data-transparency]`, `[data-motion]`); Rutin'in sahnesi aynı anahtarları okur; görüntüler `*-saydamlik` |
-| Başarım: panoda bulanıklık yükü ölçülür | ölçüldü | aşağıda "Başarım" |
+| Başarım: panoda bulanıklık yükü ölçülür | ölçüldü | aşağıda "Başarım"; betik `scripts/perf-board.mjs` |
 | Görüntüler karelerle ekran ekran karşılaştırılır | yapıldı | aşağıda "Karelerle karşılaştırma" |
 | Gerçek cihaz denetimleri "Senden bekleyenler"de | yazıldı | "Senden bekleyenler" → "Ç4b: gerçek cihazda bakılacaklar" (elle doğrulanacak) |
 | Tasarımın tek kaynağı, lint/test, galeri, görsel test, `CLAUDE.md`, `BASLA.md`, `denetci.md` | sağlandı | yukarıda |
@@ -251,12 +251,12 @@ Görüntüler `docs/ekran-goruntuleri/c4b/`, kareler `docs/tasarim/kareler/`. Bu
 | Gökyüzü ve sakin zemin | `Hava_*`, `HavaSakin_*` | aynı renkler (sakin zemin birkaç renk birimi içinde, testli). Fark: gece yıldızlarının yerleri Rutin'in onaylı yıldızları (`Hava_gece`'ninkiler başka yerde); sis rengi Rutin'in (şafakta sıcak, gecede mavi; karelerde gri); öğleden sonra güneşin yolu karelerden türetildi (**görüşün gerek**) |
 | Ortak parçalar | `Parca1`, `Parca2` | aynı (galeri karenin düzeninde). Fark: alttan sayfanın köşesi 28 (karede örnekte 30, ET1'de 28: ekran karesine uyuldu) |
 | Pano kuralları | `K3A`, `K3B`, `K3C` | zemin, cam, saydamlık azaltılmış hal ve gece karartması aynı; kartın içi Ç4c |
-| Menü | her karenin menüsü | aynı. Fark: Ayarlar simgesi dişli (karede güneşe benzer çizim); panoda seçili sayfa karelerin çoğundaki gibi opak açık (birkaç karede yarı saydam) |
+| Menü | her karenin menüsü | aynı (telefonda menünün ve alttan sayfanın arkasındaki bulanıklık hesaplanmış stilde var, `blur(28px)`; başsız tarayıcının telefon taklidindeki görüntülerde görünmüyor: gerçek cihazda bakılacak). Fark: Ayarlar simgesi dişli (karede güneşe benzer çizim); panoda seçili sayfa karelerin çoğundaki gibi opak açık (birkaç karede yarı saydam) |
 | Gelen kutusu | `GT1`–`GT6`, `GP1`–`GP4` | aynı. Fark: "İşe çevir" formunda alanlar ile düğmeler arasındaki açıklama 90 dakikayı aşınca alanların altında (karede düğmelerin altında) |
-| Hızlı giriş | `QT1`–`QT3`, `QP1`, `QP2`, `XT14` | aynı. Fark: tür hapları 38 px (karede biraz daha alçak) |
+| Hızlı giriş | `QT1`–`QT3`, `QP1`, `QP2`, `XT14` | aynı. Fark: tür hapları 38 px (karede biraz daha alçak); tarih alanı tarayıcının kendi biçiminde (görüntülerde "20-Nov-2026": test tarayıcısının dili; karede "20.11.2026", Türkçe cihazda öyle görünür) |
 | Düzenleme ve Zaman | `ET1`–`ET6`, `EP1`, `EP2` | kabuk, alanlar, alt satır ve kesik kenar aynı. Fark: Zaman bölümünün içinde gün seçimi aralığın üstünde ayrı satırda ve tarayıcının açılır listesiyle (karede aynı satırda, cam alan); "+ aralık ekle" ikincil düğme (karede sessiz yazı) — Ç4c'de düzeltilmek üzere "Bilinen sorunlar"da |
 | Modüller | `MT1`, `MP1` | aynı. Fark: alan panelinde "Alan sayfası" düğmesi yok (sayfası Ç4c'de) |
-| Modül sayfası | `MT2`–`MT6`, `MP2`, `MP3`, `K4B` | bölgeler, başlık, sayılar, sekmeler, Yaklaşanlar satırları ve paneller aynı. Fark: "Geçmiş" düğmesi paneli açıp kapamaz, panele götürür (panel sayfada açık; **görüşün gerek**); gövde modülündür (karedeki kesik çizgili yer tutucu çizilmez) |
+| Modül sayfası | `MT2`–`MT6`, `MP2`, `MP3`, `K4B` | bölgeler, başlık, sayılar, sekmeler, Yaklaşanlar satırları ve paneller aynı. Fark: iş kaleminin satırında dört simge düğmesi (Başla, Kalemi bitir, Kalemi bırak, Düzenle; kodda vardı, karede üç), bu yüzden telefonda uzun adlar kesilir; "Geçmiş" düğmesi paneli açıp kapamaz, panele götürür (panel sayfada açık; **görüşün gerek**); gövde modülündür (karedeki kesik çizgili yer tutucu çizilmez) |
 | Sahne kabuğu | `MS1`–`MS3`, `MSP1`–`MSP3` | şerit ve üç ton aynı (tonlar galeride); `deneme` kendi zemininde |
 | Ayarlar | `AT01`–`AT17`, `AP1`–`AP9` | liste, bölüm sayfaları, Görünüm, Günün çerçevesi, Hesap ve Dışa aktarım aynı. Fark: bölümlerin içi kodun eski düzeninde, cam parçalarla (ör. çerçevede saat kutuları satır başında; karede satırın sağında); renk seçicide 44 px daireler yerine eski boyut |
 | Giriş ekranları | `LT1`–`LT8`, `LP1`–`LP3` | aynı |
@@ -267,7 +267,8 @@ Görüntüler `docs/ekran-goruntuleri/c4b/`, kareler `docs/tasarim/kareler/`. Bu
 #### Denetim
 
 1. **Adım denetimi (temel, adım 1–4; `c4a-tamam..5fea04f`, HEAD'e kadar bakıldı): GEÇTİ**, `check:full` denetçide yeşil (birim 581, veritabanı 301, uçtan uca 245). Engelleyici yok; 7 önemli bulgunun hepsi düzeltildi (`d57099e`): sahne şeridi "Saydamlığı azalt"a uymuyordu; Rutin'in sahne panelleri panoda da bulanıktı; `deneme` yeni parçaları göstermiyordu (Bileşenler sekmesine panel, liste satırı, parçalı seçim, hap, anahtar, ilerleme, uyarı satırı ve alttan sayfa eklendi; formları kit'in); değer denetimi simge boylarını (`size={16}`) yakalamıyordu (kural eklendi, simgeler sınıfla); karşıtlık testi yalnız iki metin rengini ölçüyordu (durum hapı, parçalı seçim, yer tutucu, tehlikeli ve pasif düğme, menüler eklendi; "Geride" hapı açık dolguda 4,06:1 kalıyordu, hap koyu cama alındı; yer tutucu `color-ink-3` karedekinden az açıldı); panodaki yan menü öğeleri 40 px'ti (44); `cn`'in düzeltmesinin testi yoktu (`tests/unit/cn.test.ts`). Notlardan düzeltilenler: `@theme static`'in testi, bildirim süresi token'dan, `docs/05`'te "Takvim". Açık kalan notlar: görünüm anahtarının "ilk boyamadan önce" iddiası tarayıcıda tek tek kare ölçülerek sınanmadı (betik `<head>`'de değil `beforeInteractive` ile; test yeniden yüklemede özniteliği bekler); modül zemininde metin karşıtlığını ölçen test yok (`deneme`'nin zemini cam paneller altında; kural `docs/06`'da); Rutin'e özel değerler (`--color-warm-*`, `--sky-owl*`) çekirdeğin `tokens.css`'inde (karar: modüllerin değerleri de tek yerde, adları modülü söyler); sakin zeminin karelere yakınlığı kanal başına 14 birim toleransla sınanıyor; uçtan uca testlerin süre beklentileri Ç4a sonrasındaki saat işinde gevşemişti (kayıtlı karar).
-2. **Faz denetimi:** aşağıda.
+2. **Faz denetimi, tur 1: GEÇMEDİ.** Engelleyici: `check:full` kırmızı; adım denetiminin düzeltmesinde `deneme`'ye eklenen parçalı seçim telefonda sayfayı yana taşırıyor ve bir testin seçicisini çift eşleştiriyordu (`check:full` o düzeltmeden sonra koşulmamıştı). Önemliler: galerinin Ayarlar'daki bağlantısı Ayarlar bölümlere ayrılırken kaybolmuştu; Bugün'ün şeridindeki blok etiketi 3,84:1; telefon görüntülerinde camın arkası bulanık görünmüyor; karşılaştırmada yazılmamış farklar (dört simge düğmesi, tarih biçimi); kabuğun panodaki geometrisinin ve "bağlantı yok"un testi yoktu; panoda 36 ve 32 px düğmeler; görsel denetim %1 eşikle görünüş değişikliğini kaçırıyordu ve galerinin yalnız ilk ekranı çekiliyordu. Notlar: onaylı görüntü sayısı yanlış yazılmıştı, panoda Ayarlar ortalanıyordu, faz görüntüleri eskiydi, "Durum" eskiydi. Hepsi düzeltildi (`a259255`): parçalı seçim kayar ve kendi seçenekleriyle; panoda da 44 px; galeri bağlantısı; etiket koyu camda; iki yeni test (`shell.both.spec.ts`); eşik %0,2, galeri tam sayfa, onaylı görüntüler gerekçesiyle yenilendi; başarım betiği depoda (`scripts/perf-board.mjs`); telefonda bulanıklığın hesaplanmış stilde olduğu doğrulandı (görüntüye yansımaması başsız tarayıcının telefon taklidinden; gerçek cihaz maddesi 1). Açık kalan: tam manzarada panelsiz yazının (Bugün'ün başlığı, alt satırı) dört durumda ölçümü yok; Bugün Ç4c'de yeniden çizilirken eklenecek ("Bilinen sorunlar").
+3. **Faz denetimi, tur 2:** aşağıda.
 
 
 ### Ç4a: Sadeleşen çekirdek (15 Kas 2026)
@@ -935,7 +936,7 @@ Testler: 413 birim, 207 veritabanı, 166 uçtan uca (`npm run check:full` yeşil
 
 ## Sıradaki adım
 
-Ç4b (`prompts/c4b-cam-temeli.md`); Rutin 2 araya alınabilir. Ç4a yayında. Uçtan uca testlerin sabit saatle koşması bitti (aşağıda "Verdiğim kararlar" → "Uçtan uca testlerin saati").
+Ç4c (`prompts/c4c-bugun-takvim-kapanis.md`): Bugün, Takvim, kapanış ve alan sayfası; Rutin 2 araya alınabilir. Ç4b'nin yayını senin izninle.
 
 ## Senden bekleyenler
 
@@ -1544,6 +1545,8 @@ Süre sapmasındaki artış çoğunlukla `enrich`'in kendi tahminlerinin çalı�
 | 11 Kas 2026 | D1: giriş kodu bulutta Resend SMTP ile gider (gönderen `onboarding@resend.dev`, ad "Sherpa"); SMTP yalnızca `[remotes.*]` bloklarında, yerel Mailpit'te kalır; bulutta saatte en çok 10 kod e-postası. Alan adı doğrulanmadığı için Resend yalnızca hesabın kendi adresine gönderir; `ALLOWED_EMAIL` o adres olmalı | Ücretsiz katman hazır göndericiyle şablon değiştirmeye izin vermiyordu; hazır sınır (saatte 2) iki cihazda giriş için dar | `supabase/config.toml`, `docs/11-yayin-ve-cihazlar.md` |
 
 ## Bilinen sorunlar
+
+- **Ç4b, tam manzarada panelsiz yazının karşıtlığı:** sakin zemin ve paneller dört durumda ölçülüyor; tam manzaranın üstünde panelsiz duran yazılar (Bugün'ün başlığı, modül hapları, alt satır) ölçülmüyor. Bugün'ün yerleşimi Ç4c'de değişeceği için ölçüm orada eklenecek.
 
 - **Ç4b, Zaman bölümünün içi** (`src/core/ui/work/TimingSection.tsx`): renkleri token'larla ve alanları kit'in camında, ama yerleşimi eski: gün seçimi aralığın üstünde ayrı satırda ve tarayıcının açılır listesiyle (ET2'de aynı satırda), "+ aralık ekle" ikincil düğme (karede sessiz yazı). Ayarlar bölümlerinin içi de kodun eski yerleşiminde (ör. çerçevede saat kutuları satırın sağında değil). Ç4c'de karelere göre düzeltilecek.
 - **Ç4b, geliştirme sunucusu:** Turbopack geliştirme sunucusu bazen eski bileşeni sunmaya devam etti (iki kez); `.next/dev` silinip yeniden başlatınca düzeldi. Üretim derlemesinde görülmedi.

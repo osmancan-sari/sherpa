@@ -50,3 +50,5 @@ Kaynak: `docs/moduller/ORTAK.md` bölüm 4 (Rutin oturumu, 13–14 Kas 2026; isk
 - **Her şey düzenlenebilir:** ad, süre, sıklık, alt öğeler (ekle, çıkar, sırala, süre ver). Ekranda yazan her sayı ya düzenlenir ya da düzenlenebilen sayılardan hesaplanır; hesaplanan sayı öyle etiketlenir ("toplam 4 dk").
 - **Silme onayı** silmek yerine kapatmayı da sunar.
 - **İçerik veridir, kod değil.** Kullanıcı öğrendikçe adım, ürün, kural ekleyip değiştirir; bunun için kod değişmez.
+
+Kurulumda Yaklaşanlar satırının düğmeleri işin türüne göredir: iş Başla, Bitti, Düzenle; ritim Başla, Yapıldı, Düzenle; iş kalemi Başla, Kalemi bitir, Kalemi bırak, Düzenle (kodda olduğu gibi; karede üç düğme çizildi). Bekleyen iş soluk.
