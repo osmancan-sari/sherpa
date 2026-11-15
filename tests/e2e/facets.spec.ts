@@ -229,7 +229,7 @@ test("the module's and a facet's colour change in Settings and go back to the de
   await expect(sabah.getByTestId("color-dot")).toHaveCSS("background-color", ROSE);
   await waitFor(
     () => rows<{ facet_colors: Record<string, string> }>("modules"),
-    (list) => list[0].facet_colors.sabah === "#e11d48",
+    (list) => list[0].facet_colors.sabah === "#ff8fb8",
   );
   // The module's own colour: work without a facet follows it.
   const own = page.getByTestId("color-row-module");
@@ -240,7 +240,7 @@ test("the module's and a facet's colour change in Settings and go back to the de
     .click();
   await waitFor(
     () => rows<{ color: string }>("modules"),
-    (list) => list[0].color === "#16a34a",
+    (list) => list[0].color === "#7fe0a2",
   );
   const changed = await moduleDots();
   await expect(changed.plain).toHaveCSS("background-color", GREEN);
@@ -264,7 +264,7 @@ test("the module's and a facet's colour change in Settings and go back to the de
   await own.getByRole("button", { name: "Varsayılana dön" }).click();
   await waitFor(
     () => rows<{ color: string; facet_colors: Record<string, string> }>("modules"),
-    (list) => list[0].color === "#6250d6" && Object.keys(list[0].facet_colors).length === 0,
+    (list) => list[0].color === "#5b8cff" && Object.keys(list[0].facet_colors).length === 0,
   );
   const back = await moduleDots();
   await expect(back.sabah).toHaveCSS("background-color", AMBER);

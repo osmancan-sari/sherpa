@@ -70,7 +70,7 @@ test("a wrong bedtime and waking are set right or deleted in Ayarlar; the night 
   await page.clock.setFixedTime(dayAt("22:30"));
   await page.goto("/");
   await card(page).getByRole("link", { name: "Yatışı düzelt" }).click();
-  await expect(page).toHaveURL(/\/ayarlar#kayitlar$/);
+  await expect(page).toHaveURL(/\/ayarlar\/kayitlar$/);
   const records = page.getByTestId("day-records");
   const day = records.getByRole("region", { name: /^Bugün/ });
   await expect(day.getByLabel("Yatış saati")).toHaveValue("16:49");

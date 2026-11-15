@@ -33,3 +33,7 @@ Metinler koddaki gibidir; tek yeni metin bağlantı işaretidir.
 | `XP4` | Pano: modül arşivde |
 
 Öbür ekranların kendi boş halleri kendi gruplarında çizildi: Sıradakiler boş (`BT17`), Takvim'de iş yok (`TT7`), Gelen kutusu boş (`GT6`), kapanışın boş adımları (`KS6`–`KS9`), modülde iş ve geçmiş yok (`MT5`).
+
+## Kurulum (Ç4b)
+
+"bağlantı yok": `src/core/ui/look/Connection.tsx` (`useOnline`), sayfa başlığının ve Bugün'ün üst satırının sağında. Veri okunamadı: kit'in `ReadError`'u. Bütçe satırı bilgi simgesiyle, uyarı rengi yok. Bulunamayan modül: `src/core/ui/module/ModuleScreens.tsx` (`Message`). Bugün'ün boş hali ve bildirimlerin "Geri al"ı Ç4c'de (kit'in `Toast`'u eylemi taşır).

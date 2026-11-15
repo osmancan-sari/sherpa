@@ -33,3 +33,7 @@ Alanlar ve metinler koddaki gibidir (`src/core/ui/QuickAdd.tsx`, `EditDialog.tsx
 | `EP2` | Pano, yapay zekanın koyduğu değerler |
 
 Bu grupta çizilmeyenler: modülün kendi giriş türlerinin alanları ("Sınav/teslim", "Not"; modül tasarımında çizilir); "Yeni ritim" (alanları "Ritmi düzenle" ile aynı, düğmesi "Ekle"); etkin modül yokken hızlı giriş (10. grup); panoda iş kalemi ve ritim formları (kabuk ve alanlar `EP1` ile aynı kuralda).
+
+## Kurulum (Ç4b)
+
+Kabuk kit'in `Sheet`'i (`src/core/ui/kit/Overlay.tsx`; `src/core/ui/Dialog.tsx` onu sarar). `EditDialog` alanları tam genişlik; eşli alanlar `width: "half"`, ritmin üçlüsü `"third"`. Hızlı giriş: `src/core/ui/QuickAdd.tsx` (alt satırda yalnızca birincil düğme; 90 dakikayı aşınca kutu alt satırın yerini alır). Yapay zekanın koyduğu değer: `Input ai` / `Select ai` ve `AiReason`.

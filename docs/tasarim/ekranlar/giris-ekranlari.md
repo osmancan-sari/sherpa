@@ -23,3 +23,7 @@ Tam manzara (karar 2); zemin günün saatine göre. Menü yok. Ortada tek ana pa
 | `LP1`–`LP3` | Pano: e-posta, kod, kod geçersiz |
 
 Oturum düşünce bu ekrana sessizce dönülür; ayrı kare yoktur.
+
+## Kurulum (Ç4b)
+
+`src/app/giris/page.tsx`, `login-form.tsx`: tam manzara (`Backdrop kind=full`), tek ana panel (`glass-main`, `w-login` / `w-login-board`), kod alanı iri ve aralıklı (`tracking-code`), hata mercan renkte simgeyle, bilgi onay simgesiyle.

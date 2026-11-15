@@ -13,7 +13,8 @@ import { type Cookie, PUBLISHABLE_KEY, readSession, SUPABASE_URL } from "./supab
 
 // Phase screenshots. Runs only when SHERPA_SHOTS names the phase folder, for example:
 //   $env:SHERPA_SHOTS = "c1"; npm run test:e2e
-// Files land in docs/ekran-goruntuleri/<folder>/<pano|telefon>-<screen>-<theme>.png
+// Files land in docs/ekran-goruntuleri/<folder>/<pano|telefon>-<screen>[-saydamlik].png (Ç4b: one colour
+// system; "-saydamlik" is the look with "Saydamlığı azalt" on).
 //
 // The screens are shown with the sample data (scripts/demo-data.ts) and the "deneme" module.
 
@@ -160,15 +161,23 @@ function screensFor(itemId: string): Screen[] {
       name: "ayarlar",
       path: "/ayarlar",
       ready: async (page) => {
-        // Two parts of this screen arrive after the shell: the active theme (known only
-        // after hydration) and the account line (streamed in). Wait for both before the picture.
-        await expect(
-          page.getByRole("group", { name: "Tema" }).locator("[aria-pressed=true]"),
-        ).toHaveCount(1);
+        // The account line streams in after the shell: wait for it before the picture.
         await expect(
           page.locator("section", { hasText: "Hesap" }).getByRole("paragraph"),
         ).toHaveText(ALLOWED_EMAIL);
       },
+    },
+    {
+      name: "ayarlar-gorunum",
+      path: "/ayarlar/gorunum",
+      ready: async (page) => {
+        await expect(page.getByRole("switch", { name: "Saydamlığı azalt" })).toBeVisible();
+      },
+    },
+    {
+      name: "galeri",
+      path: "/tasarim",
+      ready: heading("Tasarım"),
     },
     {
       name: "ayarlar-moduller",
@@ -199,13 +208,22 @@ function screensFor(itemId: string): Screen[] {
   ];
 }
 
-/** In the light theme only the screens where colour carries the most. */
-const LIGHT = ["bugun", "modul-okul", "modul-deneme", "modul-deneme-bilesenler", "ayarlar-bloklar"];
+/** With "Saydamlığı azalt" only the screens where the glass carries the most (K3B). */
+const SOLID = ["bugun", "modul-okul", "gelen", "ayarlar"];
 
-for (const theme of ["dark", "light"] as const) {
-  test(`screens, ${theme}`, async ({ page }, testInfo) => {
+/** The look of the run: the glass as it is, or with "Saydamlığı azalt" (docs/tasarim/ilkeler.md). */
+const LOOKS = [
+  { name: "cam", suffix: "", choice: { transparency: null, motion: null } },
+  { name: "saydamlik", suffix: "-saydamlik", choice: { transparency: true, motion: null } },
+] as const;
+
+for (const look of LOOKS) {
+  test(`screens, ${look.name}`, async ({ page }, testInfo) => {
     test.setTimeout(120_000);
-    await page.addInitScript((value) => localStorage.setItem("theme", value), theme);
+    await page.addInitScript(
+      (value) => localStorage.setItem("sherpa.look", value),
+      JSON.stringify(look.choice),
+    );
     // The screens are taken at 18:00 of yesterday, with the sample data seeded for that moment:
     // outside the sample blocks (the office runs 09:00–17:30), the same whenever the run is, and
     // in the past, so the session's token never looks expired.
@@ -218,7 +236,7 @@ for (const theme of ["dark", "light"] as const) {
     const phone = testInfo.project.use.isMobile === true;
     const shot = async (name: string) => {
       const file = (suffix: string) =>
-        path.join(folder, `${testInfo.project.name}-${name}${suffix}-${theme}.png`);
+        path.join(folder, `${testInfo.project.name}-${name}${suffix}${look.suffix}.png`);
       // Move the pointer away, so no button is caught in its hover state.
       await page.mouse.move(0, 0);
       // Finish colour transitions instead of catching them halfway.
@@ -241,12 +259,12 @@ for (const theme of ["dark", "light"] as const) {
     };
 
     for (const screen of screensFor(itemId)) {
-      if (theme === "light" && !LIGHT.includes(screen.name)) continue;
+      if (look.suffix && !SOLID.includes(screen.name)) continue;
       await page.goto(screen.path);
       await screen.ready(page);
       await shot(screen.name);
     }
-    if (theme === "light") return;
+    if (look.suffix) return;
 
     // Dialogs and states that need a touch first.
     await page.goto("/m/okul-ornek");
@@ -504,9 +522,15 @@ for (const theme of ["dark", "light"] as const) {
     await shot("bugun-sahne-adimlar");
 
     // Settings with the frame and this device's voice.
-    await page.goto("/ayarlar");
+    await page.goto("/ayarlar/cerceve");
     await expect(page.getByRole("form", { name: "Günün çerçevesi" })).toBeVisible();
     await shot("ayarlar-cerceve");
+    await page.goto("/ayarlar/ses");
+    await expect(page.getByRole("group", { name: "Sesli anlatım" })).toBeVisible();
+    await shot("ayarlar-ses");
+    await page.goto("/ayarlar/yapay-zeka");
+    await expect(page.getByTestId("ai-state")).toBeVisible();
+    await shot("ayarlar-yapay-zeka");
 
     // Ç3d: Settings → Bağlantılar, with a token in use and one just made (shown once).
     await insert("device_tokens", {
@@ -516,7 +540,7 @@ for (const theme of ["dark", "light"] as const) {
       scopes: ["core/wake", "core/bed"],
       last_used_at: new Date(shotNow.getTime() - 11 * 3_600_000).toISOString(),
     });
-    await page.goto("/ayarlar");
+    await page.goto("/ayarlar/baglantilar");
     const form = page.getByRole("form", { name: "Yeni anahtar" });
     await form.getByLabel("Ad").fill("Ninova toplayıcısı");
     await form.getByRole("checkbox", { name: /Deneme: Kayıt/ }).check();
@@ -527,13 +551,12 @@ for (const theme of ["dark", "light"] as const) {
   });
 }
 
-// Ç3e: a module's facets, in both themes (the palette must read on both): the day with work in
+// Ç3e: a module's facets (Ç4b: one colour system): the day with work in
 // the morning, evening and topic facets, the module page, the colour picker, and the two
 // facets' scenes. The test module's records come through its own rules (scripts/demo-facets.ts).
-for (const theme of ["dark", "light"] as const) {
-  test(`facet screens, ${theme}`, async ({ page }, testInfo) => {
+{
+  test(`facet screens`, async ({ page }, testInfo) => {
     test.setTimeout(120_000);
-    await page.addInitScript((value) => localStorage.setItem("theme", value), theme);
     const shotDay = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Istanbul" }).format(
       new Date(Date.now() - 86_400_000),
     );
@@ -544,7 +567,7 @@ for (const theme of ["dark", "light"] as const) {
     const shot = async (name: string) => {
       await page.mouse.move(0, 0);
       await page.screenshot({
-        path: path.join(folder, `${testInfo.project.name}-${name}-${theme}.png`),
+        path: path.join(folder, `${testInfo.project.name}-${name}.png`),
         fullPage: !phone,
         animations: "disabled",
       });
@@ -587,14 +610,13 @@ for (const theme of ["dark", "light"] as const) {
   });
 }
 
-// Ç3f: the anchored chains, in both themes: the card's place in the morning, the scene with the
+// Ç3f: the anchored chains: the card's place in the morning, the scene with the
 // whole chain (another module's work in it), the next module's card after Bitti, the evening's
 // scene with the bed chain and the closing opened inside it. The sample chains come from
 // scripts/demo-chains.ts (two modules on each anchor); the frame is on, the clock yesterday's.
-for (const theme of ["dark", "light"] as const) {
-  test(`chain screens, ${theme}`, async ({ page }, testInfo) => {
+{
+  test(`chain screens`, async ({ page }, testInfo) => {
     test.setTimeout(120_000);
-    await page.addInitScript((value) => localStorage.setItem("theme", value), theme);
     const shotDay = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Istanbul" }).format(
       new Date(Date.now() - 86_400_000),
     );
@@ -624,7 +646,7 @@ for (const theme of ["dark", "light"] as const) {
     const shot = async (name: string) => {
       await page.mouse.move(0, 0);
       await page.screenshot({
-        path: path.join(folder, `${testInfo.project.name}-${name}-${theme}.png`),
+        path: path.join(folder, `${testInfo.project.name}-${name}.png`),
         fullPage: !phone,
         animations: "disabled",
       });
@@ -663,12 +685,11 @@ for (const theme of ["dark", "light"] as const) {
 }
 
 // Rutin 1: the routine's scene by the clock (the dawn, the day, the night), Günaydın, the evening's
-// last step, "İyi geceler", and the module page with a step's sheet. The scene draws its own sky,
-// the same in both themes: the dark one only. Sessions are written straight (the scene comes with
+// last step, "İyi geceler", and the module page with a step's sheet. The scene draws its own sky.
+// Sessions are written straight (the scene comes with
 // the running work); the clock is yesterday's.
 test("rutin screens", async ({ page }, testInfo) => {
   test.setTimeout(120_000);
-  await page.addInitScript(() => localStorage.setItem("theme", "dark"));
   const shotDay = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Istanbul" }).format(
     new Date(Date.now() - 86_400_000),
   );
@@ -775,7 +796,6 @@ test("rutin screens", async ({ page }, testInfo) => {
 // Ayarlar, Rutin's morning tab with another module's work as its own group.
 test("c3g screens", async ({ page }, testInfo) => {
   test.setTimeout(120_000);
-  await page.addInitScript(() => localStorage.setItem("theme", "dark"));
   const shotDay = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Istanbul" }).format(
     new Date(Date.now() - 86_400_000),
   );
@@ -823,11 +843,11 @@ test("c3g screens", async ({ page }, testInfo) => {
   await expect(now.getByTestId("evening-later")).toBeVisible();
   await shot("bugun-aksam-sirada");
   await now.getByRole("button", { name: "Yatıyorum" }).click();
-  await expect(page.getByRole("dialog", { name: /Şimdi yatıyor musun/ })).toBeVisible();
+  await expect(page.getByRole("alertdialog", { name: /Şimdi yatıyor musun/ })).toBeVisible();
   await shot("bugun-yatis-sorusu");
   await page.getByRole("button", { name: "Vazgeç" }).click();
 
-  await page.goto("/ayarlar#kayitlar");
+  await page.goto("/ayarlar/kayitlar");
   await expect(page.getByTestId("day-records")).toBeVisible();
   await page.getByTestId("day-records").scrollIntoViewIfNeeded();
   await shot("ayarlar-kayitlar");

@@ -28,3 +28,7 @@ Sakin zemin. İçerik ve metinler koddaki gibidir (`src/core/ui/inbox/InboxScree
 | `GP4` | Pano, boş |
 
 Bu grupta çizilmeyenler: hiç modül yokken çıkan "İşin bir modülü olmalı. Modüller Ayarlar'dan açılır." satırı ve liste okunamadığındaki hata (10. grup).
+
+## Kurulum (Ç4b)
+
+`src/core/ui/inbox/InboxScreen.tsx`: kartlar `glass-dense`, öneri kutusu kesik kenarlı (`color-edge-suggestion`), haplar `Chip`, formlar yerinde (`Field`, `Input`); panoda tek sütun (`spacing-read`) ve başlığın sağında "+ Yeni giriş". Boşken düz cümle.

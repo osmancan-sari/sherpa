@@ -45,3 +45,7 @@ Sakin zemin, yoğun cam. Alanlar ve metinler koddaki gibidir (`src/app/(app)/aya
 | `AP1`–`AP9` | Pano: Görünüm, Günün çerçevesi, Kayıtlar, Sesli anlatım, Modüller (arşiv onayı), Okul ayarları, Sabit bloklar, Yapay zeka, Bağlantılar |
 
 Çizilmeyenler: seri ve blok düzenleme pencereleri (5. gruptaki kabuk; alanları "Yeni seri" ve "Tek seferlik blok" ile aynı); yapay zekanın öbür durum cümleleri (anahtar yok, model yok, kapalı; aynı satırda); anahtar iptal onayı ("İptal et", "Vazgeç"; arşiv onayıyla aynı kalıp); panoda gün tipine göre açık hal. Hesap satırındaki e-posta örnektir.
+
+## Kurulum (Ç4b)
+
+`src/app/(app)/ayarlar/layout.tsx` ve `src/core/ui/settings/SettingsShell.tsx`: bölümler adresle açılır (`/ayarlar/gorunum`, `cerceve`, `kayitlar`, `ses`, `moduller`, `bloklar`, `yapay-zeka`, `baglantilar`); eski `/ayarlar#<bölüm>` bağlantıları bölüm sayfasına yönlenir. Panoda `/ayarlar` Görünüm'ü açık gösterir. Açık/kapalı satırları kit'in `SwitchRow`'u. Yeni metinler: Görünüm'ün iki anahtarı ve açıklamaları; "Bu renk koyu zeminde zor seçilir."

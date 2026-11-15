@@ -61,8 +61,10 @@ Paket sürümlerini ezberden yazma; kurarken güncel kararlı sürümü kullan v
 | `npm run db:seed` | Yerel hesaba örnek veri yazar (sahte modüller, kalemler, ritimler, bloklar, haftanın taahhüdü, gelecek haftanın Yoğun modu; `NEXT_PUBLIC_SHERPA_DEMO_MODULE=1` ise `deneme` modülüyle bölümlü işler ve şablon kopyasıyla birlikte uyanış ve yatış dizileri). Hesap doluysa `npm run db:seed -- --reset`. Yalnızca yerel Supabase |
 | `npm run ai:eval` | Yapay zeka kalite denetimi: `scripts/ai-eval/cases.json` örnekleri gerçek modelle (`-- --fake` ile sahte sağlayıcıyla), yerel hesap üzerinden geçitten; rapor yazdırır. İstem ya da model değişince |
 | `npm run icons` | Uygulama simgelerini yeniden üretir |
+| `npm run tokens` | `src/core/ui/tokens.css`'in TypeScript yansısını (`tokens.gen.ts`) yeniden yazar; token değişince (bir test ikisinin aynı olduğunu denetler) |
+| `npx playwright test gorsel --update-snapshots` | Görsel denetimin onaylı görüntülerini yeniler (`tests/e2e/gorsel.spec.ts`); yalnızca görünüş bilerek değiştiyse, gerekçesi commit mesajında. Testin kendisi `test:e2e`'nin parçasıdır |
 
-Faz ekran görüntüleri: PowerShell'de `$env:SHERPA_SHOTS = "c0"; npm run test:e2e` → `docs/ekran-goruntuleri/c0/`.
+Faz ekran görüntüleri: PowerShell'de `$env:SHERPA_SHOTS = "c0"; npm run test:e2e` → `docs/ekran-goruntuleri/c0/` (Ç4b'den beri tek renk sistemi; `-saydamlik` ekli dosyalar "Saydamlığı azalt" açıkken).
 
 Yerelde giriş kodu e-postası gönderilmez; Mailpit'e düşer: `http://127.0.0.1:54324`.
 

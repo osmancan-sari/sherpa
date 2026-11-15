@@ -9,12 +9,14 @@ export function LookSettings() {
   return (
     <div className="flex flex-col">
       <SwitchRow
+        className="border-line-soft min-h-16 border-b"
         label="Saydamlığı azalt"
         description="Paneller düz ve opak olur."
         checked={look.transparency.on}
         onChange={(on) => set("transparency", on)}
       />
       <SwitchRow
+        className="min-h-16"
         label="Hareketi azalt"
         description="Geçişler anlık olur; gökyüzü kıpırdamaz."
         checked={look.motion.on}
