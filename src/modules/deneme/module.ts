@@ -1,3 +1,4 @@
+import { token } from "@/core/ui/tokens";
 import type { ModuleDefinition, ModuleFacet } from "@/core/contract/types";
 import { dayKey, shiftDay } from "@/lib/date";
 import { ExtractPage } from "./components/ExtractPage";
@@ -32,10 +33,18 @@ const KINDS: DenemeKind[] = [
  * module's data, as a school module's courses would be. Topics share the module's default scene.
  */
 export const FIXED_FACETS: ModuleFacet[] = [
-  { key: "sabah", name: "Sabah", color: "#d97706", scene: "gunes", tone: "energy" },
-  { key: "aksam", name: "Akşam", color: "#4361d8", scene: "gece", tone: "calm" },
+  {
+    key: "sabah",
+    name: "Sabah",
+    color: token("color-swatch-orange"),
+    scene: "gunes",
+    tone: "energy",
+  },
+  { key: "aksam", name: "Akşam", color: token("color-swatch-moon"), scene: "gece", tone: "calm" },
 ];
-const TOPIC_COLORS = ["#0d9488", "#db2777", "#16a34a", "#0891b2", "#ea580c", "#c026d3"];
+const TOPIC_COLORS = (["teal", "pink", "green", "sky", "coral", "violet"] as const).map((name) =>
+  token(`color-swatch-${name}`),
+);
 
 /** A topic's facet key: stable as long as the record lives. */
 export const topicFacet = (id: string) => `konu-${id.slice(0, 8)}`;
@@ -45,7 +54,7 @@ export const deneme: ModuleDefinition = {
   name: "Deneme",
   kind: "lifelong",
   area: { slug: "sinama", name: "Sınama" },
-  color: "#6250d6",
+  color: token("color-swatch-blue"),
 
   async facets(ctx) {
     const topics = (await listItems(ctx)).filter((item) => item.kind === "konu" && !item.done);

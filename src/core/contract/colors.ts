@@ -1,3 +1,4 @@
+import { token } from "@/core/ui/tokens";
 import { findFacet, HEX_COLOR } from "./facets";
 import type { ModuleFacet } from "./types";
 
@@ -14,7 +15,7 @@ export type ColorSource = {
 };
 
 /** When nothing knows a colour (a row without code and without a colour). */
-export const NO_COLOR = "#64748b";
+export const NO_COLOR = token("color-swatch-none");
 
 const valid = (value: unknown): value is string =>
   typeof value === "string" && HEX_COLOR.test(value);
@@ -56,27 +57,39 @@ export function workColor(
 // --- The palette and readability ----------------------------------------------------------------
 
 /**
- * The ready colours of the picker: each stays at least 3:1 against the light background and
- * the dark background and card (WCAG non-text contrast), so a dot or a bar can be told apart in
- * both themes. "Görüşün gerek" (docs/05).
+ * The ready colours of the picker (frame AT11): each stays at least 3:1 against the glass it is
+ * drawn on at any hour (WCAG non-text contrast), so a dot or a bar can be told apart.
  */
 export const PALETTE: readonly { name: string; value: string }[] = [
-  { name: "Kehribar", value: "#d97706" },
-  { name: "Turuncu", value: "#ea580c" },
-  { name: "Gül", value: "#e11d48" },
-  { name: "Pembe", value: "#db2777" },
-  { name: "Eflatun", value: "#c026d3" },
-  { name: "Menekşe", value: "#7c3aed" },
-  { name: "Lacivert", value: "#4361d8" },
-  { name: "Mavi", value: "#2563eb" },
-  { name: "Camgöbeği", value: "#0891b2" },
-  { name: "Deniz yeşili", value: "#0d9488" },
-  { name: "Yeşil", value: "#16a34a" },
-  { name: "Kurşuni", value: "#64748b" },
+  { name: "Mavi", value: token("color-swatch-blue") },
+  { name: "Açık mavi", value: token("color-swatch-sky") },
+  { name: "Camgöbeği", value: token("color-swatch-teal") },
+  { name: "Yeşil", value: token("color-swatch-green") },
+  { name: "Kehribar", value: token("color-swatch-sun") },
+  { name: "Turuncu", value: token("color-swatch-orange") },
+  { name: "Mercan", value: token("color-swatch-coral") },
+  { name: "Pembe", value: token("color-swatch-pink") },
+  { name: "Eflatun", value: token("color-swatch-violet") },
+  { name: "Lavanta", value: token("color-swatch-moon") },
 ];
 
-/** The themes' backgrounds a colour is drawn on: light page, dark page, dark card. */
-export const BACKGROUNDS = ["#ffffff", "#0a0a0a", "#171717"] as const;
+/** A translucent glass over a backdrop colour, as #rrggbb. */
+function seenThrough(backdrop: string, glass: string): string {
+  const [r, g, b, a] = glass.match(/[\d.]+/g)!.map(Number);
+  const base = [1, 3, 5].map((i) => parseInt(backdrop.slice(i, i + 2), 16));
+  const mixed = [r, g, b].map((c, i) => Math.round(c * a + base[i] * (1 - a)));
+  return `#${mixed.map((c) => c.toString(16).padStart(2, "0")).join("")}`;
+}
+
+/**
+ * What a colour is drawn on: the dense glass over the brightest and the darkest calm sky (the
+ * day's lowest colour, the night's highest) and the opaque panel of "Saydamlığı azalt".
+ */
+export const BACKGROUNDS = [
+  seenThrough(token("sky-day-calm-low"), token("color-glass-dense")),
+  seenThrough(token("sky-night-calm-high"), token("color-glass-dense")),
+  token("color-solid"),
+] as const;
 
 export const READABLE_CONTRAST = 3;
 
@@ -94,7 +107,7 @@ export function contrast(a: string, b: string): number {
   return (high + 0.05) / (low + 0.05);
 }
 
-/** Whether a colour can be told apart from every background of both themes. */
+/** Whether a colour can be told apart from every glass it is drawn on. */
 export function readable(hex: string): boolean {
   if (!valid(hex)) return false;
   return BACKGROUNDS.every((background) => contrast(hex, background) >= READABLE_CONTRAST);

@@ -8,12 +8,12 @@ import { activateDeneme, addRecord, startFromModule } from "./scene-helpers";
 // "Renkler ve bölümler"), with the "deneme" module: two fixed facets with a colour, a scene and
 // a tone of their own, and one facet per open topic from its data.
 
-const AMBER = "rgb(217, 119, 6)"; // sabah, #d97706
-const NAVY = "rgb(67, 97, 216)"; // akşam, #4361d8
-const MODULE = "rgb(98, 80, 214)"; // the module, #6250d6
-const ROSE = "rgb(225, 29, 72)"; // "Gül" in the palette
-const GREEN = "rgb(22, 163, 74)"; // "Yeşil"
-const TEAL = "rgb(13, 148, 136)"; // the first topic's colour
+const AMBER = "rgb(255, 179, 107)"; // sabah, swatch-orange #ffb36b
+const NAVY = "rgb(170, 182, 255)"; // akşam, swatch-moon #aab6ff
+const MODULE = "rgb(91, 140, 255)"; // the module, swatch-blue #5b8cff
+const ROSE = "rgb(255, 143, 184)"; // "Pembe" in the palette
+const GREEN = "rgb(127, 224, 162)"; // "Yeşil"
+const TEAL = "rgb(95, 214, 198)"; // the first topic's colour, swatch-teal
 
 /** The work-colour dot of a row (on the Today screen, the module page, the week). */
 const dotOf = (row: Locator) => row.getByTestId("work-dot").first();
@@ -224,7 +224,7 @@ test("the module's and a facet's colour change in Settings and go back to the de
   await expect(sabah.getByRole("button", { name: "Varsayılana dön" })).toHaveCount(0);
   await sabah
     .getByRole("group", { name: "Sabah: hazır renkler" })
-    .getByRole("button", { name: "Gül" })
+    .getByRole("button", { name: "Pembe" })
     .click();
   await expect(sabah.getByTestId("color-dot")).toHaveCSS("background-color", ROSE);
   await waitFor(
@@ -247,15 +247,15 @@ test("the module's and a facet's colour change in Settings and go back to the de
   await expect(changed.sabah).toHaveCSS("background-color", ROSE);
   await page.goto("/ayarlar/moduller/deneme");
 
-  // A colour of one's own that is hard to see in a theme: one line, and it still saves. (One
+  // A colour of one's own that is hard to see on the dark glass: one line, and it still saves. (One
   // picker is open at a time.)
   await sabah.getByRole("button", { name: "Sabah: rengi değiştir" }).click();
-  await sabah.getByLabel("Sabah: renk kodu").fill("#FFF59D");
-  await expect(sabah.getByRole("note")).toHaveText("Bu renk açık ya da koyu temada zor seçilir.");
+  await sabah.getByLabel("Sabah: renk kodu").fill("#1E1B4B");
+  await expect(sabah.getByRole("note")).toHaveText("Bu renk koyu zeminde zor seçilir.");
   await sabah.getByRole("button", { name: "Kaydet" }).click();
   await waitFor(
     () => rows<{ facet_colors: Record<string, string> }>("modules"),
-    (list) => list[0].facet_colors.sabah === "#fff59d",
+    (list) => list[0].facet_colors.sabah === "#1e1b4b",
   );
 
   // Back to the defaults.

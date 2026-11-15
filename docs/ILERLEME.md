@@ -32,7 +32,7 @@ Ayrı bir tasarım sohbetinde (`prompts/cekirdek-cam-tasarim-oturumu.md`) çekir
 | # | Adım | Durum |
 | --- | --- | --- |
 | 0 | Plan; `CLAUDE.md` "Tasarım", `prompts/BASLA.md` ve `prompts/denetci.md` kuralları | |
-| 1 | Değerler: `src/core/ui/tokens.css` (tek yer), değer denetimi testi; tek renk sistemi (tema seçimi kalkar); Görünüm: "Saydamlığı azalt", "Hareketi azalt" (cihazın tercihi de) | |
+| 1 | Değerler: `src/core/ui/tokens.css` (tek yer), değer denetimi testi; tek renk sistemi (tema seçimi kalkar); Görünüm: "Saydamlığı azalt", "Hareketi azalt" (cihazın tercihi de) | bitti: `tokens.css`, `tokens.gen.ts` (`npm run tokens`), `kit/glass.css`, `look/` (anahtarlar ve ilk boyamadan önceki betik), `LookSettings`; testler `design-values.test.ts`, `tokens.test.ts`, `colors.test.ts` (AT11 paleti) |
 | 2 | Gökyüzü çekirdekte: güneşin yüksekliği saf, tam manzara (Bugün, sahne, giriş), sakin zemin (öbürleri), pano kuralları (gerçek bulanıklık yalnızca altından içerik geçen yerde, sürekli hareket yok, gece karartması), modülün zemini (karar 4; sözleşme, `deneme`); Rutin çekirdeğin gökyüzünü giyer; karşıtlık dört durumda ölçülür | |
 | 3 | Kit (`src/core/ui/kit/`) ve galeri (`/tasarim`): paneller, liste satırı, düğmeler, alan, anahtar, parçalı seçim, hap, durum, sekme ve geçmiş düğmesi, ilerleme, uyarı satırı, bildirim, pencere, alttan sayfa / yan panel; `docs/tasarim/parcalar.md` | |
 | 4 | Kabuklar: formlar telefonda alttan sayfa, panoda 440 px yan panel; menü (telefonda cam alt menü ve ayrı "+", panoda cam yan menü; "Takvim"); adım denetimi | |
@@ -1162,6 +1162,13 @@ Süre sapmasındaki artış çoğunlukla `enrich`'in kendi tahminlerinin çalı�
 - Ekran görüntüleri: `docs/ekran-goruntuleri/c1/`.
 
 ## Verdiğim kararlar
+
+**Ç4b: Cam temeli (15 Kas 2026)**
+
+- **Değerlerin tek yeri `src/core/ui/tokens.css`; TypeScript için üretilen yansısı `tokens.gen.ts`** (`npm run tokens`; `tests/unit/tokens.test.ts` ikisinin aynı olduğunu denetler, `db:types:check` gibi). Gökyüzünün harmanı, karşıtlık ölçümü ve renk seçici değerleri veri olarak ister; değer yine yalnızca CSS dosyasında yazılır. Tailwind'in hazır renk paleti ve yazı boyları kapatıldı (`--color-*: initial`, `--text-*: initial`): ekranda kullanılabilen her renk ve yazı boyu bir token. Henüz yeniden çizilmeyen ekranların kullandığı eski adlar (`text-muted-foreground`, `bg-card`…) aynı dosyada yeni token'lara bağlandı; yeni kod yeni adları kullanır.
+- **Değer denetimi bir birim testi** (`tests/unit/design-values.test.ts`): `src/` içinde (testler, `tokens.css`, `tokens.gen.ts` ve üretilen veritabanı tipleri dışında) renk kodu, renk işlevi (`rgba(` …), birimli keyfi Tailwind değeri (`text-[15px]`), dizgide piksel ve stil nesnesinde sayıyla verilen uzunluk yasak; yorumlar sayılmaz. Faz boyunca dönüştürülecek dosyalar testin `PENDING` listesinde, her biri adımıyla; faz bu liste boşalmadan bitmez.
+- **Tek renk sistemi:** `next-themes` ve tema seçimi kalktı; `<html>` her zaman koyu (`color-scheme: dark`), adres çubuğu rengi `color-solid`. Görünüm'ün iki anahtarı bu cihazın tercihidir (`localStorage`, `sherpa.look`): kullanıcı dokunana kadar cihazın `prefers-reduced-transparency` ve `prefers-reduced-motion` tercihini izler; cihazın tercihiyle aynı yere getirilen anahtar yeniden cihazı izler. İlk boyamadan önce satır içi bir betik `<html>`'e `data-transparency`/`data-motion` yazar (azaltılmış görünüş bir an bile tam camla açılmasın).
+- **Renk paleti AT11 karesinin on rengi oldu** (eski on iki renk açık ve koyu temaya göre seçilmişti; koyu camda bazıları 3:1'in altında kalıyordu). Okunurluk artık iki temanın zeminine değil camın en açık ve en koyu haline (gündüzün en açık sakin zemini ve gecenin en koyusu üstündeki yoğun cam) ve opak panele göre ölçülür. Kullanıcının kaydettiği renkler değişmez. `deneme`, Rutin ve `_sablon`'un varsayılan renkleri paletin token'larına bağlandı (`deneme`: modül mavi, Sabah turuncu, Akşam lavanta). "Bu renk koyu zeminde zor seçilir." (`docs/13` 4.8). Modüller `@/core/ui/tokens`'ı içe aktarabilir (`docs/06`).
 
 **Uçtan uca testlerin saati (15 Kas 2026, Ç4a'dan sonra ayrı iş; senin isteğin)**
 

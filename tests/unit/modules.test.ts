@@ -244,6 +244,7 @@ describe("module boundaries", () => {
     "@/core/app/actions",
     "@/core/ui/Notices",
     "@/core/ui/kit",
+    "@/core/ui/tokens",
     "@/lib/date",
     "@/lib/utils",
     "@/lib/supabase/database.types",

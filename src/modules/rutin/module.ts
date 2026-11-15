@@ -1,3 +1,4 @@
+import { token } from "@/core/ui/tokens";
 import type { ModuleDefinition, ModuleFacet } from "@/core/contract/types";
 import { EveningTab, MorningTab } from "./components/StepsTab";
 import { listRoutines, listRuns } from "./queries";
@@ -10,8 +11,8 @@ import { rutinScene } from "./scene";
 
 /** The two facets (rutin.md, 1): the morning (two blocks) and the evening, each its own colour. */
 export const FACETS: ModuleFacet[] = [
-  { key: "sabah", name: "Sabah", color: "#ffd58a", scene: "rutin", tone: "calm" },
-  { key: "aksam", name: "Akşam", color: "#aab6ff", scene: "rutin", tone: "calm" },
+  { key: "sabah", name: "Sabah", color: token("color-swatch-sun"), scene: "rutin", tone: "calm" },
+  { key: "aksam", name: "Akşam", color: token("color-swatch-moon"), scene: "rutin", tone: "calm" },
 ];
 
 export const rutin: ModuleDefinition = {
@@ -19,7 +20,7 @@ export const rutin: ModuleDefinition = {
   name: "Rutin",
   kind: "lifelong",
   area: { slug: "saglik", name: "Sağlık" },
-  color: "#ffd58a",
+  color: token("color-swatch-sun"),
 
   async facets() {
     return FACETS;

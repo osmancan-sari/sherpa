@@ -1,3 +1,4 @@
+import { token } from "@/core/ui/tokens";
 import type { ModuleDefinition } from "@/core/contract/types";
 import { Overview } from "./components/Overview";
 import { listOpenWork } from "./queries";
@@ -13,7 +14,7 @@ export const sablon: ModuleDefinition = {
   slug: "sablon",
   name: "Şablon",
   kind: "lifelong", // lifelong | term | until_goal
-  color: "#737373",
+  color: token("color-swatch-none"),
 
   // 1. Main screen: one line of status and its health.
   async chip(ctx) {

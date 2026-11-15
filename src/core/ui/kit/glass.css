@@ -1,0 +1,113 @@
+/*
+ * The glass (docs/tasarim/parcalar.md): fills, edges, light lines and blur, as utilities. Values
+ * come from tokens.css only.
+ *
+ * Board rule (docs/tasarim/ilkeler.md, decision 3): real blur only where content passes under
+ * (menus, sheet, side panel, dialog, toast, the scene's strip). Panels on a still backdrop look
+ * the same without it, so they blur only on the phone, where the full landscape moves behind them
+ * as the page scrolls. "Saydamlığı azalt" turns every glass flat and opaque.
+ */
+
+@utility glass-main {
+  background-color: var(--color-glass-main);
+  border: 1px solid var(--color-edge);
+  box-shadow: var(--shadow-panel);
+  @media (width < 48rem) {
+    backdrop-filter: blur(var(--blur-panel)) saturate(var(--glass-saturate));
+  }
+}
+
+@utility glass-dense {
+  background-color: var(--color-glass-dense);
+  border: 1px solid var(--color-edge);
+  box-shadow: var(--shadow-panel);
+  @media (width < 48rem) {
+    backdrop-filter: blur(var(--blur-panel)) saturate(var(--glass-saturate));
+  }
+}
+
+@utility glass-soft {
+  background-color: var(--color-glass-soft);
+  border: 1px solid var(--color-edge-soft);
+  box-shadow: var(--shadow-soft);
+  @media (width < 48rem) {
+    backdrop-filter: blur(var(--blur-soft)) saturate(var(--glass-saturate));
+  }
+}
+
+@utility glass-nav {
+  background-color: var(--color-glass-nav);
+  border: 1px solid var(--color-edge-field);
+  box-shadow: var(--shadow-nav);
+  backdrop-filter: blur(var(--blur-nav)) saturate(var(--glass-saturate-strong));
+}
+
+@utility glass-rail {
+  background-color: var(--color-glass-nav);
+  border: 1px solid var(--color-edge);
+  box-shadow: var(--shadow-rail);
+  backdrop-filter: blur(var(--blur-nav)) saturate(var(--glass-saturate-strong));
+}
+
+@utility glass-sheet {
+  background-color: var(--color-glass-sheet);
+  border: 1px solid var(--color-edge-field);
+  box-shadow: var(--shadow-sheet);
+  backdrop-filter: blur(var(--blur-sheet)) saturate(var(--glass-saturate-strong));
+}
+
+@utility glass-dialog {
+  background-color: var(--color-glass-dialog);
+  border: 1px solid var(--color-edge-button);
+  box-shadow: var(--shadow-dialog);
+  backdrop-filter: blur(var(--blur-sheet)) saturate(var(--glass-saturate-strong));
+}
+
+@utility glass-toast {
+  background-color: var(--color-glass-toast);
+  border: 1px solid var(--color-edge-button);
+  box-shadow: var(--shadow-toast);
+  backdrop-filter: blur(var(--blur-toast)) saturate(var(--glass-saturate-strong));
+}
+
+/* "Saydamlığı azalt": every glass flat and opaque, no blur. */
+:root[data-transparency="reduced"] {
+  & .glass-main,
+  & .glass-dense,
+  & .glass-soft,
+  & .glass-nav,
+  & .glass-rail,
+  & .glass-sheet,
+  & .glass-dialog,
+  & .glass-toast {
+    background-color: var(--color-solid);
+    backdrop-filter: none;
+  }
+}
+
+/* "Hareketi azalt": every transition and animation instant. */
+:root[data-motion="reduced"] *,
+:root[data-motion="reduced"] *::before,
+:root[data-motion="reduced"] *::after {
+  transition-duration: 0s !important;
+  animation-duration: 0s !important;
+  animation-iteration-count: 1 !important;
+  scroll-behavior: auto !important;
+}
+
+/* A panel label: "ŞİMDİ", "YAKLAŞANLAR". */
+@utility panel-label {
+  font-size: var(--text-xs);
+  line-height: var(--text-xs--line-height);
+  font-weight: 600;
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--color-ink-2);
+}
+
+/* The quiet underline of a text link and of quiet actions. */
+@utility link-quiet {
+  text-decoration: underline;
+  text-underline-offset: var(--underline-offset);
+  text-decoration-color: color-mix(in srgb, currentColor 55%, transparent);
+}

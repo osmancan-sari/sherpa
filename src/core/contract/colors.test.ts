@@ -54,20 +54,20 @@ describe("the colour of a piece of work", () => {
 });
 
 describe("the palette", () => {
-  it("every ready colour stays at least 3:1 against both themes' backgrounds", () => {
-    expect(PALETTE).toHaveLength(12);
+  it("every ready colour stays at least 3:1 against the glass at any hour", () => {
+    expect(PALETTE).toHaveLength(10);
     for (const { name, value } of PALETTE) {
       for (const background of BACKGROUNDS) {
         expect(contrast(value, background), `${name} on ${background}`).toBeGreaterThanOrEqual(3);
       }
       expect(readable(value)).toBe(true);
     }
-    expect(new Set(PALETTE.map(({ value }) => value)).size).toBe(12);
+    expect(new Set(PALETTE.map(({ value }) => value)).size).toBe(10);
   });
 
-  it("a colour hard to tell apart in one theme is not readable", () => {
-    expect(readable("#ffeb3b")).toBe(false); // light yellow on white
-    expect(readable("#1e1b4b")).toBe(false); // deep indigo on black
+  it("a colour hard to tell apart on the dark glass is not readable", () => {
+    expect(readable("#1e1b4b")).toBe(false); // deep indigo
+    expect(readable("#4361d8")).toBe(false); // the old light theme's blue
     expect(readable("lacivert")).toBe(false);
     expect(contrast("#000000", "#ffffff")).toBeCloseTo(21);
   });

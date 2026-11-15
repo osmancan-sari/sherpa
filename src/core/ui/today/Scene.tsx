@@ -1,5 +1,6 @@
 "use client";
 
+import { TOKENS } from "@/core/ui/tokens";
 import {
   Component,
   type ReactNode,
@@ -111,15 +112,17 @@ export function useSceneExit(): [string | null, (sessionId: string | null) => vo
   return [exited, writeExit];
 }
 
+const BOARD_QUERY = `(width >= ${TOKENS["breakpoint-md"]})`;
+
 /** Which layout this device draws: the second screen or the phone. */
 export function useDevice(): SceneProps["device"] {
   return useSyncExternalStore(
     (listener) => {
-      const query = window.matchMedia("(min-width: 768px)");
+      const query = window.matchMedia(BOARD_QUERY);
       query.addEventListener("change", listener);
       return () => query.removeEventListener("change", listener);
     },
-    () => (window.matchMedia("(min-width: 768px)").matches ? "pano" : "telefon"),
+    () => (window.matchMedia(BOARD_QUERY).matches ? "pano" : "telefon"),
     () => "pano",
   );
 }

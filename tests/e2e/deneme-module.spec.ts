@@ -41,7 +41,7 @@ async function addRecord(
 
 test("switching the module on gives it a row, a chip and a page", async ({ page }) => {
   const row = await activate(page);
-  expect(row).toMatchObject({ slug: "deneme", name: "Deneme", status: "active", color: "#6250d6" });
+  expect(row).toMatchObject({ slug: "deneme", name: "Deneme", status: "active", color: "#5b8cff" });
   // Ç4a: no life modes; nothing of them is written.
   expect(row.mode_behavior).toEqual({});
   expect((await rows("areas")).map((area) => area.slug)).toEqual(["sinama"]);

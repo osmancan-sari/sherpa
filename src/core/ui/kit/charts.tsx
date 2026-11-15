@@ -166,7 +166,7 @@ export function BarChart({
   title,
   data,
   unit,
-  color = "var(--series-1)",
+  color = "var(--color-series)",
   height = 180,
 }: ChartProps) {
   const [active, setActive] = useState<number | null>(null);
@@ -256,7 +256,7 @@ export function LineChart({
   title,
   data,
   unit,
-  color = "var(--series-1)",
+  color = "var(--color-series)",
   height = 180,
 }: ChartProps) {
   const [active, setActive] = useState<number | null>(null);

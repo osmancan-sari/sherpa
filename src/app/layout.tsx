@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import { ThemeProvider } from "@/components/theme-provider";
+import { LOOK_BOOT_SCRIPT } from "@/core/ui/look/look";
+import { token } from "@/core/ui/tokens";
 import "./globals.css";
 
 const fontSans = Geist({
@@ -19,7 +20,8 @@ export const metadata: Metadata = {
   applicationName: "Sherpa",
   // Private app: never indexed (also sent as an X-Robots-Tag header and in robots.txt).
   robots: { index: false, follow: false },
-  appleWebApp: { capable: true, title: "Sherpa", statusBarStyle: "default" },
+  // One colour system: the status bar sits over the dark sky at every hour.
+  appleWebApp: { capable: true, title: "Sherpa", statusBarStyle: "black-translucent" },
   // Next.js writes the standard "mobile-web-app-capable"; older iOS only knows this one.
   other: { "apple-mobile-web-app-capable": "yes" },
   formatDetection: { telephone: false },
@@ -29,10 +31,8 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
-    { media: "(prefers-color-scheme: dark)", color: "#0a0a0a" },
-  ],
+  themeColor: token("color-solid"),
+  colorScheme: "dark",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
@@ -42,9 +42,11 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${fontSans.variable} ${fontMono.variable} h-full antialiased`}
       suppressHydrationWarning
     >
-      <body className="flex min-h-full flex-col">
-        <ThemeProvider>{children}</ThemeProvider>
-      </body>
+      <head>
+        {/* Before the first paint: "Saydamlığı azalt" and "Hareketi azalt" of this device. */}
+        <script dangerouslySetInnerHTML={{ __html: LOOK_BOOT_SCRIPT }} />
+      </head>
+      <body className="flex min-h-full flex-col">{children}</body>
     </html>
   );
 }

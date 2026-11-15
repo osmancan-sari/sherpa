@@ -215,7 +215,8 @@ export function HeatGrid({
             tabIndex={0}
             className="focus-visible:ring-ring/50 aspect-square rounded-[4px] outline-none focus-visible:ring-3"
             style={{
-              backgroundColor: cell.level === 0 ? "var(--muted)" : `var(--seq-${cell.level})`,
+              backgroundColor:
+                cell.level === 0 ? "var(--color-fill-chip)" : `var(--color-seq-${cell.level})`,
             }}
           />
         ))}

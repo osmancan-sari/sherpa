@@ -7,10 +7,10 @@ import { AiSettings } from "@/core/ui/settings/AiSettings";
 import { ConnectionsSettings } from "@/core/ui/settings/ConnectionsSettings";
 import { DayFrameSettings } from "@/core/ui/settings/DayFrameSettings";
 import { DayRecords } from "@/core/ui/settings/DayRecords";
+import { LookSettings } from "@/core/ui/settings/LookSettings";
 import { VoiceSettings } from "@/core/ui/settings/VoiceSettings";
 import { getCurrentUser } from "@/lib/auth/session";
 import { signOut } from "./actions";
-import { ThemeSwitch } from "./theme-switch";
 
 export const metadata: Metadata = { title: "Ayarlar" };
 
@@ -18,7 +18,7 @@ export default function SettingsPage() {
   return (
     <PageShell title="Ayarlar">
       <Section title="Görünüm">
-        <ThemeSwitch />
+        <LookSettings />
       </Section>
 
       <Section title="Günün çerçevesi">

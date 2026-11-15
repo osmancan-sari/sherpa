@@ -229,7 +229,7 @@ test("a topic added and colours changed reach open screens: the colour list, the
     .getByRole("listitem")
     .filter({ hasText: "Sabah yürüyüşü" })
     .getByTestId("work-dot");
-  await expect(dot).toHaveCSS("background-color", "rgb(217, 119, 6)");
+  await expect(dot).toHaveCSS("background-color", "rgb(255, 179, 107)");
 
   await desktop.goto("/ayarlar/moduller/deneme");
   const colours = desktop.getByRole("region", { name: "Renkler" });
@@ -243,16 +243,16 @@ test("a topic added and colours changed reach open screens: the colour list, the
   });
   const row = colours.getByTestId(`color-row-konu-${topic.id.slice(0, 8)}`);
   await expect(row).toContainText("İstatistik");
-  await expect(row.getByTestId("color-dot")).toHaveCSS("background-color", "rgb(13, 148, 136)");
+  await expect(row.getByTestId("color-dot")).toHaveCSS("background-color", "rgb(95, 214, 198)");
 
   // A facet's colour changed on the desktop shows on the phone.
   const sabah = desktop.getByTestId("color-row-sabah");
   await sabah.getByRole("button", { name: "Sabah: rengi değiştir" }).click();
   await sabah
     .getByRole("group", { name: "Sabah: hazır renkler" })
-    .getByRole("button", { name: "Gül" })
+    .getByRole("button", { name: "Pembe" })
     .click();
-  await expect(dot).toHaveCSS("background-color", "rgb(225, 29, 72)");
+  await expect(dot).toHaveCSS("background-color", "rgb(255, 143, 184)");
   expect(navigations.desktop()).toBe(0);
   expect(navigations.mobile()).toBe(0);
   await context.close();

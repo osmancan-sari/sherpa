@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { ModuleFacet } from "@/core/contract/types";
+import { NO_COLOR } from "@/core/contract/colors";
 import { moduleRow, rhythm, task, workItem } from "@/core/testing/factories";
 import { splitRows } from "@/core/ai/flows/split";
 import { colorsOf, facetKeyOf, facetListOf } from "./facets";
@@ -57,7 +58,7 @@ describe("the colours of a screen", () => {
     const colors = colorsOf([mod], new Map());
     expect(colors.work(row.id, "sabah")).toBe("#0d9488");
     expect(colors.facet(row.id, "sabah")).toBeNull();
-    expect(colors.work("yok", null)).toBe("#64748b");
+    expect(colors.work("yok", null)).toBe(NO_COLOR);
   });
 });
 

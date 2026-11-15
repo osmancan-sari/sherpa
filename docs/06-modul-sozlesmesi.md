@@ -32,7 +32,8 @@ Modül yalnızca kendi klasörünü, dış paketleri (`react`, `next/link`, `luc
 | `@/core/app/hooks` | `useModuleQuery(row, anahtar, fn)`: modülün bağlamıyla hesaplanan ve her veri değişiminde tazelenen sorgu; `useNow()`: ortak saat |
 | `@/core/app/actions` | `useRefreshAll()`: modül kendi bağlamıyla bir şey yazdıktan sonra ekranı hemen tazeler |
 | `@/core/ui/Notices` | `useNotify()`, `SAVE_FAILED`: ekranın altındaki tek satırlık bildirim |
-| `@/core/ui/kit` | Bileşen takımı (`StepRunner` dahil) |
+| `@/core/ui/kit` | Bileşen takımı: cam dilinin ortak parçaları (`docs/tasarim/parcalar.md`; `StepRunner` dahil), `useReducedMotion()`, `useReducedTransparency()` (Ç4b) |
+| `@/core/ui/tokens` | Tasarım değerleri veri olarak: `token(ad)`, `TOKENS` (Ç4b; renk ya da ölçü yazılmaz, buradan alınır: `CLAUDE.md` "Tasarım") |
 | `@/components/ui/*`, `@/lib/date`, `@/lib/utils` | Düğme ve giriş alanı, tarih yardımcıları |
 | `@/lib/supabase/database.types` | Modülün kendi tablolarının satır tipleri (`Tables<"<slug>_…">`) |
 

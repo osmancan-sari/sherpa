@@ -1,3 +1,4 @@
+import { token } from "@/core/ui/tokens";
 import type {
   Block,
   BlockSeries,
@@ -38,7 +39,7 @@ export function moduleRow(overrides: Partial<ModuleRow> = {}): ModuleRow {
     area_id: null,
     weight: 1,
     weekly_floor_minutes: 0,
-    color: "#737373",
+    color: token("color-swatch-none"),
     starts_on: null,
     ends_on: null,
     end_condition: null,

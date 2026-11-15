@@ -1,5 +1,6 @@
 "use client";
 
+import { TOKENS } from "@/core/ui/tokens";
 import {
   type QueryClient,
   type QueryKey,
@@ -235,7 +236,7 @@ export function useHorizonReviews() {
 // --- The device's context ------------------------------------------------------------------
 
 /** A phone: a narrow screen or a touch screen. The second screen is neither. */
-const PHONE_QUERY = "(max-width: 767px), (pointer: coarse)";
+const PHONE_QUERY = `(width < ${TOKENS["breakpoint-md"]}), (pointer: coarse)`;
 
 function subscribeDevice(listener: () => void) {
   const query = window.matchMedia(PHONE_QUERY);

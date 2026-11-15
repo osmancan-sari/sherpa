@@ -219,7 +219,7 @@ function ColorRow({
           </form>
           {custom && !readable(custom) ? (
             <p role="note" className="text-muted-foreground text-sm">
-              Bu renk açık ya da koyu temada zor seçilir.
+              Bu renk koyu zeminde zor seçilir.
             </p>
           ) : null}
         </div>
