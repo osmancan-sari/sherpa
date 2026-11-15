@@ -139,7 +139,7 @@ function QuickAddDialog({
   const now = useNow();
   const notify = useNotify();
   const refreshAll = useRefreshAll();
-  const { modules } = useModules();
+  const { modules, isLoading: modulesLoading } = useModules();
   const active = useMemo(() => modules.filter(({ row }) => row.status === "active"), [modules]);
 
   const addTask = useAddTask();
@@ -336,6 +336,8 @@ function QuickAddDialog({
       <form
         // Checked here, not by the browser: its step rule would refuse "12dk".
         noValidate
+        // Tab picks a module only once the list is here; tests wait for it.
+        data-modules={modulesLoading ? "loading" : "ready"}
         className="flex min-h-0 flex-1 flex-col"
         onSubmit={(event) => {
           event.preventDefault();

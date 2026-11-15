@@ -103,4 +103,6 @@ export async function openQuickAdd(page: Page) {
     if ((await sheet.count()) === 0) await page.keyboard.press("n");
     await expect(sheet).toBeVisible({ timeout: 1_000 });
   }).toPass({ timeout: 10_000 });
+  // Tab walks through the modules only once their list has loaded.
+  await expect(sheet.locator("form[data-modules=ready]")).toHaveCount(1);
 }
