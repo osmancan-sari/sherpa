@@ -148,7 +148,8 @@ test("Rutin's last step: Vazgeç on the question puts the evening back on its la
     async () => (await rows("rutin_runs")).find((row) => row.routine_id === routine.id),
     (row) => Boolean(row),
   );
-  await update("rutin_runs", run!.id as string, { step_position: 3, part_position: 1 });
+  // Ç4c: "Yarının listesi" (3) comes before "Telefonu salona bırak" (4).
+  await update("rutin_runs", run!.id as string, { step_position: 4, part_position: 1 });
   await page.reload();
   await scene.getByRole("button", { name: "Yatıyorum" }).click();
   await page
@@ -158,7 +159,7 @@ test("Rutin's last step: Vazgeç on the question puts the evening back on its la
   await expect(scene.getByRole("heading", { name: "Telefonu salona bırak" })).toBeVisible();
   await waitFor(
     async () => (await rows("rutin_runs")).find((row) => row.id === run!.id),
-    (row) => row?.step_position === 3,
+    (row) => row?.step_position === 4,
   );
   expect((await today())?.bed_at).toBeNull();
   expect((await rows("sessions")).filter((row) => row.ended_at === null)).toHaveLength(1);

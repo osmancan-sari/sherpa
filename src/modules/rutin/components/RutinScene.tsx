@@ -403,9 +403,15 @@ function Scene(props: SceneProps) {
   }
 
   function all() {
-    const records = daySteps
-      .slice(stepIndex)
-      .flatMap((row, index) => recordsOf(row, "done", index === 0 ? partIndex : 0, true));
+    const records = daySteps.slice(stepIndex).flatMap((row, index) =>
+      // Ç4c: "Hepsini yaptım" does not confirm tomorrow's plan: the closing step is passed.
+      recordsOf(
+        row,
+        row.kind === "closing" && !today.closed ? "skipped" : "done",
+        index === 0 ? partIndex : 0,
+        true,
+      ),
+    );
     finish(records, ending());
   }
 
@@ -417,7 +423,15 @@ function Scene(props: SceneProps) {
   function openClosing() {
     if (!closingKey) return;
     OPENED_CLOSINGS.add(closingKey);
-    void controls.closing().then((result) => stepDone(result === "confirmed" ? "done" : "skipped"));
+    const runId = view?.id;
+    const position = stepIndex;
+    void controls.closing().then(async (result) => {
+      // The other screen may have gone on meanwhile (its own closing, "Yatıyorum"): the result
+      // is written only while the run still stands on this step.
+      const fresh = routine ? await getRun(ctx, routine.id, day).catch(() => null) : null;
+      if (!fresh || fresh.id !== runId || fresh.step_position !== position) return;
+      stepDone(result === "confirmed" ? "done" : "skipped");
+    });
   }
   useEffect(() => {
     if (!closingKey || bedtime || greeting || OPENED_CLOSINGS.has(closingKey)) return;

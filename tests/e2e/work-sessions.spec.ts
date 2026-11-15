@@ -247,6 +247,9 @@ test("a work item is started as its next sitting, and the time counts towards it
   expect(tasks.every((task) => task.status === "todo")).toBe(true);
   // One sitting stands for the item: it is on the card, and no other sitting is listed.
   await expect(
+    page.getByRole("region", { name: "Şimdi" }).getByRole("heading", { name: "Midterm hazırlığı" }),
+  ).toBeVisible();
+  await expect(
     page.getByRole("region", { name: "Sıradakiler" }).getByText("Midterm hazırlığı"),
   ).toHaveCount(0);
 });

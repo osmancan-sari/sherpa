@@ -89,3 +89,50 @@ test("long titles do not push the Today screen wider than the screen", async ({
   expect(save.y + save.height).toBeLessThanOrEqual(viewport!.height);
   expect(await sidewaysOverflow(page)).toBe(0);
 });
+
+test("the day's fixed blocks: listed on the phone with the running one marked, in the day's flow on the board (Ç4c)", async ({
+  page,
+  viewport,
+}) => {
+  await page.clock.setFixedTime(NOW);
+  const okul = await seedModule("okul-ornek", "Okul");
+  await insert("tasks", { module_id: okul.id, title: "Ödev" });
+  await insert("blocks", [
+    {
+      title: "YZV406E dersi",
+      location: "A101",
+      starts_at: new Date(NOW - 20 * 60_000).toISOString(),
+      ends_at: new Date(NOW + 20 * 60_000).toISOString(),
+    },
+    {
+      title: "Diş hekimi",
+      starts_at: new Date(NOW + 4 * 3_600_000).toISOString(),
+      ends_at: new Date(NOW + 5 * 3_600_000).toISOString(),
+    },
+    {
+      title: "İptal edilen",
+      status: "cancelled",
+      starts_at: new Date(NOW + 2 * 3_600_000).toISOString(),
+      ends_at: new Date(NOW + 3 * 3_600_000).toISOString(),
+    },
+  ]);
+  await page.goto("/");
+  await expect(
+    page.getByRole("region", { name: "Şimdi" }).getByRole("heading", { name: "YZV406E dersi" }),
+  ).toBeVisible();
+  const flow = page.getByRole("region", { name: "Günün akışı" });
+  await expect(flow.getByLabel(/Diş hekimi/)).toHaveCount(1);
+  await expect(flow.getByLabel(/İptal edilen/)).toHaveCount(0);
+  const blocks = page.getByRole("region", { name: "Bugünün sabit blokları" });
+  if (viewport!.width < 768) {
+    await expect(blocks.getByRole("listitem")).toHaveCount(2);
+    await expect(
+      blocks.locator('[aria-current="time"]').filter({ hasText: "YZV406E dersi" }),
+    ).toHaveCount(1);
+    await expect(blocks).toContainText("A101");
+    await expect(blocks).not.toContainText("İptal edilen");
+  } else {
+    // The board has them in the day's flow only.
+    await expect(blocks).toHaveCount(0);
+  }
+});

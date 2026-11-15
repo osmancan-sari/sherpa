@@ -801,7 +801,8 @@ test("rutin screens", async ({ page }, testInfo) => {
   await update(
     "rutin_runs",
     eveningRun.find((row) => row.routine_id === evening.id)!.id as string,
-    { step_position: 3, part_position: 1 },
+    // Ç4c: "Yarının listesi" (3) comes before "Telefonu salona bırak" (4).
+    { step_position: 4, part_position: 1 },
   );
   await page.reload();
   await expect(scene.getByRole("button", { name: "Yatıyorum" })).toBeVisible();

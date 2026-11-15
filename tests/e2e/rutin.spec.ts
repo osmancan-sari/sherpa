@@ -781,3 +781,64 @@ test("the Sağlık area's page: its members, their numbers, Rutin's view; reache
   await page.goto("/a/yok");
   await expect(page.getByText("Böyle bir alan yok.")).toBeVisible();
 });
+
+test("while Rutin holds the closing the evening card offers no Kapanış; with the step off it does (Ç4c)", async ({
+  page,
+}) => {
+  await switchOn(page);
+  const [settings] = await rows("settings");
+  await update("settings", settings.id as string, { day_frame: FRAME });
+  // Yesterday's evening, the bed the user's own 22:00: at 22:10 the card is the evening's.
+  await insert("days", {
+    date: DAY,
+    woke_at: dayAt("07:00").toISOString(),
+    expected_bed: "22:00:00",
+  });
+  await page.clock.setFixedTime(dayAt("22:10"));
+  await page.goto("/");
+  await expect(card(page).getByRole("heading", { name: "Akşam" })).toBeVisible();
+  await expect(card(page).getByRole("button", { name: "Yatıyorum" })).toBeVisible();
+  await expect(card(page).getByRole("button", { name: "Kapanış" })).toHaveCount(0);
+
+  // The step switched off on the module page: the card offers the closing itself.
+  await page.goto("/m/rutin/aksam");
+  await page.getByRole("switch", { name: "Yarının listesi açık" }).click();
+  await waitFor(
+    () => rows("rutin_steps"),
+    (list) => list.some((row) => row.kind === "closing" && row.active === false),
+  );
+  await page.goto("/");
+  await expect(card(page).getByRole("button", { name: "Kapanış" })).toBeVisible();
+});
+
+test("on a day already closed, Yarının listesi counts as done and the scene goes on (Ç4c)", async ({
+  page,
+}) => {
+  await switchOn(page);
+  const [settings] = await rows("settings");
+  await update("settings", settings.id as string, { day_frame: FRAME });
+  const evening = await rhythmOf("aksam");
+  const [mod] = await rows("modules");
+  await insert("sessions", { rhythm_id: evening.id, module_id: mod.id, started_at: runAt(-5) });
+  await page.goto("/");
+  await expect(scene(page)).toHaveAttribute("data-routine", "aksam");
+  const run = await waitFor(
+    () => runOf("aksam"),
+    (row) => Boolean(row),
+  );
+  // The day's closing was done elsewhere (the evening card's, another screen's).
+  const day = (await rows("days")).find((row) => row.date === run!.day);
+  if (day) await update("days", day.id as string, { closed_at: runAt(-1) });
+  else await insert("days", { date: run!.day, closed_at: runAt(-1) });
+  await update("rutin_runs", run!.id, { step_position: 3, part_position: 0 });
+  await page.reload();
+  await expect(scene(page).getByRole("heading", { name: "Telefonu salona bırak" })).toBeVisible();
+  await expect(
+    page.getByRole("region", { name: "Sahne" }).getByRole("heading", { name: "Kapanış" }),
+  ).toHaveCount(0);
+  const list = (await rows("rutin_steps")).find((row) => row.kind === "closing")!;
+  await waitFor(
+    () => rows("rutin_run_steps"),
+    (records) => records.some((row) => row.step_id === list.id && row.result === "done"),
+  );
+});

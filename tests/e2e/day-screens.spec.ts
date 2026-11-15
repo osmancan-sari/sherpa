@@ -46,7 +46,7 @@ test("Günaydın: 'Uyandım' records the waking (not estimated), then the mornin
   await expect(card(page)).toContainText("Önce: Sabah esnemesi");
   // Ç4c: the top line is "Bugün" and the date only; the day's flow writes the waking and bed.
   await expect(page.locator("main header").first()).not.toContainText("uyanış");
-  await expect(page.getByTestId("flow-ends")).toHaveText(/^09:00 uyanış · \d\d:\d\d yatış$/);
+  await expect(page.getByTestId("flow-ends")).toHaveText("09:00 uyanış · 01:00 yatış");
 
   await card(page).getByRole("button", { name: "Uyandım" }).click();
   await expect(card(page).getByRole("heading", { name: "Sabah esnemesi" })).toBeVisible();

@@ -2,7 +2,9 @@ import { token } from "@/core/ui/tokens";
 import type { ModuleDefinition, ModuleFacet } from "@/core/contract/types";
 import { BasicStepsView } from "./components/AreaView";
 import { EveningTab, MorningTab } from "./components/StepsTab";
-import { listRoutines, listRuns, listSteps } from "./queries";
+import { shiftDay } from "@/lib/date";
+import { listRecords, listRoutines, listRuns, listSteps } from "./queries";
+import { dayStepsOf, lastDoneDays } from "./server/flow";
 import { listeners, proposeAll, writeStartList } from "./rules";
 import { rutinScene } from "./scene";
 
@@ -54,18 +56,18 @@ export const rutin: ModuleDefinition = {
 
   // Ç4c: the evening closing is a step of the evening ("Yarının listesi", `kind: closing`): while
   // that step is on, the evening's scene holds it and Today's evening card offers no "Kapanış".
+  // Only when the step is due tonight (its `every_days`), as the scene would show it.
   async hostsClosing(ctx) {
-    const [routines, steps] = await Promise.all([listRoutines(ctx), listSteps(ctx)]);
+    const today = await ctx.day();
+    const [routines, steps, records] = await Promise.all([
+      listRoutines(ctx),
+      listSteps(ctx),
+      listRecords(ctx, shiftDay(today, -370)),
+    ]);
     const evening = routines.find((row) => row.key === "aksam" && row.active);
-    return Boolean(
-      evening &&
-      steps.some(
-        (row) =>
-          row.routine_id === evening.id &&
-          row.kind === "closing" &&
-          row.active &&
-          row.parent_id === null,
-      ),
+    if (!evening) return false;
+    return dayStepsOf(steps, evening.id, today, lastDoneDays(records)).some(
+      (row) => row.kind === "closing",
     );
   },
 
