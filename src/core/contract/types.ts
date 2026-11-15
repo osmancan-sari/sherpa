@@ -265,8 +265,12 @@ export type SceneProps = {
     stuck: () => void;
     /** Leaves the scene; the session goes on. */
     exit: () => void;
-    /** Ç3f: opens the evening closing inside the scene; back to the scene when it is done. */
-    closing: () => void;
+    /**
+     * Ç3f: opens the evening closing inside the scene; back to the scene when it is done. Ç4c:
+     * resolves with how it ended ("confirmed": tomorrow's plan was confirmed; "skipped": "Vazgeç"),
+     * so a scene can go on to its next step. Calling it without waiting still works.
+     */
+    closing: () => Promise<ClosingResult>;
     /**
      * Ç3f: "Yatıyorum": tonight's bedtime is now; the session ends as done. Ç3g: more than two
      * hours before tonight's bedtime range it asks first; false when the answer was "Vazgeç"
@@ -507,7 +511,28 @@ export type ModuleUi = {
    * from tokens or the module's own colour. Absent: the calm backdrop and the tones.
    */
   backdrop?: ComponentType<ModuleBackdropProps>;
+  /** Ç4c: views on its area's page (`/a/<area>`); read only, drawn with the module's context. */
+  areaViews?: ModuleAreaView[];
 };
+
+/** Ç4c: how the evening closing opened by a scene ended. */
+export type ClosingResult = "confirmed" | "skipped";
+
+/**
+ * Ç4c: a view a module gives its area's page (docs/06-modul-sozlesmesi.md, "Alan sayfası"):
+ * drawn in a dense panel with its title and the module's name at its right. The page's metrics
+ * are designed later (13 Kas 2026); this is the place for them.
+ */
+export type ModuleAreaView = {
+  key: string;
+  /** The panel's uppercase label ("SON 14 GÜN · TEMEL ADIMLAR"). */
+  title: string;
+  component: ComponentType<AreaViewProps>;
+  /** Wider views take two columns on the board. */
+  wide?: boolean;
+};
+
+export type AreaViewProps = { device: "pano" | "telefon" };
 
 /** Ç4b: what a module's backdrop is drawn with. */
 export type ModuleBackdropProps = {
@@ -536,6 +561,13 @@ export type ModuleDefinition = {
   chip: (ctx: ModuleContext) => Promise<ChipData>;
   nowCard?: (task: Task) => NowCardContent | null;
   alerts?: (ctx: ModuleContext) => Promise<Alert[]>;
+  /**
+   * Ç4c: whether the module holds the evening closing in its own scene now (Rutin: its evening
+   * step "Yarının listesi" is on). When no active module does, the evening card offers
+   * "Kapanış" and the closing opens in the standard scene shell. Cheap and read only, like
+   * the chip. Absent: it does not.
+   */
+  hostsClosing?: (ctx: ModuleContext) => Promise<boolean>;
 
   // 2. Which entries it accepts
   intake: IntakeType[];

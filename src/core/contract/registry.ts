@@ -44,6 +44,17 @@ export function definitionProblems(def: ModuleDefinition): string[] {
   if (def.facets !== undefined && typeof def.facets !== "function") {
     say("facets must be a function of the module's context");
   }
+  if (def.hostsClosing !== undefined && typeof def.hostsClosing !== "function") {
+    say("hostsClosing must be a function of the module's context");
+  }
+  const views = new Set<string>();
+  for (const view of def.ui.areaViews ?? []) {
+    if (!KEY.test(view.key)) say(`area view key "${view.key}" is not a valid key`);
+    if (views.has(view.key)) say(`area view key "${view.key}" is used twice`);
+    views.add(view.key);
+    if (!view.component || !view.title)
+      say(`area view "${view.key}" needs a title and a component`);
+  }
   const segments = new Set<string>();
   for (const tab of def.ui.tabs) {
     if (!KEY.test(tab.key)) say(`tab key "${tab.key}" is not a valid path segment`);

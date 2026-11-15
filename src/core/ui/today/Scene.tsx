@@ -20,6 +20,7 @@ import type { KnownModule } from "@/core/app/hooks";
 import { facetColor, moduleColor } from "@/core/contract/colors";
 import { chooseScene, findFacet, sceneTone, taskFacet } from "@/core/contract/facets";
 import type {
+  ClosingResult,
   ModuleFacet,
   ModuleScene,
   SceneChain,
@@ -174,8 +175,27 @@ export function SceneFrame({
   const recordBed = useRecordBed();
   const undoBed = useUndoBed();
   const askBed = useAskBed();
-  // Ç3f: the evening closing opened by the scene, in its place (this device only).
+  // Ç3f: the evening closing opened by the scene, in its place (this device only). Ç4c: the
+  // scene learns how it ended (`controls.closing()` resolves).
   const [closing, setClosing] = useState(false);
+  const closingDone = useRef<((result: ClosingResult) => void) | null>(null);
+  const openClosing = useCallback(
+    () =>
+      new Promise<ClosingResult>((resolve) => {
+        closingDone.current?.("skipped");
+        closingDone.current = resolve;
+        setClosing(true);
+      }),
+    [],
+  );
+  const endClosing = useCallback((result: ClosingResult) => {
+    setClosing(false);
+    const done = closingDone.current;
+    closingDone.current = null;
+    done?.(result);
+  }, []);
+  // A scene that goes away with its closing open hears "skipped".
+  useEffect(() => () => closingDone.current?.("skipped"), []);
   const device = useDevice();
   const session = state.session;
   const startedAt = new Date(session.started_at);
@@ -272,7 +292,7 @@ export function SceneFrame({
       },
       stuck: onStuck,
       exit: onExit,
-      closing: () => setClosing(true),
+      closing: openClosing,
       bed: async () => {
         // Ç3g: far before tonight's bedtime range it asks first; "Vazgeç" changes nothing.
         const at = new Date();
@@ -321,55 +341,128 @@ export function SceneFrame({
       {/* Its own backdrop, and the band under the clock that its content scrolls behind. */}
       {device === "telefon" ? <Backdrop kind={backdrop} contained band /> : null}
       {bedtime || strip?.hidden ? null : (
-        <header
-          aria-label="Sahne şeridi"
-          data-glass=""
-          className={cn(
-            "h-strip backdrop-blur-strip relative z-10 flex shrink-0 items-center gap-2.5 backdrop-saturate-170",
-            device === "telefon"
-              ? "bg-scene-strip-night border-line border-b pr-2 pl-5 text-sm"
-              : "bg-scene-strip border-edge-strip rounded-rail text-note gap-3 border pr-3 pl-5.5",
-          )}
-        >
-          <span className="font-medium tabular-nums">{formatTime(new Date(now))}</span>
-          <span
-            aria-hidden
-            data-testid="work-dot"
-            className="size-2 shrink-0 rounded-full"
-            style={{ backgroundColor: color }}
-          />
-          <span className="flex min-w-0 flex-1 items-baseline gap-1.5">
-            <span className="truncate font-semibold" data-testid="strip-title">
-              {title}
-            </span>
-            {stripMinutes === null ? null : (
-              <span
-                className="text-ink-2 whitespace-nowrap tabular-nums"
-                data-testid="strip-minutes"
-              >
-                · {formatMinutes(stripMinutes)}
-              </span>
-            )}
-          </span>
-          <button
-            type="button"
-            onClick={onExit}
-            className="text-note min-h-touch focus-visible:shadow-focus rounded-full px-3 font-semibold outline-none"
-          >
-            Çık
-          </button>
-        </header>
+        <SceneStripBar
+          device={device}
+          now={new Date(now)}
+          color={color}
+          title={title}
+          minutes={stripMinutes}
+          onExit={onExit}
+        />
       )}
       <section aria-label="Sahne" className="relative z-10 flex flex-1 flex-col p-5 md:p-10">
         {closing ? (
           <div data-scene-closing="">
-            <ClosingInScene onDone={() => setClosing(false)} />
+            <ClosingInScene onDone={endClosing} />
           </div>
         ) : (
           <SceneBoundary onError={onFailed}>
             <Scene {...props} />
           </SceneBoundary>
         )}
+      </section>
+    </div>
+  );
+}
+
+/**
+ * The core's strip over a scene (docs/tasarim/ekranlar/sahne.md): the time, the work's colour, its
+ * name, the minutes, "Çık". On the phone across the top edge; on the board a glass pill.
+ */
+function SceneStripBar({
+  device,
+  now,
+  color,
+  title,
+  minutes,
+  onExit,
+}: {
+  device: SceneProps["device"];
+  now: Date;
+  color: string | null;
+  title: string;
+  minutes: number | null;
+  onExit: () => void;
+}) {
+  return (
+    <header
+      aria-label="Sahne şeridi"
+      data-glass=""
+      className={cn(
+        "h-strip backdrop-blur-strip relative z-10 flex shrink-0 items-center gap-2.5 backdrop-saturate-170",
+        device === "telefon"
+          ? "bg-scene-strip-night border-line border-b pr-2 pl-5 text-sm"
+          : "bg-scene-strip border-edge-strip rounded-rail text-note gap-3 border pr-3 pl-5.5",
+      )}
+    >
+      <span className="font-medium tabular-nums">{formatTime(now)}</span>
+      {color ? (
+        <span
+          aria-hidden
+          data-testid="work-dot"
+          className="size-2 shrink-0 rounded-full"
+          style={{ backgroundColor: color }}
+        />
+      ) : null}
+      <span className="flex min-w-0 flex-1 items-baseline gap-1.5">
+        <span className="truncate font-semibold" data-testid="strip-title">
+          {title}
+        </span>
+        {minutes === null ? null : (
+          <span className="text-ink-2 whitespace-nowrap tabular-nums" data-testid="strip-minutes">
+            · {formatMinutes(minutes)}
+          </span>
+        )}
+      </span>
+      <button
+        type="button"
+        onClick={onExit}
+        className="text-note min-h-touch focus-visible:shadow-focus rounded-full px-3 font-semibold outline-none"
+      >
+        Çık
+      </button>
+    </header>
+  );
+}
+
+/**
+ * Ç4c: the evening closing when no active module holds it in its scene (`hostsClosing`): the
+ * standard scene shell, the core's strip ("Akşam kapanışı", "Çık") over the hour's landscape,
+ * and the closing inside. "Çık", "Vazgeç" and "Onayla" go back to Today. No session runs.
+ */
+export function ClosingShell({ onDone }: { onDone: () => void }) {
+  const device = useDevice();
+  const [opened] = useState(() => Date.now());
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const timer = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+  useBackdrop(device === "pano" ? { kind: "full" } : null);
+  return (
+    <div
+      data-testid="closing-shell"
+      data-device={device}
+      className={cn(
+        "animate-in fade-in flex flex-col duration-300 motion-reduce:animate-none",
+        device === "telefon"
+          ? "bg-solid fixed inset-0 z-30 overflow-x-hidden overflow-y-auto overscroll-contain pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]"
+          : "min-h-[70vh] flex-1",
+      )}
+    >
+      {device === "telefon" ? <Backdrop kind={{ kind: "full" }} contained band /> : null}
+      <SceneStripBar
+        device={device}
+        now={new Date(now)}
+        color={null}
+        title="Akşam kapanışı"
+        minutes={Math.max(0, Math.floor((now - opened) / 60_000))}
+        onExit={onDone}
+      />
+      <section aria-label="Sahne" className="relative z-10 flex flex-1 flex-col p-5 md:p-10">
+        <div data-scene-closing="">
+          <ClosingInScene onDone={onDone} />
+        </div>
       </section>
     </div>
   );

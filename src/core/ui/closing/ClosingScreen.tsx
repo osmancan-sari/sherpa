@@ -1,6 +1,5 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,47 +11,35 @@ import {
 import { useColors } from "@/core/app/facets";
 import { type KnownModule, useAiStatus, useModules, useTodayPlan } from "@/core/app/hooks";
 import { useCloseDay } from "@/core/app/plan-actions";
-import { useRecordBed } from "@/core/app/frame-actions";
-import { useAskBed } from "../today/BedAsk";
+import type { ClosingResult } from "@/core/contract/types";
 import { useQuery } from "@tanstack/react-query";
 import { postAi } from "@/core/ai/client";
 import { buildPlan, type Candidate, type PlanAdvice, tomorrowInput } from "@/core/planner";
 import { formatMinutes } from "@/lib/date";
 import { cn } from "@/lib/utils";
-import { ClientOnly } from "../ClientOnly";
+import { AiReason, Textarea } from "../kit/Field";
 import { LoadFailed } from "../today/TodayScreen";
 
-// The evening closing (docs/04-planlayici.md, "Akşam kapanışı"): confirming tomorrow's plan. One
-// step per screen, moved through with the keyboard (Enter goes on, Escape goes back). It may
-// never be done at all: tomorrow plans itself (rule 3).
+// The evening closing (docs/04-planlayici.md, "Akşam kapanışı"; look docs/tasarim/ekranlar/
+// kapanis.md, KS*, KSP*): confirming tomorrow's plan. One step per screen, moved through with the
+// keyboard (Enter goes on, Escape goes back). It may never be done at all: tomorrow plans itself
+// (rule 3). Ç4c: it opens only inside a scene (the evening's, or the standard scene shell when no
+// module holds it); there is no page of its own and no "Onayla ve yat" (the scene's last step
+// records the bedtime).
 
 const STEPS = ["Sorular", "Bugün", "Yarın", "Boşalt", "Onay"] as const;
 /** At most this many open questions are asked at the closing. */
 const MAX_QUESTIONS = 5;
 
-export function ClosingScreen() {
-  return (
-    <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-5 px-5 py-6 md:px-10 md:py-8">
-      <ClientOnly
-        fallback={<h1 className="text-xl font-semibold tracking-tight md:text-2xl">Kapanış</h1>}
-      >
-        <ClosingBody />
-      </ClientOnly>
-    </div>
-  );
-}
-
 /**
  * Ç3f: the closing inside a scene (`controls.closing()`; docs/06-modul-sozlesmesi.md, "Diziler"
- * rule 6): the same steps, no "Onayla ve yat" (the scene's own last step records the bedtime),
- * a "Vazgeç", and back to the scene when it is confirmed or given up.
+ * rule 6): back to the scene when it is confirmed or given up, with how it ended (Ç4c).
  */
-export function ClosingInScene({ onDone }: { onDone: () => void }) {
-  return <ClosingBody inScene={{ onDone }} />;
+export function ClosingInScene({ onDone }: { onDone: (result: ClosingResult) => void }) {
+  return <ClosingBody onDone={onDone} />;
 }
 
-function ClosingBody({ inScene }: { inScene?: { onDone: () => void } } = {}) {
-  const router = useRouter();
+function ClosingBody({ onDone }: { onDone: (result: ClosingResult) => void }) {
   const { modules } = useModules();
   const { input, rows, failed, retry, now, context } = useTodayPlan();
   const answer = useAnswerPrompt();
@@ -60,8 +47,6 @@ function ClosingBody({ inScene }: { inScene?: { onDone: () => void } } = {}) {
   const logRhythm = useLogRhythm();
   const addEntry = useAddInboxEntry();
   const close = useCloseDay();
-  const recordBed = useRecordBed();
-  const askBed = useAskBed();
   const [step, setStep] = useState(0);
   const [removed, setRemoved] = useState<string[]>([]);
   const [dump, setDump] = useState("");
@@ -92,7 +77,7 @@ function ClosingBody({ inScene }: { inScene?: { onDone: () => void } } = {}) {
 
   if (failed) return <LoadFailed onRetry={retry} />;
   if (!input || !rows || !tomorrow) {
-    return <h1 className="text-xl font-semibold tracking-tight md:text-2xl">Kapanış</h1>;
+    return <h2 className="tracking-title px-1 text-2xl font-bold md:px-0 md:text-3xl">Kapanış</h2>;
   }
 
   const questions = rows.prompts
@@ -120,8 +105,7 @@ function ClosingBody({ inScene }: { inScene?: { onDone: () => void } } = {}) {
 
   const next = () => setStep((value) => Math.min(STEPS.length - 1, value + 1));
   const back = () => setStep((value) => Math.max(0, value - 1));
-  /** Ç3c: "Onayla ve yat" also records tonight's bedtime (the day's frame on). */
-  const confirm = (andBed = false) => {
+  const confirm = () => {
     // One confirmation at a time: a second Enter while it is being written does nothing.
     if (close.isPending || close.isSuccess) return;
     const lines = dump
@@ -152,51 +136,51 @@ function ClosingBody({ inScene }: { inScene?: { onDone: () => void } } = {}) {
       {
         onSuccess: () => {
           for (const line of lines) addEntry.mutate({ id: crypto.randomUUID(), text: line });
-          if (andBed) recordBed.mutate({ date: input.date, at: new Date() });
-          if (inScene) inScene.onDone();
-          else router.push("/");
+          onDone("confirmed");
         },
       },
     );
   };
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-3.5 md:gap-4">
       <StepKeys onNext={step === STEPS.length - 1 ? () => confirm() : next} onBack={back} />
-      <header className="flex flex-col gap-3">
-        {inScene ? (
-          <h2 className="text-xl font-semibold tracking-tight md:text-2xl">Kapanış</h2>
-        ) : (
-          <h1 className="text-xl font-semibold tracking-tight md:text-2xl">Kapanış</h1>
-        )}
-        <ol
-          aria-label="Adımlar"
-          className="text-muted-foreground flex flex-wrap gap-x-4 gap-y-1 text-sm"
-        >
-          {STEPS.map((name, index) => (
-            <li
-              key={name}
-              aria-current={index === step ? "step" : undefined}
-              className={cn(index === step && "text-foreground font-medium")}
+      <h2 className="tracking-title px-1 text-2xl font-bold md:px-0 md:text-3xl">Kapanış</h2>
+      <ol aria-label="Adımlar" className="flex gap-1.5 md:max-w-180 md:gap-2.5">
+        {STEPS.map((name, index) => (
+          <li
+            key={name}
+            aria-current={index === step ? "step" : undefined}
+            className="flex min-w-0 flex-1 flex-col gap-1.5"
+          >
+            <span
+              aria-hidden
+              className={cn("h-1 rounded-xs", index <= step ? "bg-ink" : "bg-fill-step")}
+            />
+            <span
+              className={cn(
+                "truncate text-sm",
+                index === step ? "text-ink font-semibold" : "text-ink-2",
+              )}
             >
               {index + 1}. {name}
-            </li>
-          ))}
-        </ol>
-      </header>
+            </span>
+          </li>
+        ))}
+      </ol>
 
       <section
         aria-label={STEPS[step]}
-        className="border-border flex min-h-64 flex-col gap-4 rounded-2xl border p-6"
+        className="glass-dense rounded-dense flex min-h-[40vh] flex-col gap-3 p-4.75 md:min-h-[45vh] md:max-w-180"
       >
         {step === 0 ? (
           questions.length === 0 ? (
-            <p className="text-muted-foreground">Cevap bekleyen soru yok.</p>
+            <p className="text-ink-2 text-lead">Cevap bekleyen soru yok.</p>
           ) : (
-            <ul className="flex flex-col gap-4">
+            <ul className="flex flex-col gap-5">
               {questions.map((prompt) => (
-                <li key={prompt.id} className="flex flex-col gap-2">
-                  <p>
-                    <span className="text-muted-foreground">
+                <li key={prompt.id} className="flex flex-col gap-2.5">
+                  <p className="text-lead">
+                    <span className="text-ink-2">
                       {moduleMap.get(prompt.module_id)?.row.name} ·{" "}
                     </span>
                     {prompt.question}
@@ -206,8 +190,9 @@ function ClosingBody({ inScene }: { inScene?: { onDone: () => void } } = {}) {
                       (option) => (
                         <Button
                           key={option.value}
-                          variant="outline"
-                          className="h-11"
+                          variant="secondary"
+                          size="sm"
+                          className="h-11.5"
                           onClick={() => answer.mutate({ prompt, value: option.value })}
                         >
                           {option.label}
@@ -223,11 +208,11 @@ function ClosingBody({ inScene }: { inScene?: { onDone: () => void } } = {}) {
 
         {step === 1 ? (
           <>
-            <h2 className="font-medium">Bugün başka ne yaptın?</h2>
+            <h3 className="text-xl font-semibold">Bugün başka ne yaptın?</h3>
             {leftToday.length === 0 && rhythmsLeft.length === 0 ? (
-              <p className="text-muted-foreground">Bugün için açık kalan bir şey yok.</p>
+              <p className="text-ink-2 text-lead">Bugün için açık kalan bir şey yok.</p>
             ) : (
-              <ul className="divide-border border-border divide-y rounded-xl border">
+              <ul className={LIST}>
                 {leftToday.map((task) => (
                   <DoneRow
                     key={task.id}
@@ -251,12 +236,14 @@ function ClosingBody({ inScene }: { inScene?: { onDone: () => void } } = {}) {
 
         {step === 2 ? (
           <>
-            <h2 className="font-medium">Yarının taslağı</h2>
-            <p className="text-muted-foreground text-sm">İstemediğini çıkar.</p>
+            <div className="flex flex-col gap-1">
+              <h3 className="text-xl font-semibold">Yarının taslağı</h3>
+              <p className="text-ink-2 text-note">İstemediğini çıkar.</p>
+            </div>
             {draft.length === 0 ? (
-              <p className="text-muted-foreground">Yarın için planlanan bir şey yok.</p>
+              <p className="text-ink-2 text-lead">Yarın için planlanan bir şey yok.</p>
             ) : (
-              <ul className="divide-border border-border divide-y rounded-xl border">
+              <ul className={LIST}>
                 {draft.map((candidate) => (
                   <DraftRow
                     key={candidate.id}
@@ -273,29 +260,28 @@ function ClosingBody({ inScene }: { inScene?: { onDone: () => void } } = {}) {
 
         {step === 3 ? (
           <>
-            <h2 className="font-medium">Aklında kalanlar</h2>
-            <p className="text-muted-foreground text-sm">
-              Her satır gelen kutusuna bir giriş olur.
-            </p>
-            <textarea
+            <div className="flex flex-col gap-1">
+              <h3 className="text-xl font-semibold">Aklında kalanlar</h3>
+              <p className="text-ink-2 text-note">Her satır gelen kutusuna bir giriş olur.</p>
+            </div>
+            <Textarea
               aria-label="Aklında kalanlar"
               value={dump}
               onChange={(event) => setDump(event.target.value)}
-              rows={5}
-              className="border-input bg-background focus-visible:ring-ring/50 rounded-lg border p-3 text-base outline-none focus-visible:ring-3"
+              rows={6}
             />
           </>
         ) : null}
 
         {step === 4 ? (
           <>
-            <h2 className="font-medium">Yarın</h2>
+            <h3 className="text-xl font-semibold">Yarın</h3>
             {draft.length === 0 ? (
-              <p className="text-muted-foreground">
+              <p className="text-ink-2 text-lead">
                 Yarın için seçilen iş yok; yarın sabah plan kendiliğinden kurulur.
               </p>
             ) : (
-              <ol className="flex list-decimal flex-col gap-1 pl-5">
+              <ol className="text-lead flex flex-col gap-3">
                 {draft.map((candidate) => (
                   <li key={candidate.id}>{candidate.title}</li>
                 ))}
@@ -305,47 +291,33 @@ function ClosingBody({ inScene }: { inScene?: { onDone: () => void } } = {}) {
         ) : null}
       </section>
 
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         {step > 0 ? (
-          <Button variant="outline" className="h-11" onClick={back}>
+          <Button variant="secondary" onClick={back}>
             Geri
           </Button>
         ) : null}
         {step < STEPS.length - 1 ? (
-          <Button className="h-11" onClick={next}>
+          <Button variant="primary" onClick={next}>
             İleri
           </Button>
         ) : (
-          <>
-            <Button className="h-11" disabled={close.isPending} onClick={() => confirm()}>
-              Onayla
-            </Button>
-            {input.frame && !inScene ? (
-              <Button
-                variant="outline"
-                className="h-11"
-                disabled={close.isPending}
-                onClick={() =>
-                  void askBed(new Date()).then((yes) => {
-                    if (yes) confirm(true);
-                  })
-                }
-              >
-                Onayla ve yat
-              </Button>
-            ) : null}
-          </>
-        )}
-        {inScene ? (
-          <Button variant="ghost" className="h-11" onClick={inScene.onDone}>
-            Vazgeç
+          <Button variant="primary" disabled={close.isPending} onClick={() => confirm()}>
+            Onayla
           </Button>
-        ) : null}
+        )}
+        {/* "Vazgeç" skips the closing; the scene goes on (Ç4c). */}
+        <Button variant="quiet" onClick={() => onDone("skipped")}>
+          Vazgeç
+        </Button>
       </div>
-      <p className="text-muted-foreground text-sm">Enter ile ilerle, Escape ile geri dön.</p>
+      <p className="text-ink-2 text-sm max-md:hidden">Enter ile ilerle, Escape ile geri dön.</p>
     </div>
   );
 }
+
+/** The steps' lists: a box of rows inside the panel (KS2, KS3). */
+const LIST = "bg-fill-field border-edge-quiet rounded-2xl flex flex-col overflow-hidden border";
 
 function DoneRow({
   title,
@@ -358,14 +330,14 @@ function DoneRow({
 }) {
   const [done, setDone] = useState(false);
   return (
-    <li className="flex items-center justify-between gap-3 px-4 py-3">
-      <span className={cn("min-w-0 truncate", done && "text-muted-foreground line-through")}>
-        {mod ? <span className="text-muted-foreground">{mod.row.name} · </span> : null}
+    <li className="border-line flex min-h-15 items-center justify-between gap-3 border-b pr-2.5 pl-4 last:border-b-0">
+      <span className={cn("min-w-0 truncate text-base", done && "text-ink-2 line-through")}>
+        {mod ? <span className="text-ink-2">{mod.row.name} · </span> : null}
         {title}
       </span>
       <Button
-        variant="outline"
-        className="h-11 shrink-0"
+        variant="secondary"
+        size="sm"
         disabled={done}
         aria-label={`Yaptım: ${title}`}
         onClick={() => {
@@ -393,26 +365,21 @@ function DraftRow({
 }) {
   const colors = useColors();
   return (
-    <li className="flex items-center gap-3 px-4 py-3">
+    <li className="border-line flex min-h-15 items-center gap-3 border-b py-2 pr-2.5 pl-4 last:border-b-0">
       <span
         aria-hidden
         data-testid="work-dot"
-        className="size-2.5 shrink-0 rounded-full"
+        className="size-2.25 shrink-0 rounded-full"
         style={{ backgroundColor: colors.of(candidate.moduleId, candidate) }}
       />
-      <div className="min-w-0 flex-1">
-        <p className="truncate">{candidate.title}</p>
-        <p className="text-muted-foreground truncate text-sm tabular-nums">
+      <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+        <p className="truncate text-base font-semibold">{candidate.title}</p>
+        <p className="text-ink-2 truncate text-sm tabular-nums">
           {[mod?.row.name, formatMinutes(candidate.minutes)].filter(Boolean).join(" · ")}
         </p>
-        {reason ? <p className="text-muted-foreground truncate text-xs">{reason}</p> : null}
+        {reason ? <AiReason>{reason}</AiReason> : null}
       </div>
-      <Button
-        variant="ghost"
-        className="h-11 shrink-0"
-        aria-label={`Çıkar: ${candidate.title}`}
-        onClick={onRemove}
-      >
+      <Button variant="quiet" size="sm" aria-label={`Çıkar: ${candidate.title}`} onClick={onRemove}>
         Çıkar
       </Button>
     </li>

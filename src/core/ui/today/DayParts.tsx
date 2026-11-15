@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import type { Route } from "next";
 import { type FormEvent, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,173 +9,84 @@ import type { KnownModule } from "@/core/app/hooks";
 import type { Candidate, Plan, PlanInput, Warning } from "@/core/planner";
 import { useColors } from "@/core/app/facets";
 import { pickForMinutes } from "@/core/planner";
-import { blocksOfDay } from "@/core/today/select";
+import { dayFlowOf } from "@/core/today/flow";
+import type { Session } from "@/core/types";
 import { formatDayLabel, formatMinutes, formatTime } from "@/lib/date";
-import { rangesFor } from "@/core/contract/frame";
 import { Dialog } from "../Dialog";
+import { AlertRow } from "../kit/Feedback";
+import { PanelLabel } from "../kit/Panel";
+import { TimeStrip, type TimeStripPiece } from "../kit/TimeStrip";
 import { ConnectionPill } from "../look/Connection";
-import { wakeText } from "./frame-text";
 import { sessionTargetOf } from "./NowCard";
 
-// The pieces of the Today screen around the "now" card (docs/05-arayuz.md, "Bileşenler").
+// The pieces of the Today screen around the "now" card (docs/tasarim/ekranlar/bugun.md; Ç4c).
 
 /**
- * Date and time; with the day's frame its waking and bedtime range. Ç4a: no progress of three,
- * no finish line, no life mode, no context picker (Ç4c draws the new top line).
+ * The top line (decision 6): "Bugün" and the date; on the board the time too. No progress, no
+ * finish, no waking and bedtime line (they are written only in the day's flow).
  */
-export function TopBar({ input, now }: { input: PlanInput; now: Date }) {
+export function TopBar({ now }: { now: Date }) {
   return (
-    <header className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2">
-      <div className="flex flex-wrap items-baseline gap-x-3">
-        <h1 className="text-xl font-semibold tracking-tight md:text-2xl">Bugün</h1>
-        <p className="text-muted-foreground text-sm tabular-nums md:text-base">
-          {formatDayLabel(now)} · {formatTime(now)}
-        </p>
-      </div>
-      <div className="text-muted-foreground flex flex-wrap items-center gap-x-3 gap-y-1 text-sm tabular-nums md:text-base">
-        <ConnectionPill />
-        {input.frame ? <span data-testid="wake-line">{wakeText(input.frame)}</span> : null}
-        {input.frame && input.settings.frame ? (
-          <span data-testid="bed-range">
-            yatış {rangesFor(input.settings.frame, input.dayType).bed.join("–")}
-          </span>
-        ) : null}
-      </div>
+    <header className="flex items-baseline gap-2.5 px-1 md:gap-3.5 md:px-0">
+      <h1 className="text-title tracking-title font-bold md:text-3xl">Bugün</h1>
+      <p className="text-ink-2 text-note md:text-lead flex-1 tabular-nums">
+        {formatDayLabel(now)}
+        <span className="max-md:hidden"> · {formatTime(now)}</span>
+      </p>
+      <ConnectionPill />
     </header>
   );
 }
 
 /**
- * The day as a strip: fixed blocks, the planned work in its module's colour, the free slots, and
- * a line at the present moment. Scrolls sideways on the phone.
+ * "Günün akışı" (4.2): the day from the waking to the expected bedtime as a strip of hours; the
+ * waking and the bedtime are written only here.
  */
-export function DayStrip({
+export function DayFlowPanel({
   input,
   plan,
+  sessions,
   now,
 }: {
   input: PlanInput;
   plan: Plan;
+  sessions: Session[];
   now: Date;
-  modules: Map<string, KnownModule>;
 }) {
-  // Ç3e: each piece of work in its facet's colour, else its module's.
   const colors = useColors();
-  // With the day's frame (Ç3c) the strip runs from the waking to the expected bedtime; without
-  // it to the default bedtime (Ç4a: no finish line).
-  const marks = plan.frame;
-  const from = Math.min((marks?.wake ?? input.dayStart).getTime(), now.getTime());
-  const to = Math.max((marks?.bed ?? input.bedtime).getTime(), from + 60 * 60_000);
-  const span = to - from;
-  const left = (time: number) => `${Math.max(0, Math.min(100, ((time - from) / span) * 100))}%`;
-  const width = (start: number, end: number) =>
-    `${Math.max(0.5, ((Math.min(end, to) - Math.max(start, from)) / span) * 100)}%`;
-  const blocks = blocksOfDay(input.blocks, input.date).filter(
-    (block) =>
-      block.status !== "cancelled" &&
-      Date.parse(block.ends_at) > from &&
-      Date.parse(block.starts_at) < to,
-  );
+  const flow = dayFlowOf(input, plan, sessions);
+  const pieces: TimeStripPiece[] = flow.pieces.map((piece) => ({
+    key: piece.key,
+    kind: piece.kind,
+    start: piece.start,
+    end: piece.end,
+    label: piece.label,
+    color: piece.moduleId ? colors.of(piece.moduleId, piece.work) : undefined,
+    testId:
+      piece.kind === "work"
+        ? "strip-work"
+        : piece.kind === "travel"
+          ? "strip-travel"
+          : "strip-block",
+  }));
   return (
-    <section aria-label="Günün şeridi" className="flex flex-col gap-2">
-      <div className="text-muted-foreground flex justify-between text-xs tabular-nums">
-        <span>{formatTime(new Date(from))}</span>
-        <span>{formatTime(new Date(to))}</span>
+    <section
+      aria-label="Günün akışı"
+      className="glass-dense rounded-dense flex flex-col gap-2.5 px-4 pt-3 md:gap-3 md:pt-3.5"
+    >
+      <div className="flex flex-wrap items-baseline gap-x-3">
+        <PanelLabel className="flex-1">Günün akışı</PanelLabel>
+        <span data-testid="flow-ends" className="text-ink-2 text-sm tabular-nums">
+          {flow.wake ? `${formatTime(flow.wake)} uyanış · ` : ""}
+          {formatTime(flow.bed)} yatış
+        </span>
       </div>
-      <div className="overflow-x-auto">
-        <div className="bg-muted relative h-8 min-w-144 overflow-hidden rounded-lg">
-          {marks
-            ? [
-                { key: "wake", from: marks.wake, to: marks.workStart, label: "uyanışa bağlı" },
-                { key: "bed", from: marks.workEnd, to: marks.bed, label: "yatışa bağlı" },
-              ]
-                .filter((part) => part.to > part.from)
-                .map((part) => (
-                  <span
-                    key={part.key}
-                    data-testid={`strip-part-${part.key}`}
-                    title={`${part.label} ${formatTime(part.from)}–${formatTime(part.to)}`}
-                    className="bg-foreground/10 absolute inset-y-0"
-                    style={{
-                      left: left(part.from.getTime()),
-                      width: width(part.from.getTime(), part.to.getTime()),
-                    }}
-                  />
-                ))
-            : null}
-          {plan.slots.flatMap((slot) => {
-            const assignment = slot.assignment;
-            if (!assignment) return [];
-            const color = colors.of(assignment.candidate.moduleId, assignment.candidate);
-            const trip = (start: number, end: number, key: string, minutes: number) => (
-              <span
-                key={key}
-                data-testid="strip-travel"
-                title={`yol ${minutes} dk`}
-                aria-label={`yol ${minutes} dk`}
-                className="absolute inset-y-2 rounded-sm opacity-40"
-                style={{
-                  left: left(start),
-                  width: width(start, end),
-                  backgroundImage: `repeating-linear-gradient(135deg, ${color} 0 calc(var(--spacing) * 0.75), transparent calc(var(--spacing) * 0.75) calc(var(--spacing) * 1.5))`,
-                }}
-              />
-            );
-            const before = (assignment.travelBefore ?? 0) * 60_000;
-            const after = (assignment.travelAfter ?? 0) * 60_000;
-            const start = slot.start.getTime();
-            const end = slot.end.getTime();
-            return [
-              ...(before > 0
-                ? [trip(start - before, start, `b-${start}`, assignment.travelBefore!)]
-                : []),
-              ...(after > 0 ? [trip(end, end + after, `a-${start}`, assignment.travelAfter!)] : []),
-              <span
-                key={`s-${slot.start.getTime()}`}
-                title={`${formatTime(slot.start)}–${formatTime(slot.end)} ${assignment.candidate.title}`}
-                data-testid="strip-work"
-                className="absolute inset-y-1 rounded-sm opacity-80"
-                style={{
-                  left: left(slot.start.getTime()),
-                  width: width(slot.start.getTime(), slot.end.getTime()),
-                  backgroundColor: color,
-                }}
-              />,
-            ];
-          })}
-          {blocks.map((block) => (
-            <span
-              key={block.id}
-              title={`${formatTime(new Date(block.starts_at))}–${formatTime(new Date(block.ends_at))} ${block.title}`}
-              className="bg-glass-dense border-edge text-ink absolute inset-y-0 flex items-center overflow-hidden border px-1 text-xs whitespace-nowrap"
-              style={{
-                left: left(Date.parse(block.starts_at)),
-                width: width(Date.parse(block.starts_at), Date.parse(block.ends_at)),
-              }}
-            >
-              {block.title}
-            </span>
-          ))}
-          <span
-            aria-hidden
-            className="bg-foreground absolute inset-y-0 w-0.5"
-            style={{ left: left(now.getTime()) }}
-          />
-        </div>
-      </div>
-      <ul className="sr-only">
-        {blocks.map((block) => (
-          <li key={block.id}>
-            {formatTime(new Date(block.starts_at))}–{formatTime(new Date(block.ends_at))}{" "}
-            {block.title}
-          </li>
-        ))}
-      </ul>
+      <TimeStrip from={flow.from} to={flow.to} now={now} pieces={pieces} parts={flow.parts} />
     </section>
   );
 }
 
-/** At most two warnings, each with one action (docs/05-arayuz.md, `AlertBar`). */
+/** At most two warnings, each with one action (docs/05-arayuz.md, `AlertBar`): uyarı satırları. */
 export function AlertBar({
   warnings,
   modules,
@@ -185,45 +96,26 @@ export function AlertBar({
 }) {
   if (warnings.length === 0) return null;
   return (
-    <section aria-label="Uyarılar" className="flex flex-col gap-2">
+    <section aria-label="Uyarılar" className="grid gap-3.5 md:grid-cols-2 md:gap-3.5">
       {warnings.map((warning) => (
-        <p
+        <AlertRow
           key={`${warning.kind}-${warning.subjectId}`}
-          className="border-border flex flex-wrap items-center justify-between gap-2 rounded-xl border px-4 py-2 text-sm"
+          action={warningAction(warning, modules)}
         >
-          <span>
-            <span className="health-attention">Uyarı</span> · {warning.text}
-          </span>
-          <WarningAction warning={warning} modules={modules} />
-        </p>
+          <span className="font-semibold">Uyarı</span> · {warning.text}
+        </AlertRow>
       ))}
     </section>
   );
 }
 
-const LINK = "text-muted-foreground hover:text-foreground underline-offset-4 hover:underline";
-
-/** One action per warning: the week for time, the work's module for the work itself. */
-function WarningAction({
-  warning,
-  modules,
-}: {
-  warning: Warning;
-  modules: Map<string, KnownModule>;
-}) {
+/** One action per warning: Takvim for time, the work's module for the work itself. */
+function warningAction(warning: Warning, modules: Map<string, KnownModule>) {
   if (warning.kind === "deadline" || warning.kind === "floor") {
-    return (
-      <Link href="/hafta" className={LINK}>
-        Haftaya bak
-      </Link>
-    );
+    return { label: "Takvime bak", href: "/takvim" as const };
   }
   const slug = warning.moduleId ? modules.get(warning.moduleId)?.row.slug : undefined;
-  return (
-    <Link href={slug ? `/m/${slug}` : "/m"} className={LINK}>
-      Modüle git
-    </Link>
-  );
+  return { label: "Modüle git", href: (slug ? `/m/${slug}` : "/m") as Route };
 }
 
 /** "X dk'm var": the best work that fits the minutes the user has right now. */

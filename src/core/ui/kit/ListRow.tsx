@@ -1,3 +1,4 @@
+import { ChevronDown } from "lucide-react";
 import Link from "next/link";
 import type { ComponentProps, ReactNode } from "react";
 import { cn } from "@/lib/utils";
@@ -19,8 +20,11 @@ export function ListRow({
   className,
   titleProps,
   dotTestId = "color-dot",
+  block,
   ...props
 }: {
+  /** A fixed block: a small grey square instead of the colour dot ("18:30–19:15 · sabit"). */
+  block?: boolean;
   /** The work's or the module's colour: a 9 px dot before the text. */
   dot?: string | null;
   title: ReactNode;
@@ -39,7 +43,9 @@ export function ListRow({
 } & Omit<ComponentProps<"div">, "title" | "onClick">) {
   const body = (
     <>
-      {dot ? (
+      {block ? (
+        <span aria-hidden className="bg-ink-off size-2.25 shrink-0 rounded-xs" />
+      ) : dot ? (
         <span
           aria-hidden
           data-testid={dotTestId}
@@ -88,5 +94,41 @@ export function ListRow({
       {main}
       {trailing ? <div className="flex shrink-0 items-center gap-1.5">{trailing}</div> : null}
     </div>
+  );
+}
+
+/**
+ * The last row of a list that opens downward ("Hepsini göster") and closes again ("Küçült"):
+ * the whole width, a divider above it (docs/tasarim/ekranlar/bugun.md, 4.2; frames ZT1, ZT2).
+ */
+export function ListMore({
+  open,
+  onToggle,
+  className,
+  controls,
+}: {
+  open: boolean;
+  onToggle: () => void;
+  className?: string;
+  /** The id of the list it opens. */
+  controls?: string;
+}) {
+  return (
+    <button
+      type="button"
+      aria-expanded={open}
+      aria-controls={controls}
+      onClick={onToggle}
+      className={cn(
+        "border-line text-note focus-visible:shadow-focus flex h-11.5 w-full shrink-0 items-center justify-center gap-1.5 border-t font-semibold outline-none",
+        className,
+      )}
+    >
+      {open ? "Küçült" : "Hepsini göster"}
+      <ChevronDown
+        aria-hidden
+        className={cn("size-4 transition-transform duration-(--motion-fast)", open && "rotate-180")}
+      />
+    </button>
   );
 }

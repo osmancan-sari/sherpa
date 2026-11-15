@@ -49,7 +49,14 @@ export {
   Textarea,
   turkishDate,
 } from "./Field";
-export { ListRow } from "./ListRow";
+export { ListMore, ListRow } from "./ListRow";
+export {
+  pieceText,
+  stripHours,
+  TimeStrip,
+  type TimeStripPart,
+  type TimeStripPiece,
+} from "./TimeStrip";
 export { OverlayClose, Sheet, SheetBody, SheetFooter, Window } from "./Overlay";
 export { Panel, PanelLabel, type PanelVariant } from "./Panel";
 export { Stepper, type StepperStep } from "./Stepper";

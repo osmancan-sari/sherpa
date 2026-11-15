@@ -1,57 +1,23 @@
 "use client";
 
-import Link from "next/link";
-import { type ReactNode, useState } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useStartSession } from "@/core/app/actions";
 import { useRecordBed, useRecordWake, useSetExpected } from "@/core/app/frame-actions";
-import { useColors } from "@/core/app/facets";
 import type { KnownModule } from "@/core/app/hooks";
 import type { Assignment, DayFrame, SleepPlan, TodayBriefLine } from "./frame-text";
 import { sleepLine, shortLine } from "./frame-text";
-import { formatTime, shiftDay } from "@/lib/date";
+import { formatMinutes, formatTime, shiftDay } from "@/lib/date";
 import { useAskBed } from "./BedAsk";
-import { sessionTargetOf } from "./NowCard";
+import { CardActions, CardFrame, ChainLine, ModuleLine, sessionTargetOf, TITLE } from "./NowCard";
 
-// The day's frame on the card (docs/05-arayuz.md, "Günün çerçevesi"; Ç3c): "Günaydın" with
-// "Uyandım", the evening with tonight's bed and tomorrow's waking, and the two one-day changes.
-
-/** The work's module (and facet), with a dot in the work's colour (Ç3e). */
-function WorkModule({ mod, candidate }: { mod: KnownModule; candidate: Assignment["candidate"] }) {
-  const colors = useColors();
-  const facet = colors.facetOf(mod.row.id, candidate);
-  return (
-    <span className="inline-flex items-center gap-1.5">
-      <span
-        aria-hidden
-        data-testid="work-dot"
-        className="size-2 rounded-full"
-        style={{ backgroundColor: colors.of(mod.row.id, candidate) }}
-      />
-      {facet ? `${mod.row.name} · ${facet.name}` : mod.row.name}
-    </span>
-  );
-}
-
-const TITLE = "text-3xl leading-tight font-semibold tracking-tight md:text-5xl";
-const BIG = "h-12 px-6 text-base";
-const SECOND = "h-12 px-5 text-base";
-const SMALL = "h-11 px-3 text-sm";
+// The day's frame on the card (docs/05-arayuz.md, "Günün çerçevesi"; Ç3c; look: BT20, BT22):
+// "Günaydın" with "Uyandım", the evening with tonight's bed and tomorrow's waking, and the two
+// one-day changes. Ç4c: no "Günü kapat" on the evening's card; the closing is a step of the
+// evening's scene ("Kapanış" here only when no active module holds it).
 
 const MINUTE = 60_000;
 const clock = (instant: Date) => formatTime(instant);
-
-function Frame({ label, children }: { label: string; children: ReactNode }) {
-  return (
-    <section
-      aria-label="Şimdi"
-      className="glass-main rounded-panel flex min-h-56 flex-col justify-between gap-6 p-6 md:min-h-72 md:p-8"
-    >
-      <p className="text-muted-foreground text-xs font-medium tracking-widest uppercase">{label}</p>
-      {children}
-    </section>
-  );
-}
 
 /** "Günaydın": one tap records the waking; "Biraz önce" (two taps) a moment before it. */
 export function MorningCard({
@@ -78,41 +44,35 @@ export function MorningCard({
     // "Uyandım'dan sonra ilk rutin kendiliğinden başlasın" (Settings): one tap, waking and routine.
     if (startOnWake && first) start.mutate(sessionTargetOf(first.candidate));
   };
+  const firstModule = first ? modules.get(first.candidate.moduleId) : undefined;
   return (
-    <Frame label="Günaydın">
-      <div className="flex flex-col gap-3">
-        <h2 className={TITLE}>Günaydın</h2>
-        <ul
-          aria-label="Bugünün özeti"
-          className="text-muted-foreground flex flex-col gap-1 md:text-lg"
+    <CardFrame label={null}>
+      <h2 className={TITLE}>Günaydın</h2>
+      <ul aria-label="Bugünün özeti" className="text-note md:text-lead flex flex-col gap-1.5">
+        {brief.firstBlock ? <li className="text-ink-soft">İlk blok: {brief.firstBlock}</li> : null}
+        {first ? (
+          <li className="text-ink-2">
+            Önce: {first.candidate.title}
+            {firstModule ? ` · ${firstModule.row.name}` : null}
+          </li>
+        ) : null}
+      </ul>
+      <CardActions>
+        <Button
+          variant="primary"
+          size="lg"
+          data-primary=""
+          data-wake-action
+          onClick={() => woke(now)}
         >
-          {brief.firstBlock ? <li>İlk blok: {brief.firstBlock}</li> : null}
-          {first ? (
-            <li>
-              Önce: {first.candidate.title}
-              {modules.get(first.candidate.moduleId) ? (
-                <>
-                  {" · "}
-                  <WorkModule
-                    mod={modules.get(first.candidate.moduleId)!}
-                    candidate={first.candidate}
-                  />
-                </>
-              ) : null}
-            </li>
-          ) : null}
-        </ul>
-      </div>
-      <div className="flex flex-wrap items-center gap-2">
-        <Button className={BIG} data-wake-action onClick={() => woke(now)}>
           Uyandım
         </Button>
         {earlier ? (
           [15, 30, 60].map((minutes) => (
             <Button
               key={minutes}
-              variant="outline"
-              className={SECOND}
+              variant="secondary"
+              size="lg"
               data-wake-action
               onClick={() => woke(new Date(now.getTime() - minutes * MINUTE))}
             >
@@ -120,23 +80,20 @@ export function MorningCard({
             </Button>
           ))
         ) : (
-          <Button
-            variant="ghost"
-            className={SECOND}
-            data-wake-action
-            onClick={() => setEarlier(true)}
-          >
+          <Button variant="secondary" size="lg" data-wake-action onClick={() => setEarlier(true)}>
             Biraz önce
           </Button>
         )}
-      </div>
-    </Frame>
+      </CardActions>
+    </CardFrame>
   );
 }
 
 /**
- * The evening: the evening's next work, tonight's bed with tomorrow's waking and the sleep
- * between them, "Yatıyorum", "Günü kapat", and the two one-day changes.
+ * The evening (BT22): the evening's next work with "Başla" (the card's only primary), tonight's
+ * bed with tomorrow's waking and the sleep between them, "Yatıyorum" (secondary), and the two
+ * one-day changes. No "Günü kapat" (Ç4c): the closing is in the evening's scene; "Kapanış" is
+ * offered here only when no active module holds it (`onClosing`).
  */
 export function EveningCard({
   date,
@@ -147,6 +104,7 @@ export function EveningCard({
   closed,
   modules,
   chainLine = null,
+  onClosing,
 }: {
   date: string;
   now: Date;
@@ -158,6 +116,8 @@ export function EveningCard({
   modules: Map<string, KnownModule>;
   /** Ç3f: the next work's place in the bed chain. */
   chainLine?: string | null;
+  /** Ç4c: opens the closing in the standard scene shell (no module holds it). */
+  onClosing?: () => void;
 }) {
   const bed = useRecordBed();
   const askBed = useAskBed();
@@ -168,123 +128,120 @@ export function EveningCard({
   const mod = next ? modules.get(next.candidate.moduleId) : undefined;
   const short = shortLine(tonight);
   return (
-    <Frame label="Akşam">
-      <div className="flex flex-col gap-3">
-        {next ? (
-          <div className="flex flex-col gap-1">
-            {mod ? (
-              <p className="text-muted-foreground text-sm">
-                <WorkModule mod={mod} candidate={next.candidate} />
-              </p>
-            ) : null}
-            {chainLine ? (
-              <p data-testid="chain-line" className="text-muted-foreground text-sm tabular-nums">
-                {chainLine}
-              </p>
-            ) : null}
-            <h2 className={TITLE}>{next.candidate.title}</h2>
-          </div>
-        ) : (
-          <h2 className={TITLE}>Akşam</h2>
-        )}
-        <p data-testid="sleep-line" className="tabular-nums md:text-lg">
-          {sleepLine(frame)}
-        </p>
-        {later ? (
-          <p
-            data-testid="evening-later"
-            className="text-muted-foreground flex flex-wrap items-center gap-x-2 tabular-nums md:text-lg"
-          >
-            <span>
-              Sırada: {later.assignment.candidate.title} · {formatTime(later.at)}
-            </span>
+    <CardFrame label={null}>
+      <h2 className={TITLE}>Akşam</h2>
+      {next ? (
+        <>
+          <ModuleLine mod={mod} work={next.candidate} />
+          <ChainLine text={chainLine} />
+          <div className="flex items-center gap-3">
+            <p className="flex min-w-0 flex-1 flex-wrap items-baseline gap-x-3">
+              <span data-testid="evening-next" className="text-heading font-semibold">
+                {next.candidate.title}
+              </span>
+              <span className="text-ink-2 text-base tabular-nums">
+                {formatMinutes(next.minutes)}
+              </span>
+            </p>
             <Button
-              variant="ghost"
-              className={SMALL}
-              onClick={() => start.mutate(sessionTargetOf(later.assignment.candidate))}
+              variant="primary"
+              size="sm"
+              className="h-11.5 px-5"
+              onClick={() => start.mutate(sessionTargetOf(next.candidate))}
             >
-              Şimdi başla
-            </Button>
-          </p>
-        ) : null}
-        {short ? (
-          <p role="note" className="text-muted-foreground md:text-lg">
-            {short}
-          </p>
-        ) : null}
-      </div>
-      <div className="flex flex-col gap-3">
-        <div className="flex flex-wrap gap-2">
-          {next ? (
-            <Button className={BIG} onClick={() => start.mutate(sessionTargetOf(next.candidate))}>
               Başla
             </Button>
-          ) : null}
-          <Button
-            className={next ? SECOND : BIG}
-            variant={next ? "outline" : "default"}
-            onClick={() =>
-              void askBed(now).then((yes) => {
-                if (yes) bed.mutate({ date, at: now });
-              })
-            }
+          </div>
+        </>
+      ) : null}
+      {later ? (
+        <p
+          data-testid="evening-later"
+          className="text-ink-2 text-note md:text-lead flex flex-wrap items-center gap-x-2 tabular-nums"
+        >
+          <span>
+            Sırada: {later.assignment.candidate.title} · {formatTime(later.at)}
+          </span>
+          <button
+            type="button"
+            className="text-note text-ink min-h-touch link-quiet font-semibold"
+            onClick={() => start.mutate(sessionTargetOf(later.assignment.candidate))}
           >
-            Yatıyorum
+            Şimdi başla
+          </button>
+        </p>
+      ) : null}
+      <p data-testid="sleep-line" className="text-ink-2 text-note md:text-lead tabular-nums">
+        {sleepLine(frame)}
+      </p>
+      {short ? (
+        <p role="note" className="text-ink-2 text-note md:text-lead">
+          {short}
+        </p>
+      ) : null}
+      <CardActions className="mt-0.5">
+        <Button
+          variant="secondary"
+          size="lg"
+          className="max-md:w-full"
+          onClick={() =>
+            void askBed(now).then((yes) => {
+              if (yes) bed.mutate({ date, at: now });
+            })
+          }
+        >
+          Yatıyorum
+        </Button>
+        {onClosing && !closed ? (
+          <Button variant="secondary" size="lg" className="max-md:w-full" onClick={onClosing}>
+            Kapanış
           </Button>
-          {closed ? null : (
-            <Link
-              href="/kapanis"
-              className="border-border hover:bg-muted flex h-12 items-center rounded-lg border px-5 text-base"
-            >
-              Günü kapat
-            </Link>
-          )}
-        </div>
-        <div className="flex flex-wrap items-center gap-2 text-sm">
-          {change === null ? (
-            <>
-              <Button variant="ghost" className={SMALL} onClick={() => setChange("bed")}>
-                Bu gece geç yatacağım
+        ) : null}
+      </CardActions>
+      <div className="flex flex-wrap items-center gap-2">
+        {change === null ? (
+          <>
+            <Button variant="secondary" size="sm" onClick={() => setChange("bed")}>
+              Bu gece geç yatacağım
+            </Button>
+            <Button variant="secondary" size="sm" onClick={() => setChange("wake")}>
+              Yarın erken kalkacağım
+            </Button>
+          </>
+        ) : (
+          <>
+            <span className="text-ink-2 text-note">
+              {change === "bed" ? "Ne kadar geç?" : "Ne kadar erken?"}
+            </span>
+            {[30, 60, 90].map((minutes) => (
+              <Button
+                key={minutes}
+                variant="secondary"
+                size="sm"
+                onClick={() => {
+                  if (change === "bed") {
+                    expected.mutate({
+                      date,
+                      bed: clock(new Date(frame.bed.getTime() + minutes * MINUTE)),
+                    });
+                  } else {
+                    expected.mutate({
+                      date: shiftDay(date, 1),
+                      wake: clock(new Date(tonight.expectedWake.getTime() - minutes * MINUTE)),
+                    });
+                  }
+                  setChange(null);
+                }}
+              >
+                {minutes} dk
               </Button>
-              <Button variant="ghost" className={SMALL} onClick={() => setChange("wake")}>
-                Yarın erken kalkacağım
-              </Button>
-            </>
-          ) : (
-            <>
-              <span className="text-muted-foreground">
-                {change === "bed" ? "Ne kadar geç?" : "Ne kadar erken?"}
-              </span>
-              {[30, 60, 90].map((minutes) => (
-                <Button
-                  key={minutes}
-                  variant="outline"
-                  className={SMALL}
-                  onClick={() => {
-                    if (change === "bed") {
-                      expected.mutate({
-                        date,
-                        bed: clock(new Date(frame.bed.getTime() + minutes * MINUTE)),
-                      });
-                    } else {
-                      expected.mutate({
-                        date: shiftDay(date, 1),
-                        wake: clock(new Date(tonight.expectedWake.getTime() - minutes * MINUTE)),
-                      });
-                    }
-                    setChange(null);
-                  }}
-                >
-                  {minutes} dk
-                </Button>
-              ))}
-              <Button variant="ghost" className={SMALL} onClick={() => setChange(null)}>
-                Vazgeç
-              </Button>
-            </>
-          )}
-        </div>
+            ))}
+            <Button variant="quiet" size="sm" onClick={() => setChange(null)}>
+              Vazgeç
+            </Button>
+          </>
+        )}
       </div>
-    </Frame>
+    </CardFrame>
   );
 }

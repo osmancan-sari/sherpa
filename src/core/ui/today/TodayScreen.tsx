@@ -28,32 +28,38 @@ import { sceneBedtime } from "@/core/today/bedtime";
 import { briefOf } from "@/core/today/brief";
 import type { PlannedTarget } from "@/core/data/sessions";
 import { chainLine, chainsOf, chainWith, nextInChain, sceneChain } from "@/core/today/chain";
+import { breakText, closedUpNext, type UpNextRow, upNextOf } from "@/core/today/flow";
 import { blocksOfDay } from "@/core/today/select";
 import type { Block, Task } from "@/core/types";
-import { dayKey, formatDayLabel, formatDue, formatMinutes, formatTime } from "@/lib/date";
-import { ConnectionPill } from "../look/Connection";
+import { dayKey, formatDue, formatMinutes, formatTime } from "@/lib/date";
 import { cn } from "@/lib/utils";
 import { AiBadge } from "../ai/AiMarks";
+import { IconButton } from "../kit/Button";
 import { ReadError } from "../kit/Feedback";
+import { ListMore, ListRow } from "../kit/ListRow";
+import { PanelLabel } from "../kit/Panel";
 import { ClientOnly } from "../ClientOnly";
 import { useNotify } from "../Notices";
 import { QuickAddButton } from "../QuickAdd";
-import { AlertBar, DayStrip, isTyping, MinutesDialog, TopBar } from "./DayParts";
+import { useLayoutDevice } from "../sky/Backdrop";
+import { useClosingHost } from "./closing-host";
+import { AlertBar, DayFlowPanel, isTyping, MinutesDialog, TopBar } from "./DayParts";
 import { NowCard, sessionTargetOf, travelText } from "./NowCard";
 import { chainLook } from "./chains";
-import { SceneFrame, sceneFor, useSceneExit } from "./Scene";
+import { ClosingShell, SceneFrame, sceneFor, useSceneExit } from "./Scene";
 import { briefLine } from "./frame-text";
 import { useWakeChainStart } from "./wake-chain";
 
-// The Today screen (docs/05-arayuz.md): drawn from the planner's plan, re-made on every change
-// and every minute. The "now" card, the next things, the day as a strip, at most two warnings,
-// one line per module. One page on the second screen, one column on the phone.
+// The Today screen (docs/05-arayuz.md; look docs/tasarim/ekranlar/bugun.md, Ç4c): drawn from
+// the planner's plan, re-made on every change and every minute. The "now" card, "Sıradakiler",
+// the day's flow, at most two warnings, one chip per module and the bottom line. On the board
+// everything on one screen (the card and the list 5:3); on the phone one column.
 
 export function TodayScreen() {
   return (
-    <div className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-5 px-5 py-6 md:px-10 md:py-8">
+    <div className="flex w-full flex-1 flex-col gap-3.5 px-4 pt-4.5 pb-6 md:gap-5 md:px-10 md:pt-6 md:pb-6.5">
       <ClientOnly
-        fallback={<h1 className="text-xl font-semibold tracking-tight md:text-2xl">Bugün</h1>}
+        fallback={<h1 className="text-title tracking-title px-1 font-bold md:text-3xl">Bugün</h1>}
       >
         <TodayBody />
       </ClientOnly>
@@ -78,6 +84,9 @@ function TodayBody() {
   const [failedScene, setFailedScene] = useState<string | null>(null);
   const [stuck, setStuck] = useState<Task | null>(null);
   const stopForStuck = useStopForStuck();
+  // Ç4c: the evening closing in the standard scene shell, when no active module holds it.
+  const closingHost = useClosingHost(modules);
+  const [closingOpen, setClosingOpen] = useState(false);
 
   // The night screen shows the first work of tomorrow.
   const tomorrowFirst = useMemo(() => {
@@ -132,7 +141,11 @@ function TodayBody() {
       if (document.querySelector("[data-scene-keys]")) return;
       if (!state || !input) return;
       const key = event.key.toLowerCase();
+      // Space and Enter on a focused button are that button's (the browser presses it).
+      const onButton =
+        event.target instanceof Element && event.target.closest("button, a, [role='button']");
       if (event.key === " ") {
+        if (onButton) return;
         if (state.kind === "suggest" && state.assignment.candidate.type !== "follow_up") {
           event.preventDefault();
           start.mutate(sessionTargetOf(state.assignment.candidate));
@@ -163,13 +176,7 @@ function TodayBody() {
     // XP1: the title with the day and the hour, the panel in the card's place.
     return (
       <>
-        <header className="flex flex-wrap items-baseline gap-x-3">
-          <h1 className="text-xl font-semibold tracking-tight md:text-2xl">Bugün</h1>
-          <p className="text-ink-2 text-sm tabular-nums md:text-base">
-            {formatDayLabel(now)} · {formatTime(now)}
-          </p>
-          <ConnectionPill />
-        </header>
+        <TopBar now={now} />
         <LoadFailed onRetry={retry} />
       </>
     );
@@ -177,8 +184,18 @@ function TodayBody() {
   if (loading || !input || !plan || !state) {
     return (
       <>
-        <h1 className="text-xl font-semibold tracking-tight md:text-2xl">Bugün</h1>
-        <div className="border-border min-h-56 rounded-2xl border md:min-h-72" />
+        <TopBar now={now} />
+        <div className="glass-main rounded-panel min-h-56 md:min-h-72" />
+      </>
+    );
+  }
+
+  // Ç4c: the closing opened from the evening card, in the standard scene shell (this device).
+  if (closingOpen && !closingHost.hosted) {
+    return (
+      <>
+        <h1 className="sr-only">Bugün</h1>
+        <ClosingShell onDone={() => setClosingOpen(false)} />
       </>
     );
   }
@@ -281,117 +298,109 @@ function TodayBody() {
   // Ç3f: where the current work stands in its chain, on the standard card.
   const currentChain = chainWith(chains, currentId);
   const chainText = currentChain && currentId ? chainLine(currentChain, currentId) : null;
-  const assignments = plan.slots.flatMap((slot) => (slot.assignment ? [slot.assignment] : []));
-  const ahead = assignments.filter((row) => row.candidate.id !== currentId);
-  // Ç4a: "Sıradakiler" is the day's rest of the plan, in order; there is no "Vakit kalırsa".
-  const finished = state.kind === "done";
-  // At night and on the return the screen is quiet: the card alone (with the next work on the
-  // return), no list, no strip, no warnings (docs/04-planlayici.md, "Geri dönüş").
-  // The evening is calm too (Ç3c): its card has what the evening holds.
+  // At night, on the return and in the evening the screen is calm: the card alone (bugun.md;
+  // docs/04-planlayici.md, "Geri dönüş"); at night only the hour. The empty day has no list, no
+  // strip and no warnings (bos-ve-hata.md).
   const quiet = state.kind === "night" || state.kind === "return" || state.kind === "evening";
-  const upNext = quiet || finished ? [] : ahead;
+  const empty = state.kind === "empty";
+  const upNext = quiet || empty ? [] : upNextOf(input, plan, currentId);
   const doneToday = input.tasks.filter(
     (task) =>
       task.status === "done" && task.done_at && dayKey(new Date(task.done_at)) === input.date,
   );
 
+  const card = (
+    <NowCard
+      state={state}
+      stuck={stuck}
+      onStuckChange={setStuck}
+      frame={input.frame}
+      startOnWake={input.settings.frame?.startOnWake ?? false}
+      brief={briefLine(input)}
+      chainLine={chainText}
+      nextOf={nextOf}
+      onReturnToScene={
+        scene && running && exitedScene === running.session.id
+          ? () => setExitedScene(null)
+          : undefined
+      }
+      now={now}
+      date={input.date}
+      modules={moduleMap}
+      tomorrowFirst={tomorrowFirst}
+      closingHere={closingHost.hosted ? undefined : () => setClosingOpen(true)}
+    />
+  );
+
+  if (state.kind === "night") {
+    return (
+      <>
+        <TopBar now={now} />
+        <div className="flex flex-1 flex-col justify-center">{card}</div>
+      </>
+    );
+  }
+
   return (
     <>
-      <TopBar input={input} now={now} />
-
-      {quiet ? null : <AlertBar warnings={plan.warnings} modules={moduleMap} />}
+      <TopBar now={now} />
 
       {/* minmax(0, …) and min-w-0: a long title is cut with an ellipsis instead of widening
-          the column past the screen. */}
-      <div className="grid grid-cols-[minmax(0,1fr)] gap-5 lg:grid-cols-5">
-        <div className="min-w-0 lg:col-span-3">
+          the column past the screen. On the board the card and the list stand 5:3. */}
+      <div className="grid grid-cols-[minmax(0,1fr)] items-start gap-3.5 md:grid-cols-8 md:gap-6.5">
+        <div className="flex min-w-0 flex-col gap-2 md:col-span-5">
           {running && failedScene === running.session.id ? (
-            <p role="status" className="text-muted-foreground mb-2 text-sm">
+            <p role="status" className="text-ink-2 text-note px-1">
               Sahne açılamadı; iş sürüyor.
             </p>
           ) : null}
-          <NowCard
-            state={state}
-            stuck={stuck}
-            onStuckChange={setStuck}
-            frame={input.frame}
-            startOnWake={input.settings.frame?.startOnWake ?? false}
-            brief={briefLine(input)}
-            chainLine={chainText}
-            nextOf={nextOf}
-            onReturnToScene={
-              scene && running && exitedScene === running.session.id
-                ? () => setExitedScene(null)
-                : undefined
-            }
-            now={now}
-            date={input.date}
-            modules={moduleMap}
-            tomorrowFirst={tomorrowFirst}
-          />
+          {card}
         </div>
-
-        {/* The evening's card holds what the evening has (Ç3c): no list beside it. */}
-        <section
-          aria-label="Sıradakiler"
-          hidden={state.kind === "evening" || (state.kind === "night" && input.frame !== undefined)}
-          className={cn("flex min-w-0 flex-col gap-3 lg:col-span-2", PHONE_GLASS)}
-        >
-          <h2 className="text-muted-foreground text-xs font-medium tracking-widest uppercase">
-            Sıradakiler
-          </h2>
-          {upNext.length === 0 ? (
-            <p className="text-muted-foreground text-sm">Sırada başka iş yok.</p>
-          ) : (
-            <ul className="divide-border border-border divide-y rounded-xl border">
-              {upNext.map((row) => (
-                <CandidateRow
-                  key={`${row.candidate.type}-${row.candidate.id}`}
-                  candidate={row.candidate}
-                  date={input.date}
-                  mod={moduleMap.get(row.candidate.moduleId)}
-                  now={now}
-                />
-              ))}
-            </ul>
-          )}
-          {doneToday.length > 0 ? <DoneToday tasks={doneToday} /> : null}
-        </section>
+        {quiet || empty ? null : (
+          <div className="flex min-w-0 flex-col gap-3.5 md:col-span-3 md:gap-5">
+            <UpNext rows={upNext} date={input.date} now={now} modules={moduleMap} />
+            {doneToday.length > 0 ? (
+              <DoneToday tasks={doneToday} modules={moduleMap} className="max-md:hidden" />
+            ) : null}
+          </div>
+        )}
       </div>
 
-      {quiet ? null : (
-        <div className={cn("flex flex-col gap-5", LANDSCAPE_GLASS)}>
-          <DayStrip input={input} plan={plan} now={now} modules={moduleMap} />
-          <DayBlocks blocks={blocksOfDay(input.blocks, input.date)} now={now} />
-        </div>
+      {quiet || empty ? null : (
+        <>
+          <DayFlowPanel input={input} plan={plan} sessions={rows?.sessions ?? []} now={now} />
+          <AlertBar warnings={plan.warnings} modules={moduleMap} />
+          <DayBlocks blocks={blocksOfDay(input.blocks, input.date)} />
+        </>
       )}
 
-      <div className={cn("flex flex-col gap-4", LANDSCAPE_GLASS)}>
-        <footer className="flex flex-wrap items-center gap-2">
+      {quiet ? null : (
+        <footer className="flex flex-col gap-3.5 md:mt-auto md:flex-row md:items-end md:justify-between md:gap-6">
           <ModuleChips modules={modules.filter(({ row }) => row.status === "active")} />
-          <div className="ml-auto flex flex-wrap gap-2">
-            <Button variant="outline" className="h-11" onClick={() => setMinutesOpen(true)}>
+          <div className="flex shrink-0 flex-wrap gap-2.5 md:flex-nowrap">
+            <Button
+              variant="secondary"
+              size="sm"
+              className={LANDSCAPE_FILL}
+              onClick={() => setMinutesOpen(true)}
+            >
               X dk&apos;m var
             </Button>
-            <Button variant="outline" className="h-11" onClick={doReplan}>
+            <Button variant="secondary" size="sm" className={LANDSCAPE_FILL} onClick={doReplan}>
               Yeniden planla
             </Button>
-            {/* The evening's card has its own "Günü kapat" (Ç3c). */}
-            {state.kind === "evening" ? null : (
-              <Link
-                href="/kapanis"
-                className="border-border hover:bg-muted flex h-11 items-center rounded-lg border px-3 text-sm"
-              >
-                Günü kapat
-              </Link>
-            )}
-            <QuickAddButton />
+            <span className="max-md:hidden">
+              <QuickAddButton />
+            </span>
           </div>
         </footer>
+      )}
+      {!quiet && doneToday.length > 0 ? (
+        <DoneToday tasks={doneToday} modules={moduleMap} className="md:hidden" />
+      ) : null}
 
-        {/* At the end of the screen, under its bottom line (XT6, XP3). */}
-        <AiBudgetNotice />
-      </div>
+      {/* At the end of the screen, under its bottom line (XT6, XP3). */}
+      <AiBudgetNotice />
 
       <MinutesDialog
         open={minutesOpen}
@@ -414,13 +423,84 @@ export function LoadFailed({ onRetry }: { onRetry: () => void }) {
   );
 }
 
+/**
+ * "Sıradakiler" (4.2): the day's rest of the plan. Closed, its first work rows (two on the phone,
+ * three on the board) and "Hepsini göster"; open, everything in order (work, breaks, fixed
+ * blocks) and "Küçült". Empty: "Sırada başka iş yok." and no button.
+ */
+function UpNext({
+  rows,
+  date,
+  now,
+  modules,
+}: {
+  rows: UpNextRow[];
+  date: string;
+  now: Date;
+  modules: Map<string, KnownModule>;
+}) {
+  const board = useLayoutDevice() === "pano";
+  const [open, setOpen] = useState(false);
+  const closed = closedUpNext(rows, board ? 3 : 2);
+  const shown = open ? rows : closed;
+  const more = rows.length > closed.length;
+  return (
+    <section aria-label="Sıradakiler" className="glass-dense rounded-dense flex flex-col">
+      <PanelLabel className="px-4 pt-3.5 pb-1">Sıradakiler</PanelLabel>
+      {rows.length === 0 ? (
+        <p className="text-ink-2 px-4 pt-1 pb-4 text-base">Sırada başka iş yok.</p>
+      ) : (
+        <ul id="sradakiler-listesi" className="flex flex-col">
+          {shown.map((row) =>
+            row.kind === "work" ? (
+              <li key={row.key}>
+                <CandidateRow
+                  candidate={row.assignment.candidate}
+                  minutes={row.assignment.minutes}
+                  at={row.anchored ? row.start : null}
+                  date={date}
+                  mod={modules.get(row.assignment.candidate.moduleId)}
+                  now={now}
+                />
+              </li>
+            ) : row.kind === "break" ? (
+              <li
+                key={row.key}
+                className="text-ink-2 border-line flex h-9.25 items-center border-b pl-11.5 text-sm"
+              >
+                {breakText(row.minutes)}
+              </li>
+            ) : (
+              <li key={row.key}>
+                <ListRow
+                  block
+                  title={row.block.title}
+                  subtitle={`${formatTime(row.start)}–${formatTime(row.end)} · sabit`}
+                />
+              </li>
+            ),
+          )}
+        </ul>
+      )}
+      {more ? (
+        <ListMore open={open} onToggle={() => setOpen(!open)} controls="sradakiler-listesi" />
+      ) : null}
+    </section>
+  );
+}
+
 function CandidateRow({
   candidate,
+  minutes,
+  at,
   date,
   mod,
   now,
 }: {
   candidate: Candidate;
+  minutes: number;
+  /** Wake-bound or bed-bound work: its time is written. */
+  at: Date | null;
   date: string;
   mod: KnownModule | undefined;
   now: Date;
@@ -435,11 +515,12 @@ function CandidateRow({
 
   const parts = [
     facet ? `${mod?.row.name ?? ""} · ${facet.name}` : mod?.row.name,
-    formatMinutes(candidate.minutes),
+    formatMinutes(minutes),
     travelText(candidate.travelBefore, candidate.travelAfter),
     candidate.progress,
     candidate.type === "follow_up" ? "takip" : null,
     candidate.dueAt ? formatDue(candidate.dueAt, now) : null,
+    at ? formatTime(at) : null,
   ].filter(Boolean);
 
   const item = candidate.item;
@@ -449,140 +530,141 @@ function CandidateRow({
     item.effort_done_minutes >= item.effort_total_minutes;
 
   return (
-    <li className="flex items-center gap-3 px-4 py-3">
-      <span
-        aria-hidden
-        data-testid="work-dot"
-        className="size-2.5 shrink-0 rounded-full"
-        style={{ backgroundColor: colors.of(candidate.moduleId, candidate) }}
-      />
-      <div className="min-w-0 flex-1">
-        <p className="truncate font-medium">{candidate.title}</p>
-        <p className="text-muted-foreground truncate text-sm tabular-nums">{parts.join(" · ")}</p>
-      </div>
-      <div className="flex shrink-0 items-center gap-1">
-        {(candidate.task ?? candidate.item) ? (
-          <AiBadge row={(candidate.task ?? candidate.item)!} align="right" />
-        ) : null}
-        {candidate.type === "follow_up" ? (
-          <Button
-            variant="outline"
-            className="h-11"
-            onClick={() => followUp.mutate({ task: candidate.task!, came: true, date })}
-          >
-            Cevap geldi
-          </Button>
-        ) : (
-          <IconButton
-            label={`Başla: ${candidate.title}`}
-            onClick={() => start.mutate(sessionTargetOf(candidate))}
-          >
-            <Play aria-hidden />
-          </IconButton>
-        )}
-        {candidate.type === "task" ? (
-          <IconButton
-            label={`Bitti: ${candidate.title}`}
-            onClick={() => complete.mutate(candidate.id)}
-          >
-            <Check aria-hidden />
-          </IconButton>
-        ) : null}
-        {candidate.type === "rhythm" ? (
-          <IconButton
-            label={`Yapıldı: ${candidate.title}`}
-            onClick={() => logRhythm.mutate(candidate.id)}
-          >
-            <Check aria-hidden />
-          </IconButton>
-        ) : null}
-        {/* The item's effort is used up: it does not close on its own, the user is asked. */}
-        {candidate.type === "item" && effortUsedUp ? (
-          <Button
-            variant="outline"
-            className="h-11"
-            onClick={() => closeItem.mutate({ itemId: candidate.id, result: "done" })}
-          >
-            Bitti mi?
-          </Button>
-        ) : null}
-      </div>
-    </li>
+    <ListRow
+      dot={colors.of(candidate.moduleId, candidate)}
+      dotTestId="work-dot"
+      title={candidate.title}
+      titleProps={{ className: "truncate" }}
+      subtitle={<span className="block truncate tabular-nums">{parts.join(" · ")}</span>}
+      trailing={
+        <>
+          {(candidate.task ?? candidate.item) ? (
+            <AiBadge row={(candidate.task ?? candidate.item)!} align="right" />
+          ) : null}
+          {candidate.type === "follow_up" ? (
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => followUp.mutate({ task: candidate.task!, came: true, date })}
+            >
+              Cevap geldi
+            </Button>
+          ) : (
+            <IconButton
+              label={`Başla: ${candidate.title}`}
+              title={`Başla: ${candidate.title}`}
+              onClick={() => start.mutate(sessionTargetOf(candidate))}
+            >
+              <Play aria-hidden />
+            </IconButton>
+          )}
+          {candidate.type === "task" ? (
+            <IconButton
+              label={`Bitti: ${candidate.title}`}
+              title={`Bitti: ${candidate.title}`}
+              onClick={() => complete.mutate(candidate.id)}
+            >
+              <Check aria-hidden />
+            </IconButton>
+          ) : null}
+          {candidate.type === "rhythm" ? (
+            <IconButton
+              label={`Yapıldı: ${candidate.title}`}
+              title={`Yapıldı: ${candidate.title}`}
+              onClick={() => logRhythm.mutate(candidate.id)}
+            >
+              <Check aria-hidden />
+            </IconButton>
+          ) : null}
+          {/* The item's effort is used up: it does not close on its own, the user is asked. */}
+          {candidate.type === "item" && effortUsedUp ? (
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => closeItem.mutate({ itemId: candidate.id, result: "done" })}
+            >
+              Bitti mi?
+            </Button>
+          ) : null}
+        </>
+      }
+    />
   );
 }
 
-function IconButton({
-  label,
-  onClick,
-  children,
+/** "Bugün bitenler (n)" (BT32, BP27): the day's finished work, each with "Geri al". */
+function DoneToday({
+  tasks,
+  modules,
+  className,
 }: {
-  label: string;
-  onClick: () => void;
-  children: React.ReactNode;
+  tasks: Task[];
+  modules: Map<string, KnownModule>;
+  className?: string;
 }) {
-  return (
-    <Button variant="ghost" aria-label={label} title={label} className="size-11" onClick={onClick}>
-      {children}
-    </Button>
-  );
-}
-
-function DoneToday({ tasks }: { tasks: Task[] }) {
   const reopen = useReopenTask();
+  const colors = useColors();
   return (
-    <details className="text-sm">
-      <summary className="text-muted-foreground hover:text-foreground flex min-h-11 cursor-pointer items-center">
-        Bugün bitenler ({tasks.length})
-      </summary>
+    <section
+      aria-label="Bugün bitenler"
+      className={cn("glass-dense rounded-dense flex flex-col", className)}
+    >
+      <PanelLabel className="px-4 pt-3.5 pb-1">Bugün bitenler ({tasks.length})</PanelLabel>
       <ul className="flex flex-col">
         {tasks.map((task) => (
-          <li key={task.id} className="flex items-center justify-between gap-3 py-1">
-            <span className="text-muted-foreground truncate line-through">{task.title}</span>
-            <Button
-              variant="ghost"
-              className="h-11 shrink-0"
-              onClick={() => reopen.mutate(task.id)}
-              aria-label={`Geri al: ${task.title}`}
-            >
-              Geri al
-            </Button>
+          <li key={task.id}>
+            <ListRow
+              dot={colors.of(task.module_id, { task })}
+              title={task.title}
+              titleProps={{ className: "truncate" }}
+              subtitle={[
+                modules.get(task.module_id)?.row.name,
+                formatMinutes(task.est_minutes ?? 0),
+              ]
+                .filter(Boolean)
+                .join(" · ")}
+              trailing={
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => reopen.mutate(task.id)}
+                  aria-label={`Geri al: ${task.title}`}
+                >
+                  Geri al
+                </Button>
+              }
+            />
           </li>
         ))}
       </ul>
-    </details>
+    </section>
   );
 }
 
-function DayBlocks({ blocks, now }: { blocks: Block[]; now: Date }) {
-  if (blocks.length === 0) return null;
-  const time = now.getTime();
+/** "Bugünün sabit blokları" on the phone (BT31); the board has them in the day's flow. */
+function DayBlocks({ blocks }: { blocks: Block[] }) {
+  const shown = blocks.filter((block) => block.status !== "cancelled");
+  if (shown.length === 0) return null;
   return (
-    <section aria-label="Bugünün sabit blokları" className="flex flex-col gap-3">
-      <h2 className="text-muted-foreground text-xs font-medium tracking-widest uppercase">
-        Sabit bloklar
-      </h2>
-      <ul className="flex flex-wrap gap-2">
-        {blocks.map((block) => {
-          const over = Date.parse(block.ends_at) <= time;
-          const running = Date.parse(block.starts_at) <= time && !over;
-          return (
-            <li
-              key={block.id}
-              aria-current={running ? "time" : undefined}
-              className={cn(
-                "border-border rounded-lg border px-3 py-2 text-sm",
-                over && "text-muted-foreground",
-                running && "border-foreground",
-              )}
-            >
-              <span className="tabular-nums">
-                {formatTime(new Date(block.starts_at))}–{formatTime(new Date(block.ends_at))}
-              </span>{" "}
-              {block.title}
-              {block.location ? ` · ${block.location}` : ""}
-            </li>
-          );
-        })}
+    <section
+      aria-label="Bugünün sabit blokları"
+      className="glass-dense rounded-dense flex flex-col md:hidden"
+    >
+      <PanelLabel className="px-4 pt-3.5 pb-1">Bugünün sabit blokları</PanelLabel>
+      <ul className="flex flex-col">
+        {shown.map((block) => (
+          <li key={block.id}>
+            <ListRow
+              title={block.title}
+              subtitle={
+                <span className="tabular-nums">
+                  {formatTime(new Date(block.starts_at))}–{formatTime(new Date(block.ends_at))}
+                  {block.location ? ` · ${block.location}` : ""}
+                </span>
+              }
+            />
+          </li>
+        ))}
       </ul>
     </section>
   );
@@ -594,11 +676,18 @@ const HEALTH_LABEL: Record<Health, string> = {
   behind: "geride",
 };
 
+/**
+ * Without a panel over the full landscape (BT32, BP01): each chip and button carries the soft
+ * glass, which deepens over a bright sky until its text reads at 4.5:1 (Backdrop,
+ * landscapeAlpha); the frames draw them in the dark sky.
+ */
+const LANDSCAPE_FILL = "bg-glass-soft hover:bg-glass-dense";
+
 /** One line of status per module; touching it opens the module's page. */
 function ModuleChips({ modules }: { modules: KnownModule[] }) {
   if (modules.length === 0) return null;
   return (
-    <nav aria-label="Modüller" className="flex flex-wrap gap-2">
+    <nav aria-label="Modüller" className="flex min-w-0 flex-wrap gap-2">
       {modules.map((mod) => (
         <ModuleChip key={mod.row.id} mod={mod} />
       ))}
@@ -614,15 +703,19 @@ export function ModuleChip({ mod }: { mod: KnownModule }) {
   return (
     <Link
       href={`/m/${mod.row.slug}`}
-      className="border-border hover:bg-muted focus-visible:ring-ring/50 flex min-h-11 items-center gap-2 rounded-full border px-4 text-sm outline-none focus-visible:ring-3"
+      className={cn(
+        "h-control-sm border-edge focus-visible:shadow-focus relative flex items-center gap-2 rounded-full border px-3.5 text-sm whitespace-nowrap outline-none",
+        "after:absolute after:inset-x-0 after:-inset-y-0.75",
+        LANDSCAPE_FILL,
+      )}
     >
       <span
         aria-hidden
-        className="size-2 rounded-full"
+        className="size-2.25 shrink-0 rounded-full"
         style={{ backgroundColor: moduleColor(mod) }}
       />
-      <span className="font-medium">{mod.row.name}</span>
-      {data?.text ? <span className="text-muted-foreground">· {data.text}</span> : null}
+      <span className="font-semibold">{mod.row.name}</span>
+      {data?.text ? <span className="text-ink-2">{data.text}</span> : null}
       {data && data.health !== "ok" ? (
         <span className={cn("text-xs", `health-${data.health}`)}>{HEALTH_LABEL[data.health]}</span>
       ) : null}
@@ -630,23 +723,13 @@ export function ModuleChip({ mod }: { mod: KnownModule }) {
   );
 }
 
-/**
- * The lower parts of the screen come over the bright band at the horizon and the hills (on the
- * phone as the page scrolls; on the board where they stand): they stand in the secondary glass,
- * which deepens there until their text reads at 4.5:1 (Backdrop, landscapeAlpha). "Sıradakiler"
- * is in it on the phone; on the board it stands high in the dark sky. Ç4c redraws this part of
- * Today (BT31, BT32, BP01).
- */
-const LANDSCAPE_GLASS = "glass-soft rounded-soft p-4";
-const PHONE_GLASS = "max-md:glass-soft max-md:rounded-soft max-md:p-4";
-
 /** Rule 9: when the month's AI budget is used up, the screen says so in one quiet line. */
 function AiBudgetNotice() {
   const status = useAiStatus();
   if (status.data?.state !== "budget") return null;
   // An information, not a warning: no warning colour (docs/tasarim/ekranlar/bos-ve-hata.md).
   return (
-    <p role="note" className="text-ink-2 text-note flex items-start gap-2">
+    <p role="note" className="text-ink-2 text-note flex items-start gap-2 px-1">
       <Info aria-hidden className="mt-0.5 size-4 shrink-0" />
       Bu ayın yapay zeka bütçesi doldu; girişler ay sonuna kadar elle yönlendirilir.
     </p>

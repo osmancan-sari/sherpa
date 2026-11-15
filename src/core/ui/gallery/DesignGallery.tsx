@@ -11,6 +11,7 @@ import {
   Field,
   IconButton,
   Input,
+  ListMore,
   ListRow,
   OfflinePill,
   Panel,
@@ -26,6 +27,8 @@ import {
   SwitchRow,
   Tag,
   Textarea,
+  TimeStrip,
+  type TimeStripPiece,
   Toast,
   Window,
 } from "@/core/ui/kit";
@@ -161,7 +164,12 @@ export function DesignGallery() {
                 subtitle="Ayar ve form satırı"
                 trailing={<Switch label="Örnek" checked onChange={() => undefined} />}
               />
+              <ListRow block title="Diş hekimi" subtitle="18:30–19:15 · sabit" />
             </Panel>
+          </Section>
+
+          <Section title="Açılır liste">
+            <MoreExample />
           </Section>
         </Column>
 
@@ -263,6 +271,32 @@ export function DesignGallery() {
                 Geçmiş
               </HistoryLink>
             </Row>
+          </Section>
+
+          <Section title="Saatli şerit">
+            <Panel variant="dense" className="px-4 pt-3">
+              <TimeStrip
+                from={stripAt("07:02")}
+                to={stripAt("23:00")}
+                now={stripAt("14:10")}
+                pieces={STRIP}
+                parts={[
+                  {
+                    key: "wake",
+                    start: stripAt("07:02"),
+                    end: stripAt("07:50"),
+                    label: "uyanışa bağlı",
+                  },
+                  {
+                    key: "bed",
+                    start: stripAt("22:20"),
+                    end: stripAt("23:00"),
+                    label: "yatışa bağlı",
+                  },
+                ]}
+                label="Örnek şerit"
+              />
+            </Panel>
           </Section>
 
           <Section title="İlerleme">
@@ -412,6 +446,82 @@ function DateDemo({ id }: { id: string }) {
 
 function Column({ children }: { children: ReactNode }) {
   return <div className="flex min-w-0 flex-col gap-10">{children}</div>;
+}
+
+/** A clock time on a fixed day for the gallery's strip. */
+function stripAt(time: string): Date {
+  const [hours, minutes] = time.split(":").map(Number);
+  return new Date(2026, 10, 13, hours, minutes);
+}
+
+/** The gallery's strip: past and coming work, travel, a fixed block. */
+const STRIP: TimeStripPiece[] = [
+  {
+    key: "a",
+    kind: "work",
+    start: stripAt("07:07"),
+    end: stripAt("07:50"),
+    label: "Duş",
+    color: SUN,
+  },
+  {
+    key: "b",
+    kind: "work",
+    start: stripAt("08:15"),
+    end: stripAt("09:30"),
+    label: "Rapor: giriş",
+    color: VIOLET,
+  },
+  {
+    key: "c",
+    kind: "travel",
+    start: stripAt("09:55"),
+    end: stripAt("10:30"),
+    label: "yol 35 dk",
+    color: BLUE,
+  },
+  {
+    key: "d",
+    kind: "block",
+    start: stripAt("10:30"),
+    end: stripAt("12:20"),
+    label: "Derin Öğrenme dersi",
+  },
+  {
+    key: "e",
+    kind: "work",
+    start: stripAt("14:10"),
+    end: stripAt("15:40"),
+    label: "Proje önerisi taslağı",
+    color: BLUE,
+  },
+  {
+    key: "f",
+    kind: "work",
+    start: stripAt("17:00"),
+    end: stripAt("17:15"),
+    label: "Süpürme",
+    color: TEAL,
+  },
+  { key: "g", kind: "block", start: stripAt("18:30"), end: stripAt("19:15"), label: "Diş hekimi" },
+];
+
+/** "Hepsini göster" / "Küçült": the list opens downward. */
+function MoreExample() {
+  const [open, setOpen] = useState(false);
+  return (
+    <Panel variant="dense" label="Sıradakiler">
+      <ListRow dot={BLUE} title="İstatistik ödevi" subtitle="Okul · 60 dk · Pazar" />
+      <ListRow dot={TEAL} title="Süpürme" subtitle="Ev · 15 dk · 1/2" />
+      {open ? (
+        <>
+          <ListRow block title="Diş hekimi" subtitle="18:30–19:15 · sabit" />
+          <ListRow dot={VIOLET} title="Rapor: yöntem bölümü" subtitle="İş · 45 dk" />
+        </>
+      ) : null}
+      <ListMore open={open} onToggle={() => setOpen(!open)} />
+    </Panel>
+  );
 }
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
