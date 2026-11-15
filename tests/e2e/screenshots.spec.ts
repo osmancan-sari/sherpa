@@ -8,7 +8,7 @@ import { seedChains } from "../../scripts/demo-chains";
 import { seedFacets } from "../../scripts/demo-facets";
 import { insert, rows, update, waitFor } from "./data";
 import { expect, quietTest as base, test } from "./fixtures";
-import { ALLOWED_EMAIL, requestCode } from "./helpers";
+import { ALLOWED_EMAIL, openQuickAdd, requestCode } from "./helpers";
 import { type Cookie, PUBLISHABLE_KEY, readSession, SUPABASE_URL } from "./supabase";
 
 // Phase screenshots. Runs only when SHERPA_SHOTS names the phase folder, for example:
@@ -463,7 +463,7 @@ for (const theme of ["dark", "light"] as const) {
     await page.clock.setFixedTime(at("15:00"));
     const record = async (title: string, kind: string) => {
       await page.goto("/");
-      await page.keyboard.press("n");
+      await openQuickAdd(page);
       const entry = page.getByRole("dialog", { name: "Yeni giriş" });
       await entry.getByLabel("Giriş").fill(title);
       await page.keyboard.press("Tab");

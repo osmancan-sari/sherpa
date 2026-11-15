@@ -2,7 +2,7 @@
 
 import { type FormEvent, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { fieldClass, Input } from "@/core/ui/kit/Field";
 import { useEditBlock, useEditSeries, useSetBlockCancelled } from "@/core/app/actions";
 import { useBlocks, useCoreMutation, useNow, useSeries } from "@/core/app/hooks";
 import {
@@ -18,8 +18,7 @@ import { cn } from "@/lib/utils";
 import { ClientOnly } from "../ClientOnly";
 import { EditDialog, type EditField } from "../EditDialog";
 import { SAVE_FAILED, useNotify } from "../Notices";
-import { PageShell } from "../PageShell";
-import { BackToSettings } from "./ModulesSettings";
+import { SettingsSection } from "./SettingsShell";
 
 // Settings → Fixed blocks: weekly series (class timetable, working hours), one-off blocks,
 // and the coming blocks, any single one of which can be cancelled.
@@ -63,17 +62,16 @@ const BLOCK_FIELDS: EditField[] = [
   ...TIME_FIELDS,
 ];
 
-const selectClass = "border-input bg-background h-11 rounded-lg border px-3 text-sm md:h-9";
+const selectClass = fieldClass;
 
 /** /ayarlar/bloklar */
 export function BlocksSettingsScreen() {
   return (
-    <PageShell title="Sabit bloklar">
-      <BackToSettings />
+    <SettingsSection title="Sabit bloklar" bare>
       <ClientOnly>
         <BlocksSettingsBody />
       </ClientOnly>
-    </PageShell>
+    </SettingsSection>
   );
 }
 
@@ -129,8 +127,11 @@ function BlocksSettingsBody() {
 
 function Panel({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <section aria-label={title} className="border-border flex flex-col gap-4 rounded-xl border p-5">
-      <h2 className="text-sm font-medium">{title}</h2>
+    <section
+      aria-label={title}
+      className="glass-dense rounded-dense flex flex-col gap-4 p-4 md:p-4.5"
+    >
+      <h2 className="panel-label">{title}</h2>
       {children}
     </section>
   );

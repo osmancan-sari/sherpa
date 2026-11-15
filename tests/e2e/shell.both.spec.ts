@@ -69,16 +69,13 @@ test("one colour system; the look switches of this device are kept", async ({ pa
   await expect(html).not.toHaveAttribute("data-transparency", "reduced");
 
   const transparency = page.getByRole("switch", { name: "Saydamlığı azalt" });
-  await expect(transparency).toHaveAttribute("aria-checked", "false");
+  await expect(transparency).not.toBeChecked();
   await transparency.click();
   await expect(html).toHaveAttribute("data-transparency", "reduced");
   await page.reload();
   // Remembered on this device, and set before the first paint.
   await expect(html).toHaveAttribute("data-transparency", "reduced");
-  await expect(page.getByRole("switch", { name: "Saydamlığı azalt" })).toHaveAttribute(
-    "aria-checked",
-    "true",
-  );
+  await expect(page.getByRole("switch", { name: "Saydamlığı azalt" })).toBeChecked();
   await page.getByRole("switch", { name: "Saydamlığı azalt" }).click();
   await expect(html).not.toHaveAttribute("data-transparency", "reduced");
 
@@ -86,10 +83,7 @@ test("one colour system; the look switches of this device are kept", async ({ pa
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.reload();
   await expect(html).toHaveAttribute("data-motion", "reduced");
-  await expect(page.getByRole("switch", { name: "Hareketi azalt" })).toHaveAttribute(
-    "aria-checked",
-    "true",
-  );
+  await expect(page.getByRole("switch", { name: "Hareketi azalt" })).toBeChecked();
 });
 
 test("the page links the manifest and the home-screen icon", async ({ page }) => {

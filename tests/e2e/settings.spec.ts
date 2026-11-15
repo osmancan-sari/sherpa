@@ -31,7 +31,10 @@ test("a weekly series produces the coming weeks' blocks; a single one can be can
   // Needs room in the day and the database's day (tests/e2e/clock.ts).
   await roomInTheDay(page);
   await page.goto("/ayarlar");
-  await page.getByRole("link", { name: "Haftalık seriler ve tek seferlik bloklar" }).click();
+  await page
+    .getByRole("navigation", { name: "Ayarlar bölümleri" })
+    .getByRole("link", { name: "Sabit bloklar" })
+    .click();
   await expect(page).toHaveURL(/\/ayarlar\/bloklar$/);
   await expect(page.getByText("Seri yok.")).toBeVisible();
 

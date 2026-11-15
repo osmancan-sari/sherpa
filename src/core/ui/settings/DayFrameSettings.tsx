@@ -1,5 +1,6 @@
 "use client";
 
+import { SwitchRow } from "@/core/ui/kit/Switch";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -158,14 +159,11 @@ function DayFrameForm({ stored }: { stored: FrameSettings | null }) {
         Gün uyanışla başlar, yatışla biter. Planlayıcı bu aralıkların içinde bir uyanış ve yatış
         seçer; uykuyu iş yüküne feda etmez. Uygulama uyandırmaz.
       </p>
-      <label className="flex min-h-11 items-center gap-2 text-sm md:min-h-9">
-        <input
-          type="checkbox"
-          checked={draft.on}
-          onChange={(event) => setDraft({ ...draft, on: event.target.checked })}
-        />
-        Günün çerçevesi açık
-      </label>
+      <SwitchRow
+        label="Günün çerçevesi açık"
+        checked={draft.on}
+        onChange={(on) => setDraft({ ...draft, on })}
+      />
       {draft.on ? (
         <>
           <div className="grid grid-cols-[auto_1fr] items-center gap-x-4 gap-y-3 text-sm">
@@ -210,22 +208,17 @@ function DayFrameForm({ stored }: { stored: FrameSettings | null }) {
               })}
             </div>
           </details>
-          <label className="flex min-h-11 items-center gap-2 text-sm md:min-h-9">
-            <input
-              type="checkbox"
-              checked={draft.startOnWake}
-              onChange={(event) => setDraft({ ...draft, startOnWake: event.target.checked })}
-            />
-            &quot;Uyandım&quot;dan sonra ilk rutin kendiliğinden başlasın
-          </label>
-          <label className="flex min-h-11 items-center gap-2 text-sm md:min-h-9">
-            <input
-              type="checkbox"
-              checked={draft.chainAuto}
-              onChange={(event) => setDraft({ ...draft, chainAuto: event.target.checked })}
-            />
-            Dizide sıradaki iş kendiliğinden başlasın
-          </label>
+          <SwitchRow
+            className="border-line-soft border-t"
+            label={'"Uyandım"dan sonra ilk rutin kendiliğinden başlasın'}
+            checked={draft.startOnWake}
+            onChange={(startOnWake) => setDraft({ ...draft, startOnWake })}
+          />
+          <SwitchRow
+            label="Dizide sıradaki iş kendiliğinden başlasın"
+            checked={draft.chainAuto}
+            onChange={(chainAuto) => setDraft({ ...draft, chainAuto })}
+          />
         </>
       ) : null}
       {draft.on && problem ? (

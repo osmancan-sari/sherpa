@@ -1,5 +1,6 @@
 "use client";
 
+import { SwitchRow } from "@/core/ui/kit/Switch";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -73,16 +74,12 @@ function AiSettingsBody() {
         </p>
       ) : null}
 
-      <label className="flex items-center gap-3 text-sm">
-        <input
-          type="checkbox"
-          checked={enabled}
-          disabled={settings.isLoading}
-          onChange={(event) => save.mutate({ enabled: event.target.checked })}
-          className="size-5"
-        />
-        Yapay zeka açık
-      </label>
+      <SwitchRow
+        label="Yapay zeka açık"
+        checked={enabled}
+        disabled={settings.isLoading}
+        onChange={(on) => save.mutate({ enabled: on })}
+      />
 
       <form
         aria-label="Aylık sınır"

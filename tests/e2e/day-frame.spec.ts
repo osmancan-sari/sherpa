@@ -40,7 +40,7 @@ const events = async (type: string) =>
 test("Settings: the frame's ranges, sleep target and a day type's range are saved; off is off", async ({
   page,
 }) => {
-  await page.goto("/ayarlar");
+  await page.goto("/ayarlar/cerceve");
   const form = page.getByRole("form", { name: "Günün çerçevesi" });
   // The test account starts with the frame off.
   await expect(form.getByLabel("Günün çerçevesi açık")).not.toBeChecked();

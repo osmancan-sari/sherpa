@@ -1,5 +1,6 @@
 import { expect, type Page } from "@playwright/test";
 import { rows, waitFor } from "./data";
+import { openQuickAdd } from "./helpers";
 
 // Shared by the scene specs (Ç3c): the "deneme" module on, a record of a kind, what was said
 // (the speech is fake in every test: tests/e2e/fixtures.ts).
@@ -20,7 +21,7 @@ export async function addRecord(
   extra: { minutes?: string; kind?: string; facet?: string } = {},
 ) {
   await page.goto("/");
-  await page.keyboard.press("n");
+  await openQuickAdd(page);
   const dialog = page.getByRole("dialog", { name: "Yeni giriş" });
   await dialog.getByLabel("Giriş").fill(title);
   await page.keyboard.press("Tab");

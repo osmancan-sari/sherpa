@@ -13,7 +13,8 @@ import type { ModuleRow } from "@/core/types";
 import { ClientOnly } from "../ClientOnly";
 import { ModuleProvider } from "../module/ModuleProvider";
 import { SAVE_FAILED, useNotify } from "../Notices";
-import { PageShell } from "../PageShell";
+import { Panel } from "../kit/Panel";
+import { SettingsSection } from "./SettingsShell";
 import { ModuleColors } from "./ModuleColors";
 
 // Settings → Modules: switch a module on, pause it, archive it; and each module's own settings.
@@ -29,23 +30,11 @@ type Entry = { slug: string; name: string; row?: ModuleRow; definition?: ModuleD
 /** /ayarlar/moduller */
 export function ModulesSettingsScreen() {
   return (
-    <PageShell title="Modüller">
-      <BackToSettings />
+    <SettingsSection title="Modüller">
       <ClientOnly>
         <ModulesSettingsList />
       </ClientOnly>
-    </PageShell>
-  );
-}
-
-export function BackToSettings() {
-  return (
-    <Link
-      href="/ayarlar"
-      className="text-muted-foreground hover:text-foreground -mt-3 w-fit text-sm underline underline-offset-4"
-    >
-      Ayarlar
-    </Link>
+    </SettingsSection>
   );
 }
 
@@ -71,7 +60,7 @@ function ModulesSettingsList() {
     return <p className="text-muted-foreground text-sm">Kurulu modül yok.</p>;
   }
   return (
-    <ul className="flex flex-col gap-3">
+    <ul className="flex flex-col">
       {entries.map((entry) => (
         <ModuleSettingsRow key={entry.slug} entry={entry} />
       ))}
@@ -104,7 +93,7 @@ function ModuleSettingsRow({ entry }: { entry: Entry }) {
 
   const status = row?.status;
   return (
-    <li className="border-border flex flex-col gap-3 rounded-xl border p-4">
+    <li className="border-line flex flex-col gap-3 border-b py-3.5 last:border-b-0">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <span
@@ -205,15 +194,15 @@ function ModuleSettingsRoute() {
   const { modules, isLoading } = useModules();
   const mod = modules.find(({ row }) => row.slug === slug);
 
-  if (isLoading) return <PageShell title="Modül ayarları">{null}</PageShell>;
+  if (isLoading) return null;
   if (!mod || mod.row.status === "archived") {
     return (
-      <PageShell title="Modül ayarları">
-        <p className="text-muted-foreground">Bu modül etkin değil.</p>
-        <Link href="/ayarlar/moduller" className="w-fit underline underline-offset-4">
+      <SettingsSection title="Modül ayarları" back="/ayarlar/moduller">
+        <p className="text-base">Bu modül etkin değil.</p>
+        <Link href="/ayarlar/moduller" className="link-quiet w-fit font-semibold">
           Modüller
         </Link>
-      </PageShell>
+      </SettingsSection>
     );
   }
   return <ModuleSettingsBody mod={mod} />;
@@ -223,30 +212,21 @@ function ModuleSettingsBody({ mod }: { mod: KnownModule }) {
   const Form = mod.definition?.ui.settings;
 
   return (
-    <PageShell title={`${mod.row.name} ayarları`}>
-      <Link
-        href="/ayarlar/moduller"
-        className="text-muted-foreground hover:text-foreground -mt-3 w-fit text-sm underline underline-offset-4"
-      >
-        Modüller
-      </Link>
-
+    <SettingsSection title={`${mod.row.name} ayarları`} back="/ayarlar/moduller" bare>
       {/* Ç3e: the module's colour and its facets' (docs/05, "Renkler ve bölümler"). */}
       <ModuleColors mod={mod} />
 
-      <section
-        aria-label="Modülün ayarları"
-        className="border-border flex flex-col gap-4 rounded-xl border p-5"
-      >
-        <h2 className="text-sm font-medium">Modülün ayarları</h2>
-        {Form ? (
-          <ModuleProvider mod={mod}>
-            <Form />
-          </ModuleProvider>
-        ) : (
-          <p className="text-muted-foreground text-sm">Bu modülün kendi ayarı yok.</p>
-        )}
-      </section>
-    </PageShell>
+      <Panel variant="dense" label="Modülün ayarları" className="gap-4 pb-4">
+        <div className="flex flex-col gap-4 px-4 md:px-4.5">
+          {Form ? (
+            <ModuleProvider mod={mod}>
+              <Form />
+            </ModuleProvider>
+          ) : (
+            <p className="text-ink-2 text-note">Bu modülün kendi ayarı yok.</p>
+          )}
+        </div>
+      </Panel>
+    </SettingsSection>
   );
 }

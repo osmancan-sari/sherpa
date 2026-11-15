@@ -2,7 +2,7 @@ import type { Page } from "@playwright/test";
 import { insert, rows, seedModule, userId, waitFor } from "./data";
 import { adminClient } from "./supabase";
 import { expect, test } from "./fixtures";
-import { roomInTheDay } from "./helpers";
+import { openQuickAdd, roomInTheDay } from "./helpers";
 
 // Time constraints end to end (Ç3b; docs/07-yol-haritasi.md, "Ç3b" acceptance criteria). The
 // account's day runs from midnight to 23:59 (tests/e2e/data.ts). Tests that need a given hour
@@ -268,7 +268,7 @@ test("the deneme module's workout carries every time constraint into its rhythm"
   await page.getByRole("button", { name: "Deneme: etkinleştir" }).click();
   await expect(page.getByRole("link", { name: "Deneme ayarları" })).toBeVisible();
   await page.goto("/m/deneme");
-  await page.keyboard.press("n");
+  await openQuickAdd(page);
   const dialog = page.getByRole("dialog", { name: "Yeni giriş" });
   await dialog.getByLabel("Giriş").fill("Salon antrenmanı");
   await page.keyboard.press("Tab");

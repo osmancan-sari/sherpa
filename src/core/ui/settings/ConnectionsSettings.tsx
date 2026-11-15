@@ -150,7 +150,10 @@ function MadeToken({
   const [copied, setCopied] = useState(false);
   const origin = typeof window === "undefined" ? "" : window.location.origin;
   return (
-    <div className="border-border flex flex-col gap-3 rounded-lg border p-4" role="status">
+    <div
+      className="bg-fill-box border-edge-soft flex flex-col gap-3 rounded-2xl border p-3.5"
+      role="status"
+    >
       <p className="text-sm font-medium">Anahtar hazır. Bir daha gösterilmez; şimdi kopyala.</p>
       <div className="flex flex-wrap items-center gap-2">
         <Input

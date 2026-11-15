@@ -2,7 +2,7 @@ import type { Page } from "@playwright/test";
 import { insert, rows, seedModule, update, waitFor } from "./data";
 import { expect, test } from "./fixtures";
 import { runAt, runNow } from "./clock";
-import { roomInTheDay } from "./helpers";
+import { openQuickAdd, roomInTheDay } from "./helpers";
 
 // The "deneme" module: everything it shows and does reaches the core through the module
 // contract. These tests walk every connection point through the real interface.
@@ -23,7 +23,7 @@ async function addRecord(
   title: string,
   extra: { minutes?: string; kind?: string } = {},
 ) {
-  await page.keyboard.press("n");
+  await openQuickAdd(page);
   const dialog = page.getByRole("dialog", { name: "Yeni giriş" });
   await dialog.getByLabel("Giriş").fill(title);
   await page.keyboard.press("Tab");
@@ -126,7 +126,7 @@ test("a number outside the bounds its field declares keeps the entry from being 
   await activate(page);
   await page.goto("/");
   await expect(page.getByRole("region", { name: "Şimdi" })).toBeVisible();
-  await page.keyboard.press("n");
+  await openQuickAdd(page);
   const dialog = page.getByRole("dialog", { name: "Yeni giriş" });
   const entry = dialog.getByLabel("Giriş", { exact: true });
   await entry.fill("Kısa kayıt");
@@ -481,7 +481,7 @@ test("a pasted sherpa block goes straight to the module that knows it", async ({
   await activate(page);
   await page.goto("/");
   await expect(page.getByRole("region", { name: "Şimdi" })).toBeVisible();
-  await page.keyboard.press("n");
+  await openQuickAdd(page);
   const dialog = page.getByRole("dialog", { name: "Yeni giriş" });
   const pasted = [
     "Doküman hazır.",
@@ -529,7 +529,7 @@ test("a pasted sherpa block goes straight to the module that knows it", async ({
 test("a block nobody knows stays in the inbox as text", async ({ page }) => {
   await activate(page);
   await page.goto("/");
-  await page.keyboard.press("n");
+  await openQuickAdd(page);
   const dialog = page.getByRole("dialog", { name: "Yeni giriş" });
   await dialog.getByLabel("Giriş").fill('```sherpa\n{ "course": "BBF301E" }\n```');
   await page.keyboard.press("Enter");

@@ -63,10 +63,10 @@ test("Ayarlar → Sesli anlatım: off keeps even Dene silent, and stays off afte
   page,
 }) => {
   await recordEveryCall(page);
-  await page.goto("/ayarlar");
+  await page.goto("/ayarlar/ses");
   await expect(page.getByRole("heading", { name: "Sesli anlatım (bu cihaz)" })).toBeVisible();
   const voice = page.getByRole("group", { name: "Sesli anlatım" });
-  const enabled = voice.getByRole("checkbox", { name: "Sesli anlatım açık" });
+  const enabled = voice.getByRole("switch", { name: "Sesli anlatım açık" });
   await expect(enabled).toBeChecked();
 
   await enabled.uncheck();
@@ -90,7 +90,7 @@ test("a device without a Turkish voice says nothing (no other language reads Tur
   page,
 }) => {
   await recordEveryCall(page, "en-US");
-  await page.goto("/ayarlar");
+  await page.goto("/ayarlar/ses");
   const voice = page.getByRole("group", { name: "Sesli anlatım" });
   await expect(voice.getByText("Bu cihazda Türkçe ses yok; anlatım sessiz kalır.")).toBeVisible();
   await voice.getByRole("button", { name: "Dene" }).click();

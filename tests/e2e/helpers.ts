@@ -90,3 +90,17 @@ export async function roomInTheDay(...pages: Page[]): Promise<Date> {
   for (const page of pages) await page.clock.setFixedTime(room);
   return room;
 }
+
+/**
+ * Opens quick add with its key, "N". The key works once the page has come alive (its listeners
+ * attach a moment after the load event); pressing it right after `goto` can fall before that,
+ * so it is pressed again until the sheet is there (never while it is open: the key would then be
+ * typed into its line).
+ */
+export async function openQuickAdd(page: Page) {
+  const sheet = page.getByRole("dialog", { name: "Yeni giriş" });
+  await expect(async () => {
+    if ((await sheet.count()) === 0) await page.keyboard.press("n");
+    await expect(sheet).toBeVisible({ timeout: 1_000 });
+  }).toPass({ timeout: 10_000 });
+}

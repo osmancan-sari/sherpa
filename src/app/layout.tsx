@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import Script from "next/script";
 import { LOOK_BOOT_SCRIPT } from "@/core/ui/look/look";
 import { token } from "@/core/ui/tokens";
 import "./globals.css";
@@ -42,11 +43,13 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${fontSans.variable} ${fontMono.variable} h-full antialiased`}
       suppressHydrationWarning
     >
-      <head>
+      <body className="flex min-h-full flex-col">
         {/* Before the first paint: "Saydamlığı azalt" and "Hareketi azalt" of this device. */}
-        <script dangerouslySetInnerHTML={{ __html: LOOK_BOOT_SCRIPT }} />
-      </head>
-      <body className="flex min-h-full flex-col">{children}</body>
+        <Script id="look" strategy="beforeInteractive">
+          {LOOK_BOOT_SCRIPT}
+        </Script>
+        {children}
+      </body>
     </html>
   );
 }

@@ -128,7 +128,7 @@ test("say: the scene's words are spoken on the device that was touched, and show
 test("the voice settings are this device's: off is silent, Dene speaks, the choice stays", async ({
   page,
 }) => {
-  await page.goto("/ayarlar");
+  await page.goto("/ayarlar/ses");
   const voice = page.getByRole("group", { name: "Sesli anlatım" });
   await voice.getByRole("button", { name: "Dene" }).click();
   await expect.poll(() => spoken(page)).toEqual(["Sesli anlatım açık.", "Böyle konuşacağım."]);

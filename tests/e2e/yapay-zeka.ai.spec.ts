@@ -1,6 +1,7 @@
 import type { Page } from "@playwright/test";
 import { rows, waitFor } from "./data";
 import { expect, test } from "./fixtures";
+import { openQuickAdd } from "./helpers";
 
 // The AI end to end (Ç2), against the server that runs the recorded fake provider
 // (SHERPA_AI_FAKE=1, port 3101). The same build without any provider runs on port 3100; the
@@ -24,7 +25,7 @@ async function activateDeneme(page: Page, origin = "") {
 }
 
 async function freeLine(page: Page, text: string) {
-  await page.keyboard.press("n");
+  await openQuickAdd(page);
   const dialog = page.getByRole("dialog", { name: "Yeni giriş" });
   await dialog.getByLabel("Giriş").fill(text);
   await page.keyboard.press("Enter");
@@ -34,7 +35,7 @@ async function freeLine(page: Page, text: string) {
 
 /** A record of the module without a length: its effort is left to the AI. */
 async function addRecord(page: Page, title: string) {
-  await page.keyboard.press("n");
+  await openQuickAdd(page);
   const dialog = page.getByRole("dialog", { name: "Yeni giriş" });
   await dialog.getByLabel("Giriş").fill(title);
   await page.keyboard.press("Tab");
@@ -181,7 +182,7 @@ test("with the budget at 0 no call is made, the screens say so, and the line sta
   page,
 }) => {
   await activateDeneme(page);
-  await page.goto("/ayarlar");
+  await page.goto("/ayarlar/yapay-zeka");
   const section = page.getByRole("main");
   await expect(section.getByTestId("ai-state")).toHaveText(/Açık\./);
   await section.getByLabel("Aylık sınır ($; 0 kapatır)").fill("0");
@@ -328,7 +329,7 @@ test("settings show this month's calls and what they cost", async ({ page }) => 
     (list) => list.length === 1,
     10_000,
   );
-  await page.goto("/ayarlar");
+  await page.goto("/ayarlar/yapay-zeka");
   const table = page.getByRole("table", { name: "Bu ayın yapay zeka çağrıları" });
   await expect(table.getByRole("row").filter({ hasText: "Giriş okuma" })).toContainText(
     "fake-fast",

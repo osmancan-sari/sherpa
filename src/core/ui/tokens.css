@@ -293,6 +293,8 @@
   --spacing-login-board: 420px;
   --spacing-read: 760px; /* inbox column on the board */
   --spacing-board: 980px; /* content width of list pages on the board */
+  --spacing-settings-list: 280px; /* Ayarlar on the board: the list of sections */
+  --spacing-settings-body: 640px; /* Ayarlar on the board: the open section */
   --spacing-strip: 52px; /* the scene's strip */
   --spacing-nav-space: 112px; /* room under the content for the phone menu */
 

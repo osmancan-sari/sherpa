@@ -1,5 +1,6 @@
 import { rows, waitFor } from "./data";
 import { expect, test } from "./fixtures";
+import { openQuickAdd } from "./helpers";
 
 // The module template (src/modules/_sablon), the way its README leaves it after "copy and
 // rename": registered as "sablon-kopya" where the demo switch is on (src/modules/registry.ts).
@@ -33,7 +34,7 @@ test("a renamed copy of the template is a working module", async ({ page }) => {
   await expect(page.getByLabel("Bu hafta")).toContainText("Açık iş");
 
   // It can be picked in quick add; the task shows on its page and in its own view.
-  await page.keyboard.press("n");
+  await openQuickAdd(page);
   const dialog = page.getByRole("dialog", { name: "Yeni giriş" });
   await dialog.getByLabel("Giriş", { exact: true }).fill("Ampul al 15dk");
   await dialog.getByRole("button", { name: "Şablon kopyası", exact: true }).click();

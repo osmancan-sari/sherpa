@@ -1,5 +1,6 @@
 import { rows, waitFor } from "./data";
 import { expect, test } from "./fixtures";
+import { openQuickAdd } from "./helpers";
 
 // A time constraint written out on a free line becomes the work's (Ç3b; docs/10-yapay-zeka.md,
 // rule 12), against the server with the recorded fake provider. The real model is measured by
@@ -14,7 +15,7 @@ test("a free line's stated window and travel land on the task; a line without on
   await page.goto("/");
 
   const freeLine = async (text: string) => {
-    await page.keyboard.press("n");
+    await openQuickAdd(page);
     const dialog = page.getByRole("dialog", { name: "Yeni giriş" });
     await dialog.getByLabel("Giriş").fill(text);
     await page.keyboard.press("Enter");

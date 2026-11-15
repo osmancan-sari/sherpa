@@ -1,5 +1,7 @@
 "use client";
 
+import { SwitchRow } from "@/core/ui/kit/Switch";
+import { fieldClass } from "@/core/ui/kit/Field";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { deviceVoice, useSay, useVoiceSettings, type VoiceOption } from "@/core/voice";
@@ -56,21 +58,18 @@ function VoiceSettingsBody() {
       {available && voices !== null && voices.length === 0 ? (
         <p role="status">Bu cihazda Türkçe ses yok; anlatım sessiz kalır.</p>
       ) : null}
-      <label className="flex min-h-11 items-center gap-2 md:min-h-9">
-        <input
-          type="checkbox"
-          checked={settings.enabled}
-          onChange={(event) => save({ enabled: event.target.checked })}
-        />
-        Sesli anlatım açık
-      </label>
+      <SwitchRow
+        label="Sesli anlatım açık"
+        checked={settings.enabled}
+        onChange={(enabled) => save({ enabled })}
+      />
       <label className="flex flex-wrap items-center gap-2">
         <span>Ses</span>
         <select
           aria-label="Ses"
           value={settings.voice ?? ""}
           onChange={(event) => save({ voice: event.target.value || null })}
-          className="border-border bg-background h-11 rounded-md border px-2 md:h-9"
+          className={fieldClass}
         >
           <option value="">Cihazın Türkçe sesi</option>
           {(voices ?? []).map((voice) => (
@@ -93,14 +92,11 @@ function VoiceSettingsBody() {
         />
         <span className="tabular-nums">{settings.rate.toFixed(1)}</span>
       </label>
-      <label className="flex min-h-11 items-center gap-2 md:min-h-9">
-        <input
-          type="checkbox"
-          checked={settings.auto}
-          onChange={(event) => save({ auto: event.target.checked })}
-        />
-        Bu cihaz dokunuş olmadan da konuşsun (ikinci ekran için)
-      </label>
+      <SwitchRow
+        label="Bu cihaz dokunuş olmadan da konuşsun (ikinci ekran için)"
+        checked={settings.auto}
+        onChange={(auto) => save({ auto })}
+      />
       <div>
         <Button
           variant="outline"

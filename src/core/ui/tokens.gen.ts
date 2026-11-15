@@ -240,6 +240,8 @@ export const TOKENS = {
   "spacing-login-board": "420px",
   "spacing-read": "760px",
   "spacing-board": "980px",
+  "spacing-settings-list": "280px",
+  "spacing-settings-body": "640px",
   "spacing-strip": "52px",
   "spacing-nav-space": "112px",
   "breakpoint-md": "768px",

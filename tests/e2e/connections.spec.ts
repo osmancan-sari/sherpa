@@ -5,7 +5,7 @@ import { expect, test } from "./fixtures";
 // its first characters and revoked.
 
 test("a device token is made with its scopes, shown once, and revoked", async ({ page }) => {
-  await page.goto("/ayarlar");
+  await page.goto("/ayarlar/baglantilar");
   const form = page.getByRole("form", { name: "Yeni anahtar" });
   await expect(form.getByRole("button", { name: "Anahtar üret" })).toBeDisabled();
   await form.getByLabel("Ad").fill("iPhone Kestirmeler");

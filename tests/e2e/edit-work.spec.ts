@@ -1,7 +1,7 @@
 import type { Page } from "@playwright/test";
 import { insert, rows, seedModule, update, waitFor } from "./data";
 import { expect, test } from "./fixtures";
-import { roomInTheDay } from "./helpers";
+import { openQuickAdd, roomInTheDay } from "./helpers";
 
 // Changing work by hand: tasks, work items, rhythms, fixed blocks and their series.
 
@@ -107,7 +107,7 @@ test("a length that is not a multiple of five does not stand in the way of a sav
   expect(task.est_minutes).toBe(12);
 
   // The same in quick add: one sentence with an odd length.
-  await page.keyboard.press("n");
+  await openQuickAdd(page);
   const quick = page.getByRole("dialog", { name: "Yeni giriş" });
   await quick.getByLabel("Giriş", { exact: true }).fill("Kargo 37dk");
   await page.keyboard.press("Tab");

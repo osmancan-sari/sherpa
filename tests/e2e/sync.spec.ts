@@ -191,7 +191,7 @@ test("what the ingest endpoint writes reaches open screens: the waking, a record
   await moduleTab.goto("/m/deneme");
   await expect(moduleTab.getByRole("heading", { name: "Deneme", level: 1 })).toBeVisible();
   const settingsTab = await other.newPage();
-  await settingsTab.goto("/ayarlar");
+  await settingsTab.goto("/ayarlar/baglantilar");
   await expect(settingsTab.getByTestId("device-token")).toContainText("Henüz kullanılmadı");
   const navigations = [forbidReloads(page), forbidReloads(moduleTab), forbidReloads(settingsTab)];
 

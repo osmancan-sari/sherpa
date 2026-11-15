@@ -2,14 +2,14 @@ import type { Page } from "@playwright/test";
 import { rows, seedModule, waitFor } from "./data";
 import { expect, test } from "./fixtures";
 import { runNow } from "./clock";
-import { roomInTheDay } from "./helpers";
+import { openQuickAdd as pressN, roomInTheDay } from "./helpers";
 
 // Quick add: one box, two uses. Every entry is at most two touches or one sentence.
 
 async function openQuickAdd(page: Page) {
   await page.goto("/");
   await expect(page.getByRole("region", { name: "Şimdi" })).toBeVisible();
-  await page.keyboard.press("n");
+  await pressN(page);
   const dialog = page.getByRole("dialog", { name: "Yeni giriş" });
   await expect(dialog.getByLabel("Giriş")).toBeFocused();
   return dialog;

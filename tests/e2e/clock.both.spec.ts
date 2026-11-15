@@ -6,7 +6,7 @@ import { expect, test } from "./fixtures";
 // 08:00, "24" → 24:00); a colon typed by hand works too. Runs on the board and the phone.
 
 test("the day's frame takes its hours from the number pad", async ({ page }) => {
-  await page.goto("/ayarlar");
+  await page.goto("/ayarlar/cerceve");
   const form = page.getByRole("form", { name: "Günün çerçevesi" });
   await form.getByLabel("Günün çerçevesi açık").check();
   const field = (label: string) => form.getByLabel(label, { exact: true });

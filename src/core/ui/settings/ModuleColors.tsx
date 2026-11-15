@@ -81,7 +81,7 @@ export function ModuleColors({ mod }: { mod: KnownModule }) {
   return (
     <section
       aria-label="Renkler"
-      className="border-border flex flex-col gap-4 rounded-xl border p-5"
+      className="glass-dense rounded-dense flex flex-col gap-4 p-4 md:p-4.5"
     >
       <h2 className="text-sm font-medium">Renkler</h2>
       <ul className="flex flex-col gap-3">

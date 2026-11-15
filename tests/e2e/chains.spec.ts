@@ -1,6 +1,7 @@
 import type { Page } from "@playwright/test";
 import { insert, rows, update, waitFor } from "./data";
 import { expect, test } from "./fixtures";
+import { openQuickAdd } from "./helpers";
 
 // The anchored chains (Ç3f; docs/06-modul-sozlesmesi.md, "Diziler"): two modules' wake-bound
 // work in one morning, the scene that sees all of it, the standard card's line. The frame is off
@@ -276,7 +277,7 @@ test("the bed chain goes on the same way", async ({ page }) => {
 
 test("Ayarlar: the chain setting is on at first and can be switched off", async ({ page }) => {
   await setUp();
-  await page.goto("/ayarlar");
+  await page.goto("/ayarlar/cerceve");
   const form = page.getByRole("form", { name: "Günün çerçevesi" });
   const box = form.getByLabel("Dizide sıradaki iş kendiliğinden başlasın");
   await expect(box).toBeChecked();
@@ -467,7 +468,7 @@ test("a 'rutin' record of the test module proposes a daily routine at its place 
   });
   await page.clock.setFixedTime(dayAt("07:02"));
   await page.goto("/");
-  await page.keyboard.press("n");
+  await openQuickAdd(page);
   const dialog = page.getByRole("dialog", { name: "Yeni giriş" });
   await dialog.getByLabel("Giriş").fill("Diş ve su");
   await page.keyboard.press("Tab");

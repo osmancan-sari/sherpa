@@ -1,6 +1,7 @@
 import { insert, rows, update, waitFor } from "./data";
 import { expect, test } from "./fixtures";
 import { activateDeneme, addRecord, startFromModule } from "./scene-helpers";
+import { openQuickAdd } from "./helpers";
 
 // Ç3g (docs/06-modul-sozlesmesi.md, "Sahne" rules 2 and 3a): a scene sets what the core's strip
 // says and may leave it out on a screen; a scene that says so takes the Today keys. The examples
@@ -57,7 +58,7 @@ test("a scene that takes the keys: Space is the workout's next step, not the cor
     (list) => list[0]?.scene_step === 2,
   );
   // Space while typing is the field's: nothing moves.
-  await page.keyboard.press("n");
+  await openQuickAdd(page);
   const dialog = page.getByRole("dialog", { name: "Yeni giriş" });
   await dialog.getByLabel("Giriş").fill("not ");
   await expect(dialog.getByLabel("Giriş")).toHaveValue("not ");
