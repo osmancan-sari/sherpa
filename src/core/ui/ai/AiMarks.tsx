@@ -127,7 +127,7 @@ export function AiBadge({
           if (!open) measure();
           setOpen(!open);
         }}
-        className="text-muted-foreground hover:text-foreground focus-visible:ring-ring/50 inline-flex size-6 items-center justify-center rounded-md outline-none focus-visible:ring-3"
+        className="text-muted-foreground hover:text-foreground focus-visible:ring-ring/50 relative inline-flex size-6 items-center justify-center rounded-md outline-none after:absolute after:-inset-2.5 focus-visible:ring-3"
       >
         <Sparkles aria-hidden className="size-3.5" />
       </button>

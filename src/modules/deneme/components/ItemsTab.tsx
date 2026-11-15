@@ -103,14 +103,14 @@ export function ItemsTab() {
         <span className="flex justify-end gap-1">
           <Link
             href={`/m/${row.slug}/kayit/${item.id}`}
-            className="hover:bg-muted flex h-11 items-center rounded-lg px-2.5 text-sm md:h-8"
+            className="hover:bg-muted flex h-11 items-center rounded-lg px-2.5 text-sm"
             aria-label={`Ayrıntı: ${item.title}`}
           >
             Ayrıntı
           </Link>
           <Button
             variant="ghost"
-            className="h-11 md:h-8"
+            className="h-11"
             aria-label={`Sil: ${item.title}`}
             onClick={() => void run(() => removeItem(ctx, item.id))}
           >

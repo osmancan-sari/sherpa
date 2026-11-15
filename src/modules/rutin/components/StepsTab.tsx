@@ -3,18 +3,21 @@
 import { GripVertical, Minus, Plus, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import {
-  type PointerEvent as ReactPointerEvent,
-  type ReactNode,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { type PointerEvent as ReactPointerEvent, type ReactNode, useRef, useState } from "react";
 import { useRefreshAll } from "@/core/app/actions";
 import { useModuleQuery } from "@/core/app/hooks";
 import type { ModuleContext, SceneChain } from "@/core/contract/types";
+import {
+  Button,
+  Chip,
+  Input,
+  Panel,
+  Segmented,
+  Select,
+  Sheet,
+  Switch,
+  Window,
+} from "@/core/ui/kit";
 import { SAVE_FAILED, useNotify } from "@/core/ui/Notices";
 import { token } from "@/core/ui/tokens";
 import { useModule, useModuleChains } from "@/core/ui/module/ModuleProvider";
@@ -46,7 +49,8 @@ import {
 // a numbered list in the scene's order, grouped by block; a step's sheet to edit it (name, length,
 // frequency, basic, open, its sub-steps), to add one and to delete one. Every change proposes the
 // routines again, so the rhythm's length follows the list; the scene reads the list as it is.
-// The glass look of the drawings is step 3; here the core's own page language.
+// Drawn with the core's kit (docs/tasarim/ekranlar/rutin.md, "Modül sayfası"): a dense panel per
+// block, the kit's switch, segmented choice, sheet and window.
 
 const GROUPS: Record<"sabah" | "aksam", { key: RoutineKey; label: string; context: string }[]> = {
   sabah: [
@@ -165,7 +169,7 @@ function StepsTab({ facet }: { facet: "sabah" | "aksam" }) {
   if (list.isLoading || !list.data) return null;
   const { routines, steps } = list.data;
   if (routines.length === 0) {
-    return <p className="text-muted-foreground text-sm">Liste, modül etkinleştirilince yazılır.</p>;
+    return <p className="text-ink-2 text-sm">Liste, modül etkinleştirilince yazılır.</p>;
   }
   const step = editing ? steps.find((row) => row.id === editing) : undefined;
   const mainsOf = (routine: Routine) =>
@@ -210,14 +214,12 @@ function StepsTab({ facet }: { facet: "sabah" | "aksam" }) {
         ),
       )}
       {facet === "aksam" ? (
-        <section className="border-border rounded-2xl border px-4 py-3 text-sm">
-          <p className="text-muted-foreground text-xs font-semibold tracking-wider">
-            YATAKTA · KAYDEDİLMEZ
-          </p>
+        <Panel variant="soft" aria-label="Yatakta" className="px-4.5 py-3.5 text-sm">
+          <p className="panel-label">YATAKTA · KAYDEDİLMEZ</p>
           <p className="mt-1">
             Işık kapalı. &quot;Yatıyorum&quot;dan sonraki ekranda hatırlatılır.
           </p>
-        </section>
+        </Panel>
       ) : null}
       {step ? (
         <StepSheet key={step.id} step={step} data={list.data} onClose={close} />
@@ -324,18 +326,18 @@ function StepGroup({
     .filter((row) => row.active && row.kind === "tap")
     .forEach((row, index) => numbers.set(row.id, String(first + index + 1)));
   return (
-    <section aria-label={label} className="border-border overflow-hidden rounded-2xl border">
+    <Panel aria-label={label} className="overflow-hidden">
       <div className="flex items-center gap-2 px-4 pt-3 pb-1.5">
         <span
           aria-hidden
-          className="size-2 rounded-full"
+          className="size-2.25 rounded-full"
           style={{
             backgroundColor:
               facet === "aksam" ? token("color-swatch-moon") : token("color-swatch-sun"),
           }}
         />
-        <span className="text-xs font-semibold tracking-wider">{label}</span>
-        <span className="text-muted-foreground text-meta ml-auto">{context}</span>
+        <span className="panel-label text-ink shrink-0 whitespace-nowrap">{label}</span>
+        <span className="text-ink-2 text-meta ml-auto min-w-0 truncate">{context}</span>
       </div>
       <ol ref={listRef} className="flex flex-col">
         {rows.map((step) => {
@@ -354,7 +356,7 @@ function StepGroup({
                   <button
                     type="button"
                     aria-label={`${step.title}: sürükleyerek sırala`}
-                    className="text-muted-foreground flex size-11 shrink-0 cursor-grab touch-none items-center justify-center"
+                    className="text-ink-2 flex size-11 shrink-0 cursor-grab touch-none items-center justify-center"
                     onPointerDown={onHandleDown(step.id)}
                     onPointerMove={onHandleMove}
                     onPointerUp={onHandleUp}
@@ -379,7 +381,7 @@ function StepGroup({
           );
         })}
       </ol>
-    </section>
+    </Panel>
   );
 }
 
@@ -390,21 +392,21 @@ function StepGroup({
 function OtherGroup({ item, number }: { item: SceneChain["items"][number]; number: number }) {
   const label = (item.facet?.name ?? item.title).toLocaleUpperCase("tr");
   return (
-    <section
-      aria-label={label}
-      data-testid="rutin-other-group"
-      className="border-border overflow-hidden rounded-2xl border"
-    >
+    <Panel aria-label={label} data-testid="rutin-other-group" className="overflow-hidden">
       <div className="flex items-center gap-2 px-4 pt-3 pb-1.5">
-        <span aria-hidden className="size-2 rounded-full" style={{ backgroundColor: item.color }} />
-        <span className="text-xs font-semibold tracking-wider">{label}</span>
-        <span className="text-muted-foreground text-meta ml-auto">
+        <span
+          aria-hidden
+          className="size-2.25 rounded-full"
+          style={{ backgroundColor: item.color }}
+        />
+        <span className="panel-label text-ink shrink-0 whitespace-nowrap">{label}</span>
+        <span className="text-ink-2 text-meta ml-auto min-w-0 truncate">
           {item.module.name} modülü · toplam {item.minutes} dk
         </span>
       </div>
       <Link
         href={`/m/${item.module.slug}`}
-        className="border-border flex min-h-13.5 items-center gap-2 border-t pr-4 pl-1"
+        className="border-line flex min-h-13.5 items-center gap-2 border-t pr-4 pl-1"
         data-testid="rutin-other-row"
       >
         <span className="w-2" />
@@ -413,13 +415,13 @@ function OtherGroup({ item, number }: { item: SceneChain["items"][number]; numbe
         </span>
         <span className="flex min-w-0 flex-1 flex-col py-2">
           <span className="text-note truncate font-semibold">{item.title}</span>
-          <span className="text-muted-foreground text-meta truncate">
+          <span className="text-ink-2 text-meta truncate">
             {item.module.name} modülünden gelir, orada düzenlenir
           </span>
         </span>
-        <span className="text-muted-foreground shrink-0 text-sm">{item.module.name} ›</span>
+        <span className="text-ink-2 shrink-0 text-sm">{item.module.name} ›</span>
       </Link>
-    </section>
+    </Panel>
   );
 }
 
@@ -448,7 +450,7 @@ function StepRow({
   return (
     <div
       className={cn(
-        "border-border flex min-h-13.5 items-center gap-2 border-t pr-2",
+        "border-line flex min-h-13.5 items-center gap-2 border-t pr-2",
         indent ? "pl-7.5" : "pl-1",
         !active && "opacity-60",
       )}
@@ -483,7 +485,7 @@ function StepRow({
             </span>
           ) : null}
         </span>
-        <span className="text-muted-foreground text-meta truncate">{summary}</span>
+        <span className="text-ink-2 text-meta truncate">{summary}</span>
       </button>
       <Switch
         label={`${step.title} açık`}
@@ -496,41 +498,6 @@ function StepRow({
         }}
       />
     </div>
-  );
-}
-
-function Switch({
-  label,
-  checked,
-  onChange,
-}: {
-  label: string;
-  checked: boolean;
-  onChange: (next: boolean) => void;
-}) {
-  return (
-    <button
-      type="button"
-      role="switch"
-      aria-checked={checked}
-      aria-label={label}
-      onClick={() => onChange(!checked)}
-      className="flex size-11 shrink-0 items-center justify-center"
-    >
-      <span
-        className={cn(
-          "relative h-6 w-10.5 rounded-xl transition-colors motion-reduce:transition-none",
-          checked ? "bg-foreground" : "bg-muted",
-        )}
-      >
-        <span
-          className={cn(
-            "absolute top-0.75 size-4.5 rounded-full transition-[left] motion-reduce:transition-none",
-            checked ? "bg-background left-5.25" : "bg-muted-foreground left-0.75",
-          )}
-        />
-      </span>
-    </button>
   );
 }
 
@@ -638,37 +605,42 @@ function StepSheet({
   };
 
   return (
-    <Sheet onClose={onClose} label={step ? "Adımı düzenle" : "Adım ekle"}>
-      <div className="flex items-center gap-3">
-        <span className="text-muted-foreground text-xs font-semibold tracking-wider">
-          {heading}
-        </span>
-        <span className="flex-1" />
-        {step ? (
-          <button
-            type="button"
-            className="text-muted-foreground text-note min-h-11"
-            onClick={() => setConfirm(true)}
+    <Sheet
+      open
+      onOpenChange={(next) => !next && onClose()}
+      title={step ? "Adımı düzenle" : "Adım ekle"}
+      description={heading}
+      footer={
+        <>
+          {step ? (
+            <Button variant="quiet" className="mr-auto" onClick={() => setConfirm(true)}>
+              Adımı sil
+            </Button>
+          ) : null}
+          <Button onClick={onClose}>Vazgeç</Button>
+          <Button
+            variant="primary"
+            disabled={busy || draft.title.trim() === ""}
+            onClick={() => void save()}
           >
-            Adımı sil
-          </button>
-        ) : null}
-        <button type="button" className="text-note min-h-11 font-semibold" onClick={onClose}>
-          Vazgeç
-        </button>
-      </div>
+            {step ? "Kaydet" : "Ekle"}
+          </Button>
+        </>
+      }
+    >
       <Input
         aria-label="Adımın adı"
         value={draft.title}
         maxLength={80}
         onChange={(event) => set({ title: event.target.value })}
-        className="h-13.5 rounded-2xl text-xl font-semibold"
+        className="h-control-lg text-xl font-semibold"
         placeholder="Adım"
       />
       <Group>
         {!step ? (
           <Row label="Nereye">
-            <Choice
+            <Segmented
+              label="Nereye"
               options={WHERE.map((row) => ({ value: row.key, label: row.label }))}
               value={draft.where}
               onChange={(value) => set({ where: value as RoutineKey, position: "end" })}
@@ -677,9 +649,9 @@ function StepSheet({
         ) : null}
         {!step ? (
           <Row label="Sırası">
-            <select
+            <Select
               aria-label="Sırası"
-              className="bg-background h-9 rounded-lg border px-2 text-sm"
+              className="max-w-56"
               value={String(draft.position)}
               onChange={(event) =>
                 set({ position: event.target.value === "end" ? "end" : Number(event.target.value) })
@@ -691,14 +663,14 @@ function StepSheet({
                   {index + 1}. sıraya ({row.title} önüne)
                 </option>
               ))}
-            </select>
+            </Select>
           </Row>
         ) : null}
         {addOn ? (
           <Row label="Şunun eki">
-            <select
+            <Select
               aria-label="Şunun eki"
-              className="bg-background h-9 rounded-lg border px-2 text-sm"
+              className="max-w-56"
               value={draft.parentId ?? ""}
               onChange={(event) => set({ parentId: event.target.value })}
             >
@@ -707,7 +679,7 @@ function StepSheet({
                   {row.title}
                 </option>
               ))}
-            </select>
+            </Select>
           </Row>
         ) : null}
         <Row label={draft.secondsAuto ? "Süre · otomatik" : "Süre · elle"}>
@@ -732,7 +704,7 @@ function StepSheet({
           <Row label="">
             <button
               type="button"
-              className="min-h-11 text-sm underline underline-offset-4"
+              className="link-quiet min-h-touch text-sm"
               onClick={() => set({ secondsAuto: true })}
             >
               Otomatiğe dön
@@ -740,7 +712,8 @@ function StepSheet({
           </Row>
         ) : null}
         <Row label="Sıklık">
-          <Choice
+          <Segmented
+            label="Sıklık"
             options={[
               { value: "daily", label: "Her gün" },
               { value: "every", label: "N günde bir" },
@@ -779,13 +752,6 @@ function StepSheet({
           onTime={(index) => setPartOpen(index)}
         />
       ) : null}
-      <Button
-        className="rounded-panel text-lead h-14"
-        disabled={busy || draft.title.trim() === ""}
-        onClick={() => void save()}
-      >
-        {step ? "Kaydet" : "Ekle"}
-      </Button>
       {partOpen !== null && draft.parts[partOpen] ? (
         <PartTime
           part={draft.parts[partOpen]}
@@ -796,33 +762,24 @@ function StepSheet({
           }}
         />
       ) : null}
-      {confirm && step ? (
-        <Overlay onClose={() => setConfirm(false)} label="Adımı sil">
-          <p className="text-heading font-semibold">{step.title} silinsin mi?</p>
-          <p className="text-muted-foreground text-note">
-            Geçmiş kayıtlar kalır. Yalnızca bir süre yapmayacaksan kapatman yeterli.
-          </p>
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              className="h-12.5 flex-1 rounded-full"
-              disabled={busy}
-              onClick={() => void remove("close")}
-            >
-              Kapat
-            </Button>
-            <Button
-              className="h-12.5 flex-1 rounded-full"
-              disabled={busy}
-              onClick={() => void remove("delete")}
-            >
-              Sil
-            </Button>
-          </div>
-          <button type="button" className="text-note min-h-11" onClick={() => setConfirm(false)}>
-            Vazgeç
-          </button>
-        </Overlay>
+      {step ? (
+        <Window
+          open={confirm}
+          onOpenChange={setConfirm}
+          title="Adımı sil"
+          description={`${step.title} silinsin mi? Geçmiş kayıtlar kalır. Yalnızca bir süre yapmayacaksan kapatman yeterli.`}
+          actions={
+            <>
+              <Button onClick={() => setConfirm(false)}>Vazgeç</Button>
+              <Button disabled={busy} onClick={() => void remove("close")}>
+                Kapat
+              </Button>
+              <Button variant="danger" disabled={busy} onClick={() => void remove("delete")}>
+                Sil
+              </Button>
+            </>
+          }
+        />
       ) : null}
     </Sheet>
   );
@@ -848,9 +805,7 @@ function Parts({
   };
   return (
     <section aria-label="Alt adımlar" className="flex flex-col">
-      <p className="text-muted-foreground px-1 pb-1 text-xs font-semibold tracking-wider">
-        ALT ADIMLAR
-      </p>
+      <p className="panel-label px-1 pb-1">ALT ADIMLAR</p>
       <Group>
         {parts.map((part, index) => (
           <div
@@ -861,7 +816,7 @@ function Parts({
             <button
               type="button"
               aria-label={`${part.title}: sürükleyerek sırala`}
-              className="text-muted-foreground flex size-9 shrink-0 cursor-grab touch-none items-center justify-center"
+              className="text-ink-2 size-touch flex shrink-0 cursor-grab touch-none items-center justify-center"
               onPointerDown={(event) => {
                 event.preventDefault();
                 event.currentTarget.setPointerCapture?.(event.pointerId);
@@ -889,7 +844,7 @@ function Parts({
                 autoFocus
                 aria-label="Alt adımın adı"
                 defaultValue={part.title}
-                className="h-9 flex-1"
+                className="h-touch flex-1"
                 onBlur={(event) => {
                   const title = event.target.value.trim();
                   if (title)
@@ -903,28 +858,24 @@ function Parts({
             ) : (
               <button
                 type="button"
-                className="text-note min-w-0 flex-1 truncate text-left font-medium"
+                className="text-note min-h-touch min-w-0 flex-1 truncate text-left font-medium"
                 onClick={() => setRenaming(index)}
               >
                 {part.title}
               </button>
             )}
-            <button
-              type="button"
+            <Chip
               onClick={() => onTime(index)}
-              className={cn(
-                "h-8 shrink-0 rounded-full px-3 text-xs",
-                part.seconds ? "bg-muted" : "border border-dashed",
-              )}
+              className={cn(!part.seconds && "border-edge-ai border-dashed bg-transparent")}
             >
               {part.seconds
                 ? `${formatSeconds(part.seconds)}${part.timer ? " · sayaç" : ""}`
                 : "süre ekle"}
-            </button>
+            </Chip>
             <button
               type="button"
               aria-label={`${part.title}: çıkar`}
-              className="bg-muted flex size-7.5 shrink-0 items-center justify-center rounded-full"
+              className="bg-fill-button relative flex size-7.5 shrink-0 items-center justify-center rounded-full after:absolute after:-inset-1.75"
               onClick={() => onChange(parts.filter((_, i) => i !== index))}
             >
               <X className="size-3.5" aria-hidden />
@@ -967,12 +918,25 @@ function PartTime({
       ...(withTime ? { seconds, timer, hold } : {}),
     });
   return (
-    <Overlay onClose={onClose} label="Alt adımın süresi">
+    <Window
+      open
+      onOpenChange={(next) => !next && onClose()}
+      role="dialog"
+      title="Alt adımın süresi"
+      actions={
+        <>
+          <Button onClick={() => done(false)}>Süreyi kaldır</Button>
+          <Button variant="primary" onClick={() => done(true)}>
+            Tamam
+          </Button>
+        </>
+      }
+    >
       <Input
         aria-label="Alt adımın adı"
         value={title}
         onChange={(e) => setTitle(e.target.value)}
-        className="h-12 text-lg font-semibold"
+        className="h-control text-lg font-semibold"
       />
       <Group>
         <Row label="Süre">
@@ -994,118 +958,32 @@ function PartTime({
             aria-label="Not"
             value={note}
             onChange={(e) => setNote(e.target.value)}
-            className="h-9 max-w-56"
+            className="h-touch max-w-56"
           />
         </Row>
       </Group>
-      <p className="text-muted-foreground text-meta">
+      <p className="text-ink-2 text-meta">
         Süre bitince kendiliğinden sıradakine geçer ve adını söyler. Erken geçmek için düğmeye
         basılı tutarsın.
       </p>
-      <div className="flex gap-2">
-        <Button
-          variant="outline"
-          className="h-12.5 flex-1 rounded-full"
-          onClick={() => done(false)}
-        >
-          Süreyi kaldır
-        </Button>
-        <Button className="h-12.5 flex-1 rounded-full" onClick={() => done(true)}>
-          Tamam
-        </Button>
-      </div>
-    </Overlay>
+    </Window>
   );
 }
 
 // --- Small pieces ------------------------------------------------------------------------------
 
-function Sheet({
-  children,
-  onClose,
-  label,
-}: {
-  children: ReactNode;
-  onClose: () => void;
-  label: string;
-}) {
-  useEscape(onClose);
-  return (
-    <div className="fixed inset-0 z-40" role="presentation">
-      <button
-        type="button"
-        aria-label="Kapat"
-        className="bg-scrim absolute inset-0"
-        onClick={onClose}
-      />
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-label={label}
-        className="bg-card text-card-foreground md:rounded-sheet absolute inset-x-2 bottom-2 flex max-h-[92dvh] flex-col gap-2.5 overflow-y-auto rounded-3xl border px-3.5 pt-2.5 pb-4.5 shadow-2xl md:inset-x-auto md:top-4 md:right-4 md:bottom-4 md:w-110"
-      >
-        <span
-          aria-hidden
-          className="bg-fill-handle mx-auto h-1.25 w-10 shrink-0 rounded-sm md:hidden"
-        />
-        {children}
-      </div>
-    </div>
-  );
-}
-
-function Overlay({
-  children,
-  onClose,
-  label,
-}: {
-  children: ReactNode;
-  onClose: () => void;
-  label: string;
-}) {
-  useEscape(onClose);
-  return (
-    <div className="fixed inset-0 z-50" role="presentation">
-      <button
-        type="button"
-        aria-label="Kapat"
-        className="bg-scrim absolute inset-0"
-        onClick={onClose}
-      />
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-label={label}
-        className="bg-card text-card-foreground rounded-panel absolute inset-x-7 top-[30%] mx-auto flex max-w-md flex-col gap-3 border px-3.5 py-4 shadow-2xl"
-      >
-        {children}
-      </div>
-    </div>
-  );
-}
-
-function useEscape(onClose: () => void) {
-  const ref = useRef(onClose);
-  useEffect(() => {
-    ref.current = onClose;
-  });
-  useEffect(() => {
-    const onKey = (event: KeyboardEvent) => event.key === "Escape" && ref.current();
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, []);
-}
-
 function Group({ children }: { children: ReactNode }) {
   return (
-    <div className="bg-muted/40 rounded-alert flex flex-col border px-3.5 py-1">{children}</div>
+    <div className="bg-fill-field border-edge rounded-alert flex flex-col border px-3.5 py-1">
+      {children}
+    </div>
   );
 }
 
 function Row({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div className="flex min-h-12.5 items-center justify-between gap-3">
-      <span className="text-muted-foreground text-note">{label}</span>
+      <span className="text-ink-2 text-note">{label}</span>
       {children}
     </div>
   );
@@ -1139,36 +1017,6 @@ function Stepper({
       <button type="button" aria-label={`${label}: artır`} onClick={onPlus} className={round}>
         <Plus className="size-4" aria-hidden />
       </button>
-    </div>
-  );
-}
-
-function Choice({
-  options,
-  value,
-  onChange,
-}: {
-  options: { value: string; label: string }[];
-  value: string;
-  onChange: (value: string) => void;
-}) {
-  return (
-    <div role="radiogroup" className="bg-muted flex rounded-full p-1">
-      {options.map((option) => (
-        <button
-          key={option.value}
-          type="button"
-          role="radio"
-          aria-checked={option.value === value}
-          onClick={() => onChange(option.value)}
-          className={cn(
-            "h-8 rounded-full px-3 text-sm",
-            option.value === value && "bg-foreground text-background font-semibold",
-          )}
-        >
-          {option.label}
-        </button>
-      ))}
     </div>
   );
 }

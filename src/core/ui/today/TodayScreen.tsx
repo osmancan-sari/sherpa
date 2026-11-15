@@ -524,7 +524,7 @@ function DoneToday({ tasks }: { tasks: Task[] }) {
             <span className="text-muted-foreground truncate line-through">{task.title}</span>
             <Button
               variant="ghost"
-              className="h-11 shrink-0 md:h-8"
+              className="h-11 shrink-0"
               onClick={() => reopen.mutate(task.id)}
               aria-label={`Geri al: ${task.title}`}
             >

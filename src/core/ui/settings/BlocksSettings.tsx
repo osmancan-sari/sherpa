@@ -438,7 +438,7 @@ function BlockRow({ block }: { block: Block }) {
         {cancelled ? null : (
           <Button
             variant="ghost"
-            className="h-11 md:h-8"
+            className="h-11"
             aria-label={`Düzenle: ${block.title}, ${formatDayLabel(start)}`}
             onClick={() => setEditing(true)}
           >
@@ -447,7 +447,7 @@ function BlockRow({ block }: { block: Block }) {
         )}
         <Button
           variant="ghost"
-          className="h-11 md:h-8"
+          className="h-11"
           aria-label={`${cancelled ? "Geri al" : "İptal et"}: ${block.title}, ${formatDayLabel(start)}`}
           onClick={() => setCancelled.mutate({ blockId: block.id, cancelled: !cancelled })}
         >

@@ -1,5 +1,5 @@
 import type { Page } from "@playwright/test";
-import { insert, seedModule } from "./data";
+import { insert, rows, seedModule, waitFor } from "./data";
 import { expect, quietTest, test } from "./fixtures";
 import { openQuickAdd } from "./helpers";
 
@@ -82,6 +82,25 @@ for (const device of DEVICES) {
       await page.goto(`/m/${(ev as { slug: string }).slug}`);
       await expect(page.getByText("Bu modülde sırada iş yok.")).toBeVisible();
       await shot(page, `modul-sayfasi-${device.name}`);
+    });
+
+    test(`Rutin's module page and a step's sheet (${device.name})`, async ({ page }) => {
+      await page.goto("/ayarlar/moduller");
+      await page.getByRole("button", { name: "Rutin: etkinleştir" }).click();
+      await expect(page.getByRole("link", { name: "Rutin ayarları" })).toBeVisible();
+      await waitFor(
+        () => rows("rhythms"),
+        (list) => list.length === 3,
+      );
+      await page.goto("/m/rutin");
+      await expect(page.getByTestId("rutin-sabah")).toBeVisible();
+      await shot(page, `rutin-modul-${device.name}`);
+      await page
+        .getByTestId("rutin-sabah")
+        .getByRole("button", { name: /^Diş bakımı temel/ })
+        .click();
+      await expect(page.getByRole("dialog", { name: "Adımı düzenle" })).toBeVisible();
+      await shot(page, `rutin-adim-duzenle-${device.name}`);
     });
 
     test(`settings (${device.name})`, async ({ page }) => {

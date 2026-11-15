@@ -508,6 +508,22 @@ test("the module page: a step is renamed, lengthened, made every other day and b
   await sheet.getByRole("button", { name: "+ Alt adım ekle" }).click();
   await sheet.getByLabel("Alt adımın adı").fill("Anahtar");
   await sheet.getByLabel("Alt adımın adı").press("Enter");
+  // Every control of the sheet has a 44 px touch area (a small one reaches past its edges).
+  for (const control of await sheet.locator("button, input, select").all()) {
+    if (!(await control.isVisible())) continue;
+    const box = (await control.boundingBox())!;
+    const reach = await control.evaluate((el) => {
+      const after = getComputedStyle(el, "::after");
+      const out = (value: string) => -(parseFloat(value) || 0);
+      return {
+        y: out(after.top) + out(after.bottom),
+        x: out(after.left) + out(after.right),
+      };
+    });
+    const name = (await control.getAttribute("aria-label")) ?? (await control.innerText());
+    expect(box.height + Math.max(0, reach.y), name).toBeGreaterThanOrEqual(44);
+    expect(box.width + Math.max(0, reach.x), name).toBeGreaterThanOrEqual(44);
+  }
   await sheet.getByRole("button", { name: "Kaydet" }).click();
   await expect(sheet).toBeHidden();
   const giyin = await waitFor(
@@ -549,7 +565,7 @@ test("the module page: a step is renamed, lengthened, made every other day and b
     .getByRole("dialog", { name: "Adımı düzenle" })
     .getByRole("button", { name: "Adımı sil" })
     .click();
-  const confirm = page.getByRole("dialog", { name: "Adımı sil" });
+  const confirm = page.getByRole("alertdialog", { name: "Adımı sil" });
   await expect(confirm).toContainText("Göz damlası silinsin mi?");
   await expect(confirm.getByRole("button", { name: "Kapat" })).toBeVisible();
   await confirm.getByRole("button", { name: "Sil" }).click();

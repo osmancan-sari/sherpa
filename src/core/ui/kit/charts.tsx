@@ -67,7 +67,7 @@ function Frame({
         {width > 0 ? children(width) : null}
       </div>
       <details className="text-sm">
-        <summary className="text-muted-foreground hover:text-foreground flex min-h-11 cursor-pointer items-center md:min-h-8">
+        <summary className="text-muted-foreground hover:text-foreground flex min-h-11 cursor-pointer items-center">
           Tablo
         </summary>
         <table className="w-full max-w-sm border-collapse text-left tabular-nums">

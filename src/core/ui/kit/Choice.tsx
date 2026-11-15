@@ -41,8 +41,9 @@ export function Segmented<T extends string>({
             aria-checked={on}
             onClick={() => onChange(option.value)}
             className={cn(
-              "rounded-segment min-h-9 flex-1 px-3.5 text-center text-sm whitespace-nowrap outline-none",
-              "focus-visible:shadow-focus relative after:absolute after:inset-x-0 after:-inset-y-1",
+              "rounded-segment min-h-9.5 flex-1 px-3.5 text-center text-sm whitespace-nowrap outline-none",
+              // 38 px and the box's 3 px on each side: 44 px, inside the box (which scrolls, and clips).
+              "focus-visible:shadow-focus relative after:absolute after:inset-x-0 after:-inset-y-0.75",
               on ? "bg-light text-ink-dark font-semibold" : "text-ink-soft hover:text-ink",
             )}
           >

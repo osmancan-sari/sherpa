@@ -45,8 +45,8 @@ Ekranların içeriği ve akışı `docs/moduller/rutin.md` (8.2–8.6) ve `../ka
 
 - **Adım listesi:** blok başına yoğun panel; blok başlığında bölümün renginde nokta, büyük harfli etiket (`panel-label`) ve sağda özet ("uyanışta · toplam 4 dk"). Satır: tutamaç, sıra no, ad (yarı kalın), alt satır, varsa "temel" etiketi (sabah `warm-tag`/`warm-tag-edge`/`warm-tag-ink`, akşam `cool-tag`/`cool-tag-edge`/`cool-label`), sağda anahtar (`Switch`). Ek adım girintili ve "+" ile; kapalı adım soluk. Başka modülün işi anahtarsız, sağında "Spor ›".
 - **Akşamın altında** küçük panel: "YATAKTA · KAYDEDİLMEZ" ve `Işık kapalı. "Yatıyorum"dan sonraki ekranda hatırlatılır.`
-- **Adımı düzenle / Adım ekle:** telefonda alttan açılan sayfa, panoda sağdan yan panel (`Sheet`'in camı); süre ve sayılar `size-8` dairelerle (dokunma alanı `spacing-touch`), sıklık parçalı seçimle (`Segmented`), alt adımlar listesi; birincil "Kaydet" ("Ekle").
+- **Adımı düzenle / Adım ekle:** kit'in `Sheet`'i: telefonda alttan açılan sayfa, panoda sağdan yan panel. Başlık "Adımı düzenle" ("Adım ekle"), altında "SABAH · ADIM 1"; ad alanı; ayar grubu (süre ve sayılar `size-8` dairelerle, dokunma alanı `spacing-touch`; sıklık ve "Nereye" `Segmented`; "Sırası" ve "Şunun eki" `Select`; "Temel adım" ve "Açık" `Switch`); "ALT ADIMLAR" (süre hapı `Chip`, süresizse kesik çizgili); alt satırda solda "Adımı sil", sağda "Vazgeç" ve birincil "Kaydet" ("Ekle"). Karede baş satırında duran "Adımı sil" ve "Vazgeç" kit'in alt satırına geçti.
 - **Alt adımın süresi:** pencere (`Window`'un camı): süre, "Sayaç göster", "Süre dolmadan geçme", not; "Süreyi kaldır" (ikincil) ve "Tamam".
-- **Silme onayı:** pencere; "Kapat" (ikincil) ve "Sil", altında "Vazgeç".
+- **Silme onayı:** pencere (`Window`): başlık "Adımı sil", "… silinsin mi?"; tek satırda "Vazgeç", "Kapat" (ikincil) ve "Sil" (tehlike).
 
 Düzenlilik (Rutin 2) henüz kurulmadı: değerleri `../kareler/rutin-degerler.md` bölüm 9'dadır; kurulurken token'lara alınır.

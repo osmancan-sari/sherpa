@@ -90,6 +90,13 @@ test("one colour system; the look switches of this device are kept", async ({ pa
   await expect(page.getByRole("switch", { name: "Hareketi azalt" })).toBeChecked();
 });
 
+test("Settings links the design gallery", async ({ page }) => {
+  await page.goto("/ayarlar");
+  await page.getByRole("link", { name: "Tasarım galerisi" }).click();
+  await expect(page).toHaveURL(/\/tasarim$/);
+  await expect(page.getByRole("heading", { name: "Tasarım" })).toBeVisible();
+});
+
 test("the page links the manifest and the home-screen icon", async ({ page }) => {
   await page.goto("/");
   await expect(page.locator('link[rel="manifest"]')).toHaveAttribute(
