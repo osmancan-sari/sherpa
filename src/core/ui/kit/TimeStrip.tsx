@@ -103,12 +103,21 @@ export function TimeStrip({
     return () => window.removeEventListener("pointerdown", away);
   }, [chosen]);
 
+  // Every hour on the board (every second one when the day is longer than 16 hours, so the
+  // labels never touch), every third on the phone; the board writes the two ends too.
+  const hourCount = Math.round((end - start) / HOUR);
+  const every = board ? (hourCount > 16 ? 2 : 1) : 3;
   const hours: number[] = [];
   for (let time = start; time <= end; time += HOUR) {
     // The hour in Istanbul, whatever the device's zone (CLAUDE.md).
     const hour = Number(formatTime(new Date(time)).slice(0, 2));
-    if (board) hours.push(time);
-    else if (time > start && time < end && hour % 3 === 0) hours.push(time);
+    const edge = time === start || time === end;
+    if (board && (edge || hour % every === 0)) {
+      // An end and a label one hour from it would touch: the inner one goes.
+      const nearEdge =
+        !edge && every > 1 && (time - start < every * HOUR || end - time < every * HOUR);
+      if (!nearEdge) hours.push(time);
+    } else if (!board && !edge && hour % every === 0) hours.push(time);
   }
 
   return (

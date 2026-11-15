@@ -339,7 +339,16 @@ function ThisWeek({
   const { input } = useTodayPlan();
   const items = input?.workItems ?? [];
   const tasks = input?.tasks ?? [];
-  const parts = Object.entries(load.byModule).filter(([, minutes]) => minutes > 0);
+  // The week's load (`loadByWeek`: items and the modules' fixed demand) and the tasks of their
+  // own the list holds: the line and the bar say what the list says.
+  const byModule: Record<string, number> = { ...load.byModule };
+  for (const row of work) {
+    if (row.type !== "task" || row.done) continue;
+    byModule[row.moduleId] = (byModule[row.moduleId] ?? 0) + row.shareMinutes;
+  }
+  const parts = Object.entries(byModule).filter(([, minutes]) => minutes > 0);
+  const demand = parts.reduce((sum, [, minutes]) => sum + minutes, 0);
+  const over = demand > load.capacityMinutes;
   const workOf = (row: WeekWorkRow) =>
     row.type === "item"
       ? { item: items.find((item) => item.id === row.id) }
@@ -350,12 +359,12 @@ function ThisWeek({
         <div className="flex flex-wrap items-baseline gap-x-3">
           <PanelLabel className="flex-1">{label}</PanelLabel>
           <span data-testid="week-load" className="text-ink-2 text-sm tabular-nums">
-            {formatMinutes(load.demandMinutes)} iş · {formatMinutes(load.capacityMinutes)} vakit
+            {formatMinutes(demand)} iş · {formatMinutes(load.capacityMinutes)} vakit
           </span>
         </div>
         <LoadBar
-          label={`İş ${formatMinutes(load.demandMinutes)}, vakit ${formatMinutes(load.capacityMinutes)}`}
-          demand={load.demandMinutes}
+          label={`İş ${formatMinutes(demand)}, vakit ${formatMinutes(load.capacityMinutes)}`}
+          demand={demand}
           capacity={load.capacityMinutes}
           parts={parts.map(([moduleId, minutes]) => ({
             key: moduleId,
@@ -364,7 +373,7 @@ function ThisWeek({
             title: `${modules.get(moduleId)?.row.name ?? ""} ${formatMinutes(minutes)}`,
           }))}
         />
-        {load.over ? (
+        {over ? (
           <div role="note" className="flex flex-col gap-0.5 text-sm">
             <p className="text-attention flex items-center gap-1.5 font-semibold">
               <TriangleAlert aria-hidden className="size-4 shrink-0" />

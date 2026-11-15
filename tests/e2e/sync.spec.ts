@@ -173,21 +173,24 @@ test("what the ingest endpoint writes reaches open screens: the waking, a record
   browser,
   baseURL,
 }) => {
-  // The day's frame on: the day's flow writes the waking (Ç4c), expected until it comes.
+  // The day's frame on.
   const [settings] = await rows("settings");
   await update("settings", settings.id as string, {
     day_frame: { wake: ["06:00", "09:00"], bed: ["22:00", "01:00"], sleep_minutes: 480 },
   });
-  const [deneme] = await insert("modules", { slug: "deneme", name: "Deneme", color: "#6250d6" });
-  // A piece of work: the day's flow is drawn (an empty day shows no flow).
-  await insert("tasks", { module_id: deneme.id, title: "Okuma", est_minutes: 30 });
+  await insert("modules", { slug: "deneme", name: "Deneme", color: "#6250d6" });
   const { token } = await deviceToken(["core/wake", "deneme/kayit"]);
 
   // The server stamps the waking with the real time: the page holds that day.
   await roomInTheDay(page);
-  await page.goto("/");
-  const ends = page.getByTestId("flow-ends");
-  await expect(ends).toHaveText(/^09:00 uyanış · /);
+  // Ç4c: Today writes the waking only in the day's flow, which a quiet hour (the evening, the
+  // night) does not draw; the records page shows it at every hour.
+  await page.goto("/ayarlar/kayitlar");
+  const wakes = page.getByLabel("Uyanış saati");
+  await expect(wakes).toHaveCount(2);
+  const values = () =>
+    wakes.evaluateAll((list) => list.map((input) => (input as HTMLInputElement).value));
+  expect(await values()).toEqual(["", ""]);
   const other = await browser.newContext({ baseURL, storageState: STORAGE_STATE });
   const moduleTab = await other.newPage();
   await moduleTab.goto("/m/deneme");
@@ -197,10 +200,9 @@ test("what the ingest endpoint writes reaches open screens: the waking, a record
   await expect(settingsTab.getByTestId("device-token")).toContainText("Henüz kullanılmadı");
   const navigations = [forbidReloads(page), forbidReloads(moduleTab), forbidReloads(settingsTab)];
 
-  // The phone's alarm automation: Today shows the waking.
+  // The phone's alarm automation: the open page shows the waking.
   expect((await postIngest(baseURL!, "core/wake", token)).status).toBe(200);
-  await expect(ends).not.toHaveText(/^09:00 uyanış · /);
-  await expect(ends).toHaveText(/^\d\d:\d\d uyanış · /);
+  await expect.poll(values).toContainEqual(expect.stringMatching(/^\d\d:\d\d$/));
 
   // A collector's record: the module's page lists it, and its work is proposed.
   const sent = await postIngest(baseURL!, "deneme/kayit", token, {
