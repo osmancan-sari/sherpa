@@ -426,7 +426,9 @@ test("the module's own content on the card, the outcome report and its question"
 
   // The module asked one question; the answer comes back to it as an event.
   const question = page.getByRole("region", { name: "Soru" });
-  await expect(question).toContainText("Deneme · “Kısa hedef” nasıldı?");
+  // Ç4c: the module above the question (BT14).
+  await expect(question).toContainText("Deneme");
+  await expect(question.getByRole("heading")).toHaveText("“Kısa hedef” nasıldı?");
   await question.getByRole("button", { name: "Zor" }).click();
   await expect(question).toBeHidden();
   await waitFor(

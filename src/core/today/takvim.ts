@@ -52,12 +52,21 @@ export type DueRow = {
   work: FlowWork;
 };
 
-/** "Teslim ve sınav": the work items and the tasks of their own due on the day, by the hour. */
-export function dueOn(day: string, items: WorkItem[], tasks: Task[]): DueRow[] {
+/**
+ * "Teslim ve sınav": the work items and the tasks of their own due on the day, by the hour; only
+ * of the active modules (`activeModules`), and no proposal not accepted yet (docs/03: it is not
+ * planned and not shown until accepted), as "Bu hafta" lists them.
+ */
+export function dueOn(
+  day: string,
+  items: WorkItem[],
+  tasks: Task[],
+  activeModules: ReadonlySet<string>,
+): DueRow[] {
   const rows: DueRow[] = [];
   for (const item of items) {
-    if (!item.due_at || item.status === "dropped" || dayKey(new Date(item.due_at)) !== day)
-      continue;
+    if (!item.due_at || item.status === "dropped" || item.status === "proposed") continue;
+    if (!activeModules.has(item.module_id) || dayKey(new Date(item.due_at)) !== day) continue;
     rows.push({
       id: item.id,
       title: item.title,
@@ -68,6 +77,7 @@ export function dueOn(day: string, items: WorkItem[], tasks: Task[]): DueRow[] {
   }
   for (const task of tasks) {
     if (task.work_item_id !== null || !task.due_at || task.status === "dropped") continue;
+    if (!activeModules.has(task.module_id)) continue;
     if (dayKey(new Date(task.due_at)) !== day) continue;
     rows.push({
       id: task.id,

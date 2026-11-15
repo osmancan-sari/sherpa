@@ -80,12 +80,15 @@ export function IconButton({
   label,
   children,
   pressed,
+  quiet,
   className,
   ...props
 }: Omit<ComponentProps<"button">, "aria-label" | "children"> & {
   label: string;
   children: ReactNode;
   pressed?: boolean;
+  /** No fill and no edge (Takvim's week chooser): the icon alone, the same touch target. */
+  quiet?: boolean;
 }) {
   return (
     <button
@@ -96,9 +99,11 @@ export function IconButton({
         "size-touch text-ink flex shrink-0 items-center justify-center rounded-full border outline-none",
         "focus-visible:shadow-focus transition-colors duration-(--motion-fast) disabled:opacity-50",
         "[&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-5",
-        pressed
-          ? "bg-fill-active border-edge-pressed"
-          : "bg-fill-field border-edge-icon hover:bg-fill-button",
+        quiet
+          ? "hover:bg-fill-field border-transparent bg-transparent"
+          : pressed
+            ? "bg-fill-active border-edge-pressed"
+            : "bg-fill-field border-edge-icon hover:bg-fill-button",
         className,
       )}
       {...props}

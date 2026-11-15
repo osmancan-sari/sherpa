@@ -789,11 +789,11 @@ test("while Rutin holds the closing the evening card offers no Kapanış; with t
   const [settings] = await rows("settings");
   await update("settings", settings.id as string, { day_frame: FRAME });
   // Yesterday's evening, the bed the user's own 22:00: at 22:10 the card is the evening's.
-  await insert("days", {
-    date: DAY,
-    woke_at: dayAt("07:00").toISOString(),
-    expected_bed: "22:00:00",
-  });
+  // The day's keeper may have written the day already.
+  const day = { woke_at: dayAt("07:00").toISOString(), expected_bed: "22:00:00" };
+  const known = (await rows("days")).find((row) => row.date === DAY);
+  if (known) await update("days", known.id as string, day);
+  else await insert("days", { date: DAY, ...day });
   await page.clock.setFixedTime(dayAt("22:10"));
   await page.goto("/");
   await expect(card(page).getByRole("heading", { name: "Akşam" })).toBeVisible();

@@ -305,7 +305,6 @@
   --spacing-nav: 62px; /* phone menu bar and "+" */
   --spacing-rail: 190px; /* board menu */
   --spacing-sheet: 440px; /* side panel, dialog on the board */
-  --spacing-week-label: 80px; /* Takvim: the week's date column of the eight weeks (Ç4c redraws) */
   --spacing-login: 342px;
   --spacing-login-board: 420px;
   --spacing-read: 760px; /* inbox column on the board */

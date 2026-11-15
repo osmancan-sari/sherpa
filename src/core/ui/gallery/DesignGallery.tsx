@@ -7,6 +7,9 @@ import {
   AlertRow,
   Button,
   Chip,
+  DayBox,
+  LoadBar,
+  WeekBars,
   DateInput,
   Field,
   IconButton,
@@ -170,6 +173,10 @@ export function DesignGallery() {
 
           <Section title="Açılır liste">
             <MoreExample />
+          </Section>
+
+          <Section title="Takvim: gün kutusu, yük, haftalar">
+            <CalendarExample />
           </Section>
         </Column>
 
@@ -505,6 +512,65 @@ const STRIP: TimeStripPiece[] = [
   },
   { key: "g", kind: "block", start: stripAt("18:30"), end: stripAt("19:15"), label: "Diş hekimi" },
 ];
+
+/** Takvim's pieces: a week's days (gone by, today, selected), its load, the coming weeks. */
+function CalendarExample() {
+  const [selected, setSelected] = useState<number | null>(15);
+  const days = [
+    { name: "Per", date: 12, past: true, today: false, due: [] },
+    { name: "Cum", date: 13, past: false, today: true, due: [] },
+    { name: "Cmt", date: 14, past: false, today: false, due: [] },
+    {
+      name: "Paz",
+      date: 15,
+      past: false,
+      today: false,
+      due: [{ key: "a", title: "İstatistik ödevi", color: BLUE }],
+    },
+  ];
+  return (
+    <Panel variant="dense" className="gap-3 p-4">
+      <div className="grid grid-cols-4 gap-1.5">
+        {days.map((day) => (
+          <DayBox
+            key={day.date}
+            name={day.name}
+            date={day.date}
+            label={`${day.name} ${day.date}`}
+            today={day.today}
+            past={day.past}
+            selected={selected === day.date}
+            board={false}
+            due={day.due}
+            onClick={() => setSelected(selected === day.date ? null : day.date)}
+          />
+        ))}
+      </div>
+      <LoadBar
+        label="İş 11 sa 10 dk, vakit 17 sa 40 dk"
+        demand={670}
+        capacity={1060}
+        parts={[
+          { key: "okul", color: BLUE, minutes: 420 },
+          { key: "is", color: VIOLET, minutes: 180 },
+          { key: "ev", color: TEAL, minutes: 70 },
+        ]}
+      />
+      <WeekBars
+        onPick={() => undefined}
+        weeks={[16, 23, 30, 7, 14, 21, 28, 4].map((date, index) => ({
+          key: String(index),
+          date,
+          month: index === 0 ? "Kas" : index === 3 ? "Ara" : index === 7 ? "Oca" : "",
+          demand: index === 2 ? 2040 : 540 + index * 60,
+          capacity: 1800,
+          over: index === 2,
+          label: `${date} haftası`,
+        }))}
+      />
+    </Panel>
+  );
+}
 
 /** "Hepsini göster" / "Küçült": the list opens downward. */
 function MoreExample() {

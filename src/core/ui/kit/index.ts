@@ -36,6 +36,7 @@ export { token } from "@/core/ui/tokens";
 
 // The glass language's shared pieces (Ç4b; docs/tasarim/parcalar.md, the gallery at /tasarim).
 export { Button, buttonVariants, IconButton } from "./Button";
+export { DayBox, type DayBoxDue, LoadBar, type WeekBar, WeekBars } from "./Calendar";
 export { AiTag, Chip, type Health, Segmented, Status, Tag } from "./Choice";
 export { AlertRow, OfflinePill, ProgressBar, ReadError, StepLines, Toast } from "./Feedback";
 export {

@@ -44,6 +44,7 @@ import { format } from "date-fns";
 import { tr } from "date-fns/locale";
 import { ClientOnly } from "../ClientOnly";
 import { IconButton } from "../kit/Button";
+import { DayBox, LoadBar, WeekBars } from "../kit/Calendar";
 import { AlertRow, ProgressBar } from "../kit/Feedback";
 import { ListRow } from "../kit/ListRow";
 import { PanelLabel } from "../kit/Panel";
@@ -117,43 +118,21 @@ function Header({ week, onWeek }: { week: string | null; onWeek: (week: string) 
       <h1 className="text-title tracking-title font-bold md:text-3xl">Takvim</h1>
       {week ? (
         <div className="flex items-center max-md:ml-auto" role="group" aria-label="Hafta">
-          <ChooserButton label="Önceki hafta" onClick={() => onWeek(shiftDay(week, -7))}>
+          <IconButton quiet label="Önceki hafta" onClick={() => onWeek(shiftDay(week, -7))}>
             <ChevronLeft aria-hidden />
-          </ChooserButton>
+          </IconButton>
           <span data-testid="week-label" className="text-base font-semibold tabular-nums">
             {weekLabel(week)}
           </span>
-          <ChooserButton label="Sonraki hafta" onClick={() => onWeek(shiftDay(week, 7))}>
+          <IconButton quiet label="Sonraki hafta" onClick={() => onWeek(shiftDay(week, 7))}>
             <ChevronRight aria-hidden />
-          </ChooserButton>
+          </IconButton>
         </div>
       ) : null}
       <span className="md:ml-auto">
         <ConnectionPill />
       </span>
     </header>
-  );
-}
-
-function ChooserButton({
-  label,
-  onClick,
-  children,
-}: {
-  label: string;
-  onClick: () => void;
-  children: ReactNode;
-}) {
-  return (
-    <button
-      type="button"
-      aria-label={label}
-      title={label}
-      onClick={onClick}
-      className="size-touch focus-visible:shadow-focus flex items-center justify-center rounded-full outline-none [&_svg]:size-5"
-    >
-      {children}
-    </button>
   );
 }
 
@@ -195,7 +174,8 @@ function Week({
     if (day === today) return plan.usableMinutes;
     return calendar.days.find((row) => row.date === day)?.usableMinutes ?? null;
   };
-  const dueOfDay = (day: string) => dueOn(day, input.workItems, input.tasks);
+  const active = new Set(input.modules.map((row) => row.id));
+  const dueOfDay = (day: string) => dueOn(day, input.workItems, input.tasks, active);
 
   const detail = selected ? (
     <DayDetail
@@ -223,15 +203,20 @@ function Week({
         })
       : [];
 
-  const thisWeek = (
-    <ThisWeek
-      label={week === current ? "Bu hafta" : weekLabel(week)}
-      load={loads.shown}
-      work={calendar.work}
-      now={now}
-      modules={moduleMap}
-    />
-  );
+  // A week gone by holds what was done in it, not its open work (takvim.md: "geçmiş haftada
+  // işlerin yerinde yapılanlar durur"; product rule 2: no pile of what was not done).
+  const thisWeek =
+    shiftDay(week, 6) < today ? (
+      <PastWeek week={week} modules={moduleMap} />
+    ) : (
+      <ThisWeek
+        label={week === current ? "Bu hafta" : weekLabel(week)}
+        load={loads.shown}
+        work={calendar.work}
+        now={now}
+        modules={moduleMap}
+      />
+    );
 
   return (
     <>
@@ -239,7 +224,7 @@ function Week({
         <ol className="grid grid-cols-7 gap-1.5 md:gap-3.5">
           {days.map((day, index) => (
             <li key={day} className="min-w-0">
-              <DayBox
+              <DayCell
                 day={day}
                 name={DAY_NAMES[index]}
                 today={today}
@@ -290,8 +275,8 @@ function Week({
   );
 }
 
-/** A day of the week: its name and date; a dot per deadline; on the board its time and first deadline. */
-function DayBox({
+/** A day of the week as the kit's day box: its deadlines in their work's colours. */
+function DayCell({
   day,
   name,
   today,
@@ -311,66 +296,25 @@ function DayBox({
   onClick: () => void;
 }) {
   const colors = useColors();
-  const past = day < today;
   const number = Number(day.slice(8));
   const month = format(inIstanbul(new Date(`${day}T12:00:00Z`)), "MMMM", { locale: tr });
   return (
-    <button
-      type="button"
-      aria-pressed={selected}
-      aria-current={day === today ? "date" : undefined}
-      aria-label={`${name} ${number} ${month}${due.length > 0 ? ", teslim var" : ""}`}
+    <DayBox
+      name={name}
+      date={number}
+      label={`${name} ${number} ${month}${due.length > 0 ? ", teslim var" : ""}`}
+      today={day === today}
+      past={day < today}
+      selected={selected}
+      board={board}
+      time={usable !== null ? `${formatMinutes(usable)} vakit` : null}
+      due={due.map((row) => ({
+        key: row.id,
+        title: row.title,
+        color: colors.of(row.moduleId, row.work),
+      }))}
       onClick={onClick}
-      className={cn(
-        "focus-visible:shadow-focus flex h-18 w-full flex-col items-center justify-center gap-px rounded-2xl border outline-none md:h-23 md:items-start md:justify-start md:gap-0.5 md:px-3.5 md:py-2.5 md:text-left",
-        selected
-          ? "bg-light text-ink-dark shadow-selected border-transparent"
-          : "bg-glass-dense text-ink border-edge-soft",
-        day === today && !selected && "border-ink border-2",
-        past && !selected && "opacity-60",
-      )}
-    >
-      {board ? (
-        <>
-          <span className="text-lead font-semibold tabular-nums">
-            {name} {number}
-          </span>
-          {usable !== null ? (
-            <span
-              className={cn("text-note tabular-nums", selected ? "text-ink-dark-2" : "text-ink-2")}
-            >
-              {formatMinutes(usable)} vakit
-            </span>
-          ) : null}
-          {due[0] ? (
-            <span className="mt-auto flex w-full min-w-0 items-center gap-1.5 text-sm">
-              <span
-                aria-hidden
-                className="size-1.75 shrink-0 rounded-full"
-                style={{ backgroundColor: colors.of(due[0].moduleId, due[0].work) }}
-              />
-              <span className="truncate">{due[0].title}</span>
-            </span>
-          ) : null}
-        </>
-      ) : (
-        <>
-          <span className={cn("text-sm", selected ? "text-ink-dark-2" : "text-ink-2")}>{name}</span>
-          <span className="text-lg font-semibold tabular-nums">{number}</span>
-          <span className="flex h-1.75 gap-0.75">
-            {due.slice(0, 3).map((row) => (
-              <span
-                key={row.id}
-                aria-hidden
-                data-testid="due-dot"
-                className="size-1.75 rounded-full"
-                style={{ backgroundColor: colors.of(row.moduleId, row.work) }}
-              />
-            ))}
-          </span>
-        </>
-      )}
-    </button>
+    />
   );
 }
 
@@ -395,7 +339,6 @@ function ThisWeek({
   const { input } = useTodayPlan();
   const items = input?.workItems ?? [];
   const tasks = input?.tasks ?? [];
-  const scale = Math.max(load.capacityMinutes, load.demandMinutes, 1);
   const parts = Object.entries(load.byModule).filter(([, minutes]) => minutes > 0);
   const workOf = (row: WeekWorkRow) =>
     row.type === "item"
@@ -410,35 +353,17 @@ function ThisWeek({
             {formatMinutes(load.demandMinutes)} iş · {formatMinutes(load.capacityMinutes)} vakit
           </span>
         </div>
-        <div
-          role="img"
-          aria-label={`İş ${formatMinutes(load.demandMinutes)}, vakit ${formatMinutes(load.capacityMinutes)}`}
-          className="bg-fill-track relative h-1.5 overflow-hidden rounded-xs"
-        >
-          <div
-            className="absolute inset-y-0 left-0 flex"
-            style={{ width: `${(load.demandMinutes / scale) * 100}%` }}
-          >
-            {parts.map(([moduleId, minutes]) => (
-              <span
-                key={moduleId}
-                title={`${modules.get(moduleId)?.row.name ?? ""} ${formatMinutes(minutes)}`}
-                className="h-full"
-                style={{
-                  width: `${(minutes / Math.max(1, load.demandMinutes)) * 100}%`,
-                  backgroundColor: moduleColor(modules.get(moduleId)),
-                }}
-              />
-            ))}
-          </div>
-          <span
-            aria-hidden
-            className="bg-flow-now absolute inset-y-0 w-0.5"
-            style={{
-              left: `calc(${(load.capacityMinutes / scale) * 100}% - var(--spacing) * 0.5)`,
-            }}
-          />
-        </div>
+        <LoadBar
+          label={`İş ${formatMinutes(load.demandMinutes)}, vakit ${formatMinutes(load.capacityMinutes)}`}
+          demand={load.demandMinutes}
+          capacity={load.capacityMinutes}
+          parts={parts.map(([moduleId, minutes]) => ({
+            key: moduleId,
+            minutes,
+            color: moduleColor(modules.get(moduleId)),
+            title: `${modules.get(moduleId)?.row.name ?? ""} ${formatMinutes(minutes)}`,
+          }))}
+        />
         {load.over ? (
           <div role="note" className="flex flex-col gap-0.5 text-sm">
             <p className="text-attention flex items-center gap-1.5 font-semibold">
@@ -512,6 +437,64 @@ function ThisWeek({
             );
           })}
         </ul>
+      )}
+    </section>
+  );
+}
+
+/** A week gone by: its done work, a work's sessions added up over the week (`doneOn`). */
+function PastWeek({ week, modules }: { week: string; modules: Map<string, KnownModule> }) {
+  const { input, rows } = useTodayPlan();
+  const colors = useColors();
+  const db = useDb();
+  const days = Array.from({ length: 7 }, (_, index) => shiftDay(week, index));
+  const ids = rows ? [...new Set(days.flatMap((day) => sessionTaskIds(day, rows.sessions)))] : [];
+  const known = new Set(input?.tasks.map((task) => task.id) ?? []);
+  const missing = ids.filter((id) => !known.has(id));
+  const older = useQuery({
+    queryKey: ["core", "takvim-tasks", missing.join(",")],
+    enabled: missing.length > 0,
+    staleTime: Infinity,
+    queryFn: () => listTasksById(db, missing),
+  });
+  if (!input || !rows) return null;
+  const lookup = {
+    tasks: [...input.tasks, ...(older.data ?? [])],
+    items: input.workItems,
+    rhythms: input.rhythms,
+  };
+  const done = new Map<string, DoneRow>();
+  for (const day of days) {
+    for (const row of doneOn(day, rows.sessions, lookup)) {
+      const known = done.get(row.key);
+      done.set(row.key, known ? { ...known, minutes: known.minutes + row.minutes } : row);
+    }
+  }
+  const list = [...done.values()];
+  const total = list.reduce((sum, row) => sum + row.minutes, 0);
+  return (
+    <section aria-label="Bu hafta" className="glass-dense rounded-dense flex flex-col pb-1.5">
+      <div className="flex flex-wrap items-baseline gap-x-3 px-4 pt-3.5 pb-1.5">
+        <PanelLabel className="flex-1">{weekLabel(week)}</PanelLabel>
+        <span data-testid="week-load" className="text-ink-2 text-sm tabular-nums">
+          {list.length} iş · {formatMinutes(total)} yapıldı
+        </span>
+      </div>
+      {list.length === 0 ? (
+        <p className="text-ink-2 text-note px-4 pb-2.5">Bu hafta kayıtlı oturum yok.</p>
+      ) : (
+        list.map((row) => (
+          <ListRow
+            key={row.key}
+            dot={row.moduleId ? colors.of(row.moduleId, row.work) : null}
+            dotTestId="work-dot"
+            title={row.title}
+            subtitle={<span className="tabular-nums">{formatMinutes(row.minutes)}</span>}
+            trailing={
+              <ModuleName name={row.moduleId ? modules.get(row.moduleId)?.row.name : undefined} />
+            }
+          />
+        ))
       )}
     </section>
   );
@@ -722,59 +705,33 @@ function ModuleName({ name }: { name: string | undefined }) {
  * to its week.
  */
 function Horizon({ loads, onWeek }: { loads: WeekLoad[]; onWeek: (week: string) => void }) {
-  const scale = Math.max(1, ...loads.flatMap((load) => [load.capacityMinutes, load.demandMinutes]));
   const over = loads.find((load) => load.over) ?? null;
   return (
     <section
       aria-label="Önümüzdeki haftalar"
-      className="glass-dense rounded-dense flex flex-col gap-2.5 px-4 pt-3.5 pb-4"
+      className="glass-dense rounded-dense flex flex-col gap-2.5 px-3 pt-3.5 pb-4 md:px-4"
     >
-      <div className="flex items-baseline">
+      <div className="flex items-baseline px-1 md:px-0">
         <PanelLabel className="flex-1">Önümüzdeki haftalar</PanelLabel>
         <span className="text-ink-2 text-sm">çizgi: vakit</span>
       </div>
-      <ol className="flex gap-0.5">
-        {loads.map((load, index) => {
+      <WeekBars
+        onPick={onWeek}
+        weeks={loads.map((load, index) => {
           const start = inIstanbul(new Date(`${load.weekStart}T12:00:00Z`));
           const previous = index > 0 ? loads[index - 1].weekStart.slice(5, 7) : null;
-          const month =
-            previous !== load.weekStart.slice(5, 7) ? format(start, "MMM", { locale: tr }) : "";
-          const label = `${start.getDate()} ${format(start, "MMM", { locale: tr })} haftası: ${formatMinutes(load.demandMinutes)} iş, ${formatMinutes(load.capacityMinutes)} vakit`;
-          return (
-            <li key={load.weekStart} className="min-w-0 flex-1">
-              <button
-                type="button"
-                aria-label={label}
-                title={label}
-                onClick={() => onWeek(load.weekStart)}
-                className="focus-visible:shadow-focus flex w-full flex-col items-center gap-1 rounded-md outline-none"
-              >
-                <span className={cn("flex h-4", load.over ? "text-attention" : "")}>
-                  {load.over ? <TriangleAlert aria-hidden className="size-3.5" /> : null}
-                </span>
-                <span className="bg-fill-chip relative h-16 w-[62%] overflow-hidden rounded-md">
-                  <span
-                    className={cn(
-                      "absolute inset-x-0 bottom-0 rounded-md",
-                      load.over ? "bg-attention" : "bg-fill-bar",
-                    )}
-                    style={{ height: `${Math.min(100, (load.demandMinutes / scale) * 100)}%` }}
-                  />
-                  <span
-                    aria-hidden
-                    className="bg-flow-now absolute inset-x-0 h-0.5"
-                    style={{ bottom: `${Math.min(100, (load.capacityMinutes / scale) * 100)}%` }}
-                  />
-                </span>
-                <span className="flex flex-col items-center leading-tight">
-                  <span className="text-note tabular-nums">{start.getDate()}</span>
-                  <span className="text-ink-2 min-h-4.25 text-sm">{month}</span>
-                </span>
-              </button>
-            </li>
-          );
+          return {
+            key: load.weekStart,
+            date: start.getDate(),
+            month:
+              previous !== load.weekStart.slice(5, 7) ? format(start, "MMM", { locale: tr }) : "",
+            demand: load.demandMinutes,
+            capacity: load.capacityMinutes,
+            over: load.over,
+            label: `${start.getDate()} ${format(start, "MMM", { locale: tr })} haftası: ${formatMinutes(load.demandMinutes)} iş, ${formatMinutes(load.capacityMinutes)} vakit`,
+          };
         })}
-      </ol>
+      />
       {over ? (
         <p role="note" className="flex items-start gap-1.5 text-sm">
           <TriangleAlert aria-hidden className="text-attention mt-0.5 size-4 shrink-0" />

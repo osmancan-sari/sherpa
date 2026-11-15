@@ -58,7 +58,23 @@ describe("dueOn", () => {
       status: "dropped",
       due_at: iso("2026-11-12", "11:00"),
     });
-    const rows = dueOn("2026-11-12", [exam], [report, sitting, other, dropped]);
+    const proposed = workItem({
+      title: "Önerilen",
+      status: "proposed",
+      due_at: iso("2026-11-12", "12:00"),
+    });
+    const paused = task({
+      title: "Duraklatılmış modül",
+      module_id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+      due_at: iso("2026-11-12", "13:00"),
+    });
+    const active = new Set([exam.module_id, report.module_id]);
+    const rows = dueOn(
+      "2026-11-12",
+      [exam, proposed],
+      [report, sitting, other, dropped, paused],
+      active,
+    );
     expect(rows.map((row) => row.title)).toEqual(["Rapor", "Midterm"]);
   });
 });

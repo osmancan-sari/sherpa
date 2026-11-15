@@ -239,14 +239,14 @@ Yönlendirilmemiş girişlerin listesi. Her satırda: metin, önerilen modül (v
 
 ## Takvim (eski adı Hafta)
 
-**15 Kas 2026 kararı (kurulmadı):** bu ekranın adı "Takvim" olur ve baştan tasarlanır; yeni içerik `docs/tasarim/ekranlar/takvim.md`'dedir. Aşağıdaki metin kurulu olan hali anlatır.
+Ç4c'de kuruldu (15 Kas 2026 kararı; düzen ve kareler `docs/tasarim/ekranlar/takvim.md`), adres `/takvim` (eski `/hafta` yönlenir):
 
-- Üstte 7 günlük şerit: her gün için sabit bloklar ve kullanılabilir süre.
-- Altında kapasite çubuğu: haftanın kullanılabilir süresi ile modüllerin istediği sürenin karşılaştırması, modül renkleriyle yığılmış. Talep kapasiteyi aşıyorsa hangi son tarihlerin tehlikede olduğu listelenir.
-- ~~Hayat modu seçimi.~~ Ç4a'da kalktı.
-- Önümüzdeki 4–6 haftanın yük görünümü: hafta başına son tarih sayısı ve ağırlığı.
-
-Ç3'teki hali: üstte 7 gün (blokların ilk üçü ve günün kullanılabilir süresi; geçen günler "geçti"), kapasite çubuğu (modül renkleriyle istenen süre, kapasitenin çizgisi; aşınca tehlikedeki son tarihler), "Haftanın kalemleri" (taahhüt edilen kalemler, bu haftaki payın ne kadarı işlendi) ve modül payları, önümüzdeki 8 haftanın yükü (istenen / kapasite, son tarihler), "Haftayı yeniden kur" (kullanıcının isteği; taahhüt baştan kurulur). Yapay zeka açıkken: haftanın kalemlerinin altında taahhüdün gerekçesi (`week`), en altta "Yapay zekanın notları": Cumartesiden itibaren haftanın özeti ve önerileri (`review`), sıkışan haftalar için öneriler (`month`); yalnızca gösterilir. Akşam kapanışının taslağında da yapay zekanın gerekçesi her işin altında durur. **Görüşün gerek** (yerleşim, 8 hafta).
+- **Üst satır:** "Takvim" ve hafta seçici (önceki hafta, "9–15 Kasım", sonraki hafta).
+- **Yedi gün:** dokunulur; açılışta hiçbiri seçili değil. Gün kutusunda o gün teslimi olan işlerin noktası (yalnızca etkin modüllerin, kabul edilmiş işleri); panoda ayrıca kalan vakit ve ilk teslim.
+- **Bu hafta:** haftanın işi ve vakti tek satırda, modül renkleriyle yük çubuğu ve vaktin çizgisi; iş vakti aşınca "İstenen süre bu haftanın vaktini aşıyor." ve "Yetişmeyebilir: …". Altında haftanın işleri teslim tarihine göre (`weekWork`): teslim satırı, işlenen ve pay, yapay zekanın tek satır notu. "Modül payları" satırı ve ayrı kapasite paneli yok. Bu haftanın "Bu hafta uygun saat yok: …" uyarıları altında. Geçmiş haftada işlerin yerinde o haftada yapılanlar (oturumlarından) durur.
+- **Gün ayrıntısı:** geçmiş gün "n iş · süre" (Teslim ve sınav, Yapılanlar, Sabit; yapılmayan iş gösterilmez), bugün "n iş bitti · vakit" (Sıradakiler, Sabit, Yapılanlar, "Bugün'e git"), gelecek gün "vakit" (Teslim ve sınav, Planlananlar: Ç4a'nın tahmini, Sabit, "Plan tahminidir; o sabah yeniden kurulur."). Aynı kutuya ya da "Kapat"a dokununca haftaya dönülür.
+- **Önümüzdeki haftalar:** gelecek haftadan başlayarak sekiz hafta, çubuk iş, çizgi vakit; vakti aşan hafta dikkat renginde, açıklaması altta. Çubuk o haftaya götürür.
+- **Yapay zekanın notları** (`review`, `month`; yalnızca gösterilir) ve sonunda "Haftayı yeniden kur" (sessiz bağlantı; "Hafta yeniden kuruldu."). Uyku ortalaması satırı yok (Rutin → Düzenlilik).
 
 ## Modül sayfası iskeleti
 
