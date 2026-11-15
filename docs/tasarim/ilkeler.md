@@ -52,6 +52,7 @@ Kareler masaüstü tarayıcıda çizilip bakıldı; şunlar gerçek telefonda ve
 - Saat şeridi ve ada: içerik altına girmiyor, gökyüzü arkasına uzanıyor. Sayfa kayınca içerik saatin arkasından geçmez, şeridin altında solarak kaybolur (`ekranlar/menu.md`, "Saat şeridi ve ada"; tarayıcıda iPhone'un güvenli alanı verilerek denetlenir: `tests/e2e/safe-area.spec.ts`).
 - Gündüz gökyüzünün açık ufkunda (ekranın alt yarısı) panelsiz yazıların okunurluğu.
 - Zaman şeridinde telefonda dokunma: dar parçalara parmakla isabet (Ç4c).
+- Kapanışın akşam sahnesinde kendiliğinden açılması; Rutin kapalıyken akşam kartındaki "Kapanış" (Ç4c).
 - Telefonda alttan açılan sayfanın klavye açıkken davranışı (hızlı girişte kutu klavyenin üstünde kalmalı).
 - Takvim'de yedi gün kutusunun küçük telefonda (375 px ve altı) sığması (Ç4c).
 - Gece karartmasının panoda yeterli olup olmadığı.

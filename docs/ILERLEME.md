@@ -5,8 +5,8 @@ Bu dosyayı Claude Code günceller. Yeni bir oturum yalnızca bu dosyayı ve `pr
 ## Durum
 
 - Faz: **Ç4c. Bugün, Takvim, kapanış ve alan sayfası** (15 Kas 2026; istem `prompts/c4c-bugun-takvim-kapanis.md`). Ç4b (`c4b-tamam`) yayında
-- Adım: 7 (kapanış: görsel denetim, görüntüler, `check:full`, faz denetimi). 1–6 bitti; Bugün, Takvim ve kapanışın adım denetimleri sürüyor
-- Son commit: Ç4c step 6 (Ayarlar'da kalanlar)
+- Adım: 7 (kapanış): üç adım denetimi yapıldı ve bulguları düzeltildi; `check:full` yeşil (`eb1ad88`, 605 / 304 / 293), görüntüler `docs/ekran-goruntuleri/c4c/`, karşılaştırma ve rapor yazıldı; faz denetimi sürüyor
+- Son commit: faz görüntüleri ve rapor
 
 ### Ç4c planı
 
@@ -16,12 +16,12 @@ Bu dosyayı Claude Code günceller. Yeni bir oturum yalnızca bu dosyayı ve `pr
 | --- | --- | --- |
 | 0 | Plan | bitti |
 | 1 | Bugün: üst satır (yalnızca "Bugün" ve tarih; panoda saat), telefon ve pano yerleşimi (pano 5:3), kartın durumları kit'in düğmeleriyle (en çok bir birincil), uyarılar (`AlertRow`), modül hapları, alt satır, "Bugün bitenler"; akşam kartında "Günü kapat" yok | bitti (`f27204e`): `TodayScreen.tsx`, `NowCard.tsx` (`CardFrame`, `CardActions`), `FrameCards.tsx`, `DayParts.tsx`; gece panelsiz (`text-clock`) |
-| 2 | Günün akışı (saatli şerit; telefonda balon, panoda adlar içinde) ve açılır Sıradakiler ("Hepsini göster" / "Küçült"); kit'e ve galeriye; klavye; adım denetimi (Bugün) | bitti (`f27204e`): kit `TimeStrip`, `ListMore`, `ListRow block` (galeride); veri saf `src/core/today/flow.ts` (`flow.test.ts` 8); adım denetimi sürüyor |
-| 3 | Takvim: `/takvim` (eski `/hafta` yönlenir), hafta seçici, yedi gün, "Bu hafta", gün ayrıntısı (geçmiş, bugün, gelecek), önümüzdeki haftalar, notlar, "Haftayı yeniden kur"; adım denetimi (Takvim) | bitti (`35806fa`): `src/core/ui/takvim/TakvimScreen.tsx`, saf `src/core/today/takvim.ts` (`takvim.test.ts` 5), `listTasksById`; adım denetimi sürüyor |
-| 4 | Kapanış: sahnede (`controls.closing()` sonucunu döndürür), `/kapanis` ve Bugün'deki "Günü kapat" kalkar; sözleşme `hostsClosing`; barındıran modül yoksa akşam kartında "Kapanış" ve standart sahne kabuğu; Rutin'in "Yarının listesi" adımı açık (migration ile mevcut kullanıcıda da); `rutin.md`; adım denetimi (kapanış) | bitti (`88ea999`; `20261116090000_rutin_closing_step_on.sql`): `ClosingShell`, `closing-host.ts`, Rutin `hostsClosing` ve sahnede kapanış adımı, `deneme` örneği; testler `registry.test.ts` +2, `flow.test.ts` (Rutin), `rutin.test.ts` (db), `rutin.spec.ts` +1, `day-screens.spec.ts`; adım denetimi sürüyor |
+| 2 | Günün akışı (saatli şerit; telefonda balon, panoda adlar içinde) ve açılır Sıradakiler ("Hepsini göster" / "Küçült"); kit'e ve galeriye; klavye; adım denetimi (Bugün) | bitti (`f27204e`): kit `TimeStrip`, `ListMore`, `ListRow block` (galeride); veri saf `src/core/today/flow.ts`; adım denetimi GEÇMEDİ, düzeltildi (`44e9df4`) |
+| 3 | Takvim: `/takvim` (eski `/hafta` yönlenir), hafta seçici, yedi gün, "Bu hafta", gün ayrıntısı (geçmiş, bugün, gelecek), önümüzdeki haftalar, notlar, "Haftayı yeniden kur"; adım denetimi (Takvim) | bitti (`35806fa`): `src/core/ui/takvim/TakvimScreen.tsx`, saf `src/core/today/takvim.ts` (`takvim.test.ts` 5), `listTasksById`; adım denetimi GEÇTİ, önemliler düzeltildi (`dae096b`) |
+| 4 | Kapanış: sahnede (`controls.closing()` sonucunu döndürür), `/kapanis` ve Bugün'deki "Günü kapat" kalkar; sözleşme `hostsClosing`; barındıran modül yoksa akşam kartında "Kapanış" ve standart sahne kabuğu; Rutin'in "Yarının listesi" adımı açık (migration ile mevcut kullanıcıda da); `rutin.md`; adım denetimi (kapanış) | bitti (`88ea999`; `20261116090000_rutin_closing_step_on.sql`): `ClosingShell`, `closing-host.ts`, Rutin `hostsClosing` ve sahnede kapanış adımı, `deneme` örneği; testler `registry.test.ts` +2, `flow.test.ts` (Rutin), `rutin.test.ts` (db), `rutin.spec.ts` +1, `day-screens.spec.ts`; adım denetimi GEÇMEDİ, düzeltildi (`cfad191`) |
 | 5 | Alan sayfası: `/a/<alan>` kabuğu, üye panelleri, sözleşmede `ui.areaViews`, Rutin'in örneği; Modüller'de "Alan sayfası", modül sayfasında alanın bağlantısı | bitti (`55204b3`): `AreaScreen.tsx`, Rutin `BasicStepsView`; `rutin.spec.ts` +1; dokümanlar (`docs/05`, `06`, `09`, `rutin.md`, `docs/tasarim`) |
 | 6 | Ayarlar'da kalanlar (`ayarlar.md` ile ayrışanlar) | bitti (`030699a`): Günün çerçevesi satır düzeninde, yapay zekanın aylık çubuğu |
-| 7 | Görsel denetim, ekran görüntüleri (`docs/ekran-goruntuleri/c4c/`), karelerle karşılaştırma, `docs/05`, `check:full`, faz denetimi, rapor, `c4c-tamam`; yayın senin izninle | |
+| 7 | Görsel denetim, ekran görüntüleri (`docs/ekran-goruntuleri/c4c/`), karelerle karşılaştırma, `docs/05`, `check:full`, faz denetimi, rapor, `c4c-tamam`; yayın senin izninle | görsel denetim, görüntüler, karşılaştırma, `check:full` ve rapor bitti; faz denetimi sürüyor |
 
 ### Çekirdek ekranlarının cam tasarım oturumu (14–15 Kas 2026)
 
@@ -215,6 +215,60 @@ Her adımın sonunda `npm run check` ve commit; şema, geçit ve zarf adımları
 | 7 | `check:full`, faz denetimi, düzeltmeler, faz raporu, etiket | bitti: faz denetimi 1. turda GEÇTİ (ayrıntı "Biten fazlar" → Ç2) |
 
 ## Biten fazlar
+
+### Ç4c: Bugün, Takvim, kapanış ve alan sayfası (15–16 Kas 2026)
+
+İstem `prompts/c4c-bugun-takvim-kapanis.md`. İçeriği değişen ekranlar cam tasarımıyla kuruldu: Bugün (üst satır, kartın bütün durumları, açılır Sıradakiler, saatli günün akışı), Takvim (eski Hafta, baştan), kapanışın sahneye taşınması (ayrı sayfa ve "Günü kapat" kalktı; Rutin'in "Yarının listesi" adımı açık), alan sayfasının kabuğu ve Ayarlar'da kalan iki fark. Yeni kit parçaları: `TimeStrip`, `ListMore`, `ListRow block`, `DayBox`, `LoadBar`, `WeekBars`, `IconButton quiet` (galeride ve `parcalar.md`'de). Sözleşme: `controls.closing()` sonucunu döndürür, `hostsClosing`, `ui.areaViews` (`docs/06`). Bir migration: `20261116090000_rutin_closing_step_on.sql`.
+
+#### Kabul ölçütleri (istemin maddeleri)
+
+| Madde | Durum | Kanıt |
+| --- | --- | --- |
+| 1. Bugün: üst satır yalnızca "Bugün" ve tarih (panoda saat); telefon ve pano yerleşimi; kartın bütün durumları, kartta en çok bir birincil; uyarılar, modül hapları, alt satır, "Bugün bitenler"; akşam kartında "Günü kapat" yok | sağlandı | `TodayScreen.tsx`, `NowCard.tsx` (`CardFrame`, `CardActions`), `FrameCards.tsx`; `day-screens.spec.ts` (üst satırda uyanış yok, akşam kartında "Günü kapat" yok), `planner.spec.ts`, `work-sessions.spec.ts` ("Bugün bitenler" paneli), `today.both.spec.ts` (sabit bloklar: telefonda liste ve çalışan blok işaretli, panoda akışta); görüntüler `c4c/*-bugun*`; görsel denetim `bugun-*` |
+| 2. Günün akışı ve Sıradakiler: saatli şerit (telefonda balon, panoda adlar içinde), "Hepsini göster" / "Küçült"; dar parçada geniş dokunma alanı | sağlandı | kit `TimeStrip`, `ListMore`; veri `src/core/today/flow.ts` (`flow.test.ts` 7); `today.both.spec.ts` (balon: telefonda dokunma, panoda imleç), `work-sessions.spec.ts` (açılan listenin sırası, molalar); dokunma alanı en az 44 px (yolda 20 px şerit + 12'şer px) |
+| 3. Takvim: hafta seçici, yedi gün, "Bu hafta" (teslim tarihine göre, yük çubuğu), gün ayrıntısı (geçmiş, bugün, gelecek; tahmin ve "Plan tahminidir; o sabah yeniden kurulur."), önümüzdeki haftalar, notlar, "Haftayı yeniden kur"; rota "Takvim", eski adres yönlenir | sağlandı | `src/core/ui/takvim/TakvimScreen.tsx`, `src/core/today/takvim.ts` (`takvim.test.ts` 5); `takvim.both.spec.ts` 2 (her iki düzende), `planner.spec.ts` (`/hafta` → `/takvim`, notlar), `timing.spec.ts` (uygun saat uyarısı), `facets.spec.ts`; görüntüler `c4c/*-takvim*` |
+| 4. Kapanış sahnede; ayrı sayfa ve iki "Günü kapat" kalktı; sahnede "Onayla ve yat" yok, "Vazgeç" atlar; çekirdek modüle bağımlı değil (`hostsClosing`), barındıran yoksa akşam kartında "Kapanış" ve standart kabuk (**görüşün gerek**); sahne açılmazsa kapanış atlanmış | sağlandı | `Scene.tsx` (`ClosingShell`, `controls.closing()` → `confirmed`/`skipped`), `closing-host.ts`; `day-screens.spec.ts` (kabukta Vazgeç ve Onayla, `/kapanis` → `/`), `rutin.spec.ts` (Rutin barındırırken düğme yok, adım kapalıyken var), `chains.spec.ts` (deneme'nin sahnesinde), `registry.test.ts` +2; kapanış atlanınca sabah planı kendiliğinden kurulur (Ç3'ten beri, `planner.spec.ts` "the plan for today is made when the day starts") |
+| 5. Rutin: "Yarının listesi" akşamda Yüz ile Telefonu bırak arasında, açık; mevcut kullanıcıda da açılır; modül sayfasından kapatılabilir; `rutin.md`'de taşındı | sağlandı | `start-list.json`, migration ve `tests/db/rutin-closing-step.test.ts` 3, `rutin.test.ts` (db), `flow.test.ts` (Rutin), `rutin.spec.ts` (Vazgeç geçer, Onayla yapar, gün kapalıyken kendiliğinden yapılmış, iki ekranda sonuç yalnızca adım yerindeyse); `rutin.md` 8.1 tablosu ve Adım 3 |
+| 6. Alan sayfası: kabuk, üye panelleri, görünüm sözleşmesi, Rutin'in örneği (**görüşün gerek**) | sağlandı | `AreaScreen.tsx`, `ui.areaViews`, Rutin `BasicStepsView`; `rutin.spec.ts` (Modüller → Alan sayfası → görünüm → modül sayfası → alanın bağlantısı; olmayan alan), görsel denetim `alan-*` |
+| 7. Ayarlar'da kalanlar | sağlandı | Günün çerçevesi satır düzeninde (`AP2`, `AT03`, `AT05`), Yapay zeka'nın aylık çubuğu (`AT14`, `AT15`); `ayarlar.md` "Ç4c'de kalanlar" |
+| Klavye (pano): Bugün'ün kısayolları yeni yerleşimde; kapanışta "Enter ile ilerle, Escape ile geri dön." | sağlandı | `planner.spec.ts` (kapanışta Enter, Escape, Ctrl+Enter), `scene-strip-keys.spec.ts`, `chains.spec.ts` (Boşluk); odak bir düğmedeyken Boşluk o düğmenindir |
+| Tasarım düzeni: yeni parça önce kit'e ve galeriye, `ekranlar/*.md`, onaylı görüntüler | sağlandı | yukarıda; onaylı görüntüler bilerek yenilendi (`63bc1b8`, gerekçesi commit mesajında) |
+| Karşıtlık, tercihler | sağlandı (ölçülen yerlerde) | panelsiz haplar ve alt satır düğmeleri tam manzarada koyulaşan ikincil cam (`landscapeAlpha`); geçen günün kutusu yazısını soluklaştırmaz; "Saydamlığı azalt" görüntüleri `c4c/*-saydamlik*`. Panoda adı içinde yazılan geçmiş iş parçası (%45 soluk) ölçülmedi ("Bilinen sorunlar") |
+
+Testler: 605 birim, 304 veritabanı, 293 uçtan uca (görüntülü `check:full` yeşil, `eb1ad88`). Görsel denetimde 33 onaylı görüntü. Ekran görüntüleri `docs/ekran-goruntuleri/c4c/` (201).
+
+#### Karelerle karşılaştırma
+
+Görüntüler `docs/ekran-goruntuleri/c4c/`, kareler `docs/tasarim/kareler/`.
+
+| Ekran | Kareler | Sonuç |
+| --- | --- | --- |
+| Bugün, öneri | `BT01`, `BP01`, `ZT1`, `ZP1` | aynı düzen (üst satır, kart, Sıradakiler 2/3 satır ve "Hepsini göster", günün akışı, pano 5:3, alt satır ekranın dibinde). Fark: panelsiz haplar ve düğmeler koyu dolgulu (karede hafif açık; tam manzarada 4,5:1 için; **görüşün gerek**); birincil düğme panoda karedekinden biraz dar |
+| Çalışan iş, Neden?, takıldım, soru, sabit blok, takip, süre doldu | `BT02`, `BT05`, `BT09`–`BT16`, `BP02`, `BP05`, `BP09`–`BP15` | aynı (birincil satırın kalanını alır, sessizler altta). Fark: sabit blok kartında "12:20 bitiyor · yer" (karede "12:20'ye kadar"; metinler koddakidir) |
+| Bugün tamam, geri dönüş, boş gün | `BT17`–`BT19`, `BP16`–`BP18` | aynı. Boş günde liste, akış ve uyarı yok |
+| Günaydın | `BT20`, `BP19` | aynı |
+| Akşam | `BT22`–`BT25`, `BP21`–`BP23`, `BP29` | aynı ("Akşam" başlığı, sıradaki iş ve küçük birincil "Başla", uyku satırı, ikincil "Yatıyorum", iki küçük düğme). Fark: barındıran modül yokken "Kapanış" düğmesi (çizilmedi; **görüşün gerek**) |
+| Gece | `BT26`, `BP24` | aynı (panelsiz büyük saat, iki satır, "Yatışı düzelt") |
+| X dk'm var | `BT28`, `BP26` | fark: tek iş önerilir (karede iki satır; kodun davranışı) |
+| Günün akışı | `ZT1`–`ZT5`, `ZP1`–`ZP3` | aynı (saat etiketleri, işler, sabit bloklar gri ve tam boy, yol taralı, uyanışa ve yatışa bağlı bölümler, soluk geçmiş, "şimdi" hapı, telefonda balon). Fark: panoda gün 16 saatten uzunsa etiketler iki saatte bir; çerçeve kapalıyken şerit günün başından |
+| Sıradakiler açık | `ZT2`, `ZT3`, `ZP2` | aynı (molalar, sabit blok, "Küçült") |
+| Bugün bitenler | `BT32`, `BP27` | fark: yalnızca bitirilen işler (karede ritimler de) |
+| Takvim açılış | `TT1`, `TT2`, `TP1` | aynı. Fark: gün kutusunda geçmiş gün soluk camla (yazı soluklaşmaz) |
+| Takvim gün ayrıntısı | `TT3`–`TT5`, `TP2`–`TP4` | aynı bölümler. Fark: geçmiş günlerin sabit blokları ve bitmiş teslimleri okunmayabilir; süreler "1 sa 30 dk" (karede "90 dk") |
+| Takvim aşma, iş yok | `TT6`, `TT7`, `TP5` | aynı ("Bu hafta için taahhüt edilen iş yok.") |
+| Kapanış | `KS1`–`KS9`, `KSP1`–`KSP5` | aynı (başlık, adım çizgileri, yoğun panel, Geri/İleri/Vazgeç, panoda klavye satırı). Fark: sahnenin iç boşluğuyla başlar (panoda karedekinden biraz içeride) |
+| Alan sayfası | `MT7`, `MT8`, `MP4` | kabuk aynı (başlık, üyeler, panel, görünüm). Fark: uyku görünümü yok (metrikler sonra); Rutin'in kareleri bölümlerin varsayılan renginde |
+| Modüller'de "Alan sayfası" | `MT1`, `MP1` | aynı |
+| Ayarlar: Günün çerçevesi, Yapay zeka | `AP2`, `AT03`–`AT05`, `AT14`, `AT15` | aynı. Kalan farklar `ayarlar.md`'de |
+
+#### Denetim
+
+1. **Adım denetimi, Bugün (`c4b-tamam..f27204e`): GEÇMEDİ.** Engelleyiciler: (1) adım uçtan uca testler kırmızıyken commit edilmişti (sonraki adımlarda düzeldi); (2) görsel testin onaylı görüntüleri yenilenmeden görünüş değişmişti. Önemliler: ara commit'te `/takvim` henüz yoktu ("Takvime bak" 404), sözleşme ve dokümanlar aynı commit'te değildi, kit parçaları `parcalar.md`'de değildi (hepsi HEAD'de düzeldi); yolun telefondaki dokunma alanı 36 px; `flow.test.ts`'te koşullu beklentiler; bazı yeni davranışların testi yok. Not: saat etiketleri cihazın saat dilimiyle seçiliyordu. Düzeltmeler (`44e9df4`): yolun dokunma alanı 44 px, etiketler İstanbul saatiyle, `flow.test.ts` yol ve molayı elle kurulan planla sınıyor, balonun testi; testler (registry, kapanışın sonucu, barındıran) kapanış düzeltmelerinde. Geçmiş yeniden yazılmadı: ara commit'lerin kırmızılığı kayıtta kalır; ders olarak bundan sonra her adımda ilgili uçtan uca testler koşulur.
+2. **Adım denetimi, Takvim (`f27204e..35806fa`): GEÇTİ.** Önemliler: teslimler önerilen ve etkin olmayan modülün işini de gösteriyordu; geçmiş günde bitmiş teslimler okunmuyor; geçmiş hafta açık işleri "0 dk / 3 sa" listeliyordu; davranışların uçtan uca testi yoktu; geçen günün ikincil yazısı soluklaşınca ~4,0:1; haftalık çubuklar telefonda 39 px; Takvim'in parçaları kit'te değildi. Düzeltmeler (`dae096b`, `63bc1b8`): teslimler etkin modüllerin kabul edilmiş işleri; geçmiş hafta yapılanları gösterir; `takvim.both.spec.ts`; geçen gün camıyla soluk; çubuklar 44 px; `DayBox`, `LoadBar`, `WeekBars`, `IconButton quiet` kit'te. Açık kalan: geçmiş günün bitmiş teslimleri (okuma geniş değil; `takvim.md`'de fark). Notlardan: `docs/05` Takvim bölümü yazıldı, `spacing-week-label` kalktı, metin farkları yazıldı, Takvim'in başlığı tek başına görevleri de sayıyor.
+3. **Adım denetimi, kapanış (`35806fa..88ea999`): GEÇMEDİ.** Engelleyici: `day-records.spec.ts` akşamı hâlâ 3. adıma koyuyordu (artık "Yarının listesi"). Önemliler: migration akşam ritminin süresini güncellemiyordu ve etkisi sınanmıyordu; iki cihazda kapanışın sonucu eski adımın kaydının üstüne yazılabiliyordu; barındıran yolun ve gün kapalıyken adımın testi yoktu; telefondaki sabit blok işaretinin testi silinmişti; ILERLEME güncel değildi. Düzeltmeler (`cfad191`): test 4. adımda; migration ritmin süresini de yazar (elle yazılmış süreye dokunmaz) ve `tests/db/rutin-closing-step.test.ts` onu önceki halde bir listede koşar (ilk koşuda `uuid = text` hatasını yakaladı); sonuç yalnızca yapılış hâlâ o adımdaysa yazılır; "Hepsini yaptım" kapanış adımını geçer; `hostsClosing` adımın o gün sırada olmasına bakar; iki yeni Rutin testi ve sabit blok testi; sıkılaştırılan beklentiler.
+4. Faz denetimi: aşağıda.
+
+**Görüşün gerek:** "Kapanış" düğmesi ve standart kabuk (çizilmedi); kapanış adımının kendiliğinden açılması ve ipucu metni; alan sayfasının kabuğu ve Rutin'in görünümü; panelsiz alt satırın koyu dolgusu; geçmiş haftanın yapılanlarla gösterilmesi; bugünün özetinde "n iş bitti"nin biten oturumları sayması; çerçeve kapalıyken şeridin başı.
 
 ### Ç4b: Cam temeli ve içeriği değişmeyen ekranlar (15 Kas 2026)
 
@@ -961,9 +1015,22 @@ Testler: 413 birim, 207 veritabanı, 166 uçtan uca (`npm run check:full` yeşil
 
 ## Sıradaki adım
 
-Ç4c (`prompts/c4c-bugun-takvim-kapanis.md`): Bugün, Takvim, kapanış ve alan sayfası. Ç4b yayında; gerçek cihazda bakılacaklar "Senden bekleyenler"de.
+Ç4d (teknik cila; `docs/07`) ya da Rutin 2: senin seçimin. Ç4c'nin yayını senin izninle (migration önce); gerçek cihazda bakılacaklar "Senden bekleyenler"de.
 
 ## Senden bekleyenler
+
+### Ç4c yayını
+
+Bir migration var; yalnızca güncelleme yapar (yeni sütun yok), kod ondan bağımsız da çalışır: `20261116090000_rutin_closing_step_on.sql` (Rutin'in "Yarının listesi" adımını mevcut listede bir kez açar, akşam ritminin süresine adımın dakikalarını ekler). Sıra: 1) `sherpa-dev`, 2) `sherpa-prod` (`npx supabase db push --remote=<prod ref>`), 3) `git push origin main`, `git push origin c4c-tamam`. İznini bekliyor.
+
+### Ç4c: gerçek cihazda bakılacaklar
+
+1. **Bugün, telefon:** "Hepsini göster" ve "Küçült"; günün akışında parçalara parmakla dokun (dar parçalar, yol): balon doğru parçanın mı? Başka yere dokununca kapanıyor mu?
+2. **Bugün, pano:** her şey tek ekranda mı (kaydırma yok), alt satır ekranın dibinde mi? Gece yalnızca saat.
+3. **Akşam:** Rutin açıkken akşam sahnesinde "Yüz"den sonra kapanış kendiliğinden açılıyor mu; "Vazgeç" Telefonu bırak'a, "Onayla" da oraya geçiyor mu? Rutin'in akşam sekmesinde "Yarının listesi" anahtarını kapatınca Bugün'ün akşam kartında "Kapanış" çıkıyor mu?
+4. **Takvim, telefon:** yedi gün kutusu 375 px ve altında sığıyor mu; güne dokununca ayrıntı, aynı güne yeniden dokununca hafta; önümüzdeki haftaların çubuklarına isabet.
+5. **Alan sayfası:** Modüller → Sağlık → "Alan sayfası"; modül sayfasında "Sağlık" bağlantısı.
+6. **Görüşün gerek** (faz raporunda): "Kapanış" düğmesi ve standart kabuk, kapanış adımının kendiliğinden açılması ve ipucu, alan sayfası ve Rutin'in görünümü, panelsiz alt satırın koyu dolgusu, geçmiş haftanın yapılanlarla gösterilmesi, "n iş bitti".
 
 ### Ç4b: gerçek cihazda bakılacaklar (`docs/tasarim/ilkeler.md`, "Gerçek cihazda bakılacaklar")
 
@@ -1277,6 +1344,18 @@ Süre sapmasındaki artış çoğunlukla `enrich`'in kendi tahminlerinin çalı�
 - Ekran görüntüleri: `docs/ekran-goruntuleri/c1/`.
 
 ## Verdiğim kararlar
+
+**Ç4c: Bugün, Takvim, kapanış ve alan sayfası (15–16 Kas 2026)**
+
+- **Kapanışın yeri (sözleşme):** `controls.closing()` artık `Promise<'confirmed' | 'skipped'>` döndürür; beklemeden çağıran eski sahne de çalışır. Sahne kapanınca açık kapanış `skipped` ile çözülür. Modül barındırdığını `hostsClosing(ctx)` ile söyler (çip gibi her veri değişiminde yeniden sorulur; hata "hayır"; cevaplar gelene kadar akşam kartında düğme gösterilmez, sonradan kaybolan düğme olmasın diye). Standart kabuk `ClosingShell` (`Scene.tsx`): oturumsuz, şerit "Akşam kapanışı" ve "Çık". Gerekçe: istemin 4. maddesi; çekirdek modülü tanımaz. `docs/06` "Diziler" kural 6.
+- **Rutin'in kapanış adımı:** adım sahnenin günlük adımlarına girdi (`onScreen` artık `closing` türünü de alır). Adıma gelince sahne kapanışı kendiliğinden açar (bu cihazda, yapılış ve adım başına bir kez; "Kapanış" düğmesi yeniden açar); "Onayla" adımı yapılmış, "Vazgeç" geçilmiş yazar; gün zaten kapalıysa adım kendiliğinden yapılmış sayılır. Sonuç yalnızca yapılış hâlâ o adımdaysa yazılır (iki cihaz: öbür ekran ilerlemiş olabilir; adım denetimi). "Hepsini yaptım" kapanış adımını geçilmiş sayar (yarının planı onaylanmadı). `hostsClosing` adım o gün sıradaysa (`every_days`) evet der. Süresi 4 dk (karedeki şeritte "· 4 dk"); ipucu "Yarının planına bak; aklında kalanları yaz." (**görüşün gerek**). Temel adım olarak kaldı (`rutin.md` tablosu "evet").
+- **Migration `20261116090000_rutin_closing_step_on.sql`:** yalnızca başlangıç listesinin yazdığı ve kimsenin açmadığı adımı açar (`phase = 2`, kapalı); kullanıcı sonradan kapattıysa (`phase = 1`) dokunmaz. Akşam ritminin süresine adımın dakikalarını ekler (en çok 90, `proposalMinutes` gibi), kullanıcının elle yazdığı süreye dokunmaz. Gerekçe: üretimdeki kullanıcıda modül ancak liste değişince yeniden teklif eder. Test `tests/db/rutin-closing-step.test.ts` (migration'ı yerel psql ile önceki halde bir listenin üstünde yeniden koşar; ilk koşuda `uuid = text` hatasını yakaladı).
+- **Alan sayfası:** `/a/<alan>` istemcide çizilir (modül sayfası gibi `useParams` ve `Suspense`; Cache Components). Üye paneli haftalık raporun ilk üç sayısını gösterir. Görünüm `ui.areaViews` (anahtar, başlık, bileşen, `wide`); hata verirse yalnızca kendi paneli. Rutin'in örneği son 14 günün temel adımları; renkleri bölümlerin varsayılan renkleri (modül kullanıcının bölüm rengini okuyamaz; **görüşün gerek**). Uyku görünümü kurulmadı (çekirdeğin kaydı; metrikler sonra).
+- **Bugün:** yerleşim ve durumlar karelere göre; "Bugün bitenler" yalnızca bitirilen işleri gösterir (ritmin kaydını geri alacak yol yok); panelsiz haplar ve alt satır düğmeleri tam manzarada ikincil camın koyulaşan rengini taşır (4,5:1); çerçeve kapalıyken şerit günün başından (ilk dokunuş ya da varsayılan) başlar; panoda gün 16 saatten uzunsa saat etiketleri iki saatte bir. Sıradakiler uyanışa ve yatışa bağlı işi de saatiyle listeler; `TodayBrief.work` yalnızca çalışma penceresini sayar (Ç4a notu): ikisi farklı şeylerdir (liste günün kalanı, özet "iş"), tutarlılaştırılmadı.
+- **Takvim:** gün kutusundaki teslimler ve "Teslim ve sınav" yalnızca etkin modüllerin kabul edilmiş işleri ("Bu hafta" gibi); geçmiş hafta yapılanları gösterir; haftanın başlığı ve yük çubuğu `loadByWeek`'in yüküne haftanın tek başına görevlerini ekler (liste ile başlık aynı şeyi söylesin). Önümüzdeki haftalar gelecek haftadan başlar. Uyku satırı kalktı (`docs/09`).
+- **Kit:** `TimeStrip`, `ListMore`, `ListRow block`, `DayBox`, `LoadBar`, `WeekBars`, `IconButton quiet`; galeride ve `parcalar.md`'de. Token'lar: `color-flow-travel`, `color-flow-now` (`--color-now` adı `text-now` yazı boyuyla çakıştığı için), `color-balloon`, `color-edge-balloon`, `shadow-balloon`, `spacing-flow(-board)`, `text-clock(-board)`, `color-fill-bar`, `color-ink-dark-2`; `spacing-week-label` kalktı.
+- **Görsel denetim:** onaylı görüntüler `--update-snapshots=all` ile yazıldı. Bu yol eşiğin altında kalan farkları da yazar: Ayarlar ve Rutin'in sayfası görüntüleri de yeniden yazıldı (gözle bakıldı). **Görülen sınır:** panodaki saat etiketlerinin seyrelmesi gibi yalnızca küçük yazıları değiştiren bir değişiklik %0,2 eşiğinin altında kaldı ve test kırılmadı (Bilinen sorunlar).
+- **Testler:** Bugün ve Takvim'in yerleşim değişikliğiyle değişen uçtan uca testler tek tek güncellendi (bölge adları, kapalı liste, kapanışa giden yol `openClosing` yardımcısı: çerçeve açık, dünün akşamı 22:10, beklenen yatış 22:00). Silinen test: "Hafta: son 7 günün uyku satırı" (özellik kalktı, `docs/09` 16 Kas). Eşik gevşetilmedi; `skip`/`only` yok.
 
 **Ç4b sonrası düzeltme: saat şeridi ve ada (15 Kas 2026)**
 
@@ -1595,10 +1674,16 @@ Süre sapmasındaki artış çoğunlukla `enrich`'in kendi tahminlerinin çalı�
 
 ## Bilinen sorunlar
 
+- **Ç4c, görsel denetimin eşiği:** panoda saat etiketlerinin seyrelmesi gibi yalnızca küçük yazıları değiştiren bir değişiklik `maxDiffPixelRatio` 0,002'nin altında kaldı, test kırılmadı (onaylı görüntüler `--update-snapshots=all` ile yazıldı). Ç4d'de yazı bölgeleri için ayrı, daha sıkı bir karşılaştırma düşünülebilir.
+- **Ç4c, Takvim'de geçmiş günün bitmiş teslimleri:** bitmiş kalemler ve iki günden eski bitmiş görevler okunmadığı için geçmiş günün "Teslim ve sınav"ı eksik kalabilir (`takvim.md`). Gerekirse geçmiş hafta için ayrı okuma.
+- **Ç4c, panoda geçmiş iş parçasının yazısı:** günün akışında adı içinde yazan geçmiş parça %45 soluk; karşıtlığı ölçülmedi (kare de böyle).
+- **Ç4c, Rutin'in alan görünümünün renkleri:** bölümlerin varsayılan renkleri; kullanıcının değiştirdiği bölüm rengini modül okuyamıyor (sözleşmede yol yok).
+- **Ç4c, arada kırmızı commit'ler:** Bugün adımı (`f27204e`) uçtan uca testler kırmızıyken commit edildi; sonraki adımlarda düzeldi. Bundan sonra her adımda ilgili uçtan uca testler koşulur.
+
 - **Ç4b, tam manzarada panelsiz yazı:** tam manzaranın üstündeki camlar (ana, yoğun, ikincil) ve içlerindeki düğme ve haplar dört durumda, gökyüzünün tamamı ve tepeler üzerinde ölçülüyor (`sky.test.ts`); Bugün'ün alt grupları camda. Panelsiz kalan yazılar: Bugün'ün başlığı ve tarih satırı (koyu üst gökte), panoda "SIRADAKİLER" ve "Sırada başka iş yok" (koyu üst gökte); ölçülmüyor. Ç4c Bugün'ü BT31/BT32/BP01'e göre yeniden kurarken ölçüm de eklenecek.
 
-- **Ç4b, Ayarlar bölümlerinin içi:** renkler token, alanlar kit'in camında, ama yerleşim kodun eski düzeninde (ör. çerçevede saat kutuları satırın sağında değil). Ç4c istemindeki "Ayarlar'da kalanlar" maddesi. (Zaman bölümü bu fazda `ET2`'ye göre kuruldu.)
-- **Ç4b, Bugün'ün "Günü kapat"ı** kit'in düğmesi değil, elle yazılmış bir bağlantı (`TodayScreen.tsx`, `FrameCards.tsx`); komşu düğmelerden farklı görünüyor. Ç4c Bugün'ü yeniden kurarken kit'in `Button`'ına geçer.
+- ~~**Ç4b, Ayarlar bölümlerinin içi**~~: Ç4c'de Günün çerçevesi satır düzenine geçti; kalan küçük farklar `ayarlar.md`'de.
+- ~~**Ç4b, Bugün'ün "Günü kapat"ı**~~: Ç4c'de kalktı.
 - **Ç4b, geliştirme sunucusu:** Turbopack geliştirme sunucusu bazen eski bileşeni sunmaya devam etti (iki kez); `.next/dev` silinip yeniden başlatınca düzeldi. Üretim derlemesinde görülmedi.
 
 - Rutin 1, faz denetimi notları (açık): durum şeridindeki "Sabah/Akşam yapılan gün" biten yapılışı sayar, tasarımdaki "tamam" (iki blok ve temel adımlar) değil (2. adımda Düzenlilik'le); modül sayfasının başlığında "Sağlık ›" bağlantısı yok (alan sayfası yok); bir rutini (bloğu) kapatmanın arayüzü yok (veri yolu var: `rutin_routines.active` → `withdraw`); "Erken geç · basılı tut"un klavye karşılığı yok (panoda Boşluk o sırada bir şey yapmaz); yapılış sürerken liste düzenlenirse `step_position` başka adıma denk gelebilir; modül sayfasının yazmaları iyimser değil (yanıtı bekler, sonra yeniden teklif eder).
