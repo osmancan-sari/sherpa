@@ -4,9 +4,39 @@ Bu dosyayı Claude Code günceller. Yeni bir oturum yalnızca bu dosyayı ve `pr
 
 ## Durum
 
-- Faz: **Ç3g. Sahnenin çekirdek eksikleri** (14 Kas 2026; istem `prompts/c3g-sahne-eksikleri.md`). Rutin 1 (`rutin-1-tamam`) ve Ç3f yayında
-- Adım: 8 (kapanış) bitti: faz denetimi iki tur, GEÇTİ; `c3g-tamam`; yayında (14 Kas); 14 Kas'ın deneme kayıtları temizlendi
-- Son commit: Ç3g yayın ve temizlik kaydı
+- Faz: **Ç4a. Sadeleşen çekirdek** (15 Kas 2026; istem `prompts/c4a-sade-cekirdek.md`). Ç3g (`c3g-tamam`) yayında
+- Adım: 0 (plan) bitti
+- Son commit: Ç4a planı ve yol haritası
+
+### Çekirdek ekranlarının cam tasarım oturumu (14–15 Kas 2026)
+
+Ayrı bir tasarım sohbetinde (`prompts/cekirdek-cam-tasarim-oturumu.md`) çekirdeğin on ekran grubu cam diliyle çizildi ve kullanıcı hepsini onayladı (Ayarlar "şimdilik"). Tek kaynak `docs/13-cam-dili.md`; tuval https://claude.ai/artifact/YDd1zPn8g5xJyxViNF2KeG. Oturum görünüş için açıldı, ama kullanıcı ekranları görünce çekirdeğin içeriğini de sadeleştirdi (`docs/13` bölüm 6; `docs/09-kararlar.md` 14–15 Kas satırları): hayat modu, elle bağlam seçimi, saatle gün bitişi, "Vakit kalırsa" ve günün 3 işi kalkar; Hafta "Takvim" olur ve baştan tasarlandı; akşam kapanışı Rutin'in akşam sahnesine taşınır. Devir notu `prompts/cam-tasarim-devir.md`.
+
+**Sıra (15 Kas 2026):** Ç4 dörde bölündü (`docs/07-yol-haritasi.md`): **Ç4a** sadeleşen çekirdek (planlayıcı, veri, sözleşme, yapay zeka; bu faz), **Ç4b** cam temeli ve içeriği değişmeyen ekranlar (`prompts/c4b-cam-temeli.md`), **Ç4c** Bugün, Takvim, kapanış ve alan sayfası (`prompts/c4c-bugun-takvim-kapanis.md`), **Ç4d** eski Ç4'ün teknik cilası. Ç4a → Ç4b → Ç4c → Ç4d → Ç5. Rutin 2 araya alınabilir; Rutin 3'ün görünüş kısmı Ç4b'ye, "Yarının listesi" adımı Ç4c'ye taşındı.
+
+**Açık çekirdek sorularının cevapları** (ilerleme sohbeti, 15 Kas 2026; kullanıcının "teknik kararlarda Claude'un önerisi" kuralıyla; `prompts/c4a-sade-cekirdek.md` "Kararlar"):
+
+1. Hayat modu kalkar (kullanıcı): hiçbir yerde seçilmez, gösterilmez, okunmaz; yükü motor kapasiteden ve takvimden çıkarır.
+2. Bağlam elle seçilmez (kullanıcı), tahmin edilir: pano `desk`; telefonda sırayla `core/context` ucundan son 3 saatte yazılan değer, şu an içinde olunan ya da 30 dakika içinde başlayacak yeri olan sabit bloğun yeri, günün tipi, hiçbiri yoksa süzgeç kapalı. `core/context` ucu ve gün tipleri durur.
+3. Saatle belirlenen gün bitişi kalkar (kullanıcı): çalışma penceresi yatışa bağlı dizinin başına, o yoksa beklenen yatışa (çerçeve kapalıysa yatış aralığının varsayılan başına) uzanır. `after_finish` ve "akşam" bölümü anlamını yitirir: alan zarfta kabul edilir, okunmaz. Uyku korunur.
+4. "Vakit kalırsa" kalkar (kullanıcı): Sıradakiler günün kalan planıdır; "X dk'm var" plan dışındaki adaylardan seçmeye devam eder.
+5. Günün 3 işi kalkar (kullanıcı): planlayıcı, `plan` çağrısı, Günaydın özeti, geri dönüş kartı (sıradaki tek iş), kapanışın taslağı ("İstemediğini çıkar."), Rutin'in sesli özeti (ilk sabit blok, planlı iş sayısı ve ilk iş, yatış).
+6. "Bugün tamam": planda yapılacak çapasız iş kalmayınca ve kalan pencereye sığan planlı iş yokken; çapalı işler koşula girmez.
+7. Gelecek günlerin planı: saf tahmin, kaydedilmez, aynı kurallarla ve önceki günlere konanı düşerek; bugünün planını değiştirmez. Takvim için haftanın işleri ve sekiz haftanın iş ve vakit toplamı (veri; ekranı Ç4c'de).
+8. Kapanış bu fazda yerinde kalır; yalnızca 5. maddedeki içerik farkı.
+
+### Ç4a planı
+
+İstem `prompts/c4a-sade-cekirdek.md`. Ekranlar yeniden çizilmez: yalnızca kalkan öğeler kaldırılır, bozulan ekran toparlanır. Üretimde gerçek veri var: sütun ve tablo silinmez, kalkan alanlar okunmaz ve yazılmaz, `docs/03`'te "kullanılmıyor (Ç4a)"; temizlik Ç4d'de. Migration yalnızca ekleme yapar. Her adımda `npm run check` (veri adımlarında `test:db`) ve commit; 1., 2. ve 3. adımdan sonra denetçi (adım kipi), sonunda faz kipi.
+
+| # | Adım | Durum |
+| --- | --- | --- |
+| 0 | Bekleyen dokümanların commit'i, `docs/07` (Ç4a–Ç4d), bu plan | bitti |
+| 1 | Planlayıcı (önce testler): hayat modu; bitiş çizgisi yerine yatışa uzanan pencere, akşam ve `after_finish` kalkar, "bitiş çizgisinden sonra" uyarısı kalkar; günün 3 işi ve "vakit kalırsa" kalkar; "Bugün tamam"ın yeni koşulu; geri dönüşte sıradaki iş; bağlam tahmini (saf) ve kapalı süzgeç; gelecek günlerin tahmini, haftanın işleri ve sekiz haftanın toplamı. `docs/04` | |
+| 2 | Veri ve sözleşme: `core/context` değerinin saklanması (migration), kalkan alanların okunmaması ve yazılmaması (`docs/03`), `TodayBrief` (iş sayısı, ilk iş, yatış), mod davranışı ve `after_finish` geriye uyumla; `deneme`, şablon, Rutin (sesli özet). `docs/06`, `rutin.md` | |
+| 3 | Yapay zeka: `plan`/`replan` çıktısında günün 3 işi yok, girdilerde hayat modu yok, `month` ve `review` mod önermez; sahte sağlayıcı ve değerlendirme örnekleri. `docs/10` | |
+| 4 | Ekranlar: mod ve bağlam seçici, bitiş saati, n/3, "Vakit kalırsa", Günaydın'daki günün işleri, geri dönüşte üç iş, Hafta'daki mod, Ayarlar'daki bitiş ve "Hayat modlarında", formdaki akşam seçeneği ve uyarısı, kapanışın işaret kutuları; Takvim'in veriye ulaşan yolu. `docs/01`, `docs/05`, `docs/12` | |
+| 5 | Kapanış: uçtan uca testler, ekran görüntüleri (`docs/ekran-goruntuleri/c4a/`), `check:full`, faz denetimi, rapor, `c4a-tamam`; yayın senin izninle | |
 
 ### Ç3g planı
 
@@ -778,9 +808,7 @@ Testler: 413 birim, 207 veritabanı, 166 uçtan uca (`npm run check:full` yeşil
 
 ## Sıradaki adım
 
-Ç4 (`prompts/BASLA.md`). Rutin 2. adım (Kestirmeler bağlantısı, Düzenlilik, sürelerin öğrenilmesi, akşam hatırlatması) tasarıma göre iki hafta beklemeden de kurulabilir; sırasını sen belirlersin.
-
-Ç4 (Pano ve telefon cilası): yeni oturumda `docs/05-arayuz.md` ve `docs/11-yayin-ve-cihazlar.md` okunarak başlanır. Önce Ç3'ün ve Ç3b'nin "Görüşün gerek" satırları. Ç2'nin "Sunum slaytları cuma" ölçütü açık: Okul modülü kurulunca yeniden denenecek (D3, karar 5). Rutin'in çekirdek notları 14 ve 16–21 Ç4'e ya da Rutin 3. adıma girdidir.
+Ç4a'yı sürdür (`prompts/c4a-sade-cekirdek.md`; plan yukarıda, "Ç4a planı").
 
 ## Senden bekleyenler
 

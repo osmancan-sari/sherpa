@@ -13,8 +13,8 @@ Oturum görünüş için açıldı; kullanıcı ekranları görünce içeriği d
 | 1 | Tema | Tek renk sistemi: her saatte koyu cam ve açık metin. Açık / koyu / sistem seçeneği kalkar. Ayarlar → Görünüm'de yerine "Saydamlığı azalt" ve "Hareketi azalt" durur (cihazın kendi tercihini de izler). |
 | 1b | Gökyüzü | Zemin yalnızca **günün saatine** bağlıdır: güneşin yüksekliği cihazda tarih, saat ve sabit koordinattan hesaplanır (varsayılan İstanbul). Hava durumu, konum izni ve dış servis yoktur. Hava durumuna göre zemin konuşuldu ve ertelendi (`docs/09-kararlar.md` "Fikirler"). |
 | 2 | Gökyüzü hangi ekranlarda | Tam manzara (güneş, ay, yıldız, tepeler): Bugün, sahne, giriş ekranı. Öbür bütün ekranlar **sakin zemin**: Bugün'deki gökyüzünün o anki genel rengi; güneş, ay ve manzara yok. Uzun sayfada zemin sabit durur, içerik üstünden kayar. Sonuç: Rutin'in modül sayfası sakin zemine geçer. |
-| 3 | Pano gün boyu açık | Gerçek bulanıklık yalnızca altından içerik geçen yerde (pencere, yan panel, alt menü, şerit); durağan zeminin üstündeki panelde aynı görünüş bulanıklıksız kurulur. Panoda sürekli hareket yok (bulut kaymaz, yıldız titreşmez); gökyüzü dakikada bir güncellenir. Gece durumunda ekran karartılır (%38 örtü) ve uyumasına izin verilir. "Saydamlığı azalt": paneller düz ve opak (`#141b38`). "Hareketi azalt": geçişler anlık. |
-| 4 | Modüle özel zemin | Modül zemin verirse hem modül sayfasında hem sahnesinde kullanılır (Spor: siyah-yeşil); vermezse sakin zemin. Modüller listesinden girerken zemin çapraz solar. Çekirdek ekranlarında (Bugün, Hafta) modülün işi yalnızca renk noktasıyla görünür. |
+| 3 | Pano gün boyu açık | Gerçek bulanıklık yalnızca altından içerik geçen yerde (pencere, yan panel, alt menü, şerit); durağan zeminin üstündeki panelde aynı görünüş bulanıklıksız kurulur. Panoda sürekli hareket yok (bulut kaymaz, yıldız titreşmez); gökyüzü dakikada bir güncellenir. Gece durumunda ekran karartılır (%38 örtü) ve uyumasına izin verilir. "Saydamlığı azalt": paneller düz ve opak (`#141b38`). "Hareketi azalt": geçişler anlık. Kareler: `K3A` (olağan), `K3B` (saydamlık azaltılmış), `K3C` (gece, karartılmış). |
+| 4 | Modüle özel zemin | Modül zemin verirse hem modül sayfasında hem sahnesinde kullanılır (Spor: siyah-yeşil); vermezse sakin zemin. Modüller listesinden girerken zemin çapraz solar. Çekirdek ekranlarında (Bugün, Takvim) modülün işi yalnızca renk noktasıyla görünür. Kare: `K4B` (Spor örneği; içerik örnek). |
 | 5 | Yoğun ekranlar | Liste, tablo ve form sakin zeminde, daha dolu camda (%50). Telefonda başlık 16 px, ikincil yazı en az 14 px, satır en az 56 px; ayırıcı %14; sayılar hizalı rakam. Panoda ikincil 15, birincil 17–18, "Şimdi" başlığı 44 px ve üstü. |
 | 6 | Bugün'ün üst satırı | Yalnızca "Bugün" ve tarih (panoda saatle). İlerleme (n/3), bitiş saati, uyanış ve yatış satırı, hayat modu ve bağlam seçici yok. Hayat modu ve bağlam seçimi uygulamadan kalkar (`docs/09-kararlar.md`); saatle belirlenen bitiş de kalkar: Günaydın özetinde ve zaman çizelgesinde bitiş gösterilmez. Panoda güneşin "Sıradakiler" panelinin arkasında kalması kabul. |
 | 7 | Sıradakiler | "Vakit kalırsa" bölümü yok; "Sıradakiler" günün kalan planıdır. "Bugün tamam" kartında düğme yok; liste boşken "Sırada başka iş yok." |
@@ -425,6 +425,8 @@ Hepsi `docs/09-kararlar.md`'de 14–15 Kas 2026 satırlarıdır; kodda eski hali
 | Ayarlar | Bölüm listesi ve bölüm sayfaları | Ayarlar |
 
 Açık kalan çekirdek soruları (planlayıcı işinde çözülür): konum gelene kadar bağlam tahmininin kaynağı; bitiş saati kalkınca `after_finish` ayrımı; "Bugün tamam"ın koşulu; gelecek günlerin planı (Takvim); Rutin kapalıyken kapanışa ulaşım.
+
+Karelerin kaynak dosyaları depodadır: `docs/tasarim/kareler/` (her kare `<ad>.dc.html`; dizini `DIZIN.md`).
 
 ## 7. Dışarıda bırakılanlar
 

@@ -21,10 +21,13 @@ Her faz tek başına kullanılabilir bir şey bırakır. Bir fazın kabul ölç�
 | Ç3e. Modülün bölümleri | Bir modülün içinde ayrı renk ve sahne taşıyan bölümler (rutinde Sabah ve Akşam, Okul'da dersler); renklerin Ayarlar'dan değişmesi | Ç3c |
 | Ç3f. Çapalı diziler | Uyanışa ve yatışa bağlı işlerin tek akış olması: sahnenin diziyi görmesi (başka modülün adımları dahil), sıradaki işin kendiliğinden başlaması, dışarıdan gelen uyanıştan sonra başlama, sahneden akşam kapanışı | Ç3e |
 | Ç3g. Sahnenin çekirdek eksikleri | Rutin'in kurulumunda sözleşmede eksik bulunan altı nokta (planlama günü, şerit, tuşlar, modül sayfasında dizi, yarının uyanışı, uyanışın kaynağı) ve ilk gerçek kullanımda görülen dört sorun | Ç3f, Rutin 1 |
-| Ç4. Pano ve telefon cilası | Gün boyu açık duracak kalitede pano; uygulama gibi çalışan telefon | Ç3 |
+| Ç4a. Sadeleşen çekirdek | Hayat modu, elle bağlam, saatle gün bitişi, "vakit kalırsa" ve günün 3 işi planlayıcıdan, veriden, sözleşmeden ve yapay zekadan kalkar; bağlam tahmin edilir; gelecek günlerin plan tahmini ve Takvim'in verisi | Ç3g |
+| Ç4b. Cam temeli | Tek renk sistemi, gökyüzü ve sakin zemin, ortak parçalar, form kabukları; içeriği değişmeyen ekranlar cam dilinde; tasarımın tek kaynağı depoda | Ç4a |
+| Ç4c. Bugün, Takvim, kapanış | İçeriği değişen ekranlar yeni tasarımıyla: Bugün, zaman çizelgesi ve Sıradakiler, Takvim, kapanışın akşam sahnesine taşınması, alan sayfası | Ç4b |
+| Ç4d. Teknik cila | Gün boyu açık duracak kalitede pano; uygulama gibi çalışan telefon (klavye, bağlantısız kullanım, bildirim denemesi) | Ç4c |
 | Ç5. Claude köprüsü | Claude sohbetleri Sherpa'yı okuyup yazar | Ç1 |
 
-Ç5, Ç3 ve Ç4'ten bağımsızdır; ihtiyaç olursa öne alınır.
+Ç5, Ç3 ve Ç4'ten bağımsızdır; ihtiyaç olursa öne alınır. Ç4, çekirdek ekranlarının cam tasarım oturumundan (14–15 Kas 2026, `docs/13-cam-dili.md`) sonra dörde bölündü: Ç4a → Ç4b → Ç4c → Ç4d → Ç5.
 
 ### Ç0: İskelet
 
@@ -254,22 +257,49 @@ Tasarım: `docs/12-sahne-ve-otomasyon.md`, bölüm G. İstem `prompts/c3f-capali
 - [ ] Bugünün ve dünün uyanışı ve yatışı düzeltilip silinebiliyor; plan yeniden hesaplanıyor
 - [ ] Yeni alanları kullanmayan sahne ve sayfada hiçbir şey değişmedi; önceki fazların ve Rutin 1'in testleri gevşetilmeden geçiyor
 
-### Ç4: Pano ve telefon cilası
+### Ç4a: Sadeleşen çekirdek
 
-Tasarım: `docs/05-arayuz.md`, `docs/11-yayin-ve-cihazlar.md`.
+İstem `prompts/c4a-sade-cekirdek.md`. Cam tasarım oturumunda (14–15 Kas 2026) kullanıcının sadeleştirdiği içeriğin planlayıcı, veri, sözleşme ve yapay zeka tarafı (`docs/13-cam-dili.md` bölüm 6; `docs/09-kararlar.md` 14–15 Kas satırları). Ekranlar yeniden çizilmez; yalnızca kalkan şeyler kaldırılır.
 
 **Kapsam**
-- Pano yerleşiminin son hali: tipografi, yoğunluk, koyu tema, gece parlaklığı; ayrı pencere olarak kurulum
+- Hayat modu kalkar: planlayıcının girdisi, haftanın taahhüdü, ayarlar, modül ayarları, sözleşmedeki mod davranışı, yapay zekanın girdisi
+- Bağlam elle seçilmez: pano `desk`; telefonda `core/context` ucundan son 3 saat, yeri olan sabit blok, günün tipi, hiçbiri yoksa süzgeç kapalı
+- Saatle belirlenen gün bitişi kalkar: çalışma penceresi yatışa bağlı dizinin başına (o yoksa beklenen yatışa) uzanır; `after_finish` okunmaz
+- "Vakit kalırsa" ve günün 3 işi kalkar (planlayıcı, `plan` çağrısı, Günaydın özeti, geri dönüş, kapanışın taslağı, Rutin'in sesli özeti); "Bugün tamam"ın yeni koşulu
+- Gelecek günlerin plan tahmini (kaydedilmez); Takvim için haftanın işleri ve sekiz haftanın iş ve vakit toplamı (veri; ekranı Ç4c'de)
+
+**Kabul ölçütleri**
+- [ ] Hayat modu, bitiş saati, bağlam seçici, "Vakit kalırsa" ve günün 3 işi hiçbir ekranda yok; kalkan alanlar okunmuyor ve yazılmıyor, `docs/03`'te "kullanılmıyor (Ç4a)"
+- [ ] Bağlam tahmini dört kaynağın sırasıyla çalışıyor (testli); pano `desk`
+- [ ] Çalışma penceresi yatışa bağlı dizinin başına uzanıyor; uyku yüke feda edilmiyor
+- [ ] "Bugün tamam" planda çapasız iş kalmayınca; çapalı iş koşula girmiyor
+- [ ] Gelecek günlerin tahmini aynı girdiyle aynı; bugünün planını değiştirmiyor (testli)
+- [ ] Eski alanları gönderen modül kırılmıyor (`after_finish`, mod davranışı); `deneme`, şablon ve Rutin yeni sözleşmede
+- [ ] Önceki fazların testleri gevşetilmeden geçiyor; kalkan kuralların testleri gerekçesiyle silindi
+
+### Ç4b: Cam temeli ve içeriği değişmeyen ekranlar
+
+İstem `prompts/c4b-cam-temeli.md`. Tek renk sistemi, gökyüzü ve sakin zemin, ortak parçalar (kit ve galeri), form kabukları, menü ("Takvim" adıyla); Gelen kutusu, hızlı giriş ve düzenleme, Modüller ve modül sayfası iskeleti, sahne kabuğu, Ayarlar'ın bölümleri, giriş, boş ve hata durumları; Rutin'in modül sayfası (Rutin 3. adımın görünüş kısmı). Kabul ölçütleri istemde ve `docs/13-cam-dili.md` bölüm 5'te (gerçek cihaz denetimleri).
+
+### Ç4c: Bugün, Takvim, kapanış ve alan sayfası
+
+İstem `prompts/c4c-bugun-takvim-kapanis.md`. Bugün'ün yeni yerleşimi ve durumları, saatli şerit ve açılır Sıradakiler, Takvim, kapanışın akşam sahnesine taşınması (Rutin'in "Yarının listesi" adımı dahil), alan sayfasının kabuğu.
+
+### Ç4d: Teknik cila
+
+Tasarım: `docs/05-arayuz.md`, `docs/11-yayin-ve-cihazlar.md`. Eski Ç4'ün görünüş dışında kalan işi.
+
+**Kapsam**
+- Pano: gün boyu açık kalma, ayrı pencere olarak kurulum, ekranın uyanık kalması seçeneği, uykudan dönüşte yenileme, oturum düşünce son planın ekranda kalması
 - Klavye kısayolları; odak görünümü
-- Ekranın uyanık kalması seçeneği, uykudan dönüşte yenileme, oturum düşünce son planın ekranda kalması
-- Telefon: güvenli alanlar, uygulama kabuğunun önbelleği, bağlam seçici, bağlantısızken son plan ve üç işlemin kuyruğu
+- Telefon: güvenli alanlar, uygulama kabuğunun önbelleği, bağlantısızken son plan ve üç işlemin kuyruğu
 - Web push denemesi (çalışırsa: saatli randevu hatırlatması)
+- Ç4a'dan kalan veri temizliği: "kullanılmıyor (Ç4a)" işaretli sütun ve tabloların silinmesi (`docs/03`)
 
 **Kabul ölçütleri**
 - [ ] Pano 3 gün boyunca açık kalıp yeniden giriş istemiyor
 - [ ] Bütün ana eylemler klavyeyle yapılabiliyor
 - [ ] Şimdi kartı masadan bir bakışta okunuyor (kullanıcı onayı)
-- [ ] Telefonda bağlam "kampüs" seçilince yalnızca oraya uyan işler öneriliyor
 - [ ] `docs/11-yayin-ve-cihazlar.md` sonundaki eşitleme ve bağlantısız kullanım ölçütleri sağlanıyor
 
 ### Ç5: Claude köprüsü
@@ -301,7 +331,7 @@ Bir modülün süreci: tasarım oturumu (bkz. `prompts/modul-tasarim-oturumu.md`
 | --- | --- | --- |
 | Okul | 1: dönem takibi ve Notion aktarımı · 2: Ninova · 3: hazırlık dokümanı otomasyonu | Taslak hazır; ayrı oturumda ayrıntılanacak |
 | Beslenme | 1: plan, prep, alışveriş · 2 ve 3: belirlenecek | Taslak |
-| Rutin (sabah ve akşam) | 1: tablolar, üç ritim, iki sahne, modül sayfası, kayıt (Ç3f'den sonra) · 2: Kestirmeler bağlantısı, Düzenlilik, sürelerin öğrenilmesi · 3: çekirdeğin cam diline bağlanma ve faz 2 (Ç4'ten sonra) | Onaylandı (14 Kas 2026; `docs/moduller/rutin.md`); 1. adım kuruldu (14 Kas 2026, `rutin-1-tamam`) |
+| Rutin (sabah ve akşam) | 1: tablolar, üç ritim, iki sahne, modül sayfası, kayıt (Ç3f'den sonra) · 2: Kestirmeler bağlantısı, Düzenlilik, sürelerin öğrenilmesi (Ç4'ün parçaları arasına alınabilir) · 3: faz 2 (modül sayfasının cam görünüşü Ç4b'ye, "Yarının listesi" adımı Ç4c'ye taşındı) | Onaylandı (14 Kas 2026; `docs/moduller/rutin.md`); 1. adım kuruldu (14 Kas 2026, `rutin-1-tamam`) |
 | Spor | 1: duruş programı ve koç sahnesi | Bekliyor |
 | Ev | 1: ritimler | Taslak |
 | İş | 1: çalışma blokları | Taslak |
@@ -310,4 +340,4 @@ Bir modülün süreci: tasarım oturumu (bkz. `prompts/modul-tasarim-oturumu.md`
 
 Okul modülünün adımları için taslak kapsam ve kabul ölçütleri `docs/moduller/okul.md` ve `docs/moduller/okul-ninova.md` içindedir; tasarım oturumunda kesinleşir.
 
-Önerilen sıra: Ç0 → Ç1 → Ç2 → Ç3 → Ç3b → Ç3c → Ç3d → Ç3e → Ç3f → Ç3g → Ç4 (Ç3c–Ç3g kullanıcının kararıyla Ç4'ten önce, 12–13 Kas 2026); ilk modül (rutin) Ç3f'den sonra, tasarımı onaylanınca kurulabilir, Ç4'ü beklemez; Okul adım 1 tasarımı onaylanınca, Ç5 ve Okul adım 2 ihtiyaca göre araya girer. (Ç3, Okul adım 1'den önce bitti; Ç3b modüller tasarlanmadan önce yapılır, çünkü iş zarfını değiştirir.)
+Önerilen sıra: Ç0 → Ç1 → Ç2 → Ç3 → Ç3b → Ç3c → Ç3d → Ç3e → Ç3f → Ç3g → Ç4a → Ç4b → Ç4c → Ç4d → Ç5 (Ç3c–Ç3g kullanıcının kararıyla Ç4'ten önce, 12–13 Kas 2026; Ç4 cam tasarım oturumundan sonra dörde bölündü, 15 Kas 2026); Rutin 2 Ç4'ün parçaları arasına alınabilir; ilk modül (rutin) Ç3f'den sonra, tasarımı onaylanınca kurulabilir, Ç4'ü beklemez; Okul adım 1 tasarımı onaylanınca, Ç5 ve Okul adım 2 ihtiyaca göre araya girer. (Ç3, Okul adım 1'den önce bitti; Ç3b modüller tasarlanmadan önce yapılır, çünkü iş zarfını değiştirir.)
