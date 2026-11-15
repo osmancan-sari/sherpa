@@ -673,6 +673,8 @@ test("the area's page: a member's view in its panel, a failing view alone, a pau
 
   // A view that throws: its own panel says so; the page and its members stay.
   await insert("deneme_items", { title: "Görünümü boz", minutes: 15 });
+  // Written from outside the app: read again.
+  await page.reload();
   await expect(view.getByRole("alert")).toHaveText("Bu görünüm açılamadı.");
   await expect(members.getByRole("link", { name: /^Deneme/ })).toBeVisible();
 
