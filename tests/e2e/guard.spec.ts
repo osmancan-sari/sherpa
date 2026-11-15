@@ -38,7 +38,7 @@ test("the server-component payload of a page is guarded too", async ({ request }
     headers: { RSC: "1", "Next-Router-Prefetch": "1" },
   });
   expect(response.status()).toBe(307);
-  expect(await response.text()).not.toContain("Hafta");
+  expect(await response.text()).not.toContain("Takvim");
 });
 
 for (const path of [

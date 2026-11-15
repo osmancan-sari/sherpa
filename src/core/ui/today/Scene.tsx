@@ -228,7 +228,8 @@ export function SceneFrame({
     if (!takesKeys || closing) return;
     const onKey = (event: KeyboardEvent) => {
       if (event.ctrlKey || event.metaKey || event.altKey || isTyping(event.target)) return;
-      if (document.querySelector('[role="dialog"], [data-scene-closing]')) return;
+      if (document.querySelector('[role="dialog"], [role="alertdialog"], [data-scene-closing]'))
+        return;
       const key = sceneKeyOf(event.key);
       if (!key) return;
       // Space and Enter on a focused button or link are that button's: the browser presses it.

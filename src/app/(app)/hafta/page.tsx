@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { WeekScreen } from "@/core/ui/week/WeekScreen";
 
-export const metadata: Metadata = { title: "Hafta" };
+export const metadata: Metadata = { title: "Takvim" };
 
 export default function WeekPage() {
   return <WeekScreen />;

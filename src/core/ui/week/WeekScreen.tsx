@@ -35,7 +35,7 @@ export function WeekScreen() {
   return (
     <div className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-6 px-5 py-6 md:px-10 md:py-8">
       <ClientOnly
-        fallback={<h1 className="text-xl font-semibold tracking-tight md:text-2xl">Hafta</h1>}
+        fallback={<h1 className="text-xl font-semibold tracking-tight md:text-2xl">Takvim</h1>}
       >
         <WeekBody />
       </ClientOnly>
@@ -64,13 +64,13 @@ function WeekBody() {
   if (failed) {
     return (
       <>
-        <h1 className="text-xl font-semibold tracking-tight md:text-2xl">Hafta</h1>
+        <h1 className="text-xl font-semibold tracking-tight md:text-2xl">Takvim</h1>
         <LoadFailed onRetry={retry} />
       </>
     );
   }
   if (!input || !rows || !loads) {
-    return <h1 className="text-xl font-semibold tracking-tight md:text-2xl">Hafta</h1>;
+    return <h1 className="text-xl font-semibold tracking-tight md:text-2xl">Takvim</h1>;
   }
 
   const week = weekStart(input?.date ?? dayKey(now));
@@ -94,7 +94,7 @@ function WeekBody() {
   return (
     <>
       <header className="flex flex-wrap items-baseline justify-between gap-3">
-        <h1 className="text-xl font-semibold tracking-tight md:text-2xl">Hafta</h1>
+        <h1 className="text-xl font-semibold tracking-tight md:text-2xl">Takvim</h1>
         {sleep ? (
           <p data-testid="sleep-summary" className="text-muted-foreground text-sm tabular-nums">
             {sleep}

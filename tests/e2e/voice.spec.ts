@@ -46,7 +46,7 @@ test("taps, keys, pages and minutes open make no sound: only say() reaches the e
   // The first tap and the first key of the page: where the warm-up used to speak.
   await page.mouse.click(5, 5);
   await page.keyboard.press("Shift");
-  await page.getByRole("link", { name: "Hafta" }).first().click();
+  await page.getByRole("link", { name: "Takvim" }).first().click();
   await page.mouse.click(5, 5);
   await page.getByRole("link", { name: "Ayarlar" }).first().click();
   await expect(page.getByRole("group", { name: "Sesli anlatım" })).toBeVisible();

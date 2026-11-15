@@ -26,6 +26,7 @@ export function Sheet({
   footer,
   children,
   className,
+  bare = false,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -36,6 +37,8 @@ export function Sheet({
   footer?: ReactNode;
   children: ReactNode;
   className?: string;
+  /** The children draw the body and the bottom line themselves (SheetBody, SheetFooter). */
+  bare?: boolean;
 }) {
   return (
     <DialogPrimitive.Root open={open} onOpenChange={onOpenChange}>
@@ -78,13 +81,25 @@ export function Sheet({
               }
             />
           </div>
-          <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto overscroll-contain px-4.5 pt-2 pb-4 md:px-6">
-            {children}
-          </div>
+          {bare ? children : <SheetBody>{children}</SheetBody>}
           {footer ? <SheetFooter>{footer}</SheetFooter> : null}
         </DialogPrimitive.Popup>
       </DialogPrimitive.Portal>
     </DialogPrimitive.Root>
+  );
+}
+
+/** The sheet's scrolling body, when the form draws its own (inside a <form>). */
+export function SheetBody({ children, className }: { children: ReactNode; className?: string }) {
+  return (
+    <div
+      className={cn(
+        "flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto overscroll-contain px-4.5 pt-2 pb-4 md:px-6",
+        className,
+      )}
+    >
+      {children}
+    </div>
   );
 }
 

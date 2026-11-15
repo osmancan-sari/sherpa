@@ -39,7 +39,7 @@ test("Yatıyorum more than two hours before the bedtime range asks; Vazgeç keep
   await page.clock.setFixedTime(dayAt("19:30"));
   await page.goto("/");
   await card(page).getByRole("button", { name: "Yatıyorum" }).click();
-  const ask = page.getByRole("dialog", { name: "Saat 19:30. Şimdi yatıyor musun?" });
+  const ask = page.getByRole("alertdialog", { name: "Saat 19:30. Şimdi yatıyor musun?" });
   await expect(ask).toContainText("Yatış aralığının başı: 22:00.");
   await ask.getByRole("button", { name: "Vazgeç" }).click();
   await expect(ask).toBeHidden();
@@ -57,7 +57,7 @@ test("in the range and near it Yatıyorum is one tap", async ({ page }) => {
   await page.goto("/");
   await card(page).getByRole("button", { name: "Yatıyorum" }).click();
   await waitFor(today, (row) => Boolean(row?.bed_at));
-  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await expect(page.getByRole("alertdialog")).toHaveCount(0);
 });
 
 test("a wrong bedtime and waking are set right or deleted in Ayarlar; the night card leads there", async ({
@@ -112,7 +112,7 @@ test("a scene's Yatıyorum far before bed asks too: Vazgeç keeps the work runni
   await page.goto("/");
   const scene = page.getByTestId("deneme-gece");
   await scene.getByRole("button", { name: "Yatıyorum" }).click();
-  const ask = page.getByRole("dialog", { name: "Saat 19:30. Şimdi yatıyor musun?" });
+  const ask = page.getByRole("alertdialog", { name: "Saat 19:30. Şimdi yatıyor musun?" });
   await ask.getByRole("button", { name: "Vazgeç" }).click();
   await expect(ask).toBeHidden();
   await expect(scene).toBeVisible();
@@ -152,7 +152,7 @@ test("Rutin's last step: Vazgeç on the question puts the evening back on its la
   await page.reload();
   await scene.getByRole("button", { name: "Yatıyorum" }).click();
   await page
-    .getByRole("dialog", { name: "Saat 19:30. Şimdi yatıyor musun?" })
+    .getByRole("alertdialog", { name: "Saat 19:30. Şimdi yatıyor musun?" })
     .getByRole("button", { name: "Vazgeç" })
     .click();
   await expect(scene.getByRole("heading", { name: "Telefonu salona bırak" })).toBeVisible();

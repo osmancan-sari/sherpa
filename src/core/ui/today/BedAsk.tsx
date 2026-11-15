@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { useTodayPlan } from "@/core/app/hooks";
 import { bedAsks } from "@/core/today/bedtime";
 import { formatTime } from "@/lib/date";
-import { Dialog } from "../Dialog";
+import { Window } from "../kit/Overlay";
 
 // Ç3g: "Yatıyorum" far before the bedtime range (docs/05-arayuz.md, "Günün çerçevesi"): one short
 // question before the day is closed by a tap that may have been a slip ("Saat 16:49. Şimdi yatıyor
@@ -50,7 +50,7 @@ export function BedAskDialog() {
     set(null);
   };
   return (
-    <Dialog
+    <Window
       open={current !== null}
       onOpenChange={(open) => {
         if (!open) answer(false);
@@ -61,15 +61,14 @@ export function BedAskDialog() {
           ? `${current.framed ? "Yatış aralığının başı" : "Yatış saati"}: ${formatTime(current.start)}.`
           : undefined
       }
-    >
-      <div className="flex flex-wrap gap-2">
-        <Button className="h-11 md:h-9" onClick={() => answer(true)}>
-          Evet, yatıyorum
-        </Button>
-        <Button variant="outline" className="h-11 md:h-9" onClick={() => answer(false)}>
-          Vazgeç
-        </Button>
-      </div>
-    </Dialog>
+      actions={
+        <>
+          <Button onClick={() => answer(false)}>Vazgeç</Button>
+          <Button variant="primary" onClick={() => answer(true)}>
+            Evet, yatıyorum
+          </Button>
+        </>
+      }
+    />
   );
 }

@@ -13,8 +13,6 @@ import {
   useRef,
   useState,
 } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { postAi } from "@/core/ai/client";
 import { useAddInboxEntry, useAddTask, useAddWorkItem, useRefreshAll } from "@/core/app/actions";
 import { useDb, useRegistry } from "@/core/app/CoreProvider";
@@ -27,6 +25,10 @@ import { dueAtEndOfDay, fitsOneSitting, parseQuickText } from "@/core/intake/par
 import { TASK_DEFAULT_MINUTES, TASK_MAX_MINUTES, TASK_MIN_MINUTES } from "@/core/types";
 import { cn } from "@/lib/utils";
 import { Dialog } from "./Dialog";
+import { Button } from "./kit/Button";
+import { Chip } from "./kit/Choice";
+import { Field, fieldClass, Input, Select } from "./kit/Field";
+import { SheetBody, SheetFooter } from "./kit/Overlay";
 import { SAVE_FAILED, useNotify } from "./Notices";
 
 // Quick add: one box, two uses (docs/05-arayuz.md).
@@ -94,34 +96,29 @@ export function QuickAddProvider({ children }: { children: ReactNode }) {
 }
 
 /**
- * The button that opens quick add. On the phone there is exactly one, floating above the
- * navigation bar on every screen (the app layout places it); the inline ones are for wide
- * screens only.
+ * The button that opens quick add. On the phone there is exactly one, the "+" beside the menu
+ * bar on every screen; the inline ones are for wide screens only.
  */
 export function QuickAddButton({ floating = false }: { floating?: boolean }) {
   const { open } = useQuickAdd();
   if (floating) {
+    // The phone's "+": a glass circle beside the menu bar (AppNav places it).
     return (
       <button
         type="button"
         onClick={() => open()}
         aria-label="Yeni giriş"
-        className="bg-primary text-primary-foreground focus-visible:ring-ring/50 fixed right-4 bottom-[calc(4.5rem+env(safe-area-inset-bottom))] z-20 flex size-14 items-center justify-center rounded-full shadow-lg outline-none focus-visible:ring-3 md:hidden"
+        className="glass-nav size-nav text-ink focus-visible:shadow-focus flex shrink-0 items-center justify-center rounded-full outline-none"
       >
-        <Plus aria-hidden className="size-6" />
+        <Plus aria-hidden className="size-6" strokeWidth={2.2} />
       </button>
     );
   }
   return (
-    <Button
-      type="button"
-      variant="outline"
-      className="hidden h-9 gap-2 md:inline-flex"
-      onClick={() => open()}
-    >
+    <Button type="button" size="sm" className="hidden md:inline-flex" onClick={() => open()}>
       <Plus aria-hidden />
       Yeni giriş
-      <kbd className="text-muted-foreground hidden font-mono text-xs md:inline">N</kbd>
+      <kbd className="text-ink-2 text-meta hidden font-mono md:inline">N</kbd>
     </Button>
   );
 }
@@ -334,11 +331,12 @@ function QuickAddDialog({
       onOpenChange={(next) => !next && onClose()}
       title="Yeni giriş"
       initialFocus={inputRef}
+      bare
     >
       <form
         // Checked here, not by the browser: its step rule would refuse "12dk".
         noValidate
-        className="flex flex-col gap-4"
+        className="flex min-h-0 flex-1 flex-col"
         onSubmit={(event) => {
           event.preventDefault();
           // Enter in the entry line asks for a submit even while the save button is off.
@@ -346,177 +344,151 @@ function QuickAddDialog({
           void submit(overLimit);
         }}
       >
-        {/* A text area, one line tall until it needs more: a pasted block keeps its lines. */}
-        <textarea
-          ref={inputRef}
-          rows={1}
-          value={text}
-          onChange={(event) => {
-            setText(event.target.value);
-            setOverLimit(false);
-          }}
-          onKeyDown={onInputKey}
-          aria-label="Giriş"
-          placeholder="Sunum slaytları cuma 45dk"
-          autoComplete="off"
-          className="border-input placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 dark:bg-input/30 field-sizing-content max-h-48 min-h-12 w-full resize-none rounded-lg border bg-transparent px-3 py-3 text-base outline-none focus-visible:ring-3"
-        />
+        <SheetBody>
+          {/* A text area, one line tall until it needs more: a pasted block keeps its lines. */}
+          <textarea
+            ref={inputRef}
+            rows={1}
+            value={text}
+            onChange={(event) => {
+              setText(event.target.value);
+              setOverLimit(false);
+            }}
+            onKeyDown={onInputKey}
+            aria-label="Giriş"
+            placeholder="Sunum slaytları cuma 45dk"
+            autoComplete="off"
+            className={cn(
+              fieldClass,
+              "min-h-field field-sizing-content h-auto max-h-48 resize-none py-3",
+            )}
+          />
 
-        <div ref={detailsRef} className="flex flex-col gap-4">
-          {active.length > 0 ? (
-            <div role="group" aria-label="Modül" className="flex flex-wrap gap-2">
-              {active.map(({ row }) => (
-                <Chip
-                  key={row.id}
-                  pressed={row.slug === moduleSlug}
-                  color={moduleColor({ row })}
-                  onClick={() => selectModule(row.slug === moduleSlug ? null : row.slug)}
-                >
-                  {row.name}
+          <div ref={detailsRef} className="flex flex-col gap-4">
+            {active.length > 0 ? (
+              <div role="group" aria-label="Modül" className="flex flex-wrap gap-2">
+                {active.map(({ row }) => (
+                  <Chip
+                    key={row.id}
+                    selected={row.slug === moduleSlug}
+                    dot={moduleColor({ row })}
+                    onClick={() => selectModule(row.slug === moduleSlug ? null : row.slug)}
+                  >
+                    {row.name}
+                  </Chip>
+                ))}
+              </div>
+            ) : (
+              <p className="text-ink-2 text-sm">
+                Etkin modül yok; giriş gelen kutusuna düşer. Modüller Ayarlar’dan açılır.
+              </p>
+            )}
+
+            {selected && intakeTypes.length > 0 ? (
+              <div role="group" aria-label="Kayıt türü" className="flex flex-wrap gap-2">
+                <Chip selected={typeKey === TASK} onClick={() => setTypeKey(TASK)}>
+                  İş
                 </Chip>
-              ))}
+                {intakeTypes.map((type) => (
+                  <Chip
+                    key={type.key}
+                    selected={typeKey === type.key}
+                    onClick={() => {
+                      setTypeKey(type.key);
+                      setOverLimit(false);
+                    }}
+                  >
+                    {type.label}
+                  </Chip>
+                ))}
+              </div>
+            ) : null}
+
+            {selected && !intake ? (
+              <div className="grid grid-cols-[3fr_2fr] gap-3">
+                <Field label="Tarih">
+                  {({ id }) => (
+                    <Input
+                      id={id}
+                      type="date"
+                      value={dueDay}
+                      onChange={(event) => setDayOverride(event.target.value)}
+                    />
+                  )}
+                </Field>
+                <Field label="Süre (dk)">
+                  {({ id }) => (
+                    <Input
+                      id={id}
+                      type="number"
+                      inputMode="numeric"
+                      min={TASK_MIN_MINUTES}
+                      step={5}
+                      value={minutesText}
+                      onChange={(event) => {
+                        setMinutesOverride(event.target.value);
+                        setOverLimit(false);
+                      }}
+                    />
+                  )}
+                </Field>
+              </div>
+            ) : null}
+
+            {selected && intake ? (
+              <IntakeFields
+                fields={intake.fields}
+                values={fieldValues}
+                fallbackText={parsed.title}
+                onChange={(name, value) =>
+                  setFieldValues((current) => ({ ...current, [name]: value }))
+                }
+              />
+            ) : null}
+          </div>
+
+          {overLimit ? (
+            <div
+              role="alert"
+              className="bg-fill-box border-edge-soft flex flex-col gap-3 rounded-2xl border p-3.5"
+            >
+              <p className="text-note leading-snug">
+                {TASK_MAX_MINUTES} dakikadan uzun iş tek oturuma sığmaz. İş kalemi olarak
+                kaydedilirse toplam efor {minutes} dk olur ve oturumlara bölünür.
+              </p>
+              <div className="flex flex-wrap gap-2.5">
+                <Button type="submit" variant="primary" className="h-11.5 text-sm" disabled={busy}>
+                  İş kalemi olarak kaydet
+                </Button>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  className="h-11.5 text-sm"
+                  onClick={() => {
+                    setMinutesOverride(String(TASK_MAX_MINUTES));
+                    setOverLimit(false);
+                  }}
+                >
+                  Süreyi {TASK_MAX_MINUTES} dk yap
+                </Button>
+              </div>
             </div>
           ) : (
-            <p className="text-muted-foreground text-sm">
-              Etkin modül yok; giriş gelen kutusuna düşer. Modüller Ayarlar’dan açılır.
-            </p>
-          )}
-
-          {selected && intakeTypes.length > 0 ? (
-            <div role="group" aria-label="Kayıt türü" className="flex flex-wrap gap-2">
-              <Chip pressed={typeKey === TASK} onClick={() => setTypeKey(TASK)}>
-                İş
-              </Chip>
-              {intakeTypes.map((type) => (
-                <Chip
-                  key={type.key}
-                  pressed={typeKey === type.key}
-                  onClick={() => {
-                    setTypeKey(type.key);
-                    setOverLimit(false);
-                  }}
-                >
-                  {type.label}
-                </Chip>
-              ))}
-            </div>
-          ) : null}
-
-          {selected && !intake ? (
-            <div className="flex flex-wrap gap-4">
-              <Field label="Tarih">
-                <Input
-                  type="date"
-                  value={dueDay}
-                  onChange={(event) => setDayOverride(event.target.value)}
-                  className="h-11 w-44 md:h-9"
-                />
-              </Field>
-              <Field label="Süre (dk)">
-                <Input
-                  type="number"
-                  inputMode="numeric"
-                  min={TASK_MIN_MINUTES}
-                  step={5}
-                  value={minutesText}
-                  onChange={(event) => {
-                    setMinutesOverride(event.target.value);
-                    setOverLimit(false);
-                  }}
-                  className="h-11 w-28 md:h-9"
-                />
-              </Field>
-            </div>
-          ) : null}
-
-          {selected && intake ? (
-            <IntakeFields
-              fields={intake.fields}
-              values={fieldValues}
-              fallbackText={parsed.title}
-              onChange={(name, value) =>
-                setFieldValues((current) => ({ ...current, [name]: value }))
-              }
-            />
-          ) : null}
-        </div>
-
-        {overLimit ? (
-          <div
-            role="alert"
-            className="border-border bg-muted/50 flex flex-col gap-3 rounded-xl border p-4"
-          >
-            <p className="text-sm">
-              {TASK_MAX_MINUTES} dakikadan uzun iş tek oturuma sığmaz. İş kalemi olarak kaydedilirse
-              toplam efor {minutes} dk olur ve oturumlara bölünür.
-            </p>
-            <div className="flex flex-wrap gap-2">
-              <Button type="submit" className="h-11 md:h-9" disabled={busy}>
-                İş kalemi olarak kaydet
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                className="h-11 md:h-9"
-                onClick={() => {
-                  setMinutesOverride(String(TASK_MAX_MINUTES));
-                  setOverLimit(false);
-                }}
-              >
-                Süreyi {TASK_MAX_MINUTES} dk yap
-              </Button>
-            </div>
-          </div>
-        ) : (
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <p className="text-muted-foreground hidden text-xs md:block">
+            <p className="text-meta text-ink-2 hidden md:block">
               Tab: modül · Enter: kaydet · Modül seçmeden Enter: gelen kutusu
             </p>
-            <Button type="submit" className="h-11 md:h-9" disabled={!canSubmit || busy}>
+          )}
+        </SheetBody>
+        {overLimit ? null : (
+          <SheetFooter>
+            <span className="flex-1" />
+            <Button type="submit" variant="primary" disabled={!canSubmit || busy}>
               {submitLabel}
             </Button>
-          </div>
+          </SheetFooter>
         )}
       </form>
     </Dialog>
-  );
-}
-
-function Chip({
-  pressed,
-  color,
-  onClick,
-  children,
-}: {
-  pressed: boolean;
-  color?: string;
-  onClick: () => void;
-  children: ReactNode;
-}) {
-  return (
-    <button
-      type="button"
-      aria-pressed={pressed}
-      onClick={onClick}
-      className={cn(
-        "border-border focus-visible:ring-ring/50 flex h-11 items-center gap-2 rounded-full border px-4 text-sm outline-none focus-visible:ring-3 md:h-9 md:px-3",
-        pressed ? "bg-foreground text-background border-transparent" : "hover:bg-muted",
-      )}
-    >
-      {color ? (
-        <span aria-hidden className="size-2 rounded-full" style={{ backgroundColor: color }} />
-      ) : null}
-      {children}
-    </button>
-  );
-}
-
-function Field({ label, children }: { label: string; children: ReactNode }) {
-  return (
-    <label className="flex flex-col gap-1.5 text-sm">
-      <span className="text-muted-foreground">{label}</span>
-      {children}
-    </label>
   );
 }
 
@@ -534,43 +506,49 @@ export function IntakeFields({
   onChange: (name: string, value: string) => void;
 }) {
   return (
-    <div className="flex flex-wrap gap-4">
+    <div className="grid grid-cols-2 gap-x-3 gap-y-4">
       {fields.map((field, index) => {
         const value =
           values[field.name] ??
           (index === 0 && field.type === "text" ? fallbackText : String(field.default ?? ""));
         const label = field.required ? field.label : `${field.label} (isteğe bağlı)`;
+        const span = field.type === "text" ? "col-span-2" : "col-span-1";
         if (field.type === "select") {
           return (
-            <Field key={field.name} label={label}>
-              <select
-                // Named on its own: inside a label a select would also read out its value.
-                aria-label={label}
-                value={value}
-                onChange={(event) => onChange(field.name, event.target.value)}
-                className="border-input bg-background h-11 rounded-lg border px-3 text-sm md:h-9"
-              >
-                {!field.required ? <option value="">—</option> : null}
-                {(field.options ?? []).map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
+            <Field key={field.name} label={label} className={span}>
+              {({ id }) => (
+                <Select
+                  id={id}
+                  // Named on its own: a select would also read out its value.
+                  aria-label={label}
+                  value={value}
+                  onChange={(event) => onChange(field.name, event.target.value)}
+                >
+                  {!field.required ? <option value="">—</option> : null}
+                  {(field.options ?? []).map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </Select>
+              )}
             </Field>
           );
         }
         return (
-          <Field key={field.name} label={label}>
-            <Input
-              type={field.type}
-              inputMode={field.type === "number" ? "numeric" : undefined}
-              min={field.min}
-              max={field.max}
-              value={value}
-              onChange={(event) => onChange(field.name, event.target.value)}
-              className={cn("h-11 md:h-9", field.type === "text" ? "w-64" : "w-40")}
-            />
+          <Field key={field.name} label={label} className={span}>
+            {({ id }) => (
+              <Input
+                id={id}
+                aria-label={label}
+                type={field.type}
+                inputMode={field.type === "number" ? "numeric" : undefined}
+                min={field.min}
+                max={field.max}
+                value={value}
+                onChange={(event) => onChange(field.name, event.target.value)}
+              />
+            )}
           </Field>
         );
       })}

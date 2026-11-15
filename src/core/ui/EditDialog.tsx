@@ -1,9 +1,9 @@
 "use client";
 
 import { type FormEvent, type ReactNode, useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { AiHint } from "./ai/AiMarks";
+import { Button } from "./kit/Button";
+import { Field, Input, Select } from "./kit/Field";
+import { SheetBody, SheetFooter } from "./kit/Overlay";
 import { Dialog } from "./Dialog";
 
 // A small form in a dialog, for changing a record by hand: a task, a work item, a rhythm, a
@@ -16,12 +16,16 @@ export type EditField = {
   type: "text" | "date" | "time" | "number" | "select";
   options?: { value: string; label: string }[];
   required?: boolean;
+  /** Its share of the row: a pair ("Son tarih" and "Süre") or a three ("Hedef, Dönem, Süre"). */
+  width?: "half" | "third";
   min?: number;
   max?: number;
   step?: number;
 };
 
 export type EditValues = Record<string, string>;
+
+const SPAN = { full: "col-span-6", half: "col-span-3", third: "col-span-2" } as const;
 
 function fieldProblem(field: EditField, value: string): boolean {
   if (value.trim() === "") return field.required === true;
@@ -85,66 +89,74 @@ export function EditDialog({
   };
 
   return (
-    <Dialog open onOpenChange={(open) => (open ? undefined : onClose())} title={title}>
+    <Dialog open onOpenChange={(open) => (open ? undefined : onClose())} title={title} bare>
       {/* The form checks its own fields; the browser's check would refuse a length like 12 or 37
           minutes because of the step. */}
-      <form noValidate onSubmit={submit} className="flex flex-col gap-4">
-        <div className="flex flex-wrap items-end gap-3">
-          {fields.map((field) => {
-            const label = field.required ? field.label : `${field.label} (isteğe bağlı)`;
-            const value = values[field.name] ?? "";
-            return (
-              <label key={field.name} className="flex flex-col gap-1.5 text-sm">
-                <span className="text-muted-foreground">{label}</span>
-                {field.type === "select" ? (
-                  <select
-                    // Named on its own: inside a label a select would also read out its value.
-                    aria-label={label}
-                    value={value}
-                    onChange={(event) => set(field.name, event.target.value)}
-                    className="border-input bg-background h-11 rounded-lg border px-3 text-sm md:h-9"
-                  >
-                    {(field.options ?? []).map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
-                ) : (
-                  <Input
-                    type={field.type}
-                    inputMode={field.type === "number" ? "numeric" : undefined}
-                    min={field.min}
-                    max={field.max}
-                    step={field.step}
-                    value={value}
-                    onChange={(event) => set(field.name, event.target.value)}
-                    aria-invalid={fieldProblem(field, value) || undefined}
-                    className={
-                      field.type === "text" ? "h-11 w-72 max-w-full md:h-9" : "h-11 w-40 md:h-9"
-                    }
-                  />
-                )}
-                {/* Only while untouched: once the user types, the value is theirs. */}
-                {hints[field.name] && value === (initial[field.name] ?? "") ? (
-                  <AiHint reason={hints[field.name]} />
-                ) : null}
-              </label>
-            );
-          })}
-        </div>
-        {sectionState?.node}
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex flex-wrap gap-2">{extra}</div>
-          <div className="flex gap-2">
-            <Button type="button" variant="ghost" className="h-11 md:h-9" onClick={onClose}>
-              Vazgeç
-            </Button>
-            <Button type="submit" className="h-11 md:h-9" disabled={!valid}>
-              {saveLabel}
-            </Button>
+      <form noValidate onSubmit={submit} className="flex min-h-0 flex-1 flex-col">
+        <SheetBody>
+          <div className="grid grid-cols-6 gap-x-3 gap-y-4">
+            {fields.map((field) => {
+              const label = field.required ? field.label : `${field.label} (isteğe bağlı)`;
+              const value = values[field.name] ?? "";
+              // Only while untouched: once the user types, the value is theirs.
+              const ai = Boolean(hints[field.name]) && value === (initial[field.name] ?? "");
+              return (
+                <Field
+                  key={field.name}
+                  label={label}
+                  aiReason={ai ? hints[field.name] : undefined}
+                  className={SPAN[field.width ?? "full"]}
+                >
+                  {({ id, describedBy }) =>
+                    field.type === "select" ? (
+                      <Select
+                        id={id}
+                        // Named on its own: a select would also read out its value.
+                        aria-label={label}
+                        aria-describedby={describedBy}
+                        ai={ai}
+                        value={value}
+                        onChange={(event) => set(field.name, event.target.value)}
+                      >
+                        {(field.options ?? []).map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </Select>
+                    ) : (
+                      <Input
+                        id={id}
+                        aria-label={label}
+                        aria-describedby={describedBy}
+                        ai={ai}
+                        type={field.type}
+                        inputMode={field.type === "number" ? "numeric" : undefined}
+                        min={field.min}
+                        max={field.max}
+                        step={field.step}
+                        value={value}
+                        onChange={(event) => set(field.name, event.target.value)}
+                        aria-invalid={fieldProblem(field, value) || undefined}
+                      />
+                    )
+                  }
+                </Field>
+              );
+            })}
           </div>
-        </div>
+          {sectionState?.node}
+        </SheetBody>
+        <SheetFooter>
+          {extra}
+          <span className="flex-1" />
+          <Button type="button" variant="secondary" onClick={onClose}>
+            Vazgeç
+          </Button>
+          <Button type="submit" variant="primary" disabled={!valid}>
+            {saveLabel}
+          </Button>
+        </SheetFooter>
       </form>
     </Dialog>
   );

@@ -41,7 +41,7 @@ export { AiTag, Chip, type Health, Segmented, Status, Tag } from "./Choice";
 export { AlertRow, OfflinePill, ProgressBar, ReadError, StepLines, Toast } from "./Feedback";
 export { AiReason, Field, FieldError, Input, Select, Textarea } from "./Field";
 export { ListRow } from "./ListRow";
-export { OverlayClose, Sheet, SheetFooter, Window } from "./Overlay";
+export { OverlayClose, Sheet, SheetBody, SheetFooter, Window } from "./Overlay";
 export { Panel, PanelLabel, type PanelVariant } from "./Panel";
 export { Switch, SwitchRow } from "./Switch";
 export { HistoryLink, TabBar, TabLink } from "./Tabs";

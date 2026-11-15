@@ -123,7 +123,7 @@ function TodayBody() {
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       if (event.ctrlKey || event.metaKey || event.altKey || isTyping(event.target)) return;
-      if (document.querySelector('[role="dialog"]')) return;
+      if (document.querySelector('[role="dialog"], [role="alertdialog"]')) return;
       // Ç3f: the closing opened inside a scene has its own keys (Enter, Escape).
       if (document.querySelector("[data-scene-closing]")) return;
       // Ç3g: a scene that takes the keys has them (SceneProps.keys).

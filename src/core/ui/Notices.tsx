@@ -10,6 +10,8 @@ import {
   useState,
 } from "react";
 
+import { Toast } from "./kit/Feedback";
+
 // One quiet line at the bottom of the screen: "Gelen kutusuna eklendi", "Kaydedilemedi".
 // No badges, no stacking, nothing that asks for attention; the newest line replaces the last.
 
@@ -42,18 +44,16 @@ export function NoticeProvider({ children }: { children: ReactNode }) {
   return (
     <NoticeContext.Provider value={value}>
       {children}
+      {/* At the bottom centre, above the phone's menu bar (docs/tasarim/parcalar.md, "Bildirim"). */}
       <div
         role="status"
         aria-live="polite"
-        className="pointer-events-none fixed inset-x-0 bottom-[calc(4.5rem+env(safe-area-inset-bottom))] z-50 flex justify-center px-4 md:bottom-6"
+        className="pointer-events-none fixed inset-x-0 bottom-[calc(var(--spacing-nav)+--spacing(9)+env(safe-area-inset-bottom))] z-50 flex justify-center px-4 md:bottom-6"
       >
         {notice ? (
-          <p
-            key={notice.id}
-            className="bg-foreground text-background rounded-lg px-4 py-2 text-sm shadow-lg"
-          >
+          <Toast key={notice.id} className="max-w-sheet">
             {notice.text}
-          </p>
+          </Toast>
         ) : null}
       </div>
     </NoticeContext.Provider>

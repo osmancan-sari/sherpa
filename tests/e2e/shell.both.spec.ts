@@ -1,11 +1,11 @@
 import { expect, test } from "./fixtures";
-import { ALLOWED_EMAIL, roomInTheDay } from "./helpers";
+import { roomInTheDay } from "./helpers";
 
 // The signed-in shell, run once at second-screen width ("pano") and once at phone width ("telefon").
 
 const screens = [
   { label: "Bugün", path: "/", empty: "Bugün için planlanan bir şey yok." },
-  { label: "Hafta", path: "/hafta", empty: "Bu hafta için taahhüt edilen kalem yok." },
+  { label: "Takvim", path: "/hafta", empty: "Bu hafta için taahhüt edilen kalem yok." },
   { label: "Modüller", path: "/m", empty: "Henüz modül yok." },
   { label: "Gelen kutusu", path: "/gelen", empty: "Gelen kutusu boş." },
   { label: "Ayarlar", path: "/ayarlar", empty: null },
@@ -32,16 +32,26 @@ test("navigation fits the screen and nothing scrolls sideways", async ({ page, v
   const box = (await nav.boundingBox())!;
 
   if (viewport!.width < 768) {
-    // Phone: a bar along the bottom edge with comfortable touch targets.
-    expect(box.y + box.height).toBeCloseTo(viewport!.height, 0);
-    expect(box.width).toBeCloseTo(viewport!.width, 0);
+    // Phone: a glass bar near the bottom edge, the "+" circle beside it, comfortable targets
+    // (docs/tasarim/ekranlar/menu.md).
+    const plus = (await page.getByRole("button", { name: "Yeni giriş" }).boundingBox())!;
+    expect(viewport!.height - (box.y + box.height)).toBeGreaterThanOrEqual(16);
+    expect(viewport!.height - (box.y + box.height)).toBeLessThanOrEqual(30);
+    expect(box.x).toBeGreaterThanOrEqual(12);
+    expect(plus.x + plus.width).toBeLessThanOrEqual(viewport!.width - 12);
+    expect(plus.x).toBeGreaterThan(box.x + box.width);
     for (const link of await nav.getByRole("link").all()) {
       expect((await link.boundingBox())!.height).toBeGreaterThanOrEqual(44);
     }
+    // The selected page is the wider pill.
+    const links = await nav.getByRole("link").all();
+    const widths = await Promise.all(links.map(async (link) => (await link.boundingBox())!.width));
+    expect(widths[0]).toBeGreaterThan(Math.max(...widths.slice(1)));
   } else {
-    // Second screen: a rail down the left edge.
-    expect(box.x).toBe(0);
-    expect(box.height).toBeCloseTo(viewport!.height, 0);
+    // Second screen: a glass rail down the left, standing off the edges.
+    expect(box.x).toBeGreaterThanOrEqual(12);
+    expect(box.x).toBeLessThanOrEqual(20);
+    expect(box.height).toBeCloseTo(viewport!.height - 32, 0);
   }
 
   const overflow = await page.evaluate(
@@ -50,24 +60,36 @@ test("navigation fits the screen and nothing scrolls sideways", async ({ page, v
   expect(overflow).toBe(0);
 });
 
-test("dark is the default theme; light can be chosen and is remembered", async ({ page }) => {
-  await page.goto("/ayarlar");
+test("one colour system; the look switches of this device are kept", async ({ page }) => {
+  await page.goto("/ayarlar/gorunum");
   const html = page.locator("html");
-  await expect(html).toHaveClass(/dark/);
+  // No theme choice: dark at every hour.
+  await expect(html).not.toHaveClass(/dark|light/);
+  await expect(page.getByRole("button", { name: "Koyu" })).toHaveCount(0);
+  await expect(html).not.toHaveAttribute("data-transparency", "reduced");
 
-  await page.getByRole("button", { name: "Açık" }).click();
-  await expect(html).not.toHaveClass(/dark/);
-  await expect(page.getByRole("button", { name: "Açık" })).toHaveAttribute("aria-pressed", "true");
-
+  const transparency = page.getByRole("switch", { name: "Saydamlığı azalt" });
+  await expect(transparency).toHaveAttribute("aria-checked", "false");
+  await transparency.click();
+  await expect(html).toHaveAttribute("data-transparency", "reduced");
   await page.reload();
-  await expect(html).not.toHaveClass(/dark/);
-  // The account line streams in after the shell, in either theme.
-  await expect(page.locator("section", { hasText: "Hesap" }).getByRole("paragraph")).toHaveText(
-    ALLOWED_EMAIL,
+  // Remembered on this device, and set before the first paint.
+  await expect(html).toHaveAttribute("data-transparency", "reduced");
+  await expect(page.getByRole("switch", { name: "Saydamlığı azalt" })).toHaveAttribute(
+    "aria-checked",
+    "true",
   );
+  await page.getByRole("switch", { name: "Saydamlığı azalt" }).click();
+  await expect(html).not.toHaveAttribute("data-transparency", "reduced");
 
-  await page.getByRole("button", { name: "Koyu" }).click();
-  await expect(html).toHaveClass(/dark/);
+  // The device's own preference turns "Hareketi azalt" on by itself.
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.reload();
+  await expect(html).toHaveAttribute("data-motion", "reduced");
+  await expect(page.getByRole("switch", { name: "Hareketi azalt" })).toHaveAttribute(
+    "aria-checked",
+    "true",
+  );
 });
 
 test("the page links the manifest and the home-screen icon", async ({ page }) => {

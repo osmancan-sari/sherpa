@@ -27,6 +27,7 @@ export const TOKENS = {
   "color-energy-base": "#070a16",
   "color-light": "rgba( 246, 247, 255, 0.92 )",
   "color-fill-quiet": "rgba(255, 255, 255, 0.06)",
+  "color-fill-box": "rgba( 255, 255, 255, 0.07 )",
   "color-fill-field": "rgba(255, 255, 255, 0.08)",
   "color-fill-chip": "rgba(255, 255, 255, 0.1)",
   "color-fill-selected": "rgba(255, 255, 255, 0.12)",

@@ -122,7 +122,10 @@ export function AiReason({ id, children }: { id?: string; children: ReactNode })
   return (
     <span id={id} className="text-meta text-ink-2 flex items-start gap-1.5">
       <Sparkles aria-hidden className="mt-0.5 size-3.5 shrink-0" />
-      <span>{children}</span>
+      <span>
+        <span className="sr-only">Yapay zeka: </span>
+        {children}
+      </span>
     </span>
   );
 }

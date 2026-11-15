@@ -38,6 +38,7 @@ const IMPORTANCE: EditField = {
   label: "Önem",
   type: "select",
   required: true,
+  width: "half",
   options: [
     { value: "1", label: "Düşük" },
     { value: "2", label: "Normal" },
@@ -46,7 +47,7 @@ const IMPORTANCE: EditField = {
   ],
 };
 const TITLE: EditField = { name: "title", label: "Ad", type: "text", required: true };
-const DUE: EditField = { name: "due", label: "Son tarih", type: "date" };
+const DUE: EditField = { name: "due", label: "Son tarih", type: "date", width: "half" };
 
 const TASK_FIELDS: EditField[] = [
   TITLE,
@@ -56,6 +57,7 @@ const TASK_FIELDS: EditField[] = [
     label: "Süre (dk)",
     type: "number",
     required: true,
+    width: "half",
     min: TASK_MIN_MINUTES,
     max: TASK_MAX_MINUTES,
     step: 5,
@@ -66,6 +68,7 @@ const TASK_FIELDS: EditField[] = [
     label: "Durum",
     type: "select",
     required: true,
+    width: "half",
     options: [
       { value: "open", label: "Açık" },
       { value: "waiting", label: "Bekliyor" },
@@ -77,11 +80,19 @@ const TASK_FIELDS: EditField[] = [
 const ITEM_FIELDS: EditField[] = [
   TITLE,
   DUE,
-  { name: "effort_total_minutes", label: "Toplam efor (dk)", type: "number", min: 5, step: 5 },
+  {
+    name: "effort_total_minutes",
+    label: "Toplam efor (dk)",
+    type: "number",
+    width: "half",
+    min: 5,
+    step: 5,
+  },
   {
     name: "session_minutes",
     label: "Oturum (dk)",
     type: "number",
+    width: "half",
     min: TASK_MIN_MINUTES,
     max: TASK_MAX_MINUTES,
     step: 5,
@@ -91,12 +102,21 @@ const ITEM_FIELDS: EditField[] = [
 
 const RHYTHM_FIELDS: EditField[] = [
   TITLE,
-  { name: "target_count", label: "Hedef", type: "number", required: true, min: 1, max: 31 },
+  {
+    name: "target_count",
+    label: "Hedef",
+    type: "number",
+    required: true,
+    width: "third",
+    min: 1,
+    max: 31,
+  },
   {
     name: "period",
     label: "Dönem",
     type: "select",
     required: true,
+    width: "third",
     options: [
       { value: "day", label: "Günde" },
       { value: "week", label: "Haftada" },
@@ -108,6 +128,7 @@ const RHYTHM_FIELDS: EditField[] = [
     label: "Süre (dk)",
     type: "number",
     required: true,
+    width: "third",
     min: TASK_MIN_MINUTES,
     max: TASK_MAX_MINUTES,
     step: 5,

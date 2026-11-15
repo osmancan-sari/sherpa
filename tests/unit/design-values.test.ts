@@ -25,11 +25,6 @@ const ALLOWED: Record<string, string> = {
  */
 const PENDING: Record<string, string> = {
   "src/modules/rutin/components/StepsTab.tsx": "step 6: Rutin's module page",
-  "src/core/ui/Dialog.tsx": "step 4: the shells",
-  "src/core/ui/Notices.tsx": "step 4: the shells",
-  "src/core/ui/QuickAdd.tsx": "step 4: the shells",
-  "src/core/ui/AppNav.tsx": "step 4: the menu",
-  "src/app/(app)/layout.tsx": "step 4: the menu",
   "src/app/giris/page.tsx": "step 5: the sign-in screens",
   "src/app/giris/login-form.tsx": "step 5: the sign-in screens",
   "src/core/ui/today/DayParts.tsx": "step 5: Today on the new base",
