@@ -6,7 +6,7 @@ Bu dosyayı Claude Code günceller. Yeni bir oturum yalnızca bu dosyayı ve `pr
 
 - Faz: **Ç4b. Cam temeli ve içeriği değişmeyen ekranlar** (15 Kas 2026; istem `prompts/c4b-cam-temeli.md`). Ç4a (`c4a-tamam`) yayında
 - Adım: 8 (kapanış) bitti: ikinci oturumda (15 Kas 2026) kullanıcının listesi, 4.10 görüntüleri ve karşılaştırması; yeni faz denetimi üç turda: tur 1 GEÇMEDİ (düzeltildi), tur 2 ve tur 3 GEÇTİ. **`c4b-tamam` etiketi atıldı**, yayında (15 Kas)
-- Son commit: Ç4b faz raporu (denetim tur 3), `c4b-tamam`
+- Son commit: Ç4b sonrası düzeltme "saat şeridi ve ada" (15 Kas 2026; `check:full` yeşil, denetçi adım kipinde GEÇTİ), yayında (`git push origin main`, kullanıcının izniyle)
 
 ### Çekirdek ekranlarının cam tasarım oturumu (14–15 Kas 2026)
 
@@ -967,7 +967,9 @@ Kareler masaüstü tarayıcıda çizildi ve ben de yalnızca tarayıcıda (Chrom
 
 Bu fazda migration yok; yalnızca kod. ~~`git push origin main`, `git push origin c4b-tamam`~~ **yapıldı** (15 Kas, senin izninle). Üretim yayını hazır (`sherpa-private-89oqmfj2q`).
 
-Yayından sonra: yukarıdaki "Ç4b: gerçek cihazda bakılacaklar" maddeleri 1–7. Ayrıca: hızlı girişte ve düzenlemede tarih "20.11.2026" biçiminde görünüyor mu; Ayarlar → Günün çerçevesi'nde uyku hedefi −/+ ile değişiyor mu; panoda Modüller genişliği doldurmuş mu; telefonda Ayarlar'ın sonunda "Tasarım galerisi" menünün üstünde mi.
+Ç4b sonrası düzeltme "saat şeridi ve ada" (15 Kas, migration yok) ~~`git push origin main`~~ **yapıldı** (senin izninle: `check:full` yeşil ve denetçi engel bulmazsa).
+
+Yayından sonra: yukarıdaki "Ç4b: gerçek cihazda bakılacaklar" maddeleri 1–8. Ayrıca: hızlı girişte ve düzenlemede tarih "20.11.2026" biçiminde görünüyor mu; Ayarlar → Günün çerçevesi'nde uyku hedefi −/+ ile değişiyor mu; panoda Modüller genişliği doldurmuş mu; telefonda Ayarlar'ın sonunda "Tasarım galerisi" menünün üstünde mi.
 
 
 Bir migration var, yalnızca ekleme yapar; kod onu ister (`core/context` ucu `settings.reported_context` yazar): **migration koddan önce** gider.
