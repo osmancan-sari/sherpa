@@ -4,9 +4,24 @@ Bu dosyayı Claude Code günceller. Yeni bir oturum yalnızca bu dosyayı ve `pr
 
 ## Durum
 
-- Faz: **Ç4b. Cam temeli ve içeriği değişmeyen ekranlar** (15 Kas 2026; istem `prompts/c4b-cam-temeli.md`). Ç4a (`c4a-tamam`) yayında
-- Adım: 8 (kapanış) bitti: ikinci oturumda (15 Kas 2026) kullanıcının listesi, 4.10 görüntüleri ve karşılaştırması; yeni faz denetimi üç turda: tur 1 GEÇMEDİ (düzeltildi), tur 2 ve tur 3 GEÇTİ. **`c4b-tamam` etiketi atıldı**, yayında (15 Kas)
-- Son commit: Ç4b sonrası düzeltme "saat şeridi ve ada" (15 Kas 2026; `check:full` yeşil, denetçi adım kipinde GEÇTİ), yayında (`git push origin main`, kullanıcının izniyle)
+- Faz: **Ç4c. Bugün, Takvim, kapanış ve alan sayfası** (15 Kas 2026; istem `prompts/c4c-bugun-takvim-kapanis.md`). Ç4b (`c4b-tamam`) yayında
+- Adım: 0 (plan)
+- Son commit: Ç4b sonrası düzeltme "saat şeridi ve ada" (15 Kas 2026), yayında
+
+### Ç4c planı
+
+İstem `prompts/c4c-bugun-takvim-kapanis.md`; bağlayıcı tasarım `docs/tasarim/ekranlar/bugun.md`, `takvim.md`, `kapanis.md`, `moduller.md` (alan sayfası), `ayarlar.md`; kareler `docs/tasarim/kareler/` (`BT*`, `BP*`, `ZT*`, `ZP*`, `TT*`, `TP*`, `KS*`, `KSP*`, `MT7`, `MT8`, `MP4`). Yeni parça önce kit'e ve galeriye; her adımda `npm run check` ve commit. Denetçi: Bugün, Takvim ve kapanış bitince ayrı ayrı adım kipinde; sonunda faz kipinde.
+
+| # | Adım | Durum |
+| --- | --- | --- |
+| 0 | Plan | bitti |
+| 1 | Bugün: üst satır (yalnızca "Bugün" ve tarih; panoda saat), telefon ve pano yerleşimi (pano 5:3), kartın durumları kit'in düğmeleriyle (en çok bir birincil), uyarılar (`AlertRow`), modül hapları, alt satır, "Bugün bitenler"; akşam kartında "Günü kapat" yok | |
+| 2 | Günün akışı (saatli şerit; telefonda balon, panoda adlar içinde) ve açılır Sıradakiler ("Hepsini göster" / "Küçült"); kit'e ve galeriye; klavye; adım denetimi (Bugün) | |
+| 3 | Takvim: `/takvim` (eski `/hafta` yönlenir), hafta seçici, yedi gün, "Bu hafta", gün ayrıntısı (geçmiş, bugün, gelecek), önümüzdeki haftalar, notlar, "Haftayı yeniden kur"; adım denetimi (Takvim) | |
+| 4 | Kapanış: sahnede (`controls.closing()` sonucunu döndürür), `/kapanis` ve Bugün'deki "Günü kapat" kalkar; sözleşme `hostsClosing`; barındıran modül yoksa akşam kartında "Kapanış" ve standart sahne kabuğu; Rutin'in "Yarının listesi" adımı açık (migration ile mevcut kullanıcıda da); `rutin.md`; adım denetimi (kapanış) | |
+| 5 | Alan sayfası: `/a/<alan>` kabuğu, üye panelleri, sözleşmede `ui.areaViews`, Rutin'in örneği; Modüller'de "Alan sayfası", modül sayfasında alanın bağlantısı | |
+| 6 | Ayarlar'da kalanlar (`ayarlar.md` ile ayrışanlar) | |
+| 7 | Görsel denetim, ekran görüntüleri (`docs/ekran-goruntuleri/c4c/`), karelerle karşılaştırma, `docs/05`, `check:full`, faz denetimi, rapor, `c4c-tamam`; yayın senin izninle | |
 
 ### Çekirdek ekranlarının cam tasarım oturumu (14–15 Kas 2026)
 
