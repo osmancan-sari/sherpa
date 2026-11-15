@@ -46,7 +46,11 @@ test("Settings: the frame's ranges, sleep target and a day type's range are save
   await expect(form.getByLabel("Günün çerçevesi açık")).not.toBeChecked();
   await form.getByLabel("Günün çerçevesi açık").check();
   await form.getByLabel("Uyanış başlangıç", { exact: true }).fill("06:30");
-  await form.getByLabel("Uyku hedefi (saat)").fill("7,5");
+  // The sleep target is a counter (Ç4b): half an hour at a time, from 8 hours.
+  await form.getByRole("button", { name: "Uyku hedefi: azalt" }).click();
+  await expect(form.getByRole("group", { name: "Uyku hedefi" }).getByRole("status")).toHaveText(
+    "7,5 saat",
+  );
   await form.getByText("Gün tipine göre").click();
   await form.getByLabel("Ofis günü uyanış başlangıç").fill("06:00");
   await form.getByLabel("Ofis günü uyanış bitiş").fill("07:30");

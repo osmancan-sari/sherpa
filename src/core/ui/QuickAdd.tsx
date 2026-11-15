@@ -27,7 +27,7 @@ import { cn } from "@/lib/utils";
 import { Dialog } from "./Dialog";
 import { Button } from "./kit/Button";
 import { Chip } from "./kit/Choice";
-import { Field, fieldClass, Input, Select } from "./kit/Field";
+import { DateInput, Field, fieldClass, Input, Select } from "./kit/Field";
 import { SheetBody, SheetFooter } from "./kit/Overlay";
 import { SAVE_FAILED, useNotify } from "./Notices";
 
@@ -410,9 +410,8 @@ function QuickAddDialog({
               <div className="grid grid-cols-[3fr_2fr] gap-3">
                 <Field label="Tarih">
                   {({ id }) => (
-                    <Input
+                    <DateInput
                       id={id}
-                      type="date"
                       value={dueDay}
                       onChange={(event) => setDayOverride(event.target.value)}
                     />

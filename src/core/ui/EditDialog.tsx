@@ -2,7 +2,7 @@
 
 import { type FormEvent, type ReactNode, useState } from "react";
 import { Button } from "./kit/Button";
-import { Field, Input, Select } from "./kit/Field";
+import { DateInput, Field, Input, Select } from "./kit/Field";
 import { SheetBody, SheetFooter } from "./kit/Overlay";
 import { Dialog } from "./Dialog";
 
@@ -124,6 +124,18 @@ export function EditDialog({
                           </option>
                         ))}
                       </Select>
+                    ) : field.type === "date" ? (
+                      <DateInput
+                        id={id}
+                        aria-label={label}
+                        aria-describedby={describedBy}
+                        ai={ai}
+                        min={field.min}
+                        max={field.max}
+                        value={value}
+                        onChange={(event) => set(field.name, event.target.value)}
+                        aria-invalid={fieldProblem(field, value) || undefined}
+                      />
                     ) : (
                       <Input
                         id={id}

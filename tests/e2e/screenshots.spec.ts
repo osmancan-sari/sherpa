@@ -8,7 +8,7 @@ import { seedChains } from "../../scripts/demo-chains";
 import { seedFacets } from "../../scripts/demo-facets";
 import { insert, rows, update, waitFor } from "./data";
 import { expect, quietTest as base, test } from "./fixtures";
-import { ALLOWED_EMAIL, openQuickAdd, requestCode } from "./helpers";
+import { ALLOWED_EMAIL, openQuickAdd, requestCode, roomInTheDay } from "./helpers";
 import { type Cookie, PUBLISHABLE_KEY, readSession, SUPABASE_URL } from "./supabase";
 
 // Phase screenshots. Runs only when SHERPA_SHOTS names the phase folder, for example:
@@ -249,7 +249,7 @@ for (const look of LOOKS) {
       // its end as well.
       await page.screenshot({ path: file(""), animations: "disabled" });
       const long = await page.evaluate(
-        () => document.documentElement.scrollHeight > window.innerHeight * 1.3,
+        () => document.documentElement.scrollHeight > window.innerHeight + 1,
       );
       if (long) {
         await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
@@ -889,4 +889,84 @@ base("login screens", async ({ browser }, testInfo) => {
   await shot("giris-kod");
 
   await context.close();
+});
+
+// Ç4b, docs/tasarim/ekranlar/bos-ve-hata.md (frames XT1, XT2, XT6–XT14, XP1–XP4): the empty and
+// error states on an empty account. A read that fails is made by stopping its request; the AI
+// budget by answering the status request; the lost connection by taking the browser offline.
+test("empty and error screens", async ({ page, context }, testInfo) => {
+  test.setTimeout(120_000);
+  await roomInTheDay(page);
+  const shot = async (name: string) => {
+    await page.mouse.move(0, 0);
+    await page.screenshot({
+      path: path.join(folder, `${testInfo.project.name}-${name}.png`),
+      animations: "disabled",
+    });
+  };
+  const main = page.getByRole("main");
+
+  // Modüller with no module switched on (XT9).
+  await page.goto("/m");
+  await expect(main.getByText("Henüz modül yok.")).toBeVisible();
+  await shot("bos-moduller");
+
+  // Quick add with no module switched on: everything goes to the inbox (XT14).
+  await openQuickAdd(page);
+  const dialog = page.getByRole("dialog", { name: "Yeni giriş" });
+  await expect(dialog).toContainText("Etkin modül yok");
+  await dialog.getByLabel("Giriş").fill("kombi bakımı için usta çağır");
+  await shot("bos-hizli-giris");
+  await page.keyboard.press("Escape");
+
+  // The module pages that are not there (XT10–XT13, XP4).
+  await insert("modules", [
+    { slug: "spor-ornek", name: "Spor", color: "#22c55e", status: "archived" },
+    { slug: "ev-ornek", name: "Ev", color: "#16a34a" },
+  ]);
+  await page.goto("/m/spor-ornek");
+  await expect(main).toContainText("Bu modül arşivde.");
+  await shot("hata-modul-arsivde");
+  await page.goto("/m/deneme");
+  await expect(main).toContainText("Bu modül etkin değil.");
+  await shot("hata-modul-etkin-degil");
+  await page.goto("/m/hic-yok");
+  await expect(main).toContainText("Böyle bir modül yok.");
+  await shot("hata-modul-yok");
+  await page.goto("/m/ev-ornek/olmayan");
+  await expect(main).toContainText("Bu modülde böyle bir sayfa yok.");
+  await shot("hata-sayfa-yok");
+
+  // A list that could not be read (XT8), and Bugün's (XT1, XP1).
+  await page.route("**/rest/v1/inbox_entries*", (route) => route.abort());
+  await page.goto("/gelen");
+  await expect(page.getByRole("alert").filter({ hasText: "Veri okunamadı." })).toBeVisible({
+    timeout: 15_000,
+  });
+  await shot("hata-gelen-okunamadi");
+  await page.unroute("**/rest/v1/inbox_entries*");
+  await page.route("**/rest/v1/tasks*", (route) => route.abort());
+  await page.goto("/");
+  await expect(page.getByRole("alert").filter({ hasText: "Veri okunamadı." })).toBeVisible({
+    timeout: 15_000,
+  });
+  await shot("hata-bugun-okunamadi");
+  await page.unroute("**/rest/v1/tasks*");
+
+  // The month's AI budget used up, on an empty day (XT6, XT7, XP3).
+  await page.route("**/api/ai/status", (route) =>
+    route.fulfill({ json: { state: "budget" }, contentType: "application/json" }),
+  );
+  await page.goto("/");
+  await expect(page.getByText("Bu ayın yapay zeka bütçesi doldu")).toBeVisible();
+  await shot("bos-gun-butce");
+  await page.unroute("**/api/ai/status");
+
+  // The connection lost: a small pill at the right of the title; the screen stays (XT2, XP2).
+  await page.goto("/gelen");
+  await expect(page.getByRole("heading", { level: 1, name: "Gelen kutusu" })).toBeVisible();
+  await context.setOffline(true);
+  await expect(page.getByRole("status").filter({ hasText: "bağlantı yok" })).toBeVisible();
+  await shot("hata-baglanti-yok");
+  await context.setOffline(false);
 });

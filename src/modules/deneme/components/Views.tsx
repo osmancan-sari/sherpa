@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { useRefreshAll } from "@/core/app/actions";
 import { useModuleQuery } from "@/core/app/hooks";
 import type { ModuleViewProps } from "@/core/contract/types";
-import { BarChart, EmptyState, NumberStepper, Timer } from "@/core/ui/kit";
+import { BarChart, EmptyState, Stepper, Timer } from "@/core/ui/kit";
 import { useModule } from "@/core/ui/module/ModuleProvider";
 import { SAVE_FAILED, useNotify } from "@/core/ui/Notices";
 import { dayKey, formatMinutes, shiftDay } from "@/lib/date";
@@ -108,7 +108,8 @@ export function FocusView() {
       <Timer label="Odak süresi" startedAt={startedAt} durationSeconds={minutes * 60} />
       {startedAt === null ? (
         <div className="flex flex-col items-center gap-6">
-          <NumberStepper
+          <Stepper
+            size="lg"
             label="Dakika"
             value={minutes}
             onChange={setMinutes}
@@ -160,7 +161,7 @@ export function SettingsForm() {
       <p className="text-muted-foreground text-sm">
         Süresi yazılmayan alışkanlık kayıtlarının oturum uzunluğu.
       </p>
-      <NumberStepper
+      <Stepper
         label="Varsayılan süre"
         value={minutes}
         onChange={setMinutes}

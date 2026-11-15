@@ -125,3 +125,18 @@
     animation: sky-twinkle var(--motion-twinkle) ease-in-out infinite;
   }
 }
+
+/*
+ * The date field (Field.tsx, DateInput): at rest the browser's own writing of the date is hidden
+ * and the field shows the Turkish one over it; while the field is being edited the browser's own
+ * writing comes back. The calendar icon stays.
+ */
+.date-field:not(:focus) {
+  color: transparent;
+}
+.date-field:not(:focus)::-webkit-datetime-edit {
+  opacity: 0;
+}
+.date-field::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+}

@@ -31,6 +31,63 @@ export function Input({ className, ai, ...props }: ComponentProps<"input"> & { a
   );
 }
 
+/** "2026-11-20" as Turkish writes it: "20.11.2026". */
+export function turkishDate(value: string): string {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  return match ? `${match[3]}.${match[2]}.${match[1]}` : "";
+}
+
+/**
+ * A date field. The browser's own date input stays the control (its picker, its keyboard, its
+ * value "yyyy-mm-dd"), but the browser writes the date in its own language ("20-Nov-2026" in an
+ * English one); so at rest the field shows the date as Turkish writes it ("20.11.2026"), and the
+ * browser's own writing comes back only while the field is being edited. A click opens the
+ * picker where the browser can.
+ */
+export function DateInput({
+  className,
+  inputClassName,
+  ai,
+  value,
+  onClick,
+  ...props
+}: Omit<ComponentProps<"input">, "type" | "value"> & {
+  ai?: boolean;
+  value: string;
+  /** The field's own classes (its height); `className` places and sizes the whole. */
+  inputClassName?: string;
+}) {
+  return (
+    <span className={cn("relative flex w-full min-w-0", className)}>
+      <input
+        data-slot="input"
+        data-ai={ai || undefined}
+        type="date"
+        value={value}
+        onClick={(event) => {
+          onClick?.(event);
+          try {
+            event.currentTarget.showPicker?.();
+          } catch {
+            // Not allowed here (a frame, an old browser): the field still takes typing.
+          }
+        }}
+        className={cn(fieldClass, ai && aiFieldClass, "date-field peer", inputClassName)}
+        {...props}
+      />
+      <span
+        aria-hidden
+        className={cn(
+          "pointer-events-none absolute inset-y-0 left-3.5 flex items-center text-base tabular-nums peer-focus:invisible",
+          value ? "text-ink" : "text-ink-3",
+        )}
+      >
+        {value ? turkishDate(value) : "gg.aa.yyyy"}
+      </span>
+    </span>
+  );
+}
+
 export function Textarea({ className, ...props }: ComponentProps<"textarea">) {
   return (
     <textarea

@@ -59,13 +59,15 @@ function ModulesList() {
       {shown.length === 0 ? (
         <EmptyState>Henüz modül yok.</EmptyState>
       ) : (
+        // On the board the panels stand in two columns over the whole width beside the menu; a
+        // panel alone takes both.
         <div className="grid items-start gap-3.5 md:grid-cols-2 md:gap-5">
           {[...areas.values()].map((area) => (
             <Panel
               key={area.name}
               variant="dense"
               aria-label={area.name}
-              className="overflow-hidden"
+              className="overflow-hidden md:only:col-span-2"
             >
               <div className="border-line flex flex-col gap-0.5 border-b px-4 pt-3 pb-2.5">
                 <span className="panel-label text-ink">{area.name}</span>
@@ -79,7 +81,11 @@ function ModulesList() {
             </Panel>
           ))}
           {loose.length > 0 ? (
-            <Panel variant="dense" aria-label="Modüller" className="overflow-hidden">
+            <Panel
+              variant="dense"
+              aria-label="Modüller"
+              className="overflow-hidden md:only:col-span-2"
+            >
               {loose.map((mod) => (
                 <ModuleRow key={mod.row.id} mod={mod} />
               ))}

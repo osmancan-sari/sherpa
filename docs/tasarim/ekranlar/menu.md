@@ -21,4 +21,4 @@ Kaynak: `docs/13-cam-dili.md` bölüm 1 ve 4.3 ("Menü"), `docs/moduller/ORTAK.m
 
 ## Sayfa başlığı
 
-Liste sayfalarında başlık `text-title` (panoda `text-3xl`), kalın, `tracking-title`; içerik telefonda `px-4`, panoda `px-10` iç boşlukla, panoda en çok `spacing-board` geniş.
+Liste sayfalarında başlık `text-title` (panoda `text-3xl`), kalın, `tracking-title`; içerik telefonda `px-4`, panoda `px-10` iç boşlukla, panoda menünün yanındaki genişliğin tamamında (Modüller, modül sayfası); okunacak tek sütun (Gelen kutusu) en çok `spacing-read` geniş.

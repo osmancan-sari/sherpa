@@ -100,6 +100,46 @@ test("Settings links the design gallery", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "Tasarım" })).toBeVisible();
 });
 
+test("phone: at the end of a page its last item stands above the menu, not behind it", async ({
+  page,
+  viewport,
+}) => {
+  // The board's menu stands beside the page: nothing can pass behind it.
+  if (viewport!.width >= 768) return;
+  await roomInTheDay(page);
+  const pages = [
+    { path: "/", ready: page.getByRole("region", { name: "Şimdi" }) },
+    { path: "/hafta", ready: page.getByRole("heading", { level: 1, name: "Takvim" }) },
+    { path: "/m", ready: page.getByRole("link", { name: "Modülleri aç, duraklat ya da arşivle" }) },
+    { path: "/gelen", ready: page.getByRole("heading", { level: 1, name: "Gelen kutusu" }) },
+    { path: "/ayarlar", ready: page.getByRole("link", { name: "Tasarım galerisi" }) },
+    { path: "/ayarlar/cerceve", ready: page.getByRole("form", { name: "Günün çerçevesi" }) },
+    { path: "/ayarlar/bloklar", ready: page.getByRole("heading", { name: "Sabit bloklar" }) },
+    { path: "/tasarim", ready: page.getByRole("region", { name: "Sahne tonları" }) },
+  ];
+  const menu = page.getByRole("navigation", { name: "Ana gezinme" });
+  for (const { path, ready } of pages) {
+    await page.goto(path);
+    await expect(ready).toBeVisible();
+    await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+    const top = (await menu.boundingBox())!.y;
+    // The lowest thing the page draws (fixed pieces such as the menu and "+" left out).
+    const bottom = await page.evaluate(() => {
+      let lowest = 0;
+      for (const element of document.querySelectorAll("main *")) {
+        const style = getComputedStyle(element);
+        if (style.position === "fixed" || style.visibility === "hidden") continue;
+        if (element.closest("[role=dialog]")) continue;
+        const box = element.getBoundingClientRect();
+        if (box.width === 0 || box.height === 0) continue;
+        lowest = Math.max(lowest, box.bottom);
+      }
+      return lowest;
+    });
+    expect(bottom, path).toBeLessThanOrEqual(top - 8);
+  }
+});
+
 test("the page links the manifest and the home-screen icon", async ({ page }) => {
   await page.goto("/");
   await expect(page.locator('link[rel="manifest"]')).toHaveAttribute(

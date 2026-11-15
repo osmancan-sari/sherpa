@@ -7,6 +7,7 @@ import {
   AlertRow,
   Button,
   Chip,
+  DateInput,
   Field,
   IconButton,
   Input,
@@ -20,6 +21,7 @@ import {
   Sheet,
   Status,
   StepLines,
+  Stepper,
   Switch,
   SwitchRow,
   Tag,
@@ -235,6 +237,10 @@ export function DesignGallery() {
             </Row>
           </Section>
 
+          <Section title="Sayaç">
+            <StepperDemo />
+          </Section>
+
           <Section title="Durum">
             <Row>
               <Status health="ok" />
@@ -297,6 +303,9 @@ export function DesignGallery() {
               <Field label="Hatalı" error="Saat 00:00 ile 24:00 arasında olmalı.">
                 {({ id }) => <Input id={id} defaultValue="25:70" aria-invalid />}
               </Field>
+              <Field label="Tarih" hint="Türkçe yazılır: gg.aa.yyyy">
+                {({ id }) => <DateDemo id={id} />}
+              </Field>
             </div>
             <Field label="Seçim">
               {({ id }) => (
@@ -343,6 +352,59 @@ export function DesignGallery() {
       </div>
     </div>
   );
+}
+
+/** The counter, small (a form row) and large (a full-screen view); the first at its least. */
+function StepperDemo() {
+  const [minutes, setMinutes] = useState(480);
+  const [seconds, setSeconds] = useState(0);
+  const [focus, setFocus] = useState(25);
+  return (
+    <Panel variant="dense" className="gap-1 px-4 py-2">
+      <div className="flex min-h-12.5 items-center justify-between gap-3">
+        <span className="text-ink-2 text-note">Süre (en azında)</span>
+        <Stepper
+          label="Süre"
+          value={seconds}
+          min={0}
+          max={600}
+          step={15}
+          format={(value) => (value === 0 ? "süresiz" : `${value} sn`)}
+          onChange={setSeconds}
+        />
+      </div>
+      <div className="border-line flex min-h-12.5 items-center justify-between gap-3 border-t">
+        <span className="text-ink-2 text-note">Uyku hedefi</span>
+        <Stepper
+          label="Uyku hedefi"
+          value={minutes}
+          min={240}
+          max={720}
+          step={30}
+          format={(value) => String(value / 60).replace(".", ",")}
+          unit="saat"
+          onChange={setMinutes}
+        />
+      </div>
+      <div className="border-line flex justify-center border-t py-3">
+        <Stepper
+          size="lg"
+          label="Dakika"
+          value={focus}
+          min={5}
+          max={90}
+          step={5}
+          unit="dk"
+          onChange={setFocus}
+        />
+      </div>
+    </Panel>
+  );
+}
+
+function DateDemo({ id }: { id: string }) {
+  const [day, setDay] = useState("2026-11-20");
+  return <DateInput id={id} value={day} onChange={(event) => setDay(event.target.value)} />;
 }
 
 function Column({ children }: { children: ReactNode }) {

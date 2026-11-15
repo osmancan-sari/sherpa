@@ -1,14 +1,16 @@
 "use client";
 
+import { Stepper } from "@/core/ui/kit/Stepper";
 import { SwitchRow } from "@/core/ui/kit/Switch";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   checkFrame,
   DEFAULT_FRAME,
   type FrameSettings,
   readFrame,
+  SLEEP_MAX,
+  SLEEP_MIN,
   toStoredFrame,
 } from "@/core/contract/frame";
 import { useSaveDayFrame } from "@/core/app/frame-actions";
@@ -34,7 +36,8 @@ type Draft = {
   on: boolean;
   wake: Pair;
   bed: Pair;
-  hours: string;
+  /** The sleep target in minutes, changed half an hour at a time. */
+  sleepMinutes: number;
   byDayType: Record<DayType, { wake: Pair; bed: Pair }>;
   startOnWake: boolean;
   chainAuto: boolean;
@@ -53,7 +56,7 @@ function draftOf(frame: FrameSettings | null): Draft {
     on: frame !== null,
     wake: source.wake,
     bed: source.bed,
-    hours: String(source.sleepMinutes / 60).replace(".", ","),
+    sleepMinutes: source.sleepMinutes,
     byDayType,
     startOnWake: source.startOnWake,
     chainAuto: source.chainAuto,
@@ -80,11 +83,10 @@ function valueOf(draft: Draft): unknown {
     if (own.bed[0] || own.bed[1]) entry.bed = clocks(own.bed);
     if (entry.wake || entry.bed) byDayType[type] = entry;
   }
-  const hours = Number(draft.hours.replace(",", "."));
   return {
     wake: clocks(draft.wake),
     bed: clocks(draft.bed),
-    sleep_minutes: Number.isFinite(hours) ? Math.round(hours * 60) : NaN,
+    sleep_minutes: draft.sleepMinutes,
     ...(Object.keys(byDayType).length > 0 ? { by_day_type: byDayType } : {}),
     ...(draft.startOnWake ? { start_on_wake: true } : {}),
     ...(draft.chainAuto ? {} : { chain_auto: false }),
@@ -172,16 +174,16 @@ function DayFrameForm({ stored }: { stored: FrameSettings | null }) {
             <span>Yatış</span>
             {pair(draft.bed, (bed) => setDraft({ ...draft, bed }), "Yatış")}
             <span>Uyku hedefi</span>
-            <span className="flex items-center gap-2">
-              <Input
-                aria-label="Uyku hedefi (saat)"
-                value={draft.hours}
-                inputMode="decimal"
-                className="h-11 w-20 text-center tabular-nums"
-                onChange={(event) => setDraft({ ...draft, hours: event.target.value })}
-              />
-              saat
-            </span>
+            <Stepper
+              label="Uyku hedefi"
+              value={draft.sleepMinutes}
+              min={SLEEP_MIN}
+              max={SLEEP_MAX}
+              step={30}
+              format={(minutes) => String(minutes / 60).replace(".", ",")}
+              unit="saat"
+              onChange={(sleepMinutes) => setDraft({ ...draft, sleepMinutes })}
+            />
           </div>
           <details className="text-sm">
             <summary className="text-muted-foreground hover:text-foreground flex min-h-11 cursor-pointer items-center">

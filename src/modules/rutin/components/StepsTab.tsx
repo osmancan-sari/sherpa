@@ -1,6 +1,6 @@
 "use client";
 
-import { GripVertical, Minus, Plus, X } from "lucide-react";
+import { GripVertical, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { type PointerEvent as ReactPointerEvent, type ReactNode, useRef, useState } from "react";
@@ -15,6 +15,7 @@ import {
   Segmented,
   Select,
   Sheet,
+  Stepper,
   Switch,
   Window,
 } from "@/core/ui/kit";
@@ -327,18 +328,11 @@ function StepGroup({
     .forEach((row, index) => numbers.set(row.id, String(first + index + 1)));
   return (
     <Panel aria-label={label} className="overflow-hidden">
-      <div className="flex items-center gap-2 px-4 pt-3 pb-1.5">
-        <span
-          aria-hidden
-          className="size-2.25 rounded-full"
-          style={{
-            backgroundColor:
-              facet === "aksam" ? token("color-swatch-moon") : token("color-swatch-sun"),
-          }}
-        />
-        <span className="panel-label text-ink shrink-0 whitespace-nowrap">{label}</span>
-        <span className="text-ink-2 text-meta ml-auto min-w-0 truncate">{context}</span>
-      </div>
+      <GroupHeading
+        dot={facet === "aksam" ? token("color-swatch-moon") : token("color-swatch-sun")}
+        label={label}
+        context={context}
+      />
       <ol ref={listRef} className="flex flex-col">
         {rows.map((step) => {
           const addOns = steps
@@ -393,17 +387,11 @@ function OtherGroup({ item, number }: { item: SceneChain["items"][number]; numbe
   const label = (item.facet?.name ?? item.title).toLocaleUpperCase("tr");
   return (
     <Panel aria-label={label} data-testid="rutin-other-group" className="overflow-hidden">
-      <div className="flex items-center gap-2 px-4 pt-3 pb-1.5">
-        <span
-          aria-hidden
-          className="size-2.25 rounded-full"
-          style={{ backgroundColor: item.color }}
-        />
-        <span className="panel-label text-ink shrink-0 whitespace-nowrap">{label}</span>
-        <span className="text-ink-2 text-meta ml-auto min-w-0 truncate">
-          {item.module.name} modülü · toplam {item.minutes} dk
-        </span>
-      </div>
+      <GroupHeading
+        dot={item.color}
+        label={label}
+        context={`${item.module.name} modülü · toplam ${item.minutes} dk`}
+      />
       <Link
         href={`/m/${item.module.slug}`}
         className="border-line flex min-h-13.5 items-center gap-2 border-t pr-4 pl-1"
@@ -687,19 +675,14 @@ function StepSheet({
         <Row label={draft.secondsAuto ? "Süre · otomatik" : "Süre · elle"}>
           <Stepper
             label="Süre"
-            text={draft.seconds === 0 ? "süresiz" : formatSeconds(draft.seconds)}
-            onMinus={() =>
-              set({
-                seconds: Math.max(0, draft.seconds - (draft.seconds > 60 ? 60 : 15)),
-                secondsAuto: false,
-              })
+            value={draft.seconds}
+            min={0}
+            max={10800}
+            step={(value, direction) =>
+              value + direction * (direction < 0 ? (value > 60 ? 60 : 15) : value >= 60 ? 60 : 15)
             }
-            onPlus={() =>
-              set({
-                seconds: Math.min(10800, draft.seconds + (draft.seconds >= 60 ? 60 : 15)),
-                secondsAuto: false,
-              })
-            }
+            format={(value) => (value === 0 ? "süresiz" : formatSeconds(value))}
+            onChange={(seconds) => set({ seconds, secondsAuto: false })}
           />
         </Row>
         {!draft.secondsAuto ? (
@@ -730,9 +713,11 @@ function StepSheet({
           <Row label="Kaç günde bir">
             <Stepper
               label="Kaç günde bir"
-              text={`${draft.everyDays} gün`}
-              onMinus={() => set({ everyDays: Math.max(2, (draft.everyDays ?? 2) - 1) })}
-              onPlus={() => set({ everyDays: Math.min(365, (draft.everyDays ?? 2) + 1) })}
+              value={draft.everyDays}
+              min={2}
+              max={365}
+              format={(value) => `${value} gün`}
+              onChange={(everyDays) => set({ everyDays })}
             />
           </Row>
         ) : null}
@@ -944,9 +929,14 @@ function PartTime({
         <Row label="Süre">
           <Stepper
             label="Alt adımın süresi"
-            text={formatSeconds(seconds)}
-            onMinus={() => setSeconds(Math.max(5, seconds - (seconds > 60 ? 30 : 5)))}
-            onPlus={() => setSeconds(Math.min(3600, seconds + (seconds >= 60 ? 30 : 5)))}
+            value={seconds}
+            min={5}
+            max={3600}
+            step={(value, direction) =>
+              value + direction * (direction < 0 ? (value > 60 ? 30 : 5) : value >= 60 ? 30 : 5)
+            }
+            format={formatSeconds}
+            onChange={setSeconds}
           />
         </Row>
         <Row label="Sayaç göster">
@@ -974,6 +964,24 @@ function PartTime({
 
 // --- Small pieces ------------------------------------------------------------------------------
 
+/**
+ * A block's heading: the dot, the label and at the right the summary ("uyanışta · toplam 4 dk").
+ * A summary that does not fit beside the label goes to the next line, under the label, whole.
+ */
+function GroupHeading({ dot, label, context }: { dot: string; label: string; context: string }) {
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-0.5 px-4 pt-3 pb-1.5">
+      <span className="flex items-center gap-2">
+        <span aria-hidden className="size-2.25 rounded-full" style={{ backgroundColor: dot }} />
+        <span className="panel-label text-ink whitespace-nowrap">{label}</span>
+      </span>
+      <span className="text-ink-2 text-meta pl-4.25" data-testid="rutin-group-summary">
+        {context}
+      </span>
+    </div>
+  );
+}
+
 function Group({ children }: { children: ReactNode }) {
   return (
     <div className="bg-fill-field border-edge rounded-alert flex flex-col border px-3.5 py-1">
@@ -987,38 +995,6 @@ function Row({ label, children }: { label: string; children: ReactNode }) {
     <div className="flex min-h-12.5 items-center justify-between gap-3">
       <span className="text-ink-2 text-note">{label}</span>
       {children}
-    </div>
-  );
-}
-
-function Stepper({
-  label,
-  text,
-  onMinus,
-  onPlus,
-}: {
-  label: string;
-  text: string;
-  onMinus: () => void;
-  onPlus: () => void;
-}) {
-  // 32 px circles (frame), each with a 44 px touch area.
-  const round =
-    "bg-fill-button relative flex size-8 items-center justify-center rounded-full after:absolute after:-inset-1.5";
-  return (
-    <div className="flex items-center gap-3">
-      <button type="button" aria-label={`${label}: azalt`} onClick={onMinus} className={round}>
-        <Minus className="size-4" aria-hidden />
-      </button>
-      <span
-        className="min-w-14 text-center text-base font-semibold tabular-nums"
-        data-testid={`stepper-${label}`}
-      >
-        {text}
-      </span>
-      <button type="button" aria-label={`${label}: artır`} onClick={onPlus} className={round}>
-        <Plus className="size-4" aria-hidden />
-      </button>
     </div>
   );
 }

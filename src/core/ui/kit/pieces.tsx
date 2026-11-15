@@ -1,63 +1,13 @@
 "use client";
 
-import { Minus, Plus } from "lucide-react";
 import { type ReactNode, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useNow } from "@/core/app/hooks";
 import { cn } from "@/lib/utils";
 
-// The smaller pieces of the module component kit: stepper, choice chips, timer, timeline,
+// The smaller pieces of the module component kit: choice chips, timer, timeline,
 // grid, and the empty and error states. Modules use these and write their own only where
 // these do not reach (docs/06-modul-sozlesmesi.md, "Modül arayüzü").
-
-/** A number changed with two large buttons; made for the thumb. */
-export function NumberStepper({
-  label,
-  value,
-  onChange,
-  min = 0,
-  max = Number.MAX_SAFE_INTEGER,
-  step = 1,
-  unit,
-}: {
-  label: string;
-  value: number;
-  onChange: (value: number) => void;
-  min?: number;
-  max?: number;
-  step?: number;
-  unit?: string;
-}) {
-  const clamp = (next: number) => Math.min(max, Math.max(min, next));
-  return (
-    <div role="group" aria-label={label} className="flex items-center gap-2">
-      <Button
-        type="button"
-        variant="outline"
-        className="size-11"
-        aria-label={`${label}: azalt`}
-        disabled={value <= min}
-        onClick={() => onChange(clamp(value - step))}
-      >
-        <Minus aria-hidden />
-      </Button>
-      <output aria-live="polite" className="min-w-16 text-center text-lg font-medium tabular-nums">
-        {value}
-        {unit ? <span className="text-muted-foreground text-sm"> {unit}</span> : null}
-      </output>
-      <Button
-        type="button"
-        variant="outline"
-        className="size-11"
-        aria-label={`${label}: artır`}
-        disabled={value >= max}
-        onClick={() => onChange(clamp(value + step))}
-      >
-        <Plus aria-hidden />
-      </Button>
-    </div>
-  );
-}
 
 /** One of a few options, as chips. */
 export function ChoiceChips<T extends string>({

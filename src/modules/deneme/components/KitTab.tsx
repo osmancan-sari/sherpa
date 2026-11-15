@@ -14,13 +14,13 @@ import {
   HeatGrid,
   LineChart,
   ListRow,
-  NumberStepper,
   Panel,
   ProgressBar,
   Segmented,
   Sheet,
   Status,
   StepLines,
+  Stepper,
   Switch,
   Timeline,
 } from "@/core/ui/kit";
@@ -106,15 +106,8 @@ export function KitTab() {
           <EmptyState>Tarihli kayıt yok.</EmptyState>
         )}
       </Piece>
-      <Piece title="Sayı adımlayıcı">
-        <NumberStepper
-          label="Tekrar"
-          value={count}
-          onChange={setCount}
-          min={1}
-          max={12}
-          unit="kez"
-        />
+      <Piece title="Sayaç">
+        <Stepper label="Tekrar" value={count} onChange={setCount} min={1} max={12} unit="kez" />
       </Piece>
       <Piece title="Seçim çipleri">
         <ChoiceChips

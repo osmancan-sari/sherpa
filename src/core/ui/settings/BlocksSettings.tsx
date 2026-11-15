@@ -2,7 +2,7 @@
 
 import { type FormEvent, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { fieldClass, Input } from "@/core/ui/kit/Field";
+import { DateInput, fieldClass, Input } from "@/core/ui/kit/Field";
 import { useEditBlock, useEditSeries, useSetBlockCancelled } from "@/core/app/actions";
 import { useBlocks, useCoreMutation, useNow, useSeries } from "@/core/app/hooks";
 import {
@@ -389,11 +389,11 @@ function BlockForm() {
         </select>
       </Labelled>
       <Labelled label="Tarih">
-        <Input
-          type="date"
+        <DateInput
           value={day}
           onChange={(event) => setDay(event.target.value)}
-          className="h-11 w-44"
+          className="w-44"
+          inputClassName="h-11"
         />
       </Labelled>
       <Labelled label="Başlangıç">

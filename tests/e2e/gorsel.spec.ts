@@ -37,6 +37,10 @@ async function shot(
   await expect(page).toHaveScreenshot(`${name}.png`, {
     // Tight: a change of a token (a colour, a size) moves more pixels than this.
     maxDiffPixelRatio: 0.002,
+    // And a pixel counts as changed at a small colour distance: the glass and the calm backdrop
+    // are close dark colours, and at the default (0.2) a panel that grew by hundreds of pixels
+    // over the backdrop still read as unchanged (Ç4b, Modüller on the board).
+    threshold: 0.02,
     fullPage: options.fullPage,
     animations: "disabled",
     caret: "hide",

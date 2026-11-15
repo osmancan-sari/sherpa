@@ -18,7 +18,7 @@ import { dayKey, formatDue, formatMinutes, istanbulInstant } from "@/lib/date";
 import { ClientOnly } from "../ClientOnly";
 import { Button } from "../kit/Button";
 import { Chip } from "../kit/Choice";
-import { Field, Input } from "../kit/Field";
+import { DateInput, Field, Input } from "../kit/Field";
 import { EmptyState, PageShell } from "../PageShell";
 import { QuickAddButton } from "../QuickAdd";
 import { useNotify } from "../Notices";
@@ -183,12 +183,7 @@ function EntryRow({ entry, modules }: { entry: InboxEntry; modules: KnownModule[
           <div className="grid grid-cols-[3fr_2fr] gap-3 md:flex md:flex-wrap md:items-end">
             <Field label="Tarih" className="md:w-50">
               {({ id }) => (
-                <Input
-                  id={id}
-                  type="date"
-                  value={day}
-                  onChange={(event) => setDay(event.target.value)}
-                />
+                <DateInput id={id} value={day} onChange={(event) => setDay(event.target.value)} />
               )}
             </Field>
             <Field label="Süre (dk)" className="md:w-30">
@@ -227,9 +222,8 @@ function EntryRow({ entry, modules }: { entry: InboxEntry; modules: KnownModule[
           <div className="grid grid-cols-2 gap-3 md:flex md:flex-wrap md:items-end">
             <Field label="Gün" className="col-span-2 md:w-50">
               {({ id }) => (
-                <Input
+                <DateInput
                   id={id}
-                  type="date"
                   value={blockDay}
                   onChange={(event) => setBlockDay(event.target.value)}
                 />

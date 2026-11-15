@@ -8,7 +8,7 @@ Alanlar ve metinler koddaki gibidir (`src/core/ui/QuickAdd.tsx`, `EditDialog.tsx
 
 **Kabuk.** Telefonda tutamaç, başlık ve sağda kapat düğmesi; içerik kayar; alt satır sabittir (çizgiyle ayrılır). Alt satırda solda varsa ek eylem ("Bırak", "Durdur"; ikincil), sağda "Vazgeç" (ikincil) ve "Kaydet" (birincil). Geçersiz formda "Kaydet" soluktur. Telefonda alt satıra sığmayan ek eylem ("Adımlara böl") formun sonuna iner.
 
-**Hızlı giriş ("Yeni giriş").** Tek satırlık giriş kutusu odakta açılır (yer tutucu "Sunum slaytları cuma 45dk"); altında modül hapları. Modül seçilince tür hapları ("İş" ve modülün kendi türleri), "Tarih" ve "Süre (dk)" çıkar; düğme modül yokken "Gelen kutusuna ekle", varken "Ekle". Süre 90 dakikayı aşınca kutu: açıklama, "İş kalemi olarak kaydet" (birincil) ve "Süreyi 90 dk yap". Panoda alanların altında kısayol satırı.
+**Hızlı giriş ("Yeni giriş").** Tek satırlık giriş kutusu odakta açılır (yer tutucu "Sunum slaytları cuma 45dk"); altında modül hapları. Modül seçilince tür hapları ("İş" ve modülün kendi türleri), "Tarih" ve "Süre (dk)" çıkar; düğme modül yokken "Gelen kutusuna ekle", varken "Ekle". Süre 90 dakikayı aşınca kutu: açıklama, "İş kalemi olarak kaydet" (birincil) ve "Süreyi 90 dk yap". Panoda alanların altında kısayol satırı. "Tarih" kit'in tarih alanıdır (`DateInput`): tarih her tarayıcıda Türkçe yazılır ("20.11.2026", karedeki gibi); düzenlerken tarayıcının kendi yazısı görünür.
 
 **Düzenleme.** "İşi düzenle": Ad, Bölüm (modülün bölümü varsa), Son tarih ve Süre yan yana, Önem ve Durum yan yana, "Neyi bekliyor (isteğe bağlı)", Zaman. "İş kalemini düzenle": Ad, Bölüm, Son tarih, Toplam efor ve Oturum, Önem, Zaman, "Adımlara böl". "Ritmi düzenle": Ad; Hedef, Dönem ve Süre tek satırda; Zaman (dinlenme ile); "Durdur".
 

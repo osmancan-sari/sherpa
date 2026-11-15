@@ -8,15 +8,14 @@ import { ConnectionPill } from "./look/Connection";
 const WIDTH = {
   /** One column of cards (Gelen kutusu). */
   read: "md:max-w-read",
-  /** Lists and panels side by side (Modüller). */
-  board: "md:max-w-board",
+  /** The whole width beside the menu: panels side by side (Modüller), like the module page. */
   full: "",
 } as const;
 
 export function PageShell({
   title,
   action,
-  width = "board",
+  width = "full",
   children,
 }: {
   title: string;
