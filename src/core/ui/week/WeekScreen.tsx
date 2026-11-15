@@ -221,7 +221,7 @@ function DayStrip({
   const today = input.date;
   return (
     <section aria-label="Haftanın günleri" className="overflow-x-auto">
-      <ol className="grid min-w-[42rem] grid-cols-7 gap-2">
+      <ol className="grid min-w-168 grid-cols-7 gap-2">
         {DAY_NAMES.map((name, index) => {
           const day = shiftDay(week, index);
           const blocks = blocksOfDay(rows.blocks, day).filter(
@@ -359,7 +359,7 @@ function Horizon({ loads }: { loads: WeekLoad[] }) {
                 <span
                   className={cn(
                     "absolute inset-y-0 left-0 rounded",
-                    load.over ? "bg-[var(--health-attention)]" : "bg-foreground/60",
+                    load.over ? "bg-attention" : "bg-foreground/60",
                   )}
                   style={{ width: `${(load.demandMinutes / scale) * 100}%` }}
                 />

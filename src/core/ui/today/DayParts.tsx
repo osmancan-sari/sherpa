@@ -13,6 +13,7 @@ import { blocksOfDay } from "@/core/today/select";
 import { formatDayLabel, formatMinutes, formatTime } from "@/lib/date";
 import { rangesFor } from "@/core/contract/frame";
 import { Dialog } from "../Dialog";
+import { ConnectionPill } from "../look/Connection";
 import { wakeText } from "./frame-text";
 import { sessionTargetOf } from "./NowCard";
 
@@ -32,6 +33,7 @@ export function TopBar({ input, now }: { input: PlanInput; now: Date }) {
         </p>
       </div>
       <div className="text-muted-foreground flex flex-wrap items-center gap-x-3 gap-y-1 text-sm tabular-nums md:text-base">
+        <ConnectionPill />
         {input.frame ? <span data-testid="wake-line">{wakeText(input.frame)}</span> : null}
         {input.frame && input.settings.frame ? (
           <span data-testid="bed-range">
@@ -81,7 +83,7 @@ export function DayStrip({
         <span>{formatTime(new Date(to))}</span>
       </div>
       <div className="overflow-x-auto">
-        <div className="bg-muted relative h-8 min-w-[36rem] overflow-hidden rounded-lg">
+        <div className="bg-muted relative h-8 min-w-144 overflow-hidden rounded-lg">
           {marks
             ? [
                 { key: "wake", from: marks.wake, to: marks.workStart, label: "uyanışa bağlı" },
@@ -115,7 +117,7 @@ export function DayStrip({
                 style={{
                   left: left(start),
                   width: width(start, end),
-                  backgroundImage: `repeating-linear-gradient(135deg, ${color} 0 3px, transparent 3px 6px)`,
+                  backgroundImage: `repeating-linear-gradient(135deg, ${color} 0 calc(var(--spacing) * 0.75), transparent calc(var(--spacing) * 0.75) calc(var(--spacing) * 1.5))`,
                 }}
               />
             );

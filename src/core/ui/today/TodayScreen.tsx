@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, Play } from "lucide-react";
+import { Check, Info, Play } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -33,6 +33,7 @@ import type { Block, Task } from "@/core/types";
 import { dayKey, formatDue, formatMinutes, formatTime } from "@/lib/date";
 import { cn } from "@/lib/utils";
 import { AiBadge } from "../ai/AiMarks";
+import { ReadError } from "../kit/Feedback";
 import { ClientOnly } from "../ClientOnly";
 import { useNotify } from "../Notices";
 import { QuickAddButton } from "../QuickAdd";
@@ -392,22 +393,9 @@ function TodayBody() {
 }
 
 /** Shown when the data could not be read. One plain sentence and a way to try again. */
+/** "Veri okunamadı": the screen's main panel in its place (docs/tasarim/ekranlar/bos-ve-hata.md). */
 export function LoadFailed({ onRetry }: { onRetry: () => void }) {
-  return (
-    <div
-      role="alert"
-      className="border-border flex min-h-56 flex-col justify-between gap-6 rounded-2xl border p-6 md:p-8"
-    >
-      <p className="text-muted-foreground text-lg">
-        Veri okunamadı. Bağlantı gelince kendiliğinden yenilenir.
-      </p>
-      <div>
-        <Button variant="outline" className="h-11 md:h-9" onClick={onRetry}>
-          Yeniden dene
-        </Button>
-      </div>
-    </div>
-  );
+  return <ReadError onRetry={onRetry} className="min-h-56 justify-between md:p-6" />;
 }
 
 function CandidateRow({
@@ -636,8 +624,10 @@ export function ModuleChip({ mod }: { mod: KnownModule }) {
 function AiBudgetNotice() {
   const status = useAiStatus();
   if (status.data?.state !== "budget") return null;
+  // An information, not a warning: no warning colour (docs/tasarim/ekranlar/bos-ve-hata.md).
   return (
-    <p role="note" className="text-muted-foreground text-sm">
+    <p role="note" className="text-ink-2 text-note flex items-start gap-2">
+      <Info aria-hidden className="mt-0.5 size-4 shrink-0" />
       Bu ayın yapay zeka bütçesi doldu; girişler ay sonuna kadar elle yönlendirilir.
     </p>
   );

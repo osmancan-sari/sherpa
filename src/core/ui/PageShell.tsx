@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
+import { ConnectionPill } from "./look/Connection";
 
 // The frame of a list screen (docs/tasarim/ekranlar/menu.md, "Sayfa başlığı"): the title, an
 // action at its right on the board, and the content under it on the calm backdrop.
@@ -28,6 +29,7 @@ export function PageShell({
     <div className="flex w-full flex-1 flex-col gap-3.5 px-4 pt-4.5 pb-6 md:gap-4 md:px-10 md:pt-6">
       <header className={cn("flex items-center gap-3 px-1 md:px-0", WIDTH[width])}>
         <h1 className="text-title tracking-title flex-1 font-bold md:text-3xl">{title}</h1>
+        <ConnectionPill />
         {action ? <div className="hidden md:block">{action}</div> : null}
       </header>
       <div className={cn("flex flex-col gap-3.5 md:gap-4", WIDTH[width])}>{children}</div>

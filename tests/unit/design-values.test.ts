@@ -25,10 +25,6 @@ const ALLOWED: Record<string, string> = {
  */
 const PENDING: Record<string, string> = {
   "src/modules/rutin/components/StepsTab.tsx": "step 6: Rutin's module page",
-  "src/app/giris/page.tsx": "step 5: the sign-in screens",
-  "src/app/giris/login-form.tsx": "step 5: the sign-in screens",
-  "src/core/ui/today/DayParts.tsx": "step 5: Today on the new base",
-  "src/core/ui/week/WeekScreen.tsx": "step 5: Takvim on the new base",
 };
 
 function files(dir: string): string[] {

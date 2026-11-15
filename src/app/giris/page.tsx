@@ -9,12 +9,13 @@ export const metadata: Metadata = { title: "Giriş" };
 
 export default function LoginPage() {
   return (
-    <main className="flex min-h-dvh flex-1 items-center justify-center px-6 py-[max(1.5rem,env(safe-area-inset-top))]">
+    <main className="relative flex min-h-dvh flex-1 flex-col items-center px-6 pt-[max(--spacing(27),env(safe-area-inset-top))] pb-10 md:justify-center md:pt-10">
+      {/* The full landscape, by the hour (docs/tasarim/ekranlar/giris-ekranlari.md). */}
       <Backdrop kind={{ kind: "full" }} />
-      <div className="flex w-full max-w-sm flex-col gap-8">
-        <div className="flex flex-col gap-1">
-          <h1 className="text-2xl font-semibold tracking-tight">Sherpa</h1>
-          <p className="text-muted-foreground text-sm">
+      <div className="glass-main rounded-panel w-login md:w-login-board flex max-w-full flex-col gap-5 p-5.5 md:p-7">
+        <div className="flex flex-col gap-1.5">
+          <h1 className="tracking-title text-4xl font-bold">Sherpa</h1>
+          <p className="text-ink-2 text-base leading-snug">
             E-postana tek kullanımlık bir kod gönderilir.
           </p>
         </div>
