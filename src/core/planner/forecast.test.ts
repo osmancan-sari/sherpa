@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { block, moduleRow, rhythm, rhythmLog, task, workItem } from "@/core/testing/factories";
 import { istanbulInstant, shiftDay } from "@/lib/date";
 import { forecastDays, FORECAST_WEEKS } from "./forecast";
+import { DAYS_AHEAD } from "./frame";
 import { buildPlan } from "./plan";
 import { DEFAULT_SETTINGS } from "./slots";
 import type { PlanInput } from "./types";
@@ -220,5 +221,10 @@ describe("forecastDays", () => {
     const waiting = task({ status: "waiting", follow_up_on: NEXT, title: "Hocadan cevap" });
     const days = forecast(input({ tasks: [waiting] }), shiftDay(DATE, 3));
     expect(days.map(ids)).toEqual([[waiting.id], [], []]);
+  });
+
+  it("reaches no further than the frame works out each day's start and end", () => {
+    // Every forecast day has its routines left out of its start and end (frame.ts, DAYS_AHEAD).
+    expect(DAYS_AHEAD).toBeGreaterThanOrEqual(FORECAST_WEEKS * 7 + 1);
   });
 });

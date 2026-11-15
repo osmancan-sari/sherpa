@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { Timing } from "@/core/contract/timing";
 import { block, dayRow, moduleRow, rhythm, settingsRow, task } from "@/core/testing/factories";
 import type { DayRow, Settings, Task } from "@/core/types";
-import { dayKey, formatTime, istanbulInstant } from "@/lib/date";
+import { dayKey, formatTime, istanbulInstant, shiftDay } from "@/lib/date";
 import { type SleepArgs, sleepPlan } from "./frame";
 import { type PlanRows, planInput, weekSettings } from "./input";
 import { buildPlan, planningDay } from "./plan";
@@ -607,6 +607,31 @@ describe("the states of the day", () => {
     expect(planningDay(at("04:30", NEXT), "06:00")).toBe(DATE);
     expect(planningDay(at("05:30", NEXT), "06:00")).toBe(NEXT);
     expect(planningDay(at("04:30", NEXT), "04:00")).toBe(NEXT);
+  });
+});
+
+describe("the days ahead with the frame (Ç4a)", () => {
+  it("each day of the forecast's reach starts after its morning routine and ends before its evening one", () => {
+    const morning = rhythm({
+      period: "day",
+      target_count: 1,
+      est_minutes: 30,
+      timing: { anchor: "wake" },
+    });
+    const evening = rhythm({
+      period: "day",
+      target_count: 1,
+      est_minutes: 20,
+      timing: { anchor: "bed" },
+    });
+    const input = inputAt(
+      "10:00",
+      rows({ rhythms: [morning, evening], days: [today({ woke_at: iso("07:00") })] }),
+    );
+    const far = shiftDay(DATE, 50);
+    // A light day: up at 09:00 (the range's end), so bed at 01:00 the night after.
+    expect(input.settings.dayStarts?.[far]).toBe(at("09:30", far).getTime());
+    expect(input.settings.dayEnds?.[far]).toBe(at("00:40", shiftDay(far, 1)).getTime());
   });
 });
 

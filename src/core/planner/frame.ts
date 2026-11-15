@@ -15,8 +15,12 @@ const MINUTE = 60_000;
 export const WAKE_STEP = 15;
 /** The morning state lasts this long past the end of the waking range. */
 export const MORNING_GRACE = 60;
-/** Days ahead whose start the frame works out (the rest start at the waking range's end). */
-const DAYS_AHEAD = 8;
+/**
+ * Days ahead whose start and end the frame works out (the rest start at the waking range's end
+ * and end at the bedtime range's start). Ç4a: as far as the forecast reaches (`FORECAST_WEEKS`
+ * weeks, today included), so every forecast day leaves out its morning and evening routines.
+ */
+export const DAYS_AHEAD = 8 * 7 + 1;
 
 export { bedInstant };
 

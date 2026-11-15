@@ -320,7 +320,7 @@ proposals jsonb               -- öne çekme ve bırakma önerileri ve durumlar�
 
 ### life_mode_periods
 
-**Kullanılmıyor (Ç4a):** hayat modu kalktı (`docs/09-kararlar.md`, 14 Kas 2026). Tablo durur; uygulama okumaz ve yazmaz. Temizliği Ç4d'de.
+**Kullanılmıyor (Ç4a):** hayat modu kalktı (`docs/09-kararlar.md`, 14 Kas 2026). Tablo durur; uygulama okumaz ve yazmaz; yalnızca dışa aktarım eski kayıtları da verir. Temizliği Ç4d'de.
 ```
 mode enum(normal, busy, minimum, holiday)
 starts_on date, ends_on date

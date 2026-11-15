@@ -50,7 +50,18 @@ test("work in a facet has the facet's colour on the module page, the strip, the 
   await page.goto("/m/deneme");
   await expect(dotOf(upcoming(page, "Akşam esnemesi"))).toHaveCSS("background-color", NAVY);
 
-  // Today: the strip, and the card or the list, whichever each work is in.
+  // Today: the strip, and the card or the list, whichever each work is in. The week keeper takes
+  // the new items into the week first (an item outside the commitment is not offered); the
+  // screen is read once it has (in a full run it could come late: Ç4a phase audit).
+  const titles = ["Sabah yürüyüşü", "Akşam okuması", "Bölümsüz iş"];
+  const ids = (await rows<{ id: string; title: string }>("work_items"))
+    .filter((row) => titles.includes(row.title))
+    .map((row) => row.id);
+  await waitFor(
+    () => rows<{ committed: string[] }>("week_plans"),
+    (list) => list.some((row) => ids.every((id) => row.committed.includes(id))),
+    15_000,
+  );
   await page.goto("/");
   await expect(page.locator('[data-testid="strip-work"][title*="Sabah yürüyüşü"]')).toHaveCSS(
     "background-color",

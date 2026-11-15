@@ -5,7 +5,7 @@ Bu dosyayı Claude Code günceller. Yeni bir oturum yalnızca bu dosyayı ve `pr
 ## Durum
 
 - Faz: **Ç4a. Sadeleşen çekirdek** (15 Kas 2026; istem `prompts/c4a-sade-cekirdek.md`). Ç3g (`c3g-tamam`) yayında
-- Adım: 5 (kapanış) bitti: adım denetimi ve faz denetimi (2 tur), `c4a-tamam`; yayın senin iznini bekliyor ("Senden bekleyenler")
+- Adım: 5 (kapanış) bitti: adım denetimi ve faz denetimi (2 tur, ikisi de GEÇTİ), `check:full` yeşil, `c4a-tamam` etiketi; yayın senin iznini bekliyor ("Senden bekleyenler")
 - Son commit: Ç4a faz raporu
 
 ### Çekirdek ekranlarının cam tasarım oturumu (14–15 Kas 2026)
@@ -202,7 +202,7 @@ Her adımın sonunda `npm run check` ve commit; şema, geçit ve zarf adımları
 | Eski alanı gönderen modül kırılmıyor; `deneme`, şablon ve Rutin yeni sözleşmede | Sağlandı | `registry.test.ts` (eski `modeBehavior` kabul), zarf şeması `after_finish`'i kabul ediyor (`timing.test.ts`, `timing-draft.test.ts`), `modules.test.ts`, Rutin `brief.test.ts` (yeni kalıp) |
 | Önceki fazların testleri gevşetilmeden; kalkan kuralların testleri gerekçesiyle silindi | Sağlandı | Silinen ve yeniden yazılan testler "Verdiğim kararlar" → Ç4a'da tek tek |
 
-Testler: 561 birim, 301 veritabanı, 231 uçtan uca (`check:full` yeşil). Görüntülü koşu (`SHERPA_SHOTS=c4a`) ekran görüntüsü testleriyle birlikte yeşil. Ekran görüntüleri `docs/ekran-goruntuleri/c4a/` (179; pano ve telefon).
+Testler: 563 birim, 301 veritabanı, 231 uçtan uca (`check:full` yeşil). Görüntülü koşu (`SHERPA_SHOTS=c4a`) ekran görüntüsü testleriyle birlikte yeşil. Ekran görüntüleri `docs/ekran-goruntuleri/c4a/` (179; pano ve telefon).
 
 **Elle doğrulanacaklar.** Gerçek telefonda: bağlam tahmininin (bildirilen yer, yeri olan blok) "Şimdi"ye etkisi; Rutin'in yeni sesli özeti. Yayında: çerçeve açıkken gün artık yatışa bağlı rutine kadar sürüyor; öğleden sonra ve akşam önerilen iş miktarı (kapasite büyüdü, öğrenilen kapasite çarpanı zamanla ayarlanır).
 
@@ -218,12 +218,14 @@ Testler: 561 birim, 301 veritabanı, 231 uçtan uca (`check:full` yeşil). Gör�
 - Uçtan uca testler 20:30'dan sonra başlamıyor (test hesabının günü 22:00'de bitiyor). Ç4d'de testlerin kendi saatini tutması bu sınırı kaldırır.
 - Docker'daki veritabanının saati makineden birkaç saniye ileri gidebiliyor; testlerde "şimdi" ile veritabanının damgası karşılaştırılırken pay bırakıldı (`deneme-module.spec.ts`, `screenshots.spec.ts`).
 - Ç4d'ye: kullanılmayan sütun ve tabloların silinmesi (`docs/03` "kullanılmıyor (Ç4a)").
+- Ç4c'de tutarlılaştırılacak: Sıradakiler uyanışa bağlı işi de listeliyor, `TodayBrief.work` yalnızca çalışma penceresini sayıyor; Hafta'da Okul'un payı "4 sa 3 dk", kapasite açıklamasında "4 sa 2 dk" (yuvarlama).
 - Faz denetiminin notları (Ç4b/Ç4c'de bakılacak): `useDeviceKind` dokunmatik panoyu telefon sayar (**görüşün gerek**); bağlam sözlüğündeki "is" sözcüğü "İş Bankası" gibi yerleri ofis sayar (**görüşün gerek**); `pano-bugun-aksam` görüntüsünde 23:30'da "Bu gece yatış 23:15" (geçmiş saat; c3g'den beri) ve `pano-rutin-sabah-safak`'ta alt tuşların altında turuncu bant (c3g'den beri). `TodayBrief.top` ve `finishLine` kaldırıldı: bu alanı okuyan dış bir modül olsaydı kırılırdı; depodaki iki okuyucu bağlandı.
 
 **Denetim**
 
 - Adım denetimi (adım 1–3, `4f8bb73..4397835`): GEÇTİ. `check:full` denetçide tamamlanamadı (aynı anda koşan uçtan uca testlerle `next build` çakıştı; birim 551, veritabanı 301 yeşil). 5 önemli: (1) telefonda bağlam bilinmeyince (`null`) yapay zekanın plan isteği 400 alıyordu: istek şeması `null` kabul ediyor, `PLAN_REQUEST` testli; (2) tahmin cihazın bağlamını gelecek günlere taşıyordu: `context: null`, testli; (3) formdaki saklı `after_finish` çapa seçilince kaydı engelliyordu: çapada düşürülüyor, `timing-draft.test.ts`; (4) ton değerlendirmesinin örnekleri eski girdideydi: yeni biçim, `ai:eval -- --fake` 4/4 temiz; (5) uçtan uca testler kalkan öğeleri arıyordu: güncellendi. 6 not: örnek veride `mode_behavior` (kaldırıldı), ölü `usedUp` dalı (kaldırıldı), kapanışın çıkardıklarının "iş vardı" sayılması (`putOff`), zaman sırası tutmayan bir test girdisi (düzeltildi), tahminin taban ve takip testleri (eklendi), bildirilen yerin okuyup yazması (tek koşullu yazma). Ayrıca akşam kuralı değişti: yatış aralığı başlayıp günün işi bitince de akşam (aksi halde akşam kartı neredeyse hiç görünmüyordu).
 - Faz denetimi, 1. tur (`226960c..a6472c5`): GEÇTİ, `check:full` denetçide yeşil (558 / 301 / 231). 4 önemli: (1) kapanış yarının kaydına `putOff` yazmadığı için çıkarılan iş ertesi gün yine "iş vardı" sayılıyordu: kapanış `putOff: []` yazıyor, `planInput` üzerinden test; (2) tahminin taban testi boş geçiyordu (Pazar'da iş yoktu): dört koşu, Pazar'da iş ve tek başına planlanınca taban beklentisi; (3) `useCalendar` testsizdi: saf `calendarOf`'a çıkarıldı, `calendar.test.ts` 2 test; (4) ILERLEME güncel değildi: güncellendi. 5 not yukarıdaki listede ya da düzeltildi (sahipsiz yorum silindi).
+- Faz denetimi, 2. tur (`226960c..15e46d7`): GEÇTİ. Denetçinin `check:full`'ünde bir uçtan uca test kırılgan çıktı (`facets.spec.ts`: tam koşuda şeritte iş yoktu, tek başına 5 kez geçti). 3 önemli: (1) o test: haftanın yeni kalemleri taahhüde almasını bekledikten sonra Bugün'e gidiyor; (2) tahminde çapalı işin süresi 7 günden sonra düşülmüyordu: `DAYS_AHEAD` tahminin erimine (57 gün) çıktı, `frame.test.ts` +1, `forecast.test.ts` +1, çerçeve kapalıyken düşülmemesi `docs/04`'te bilinen sınır; (3) ILERLEME etiketi atılmamışken atılmış gibi yazıyordu: düzeltildi. Notlar: uyku vaktine düşen işin söylenmemesi Fikirler'de; dışa aktarımın `life_mode_periods` okuması `docs/03`'te istisna; Sıradakiler ile `TodayBrief.work` farkı ve Hafta'daki yuvarlama Ç4c notlarında. Son `check:full` yeşil (sayılar yukarıda).
 
 ### Ç3g: Sahnenin çekirdek eksikleri (14 Kas 2026)
 
