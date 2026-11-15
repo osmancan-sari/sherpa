@@ -5,6 +5,7 @@ import { SHARED_RULES } from "./common";
 // The planning calls (docs/10-yapay-zeka.md, "Çağrılar"): `plan` and `replan` for a day,
 // `week` for the week's commitment, `month` for the coming weeks, `review` for the week behind.
 // The AI suggests; the engine (src/core/planner) applies the suggestions within its rules.
+// Ç4a: no life modes and no day's three; the day runs to the bedtime (no finish line).
 
 const reasoned = z.object({ id: z.string(), reason: z.string().max(300) });
 
@@ -42,29 +43,29 @@ export type PlanCandidate = {
 export type PlanCallInput = {
   date: string;
   weekday: string;
-  life_mode: string;
   /** Minutes of work the day can hold (slots × capacity factor). */
   capacity_minutes: number;
-  /** The engine's own plan: its three and what it placed, in order. */
-  base: { top3: string[]; placed: string[] };
+  /** The engine's own plan: what it placed, in order. */
+  base: { placed: string[] };
   /** At most 80 candidates, the engine's best first. */
   candidates: PlanCandidate[];
   blocks: { title: string; start: string; end: string }[];
-  /** Yesterday: how much of what was planned got done (for sizing; never mentioned). */
-  yesterday: { planned: number; done: number } | null;
+  /** Yesterday: how much work got done, pieces and minutes (for sizing; never mentioned). */
+  yesterday: { done: number; minutes: number } | null;
   /** The user's note at the closing, or for "Yeniden planla". */
   note: string | null;
   /** `replan` only: what is already done today. */
   done_today?: string[];
   /**
    * With the day's frame (Ç3c): the working window, from after waking and the morning routine
-   * to the finish line, and the expected bedtime ("HH:mm"). Nothing else of sleep goes out.
+   * to where the bed-bound routine begins (Ç4a), and the expected bedtime ("HH:mm"). Nothing else
+   * of sleep goes out.
    */
-  day?: { start: string; finish: string; bed: string };
+  day?: { start: string; end: string; bed: string };
 };
 
+// Ç4a: an answer that still carries "top3" is read past (zod drops unknown keys).
 export const planOutput = z.object({
-  top3: z.array(reasoned).max(3),
   prefer: z.array(reasoned).max(10),
   defer: z.array(reasoned).max(10),
   estimates: z
@@ -82,26 +83,25 @@ export const planOutput = z.object({
 export type PlanOutput = z.infer<typeof planOutput>;
 
 const PLAN_RULES = `
-- "top3": the day's three, best for the user's balance across modules and their deadlines; ids
-  from "candidates" only. Work due today ("mandatory": "due_today") heads the three anyway: your
-  choices fill the places it leaves. Other mandatory work is placed by the engine anyway: do not
-  spend the three on it unless it is the most important thing of the day. Rhythms ("type":
-  "rhythm", habits) do not go in the three unless their weekly floor is at risk ("mandatory":
-  "floor"). Choose only work that fits the time left in the day ("capacity_minutes").
+- The plan is the whole rest of the day in order; there is no list of the day's three. Mandatory
+  work ("mandatory" set) is placed by the engine anyway. Balance the user's modules and their
+  deadlines with "prefer" and "defer"; ids from "candidates" only.
 - "time" on a candidate is its time constraint: its windows are hard (the engine never places
   it outside them and drops advice that would), preferred and avoided hours are soft, travel
   comes on top of its minutes.
-- "prefer": work to bring forward; "defer": work that can wait (never mandatory work: the
-  engine refuses it). Each with one short reason the user reads behind "neden?".
+- "prefer": work to bring forward (it fits the time left in the day, "capacity_minutes");
+  "defer": work that can wait (never mandatory work: the engine refuses it). Each with one short
+  reason the user reads behind "neden?".
 - "estimates": only where the given minutes are clearly wrong for the work, 5 to 90.
 - "warnings": at most two short sentences, only for what the user must know today.
 - Plan within "capacity_minutes"; the engine cuts what does not fit.
-- "day", when given, is the working window ("start" to "finish") and the expected bedtime
-  ("bed"); work belongs inside the window. Do not plan, judge or mention sleep.`;
+- "day", when given, is the working window ("start" to "end": it runs until the evening
+  routine before bed) and the expected bedtime ("bed"); work belongs inside the window. Do not
+  plan, judge or mention sleep.`;
 
 export const planSpec: AiCallSpec<PlanOutput> = {
   kind: "plan",
-  version: "plan-4",
+  version: "plan-5",
   maxTokens: 6000,
   schema: planOutput,
   system: `You plan one day of a planning app's user. The engine already made a valid plan
@@ -114,7 +114,7 @@ ${SHARED_RULES}`,
 
 export const replanSpec: AiCallSpec<PlanOutput> = {
   kind: "replan",
-  version: "replan-4",
+  version: "replan-5",
   maxTokens: 6000,
   schema: planOutput,
   system: `The user's day fell apart and they asked to plan the rest of it again. "done_today"
@@ -129,7 +129,6 @@ ${SHARED_RULES}`,
 
 export type WeekCallInput = {
   week_start: string;
-  life_mode: string;
   /** This week's usable minutes; per module, what its rhythms and floor need (not less). */
   capacity_minutes: number;
   fixed_minutes: { module: string; minutes: number }[];
@@ -166,7 +165,7 @@ export type WeekOutput = z.infer<typeof weekOutput>;
 
 export const weekSpec: AiCallSpec<WeekOutput> = {
   kind: "week",
-  version: "week-3",
+  version: "week-4",
   maxTokens: 6000,
   schema: weekOutput,
   system: `You choose what a planning app's user works on this week. "items" are the
@@ -203,10 +202,9 @@ export const monthOutput = z.object({
   proposals: z
     .array(
       z.object({
-        kind: z.enum(["advance", "drop", "mode"]),
+        kind: z.enum(["advance", "drop"]),
         item_id: z.string().nullable(),
         week_start: z.string().nullable(),
-        mode: z.enum(["normal", "busy", "minimum", "holiday"]).nullable(),
         text: z.string().max(300),
       }),
     )
@@ -217,13 +215,13 @@ export type MonthOutput = z.infer<typeof monthOutput>;
 
 export const monthSpec: AiCallSpec<MonthOutput> = {
   kind: "month",
-  version: "month-2",
+  version: "month-3",
   maxTokens: 4000,
   schema: monthOutput,
   system: `You look at a planning app's coming weeks. Where a week's demand is over its
-capacity, propose at most five things: "advance" (start an item earlier; item_id, week_start),
-"drop" (leave an item; item_id), or "mode" (a life mode for a week; week_start, mode). Each
-proposal has one short sentence for the user. No proposals when nothing is tight.
+capacity, propose at most five things: "advance" (start an item earlier; item_id, week_start)
+or "drop" (leave an item; item_id). Each proposal has one short sentence for the user. No
+proposals when nothing is tight.
 
 ${PLANNING_TONE}
 ${SHARED_RULES}`,
@@ -239,28 +237,23 @@ export type ReviewCallInput = {
   worked: { module: string; minutes: number }[];
   /** The coming four weeks: demand against capacity. */
   coming: { week_start: string; capacity: number; demand: number }[];
-  life_mode: string;
 };
 
 export const reviewOutput = z.object({
   summary: z.string().max(600),
   suggestions: z.array(z.string().max(300)).max(3),
-  mode: z
-    .object({ mode: z.enum(["normal", "busy", "minimum", "holiday"]), reason: z.string().max(300) })
-    .nullable(),
 });
 
 export type ReviewOutput = z.infer<typeof reviewOutput>;
 
 export const reviewSpec: AiCallSpec<ReviewOutput> = {
   kind: "review",
-  version: "review-2",
+  version: "review-3",
   maxTokens: 4000,
   schema: reviewOutput,
   system: `You write a planning app's weekly look back for its user: a short summary of the
-week across the modules (no blame, no praise), at most three suggestions for the coming week,
-and a life mode only when the coming weeks call for a change. Minutes worked are told as plain
-amounts, never against a plan, a floor or another week.
+week across the modules (no blame, no praise) and at most three suggestions for the coming
+week. Minutes worked are told as plain amounts, never against a plan, a floor or another week.
 
 ${PLANNING_TONE}
 ${SHARED_RULES}`,

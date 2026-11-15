@@ -1,6 +1,5 @@
 "use client";
 
-import { Check } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -64,7 +63,6 @@ function ClosingBody({ inScene }: { inScene?: { onDone: () => void } } = {}) {
   const recordBed = useRecordBed();
   const askBed = useAskBed();
   const [step, setStep] = useState(0);
-  const [picked, setPicked] = useState<string[] | null>(null);
   const [removed, setRemoved] = useState<string[]>([]);
   const [dump, setDump] = useState("");
   const moduleMap = useMemo(() => new Map(modules.map((mod) => [mod.row.id, mod])), [modules]);
@@ -105,32 +103,23 @@ function ClosingBody({ inScene }: { inScene?: { onDone: () => void } } = {}) {
   // What was meant for today and is still open: one tap marks it done.
   const leftToday = input.tasks.filter(
     (task) =>
-      (task.status === "todo" || task.status === "doing") &&
-      (input.top3?.includes(task.id) || task.planned_date === input.date),
+      (task.status === "todo" || task.status === "doing") && task.planned_date === input.date,
   );
   const rhythmsLeft = input.rhythms.filter(
     (rhythm) =>
       rhythm.active &&
       !input.rhythmLogs.some((log) => log.rhythm_id === rhythm.id && log.done_on === input.date),
   );
-  const top3 = picked ?? tomorrow.plan.top3;
-  const candidates = tomorrow.plan.candidates.filter((row) => row.type !== "follow_up");
-  const placed = new Set(
-    tomorrow.plan.slots.flatMap((slot) => (slot.assignment ? [slot.assignment.candidate.id] : [])),
+  // Ç4a: tomorrow's draft is its plan's work in order (no day's three, no "vakit kalırsa"):
+  // what does not fit is not on it; routines bound to the waking or the bedtime are not either.
+  const draft = tomorrow.plan.slots.flatMap((slot) =>
+    slot.assignment && slot.part === undefined && slot.assignment.candidate.type !== "follow_up"
+      ? [slot.assignment.candidate]
+      : [],
   );
 
   const next = () => setStep((value) => Math.min(STEPS.length - 1, value + 1));
   const back = () => setStep((value) => Math.max(0, value - 1));
-  const togglePick = (id: string) => {
-    const current = picked ?? tomorrow.plan.top3;
-    setPicked(
-      current.includes(id)
-        ? current.filter((value) => value !== id)
-        : current.length < 3
-          ? [...current, id]
-          : current,
-    );
-  };
   /** Ç3c: "Onayla ve yat" also records tonight's bedtime (the day's frame on). */
   const confirm = (andBed = false) => {
     // One confirmation at a time: a second Enter while it is being written does nothing.
@@ -145,13 +134,13 @@ function ClosingBody({ inScene }: { inScene?: { onDone: () => void } } = {}) {
       return task?.work_item_id ? [id, task.work_item_id] : [id];
     });
     const skipped = [...new Set([...(tomorrow.base.skipped ?? []), ...takenOut])];
-    const plan = buildPlan({ ...tomorrow.base, top3, skipped });
+    const plan = buildPlan({ ...tomorrow.base, skipped });
     close.mutate(
       {
         today: input.date,
         now: new Date(),
         tomorrow: {
-          plan: { ...plan, top3 },
+          plan,
           day: tomorrow.base,
           stored: advice ? { skipped, advice } : { skipped },
         },
@@ -261,26 +250,18 @@ function ClosingBody({ inScene }: { inScene?: { onDone: () => void } } = {}) {
         {step === 2 ? (
           <>
             <h2 className="font-medium">Yarının taslağı</h2>
-            <p className="text-muted-foreground text-sm">
-              Günün üç işi işaretli. Dokunarak değiştir; istemediğini çıkar.
-            </p>
-            {candidates.length === 0 ? (
+            <p className="text-muted-foreground text-sm">İstemediğini çıkar.</p>
+            {draft.length === 0 ? (
               <p className="text-muted-foreground">Yarın için planlanan bir şey yok.</p>
             ) : (
               <ul className="divide-border border-border divide-y rounded-xl border">
-                {candidates.map((candidate) => (
+                {draft.map((candidate) => (
                   <DraftRow
                     key={candidate.id}
                     candidate={candidate}
                     mod={moduleMap.get(candidate.moduleId)}
-                    chosen={top3.includes(candidate.id)}
-                    fits={placed.has(candidate.id)}
-                    onToggle={() => togglePick(candidate.id)}
                     reason={advice?.reasons?.[candidate.id]}
-                    onRemove={() => {
-                      setRemoved([...removed, candidate.id]);
-                      if (picked) setPicked(picked.filter((id) => id !== candidate.id));
-                    }}
+                    onRemove={() => setRemoved([...removed, candidate.id])}
                   />
                 ))}
               </ul>
@@ -307,14 +288,14 @@ function ClosingBody({ inScene }: { inScene?: { onDone: () => void } } = {}) {
         {step === 4 ? (
           <>
             <h2 className="font-medium">Yarın</h2>
-            {top3.length === 0 ? (
+            {draft.length === 0 ? (
               <p className="text-muted-foreground">
                 Yarın için seçilen iş yok; yarın sabah plan kendiliğinden kurulur.
               </p>
             ) : (
               <ol className="flex list-decimal flex-col gap-1 pl-5">
-                {top3.map((id) => (
-                  <li key={id}>{candidates.find((row) => row.id === id)?.title ?? "İş"}</li>
+                {draft.map((candidate) => (
+                  <li key={candidate.id}>{candidate.title}</li>
                 ))}
               </ol>
             )}
@@ -400,16 +381,10 @@ function DraftRow({
   reason,
   candidate,
   mod,
-  chosen,
-  fits,
-  onToggle,
   onRemove,
 }: {
   candidate: Candidate;
   mod: KnownModule | undefined;
-  chosen: boolean;
-  fits: boolean;
-  onToggle: () => void;
   onRemove: () => void;
   /** The AI's reason, when it planned the draft. */
   reason?: string;
@@ -417,18 +392,6 @@ function DraftRow({
   const colors = useColors();
   return (
     <li className="flex items-center gap-3 px-4 py-3">
-      <button
-        type="button"
-        aria-pressed={chosen}
-        aria-label={`Günün üç işi: ${candidate.title}`}
-        onClick={onToggle}
-        className={cn(
-          "border-border flex size-6 shrink-0 items-center justify-center rounded-full border text-xs",
-          chosen && "bg-foreground text-background",
-        )}
-      >
-        {chosen ? <Check aria-hidden className="size-3.5" /> : null}
-      </button>
       <span
         aria-hidden
         data-testid="work-dot"
@@ -438,9 +401,7 @@ function DraftRow({
       <div className="min-w-0 flex-1">
         <p className="truncate">{candidate.title}</p>
         <p className="text-muted-foreground truncate text-sm tabular-nums">
-          {[mod?.row.name, formatMinutes(candidate.minutes), fits ? null : "vakit kalırsa"]
-            .filter(Boolean)
-            .join(" · ")}
+          {[mod?.row.name, formatMinutes(candidate.minutes)].filter(Boolean).join(" · ")}
         </p>
         {reason ? <p className="text-muted-foreground truncate text-xs">{reason}</p> : null}
       </div>

@@ -311,6 +311,8 @@ export function settingsRow(overrides: Partial<Settings> = {}): Settings {
     ai_enabled: true,
     ai_monthly_budget_usd: 5,
     day_frame: { wake: ["06:00", "09:00"], bed: ["22:00", "01:00"], sleep_minutes: 480 },
+    reported_context: null,
+    reported_context_at: null,
     created_at: STAMP,
     updated_at: STAMP,
     ...overrides,

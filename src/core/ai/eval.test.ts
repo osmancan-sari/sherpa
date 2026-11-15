@@ -154,20 +154,14 @@ describe("ai-eval: tone (rule 2)", () => {
   it("reads every sentence the user would see", () => {
     expect(
       userTexts("plan", {
-        top3: [{ id: "a", reason: "r1" }],
-        prefer: [{ id: "b", reason: "r2" }],
-        defer: [],
+        prefer: [{ id: "a", reason: "r1" }],
+        defer: [{ id: "b", reason: "r2" }],
         estimates: [{ id: "c", minutes: 30, reason: "r3" }],
         warnings: ["w"],
       }),
     ).toEqual(["r1", "r2", "r3", "w"]);
-    expect(
-      userTexts("review", {
-        summary: "s",
-        suggestions: ["x"],
-        mode: { mode: "busy", reason: "m" },
-      }),
-    ).toEqual(["s", "x", "m"]);
+    // Ç4a: no day's three, no life mode in the answers.
+    expect(userTexts("review", { summary: "s", suggestions: ["x"] })).toEqual(["s", "x"]);
     expect(userTexts("month", { proposals: [{ text: "t" }] })).toEqual(["t"]);
     expect(userTexts("week", { committed: [{ id: "a", reason: "c" }], drop: [] })).toEqual(["c"]);
   });

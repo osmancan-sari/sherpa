@@ -46,12 +46,8 @@ describe("the deneme module", () => {
     expect(Object.keys(deneme.on ?? {})).toEqual(
       expect.arrayContaining([deneme.emits[0], "core.prompt_answered"]),
     );
-    expect(Object.keys(deneme.modeBehavior).sort()).toEqual([
-      "busy",
-      "holiday",
-      "minimum",
-      "normal",
-    ]);
+    // Ç4a: no life modes; the example declares no behaviour for them.
+    expect(deneme.modeBehavior).toBeUndefined();
     expect(typeof deneme.weeklyReport).toBe("function");
     expect(typeof deneme.onActivate).toBe("function");
     expect(typeof deneme.onOutcome).toBe("function");

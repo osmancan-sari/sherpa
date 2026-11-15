@@ -1,9 +1,10 @@
 import "server-only";
 import { z } from "zod";
 import { CORE_INGEST } from "@/core/contract/ingest";
-import { planningDayOf, recordBed, recordWake } from "@/core/data/frame";
+import { planningDayOf, recordBed, recordWake, saveReportedContext } from "@/core/data/frame";
 import { tellDayClosed, tellDayStarted } from "@/core/data/session-events";
 import { CORE_EVENTS, emitEvent } from "@/core/events/bus";
+import type { Context } from "@/core/types";
 import { type ServerDeps, serverTold } from "./context";
 import { keepWeekOnServer } from "./plan";
 
@@ -97,9 +98,11 @@ export const CORE_INGEST_HANDLERS: CoreIngest[] = [
       })
       .strict(),
     async handle(payload, deps) {
-      const { context, at } = payload as { context: string; at?: string };
+      const { context, at } = payload as { context: Context; at?: string };
       const instant = momentOf(at, deps.now());
-      // Only told for now: the screens do not pick their context from it yet (docs/09, Fikirler).
+      // Ç4a: kept, and the phone's screens infer their context from it for three hours
+      // (docs/04-planlayici.md, "Bağlam tahmini"). An older report never replaces a newer one.
+      await saveReportedContext(deps.db, context, instant);
       const told = serverTold(deps);
       await emitEvent({
         db: told.db,

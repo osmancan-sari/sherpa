@@ -57,13 +57,7 @@ export const rutin: ModuleDefinition = {
   emits: [],
   on: listeners,
 
-  // 4. The same in every mode: the routines stay once a day (rutin.md, 9).
-  modeBehavior: {
-    normal: { weightMultiplier: 1, floorMultiplier: 1 },
-    busy: { weightMultiplier: 1, floorMultiplier: 1 },
-    minimum: { weightMultiplier: 1, floorMultiplier: 1 },
-    holiday: { weightMultiplier: 1, floorMultiplier: 1 },
-  },
+  // 4. (Ç4a: no life modes; the routines stay once a day, rutin.md, 9.)
 
   // 5. Weekly report: the counts; no suggestion sentences (rutin.md, 10). The full numbers are step 2.
   async weeklyReport(ctx, week) {

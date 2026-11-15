@@ -1,5 +1,5 @@
 import { nextSessionMinutes } from "@/core/contract/envelope";
-import type { LifeMode, ModuleRow, Rhythm, RhythmLog } from "@/core/types";
+import type { ModuleRow, Rhythm, RhythmLog } from "@/core/types";
 import { effortUsedUp, isBlocked } from "@/core/today/select";
 import { dayKey, istanbulInstant, monthStart, shiftDay, weekStart, weekdayOf } from "@/lib/date";
 import type { Timing } from "@/core/contract/timing";
@@ -19,37 +19,22 @@ const FLOOR_SITTING_MINUTES = 45;
 
 const IMPORTANCE_FACTOR: Record<number, number> = { 1: 0.5, 2: 1, 3: 1.5, 4: 2 };
 
-type Behavior = { weightMultiplier?: number; floorMultiplier?: number };
+// Ç4a: there are no life modes. `modules.mode_behavior` and `rhythms.mode_targets` are not read;
+// the load comes from the deadlines, the capacity and the calendar.
 
-function behavior(mod: ModuleRow, mode: LifeMode): Behavior {
-  const all = (mod.mode_behavior ?? {}) as Record<string, Behavior | undefined>;
-  return all[mode] ?? {};
+/** The module's weight. */
+export function moduleWeight(mod: ModuleRow): number {
+  return Number(mod.weight);
 }
 
-/** The module's weight in this life mode. */
-export function moduleWeight(mod: ModuleRow, mode: LifeMode): number {
-  const multiplier = behavior(mod, mode).weightMultiplier;
-  return Number(mod.weight) * (typeof multiplier === "number" ? multiplier : 1);
+/** The weekly floor of a module, in minutes. */
+export function weeklyFloor(mod: ModuleRow): number {
+  return Math.round(mod.weekly_floor_minutes);
 }
 
-/**
- * The weekly floor of a module in this life mode. A lifelong module's floor shrinks in busy
- * mode but is never wiped out (at least half stays).
- */
-export function weeklyFloor(mod: ModuleRow, mode: LifeMode): number {
-  const raw = behavior(mod, mode).floorMultiplier;
-  let multiplier = typeof raw === "number" ? raw : 1;
-  if (mode === "busy" && mod.kind === "lifelong") multiplier = Math.max(multiplier, 0.5);
-  return Math.round(mod.weekly_floor_minutes * Math.min(1, Math.max(0, multiplier)));
-}
-
-/** The rhythm's target in this life mode; busy mode never goes below the floor. */
-export function rhythmTarget(rhythm: Rhythm, mode: LifeMode): number {
-  const targets = (rhythm.mode_targets ?? {}) as Record<string, unknown>;
-  const byMode = targets[mode];
-  const target = typeof byMode === "number" ? byMode : rhythm.target_count;
-  if (mode === "normal" || mode === "busy") return Math.max(target, rhythm.floor_count);
-  return target;
+/** The rhythm's target in its period; never below its floor. */
+export function rhythmTarget(rhythm: Rhythm): number {
+  return Math.max(rhythm.target_count, rhythm.floor_count);
 }
 
 /** First and last day of the rhythm's period that contains the day. */
@@ -77,20 +62,15 @@ export type RhythmState = {
 };
 
 /** Where a rhythm stands on the day; earlier periods are not seen at all. */
-export function rhythmState(
-  rhythm: Rhythm,
-  logs: RhythmLog[],
-  day: string,
-  mode: LifeMode,
-): RhythmState {
+export function rhythmState(rhythm: Rhythm, logs: RhythmLog[], day: string): RhythmState {
   const { from, to } = periodBounds(rhythm.period, day);
   const mine = logs.filter((log) => log.rhythm_id === rhythm.id);
   const done = mine.filter((log) => log.done_on >= from && log.done_on <= to).length;
   const doneToday = mine.filter((log) => log.done_on === day).length;
-  const target = rhythmTarget(rhythm, mode);
+  const target = rhythmTarget(rhythm);
   const total = dayCount(from, to);
   const daysLeft = dayCount(day, to);
-  const floor = mode === "holiday" ? 0 : Math.min(rhythm.floor_count, target);
+  const floor = Math.min(rhythm.floor_count, target);
   const floorNeeded = Math.max(0, floor - done);
   // The doings still reachable in the period: the days left, fewer with windows on some days
   // only or rest days between doings (docs/04-planlayici.md, "Zaman kısıtları", rule 7).
@@ -201,16 +181,13 @@ function withTiming(
 
 /**
  * Whether today still holds a stretch of the work's windows as long as the work, between the
- * window's start and the finish line. Work without windows always does.
+ * window's start and tonight's bedtime (Ç4a: the day has no finish line). Work without windows
+ * always does.
  */
 function openToday(candidate: Candidate, input: PlanInput): boolean {
   if (!candidate.timing?.windows) return true;
   const from = windowStartOf(input).getTime();
-  // Work that may go into the evening (Ç3c) is open until bedtime.
-  const to =
-    input.frame && candidate.timing.after_finish
-      ? input.frame.bed.getTime()
-      : input.finishLine.getTime();
+  const to = input.bedtime.getTime();
   return (allowedOn(candidate.timing, input.date) ?? []).some(
     (range) =>
       (Math.min(range.end, to) - Math.max(range.start, from)) / 60_000 >= candidate.minutes,
@@ -227,7 +204,7 @@ export function candidatesOf(input: PlanInput): {
   /** With the day's frame (Ç3c): work bound to the waking or the bedtime, kept out of the slots. */
   anchored: Candidate[];
 } {
-  const { date, lifeMode } = input;
+  const { date } = input;
   const modules = new Map(
     input.modules.filter((mod) => mod.status === "active").map((mod) => [mod.id, mod]),
   );
@@ -359,7 +336,7 @@ export function candidatesOf(input: PlanInput): {
   const rhythmStates = new Map<string, RhythmState>();
   for (const rhythm of input.rhythms) {
     if (!rhythm.active || !modules.has(rhythm.module_id) || skipped.has(rhythm.id)) continue;
-    const state = rhythmState(rhythm, input.rhythmLogs, date, lifeMode);
+    const state = rhythmState(rhythm, input.rhythmLogs, date);
     rhythmStates.set(rhythm.id, state);
     if (state.debt === 0) continue;
     if (rhythm.period !== "day" && state.doneToday > 0) continue;
@@ -393,7 +370,7 @@ export function candidatesOf(input: PlanInput): {
   const scored: Candidate[] = [];
   for (const raw of raws) {
     const mod = modules.get(raw.moduleId)!;
-    const weight = moduleWeight(mod, lifeMode);
+    const weight = moduleWeight(mod);
     let urgency = 0;
     let mandatory: MandatoryReason | null = null;
     if (raw.dueAt !== null) {
@@ -421,7 +398,7 @@ export function candidatesOf(input: PlanInput): {
         : 0;
     let score = weight * (IMPORTANCE_FACTOR[raw.importance] ?? 1) * (urgency + debt + wait);
     if (preferred.has(raw.id)) score *= 1.5;
-    // A module that the life mode switches off offers nothing, unless it is due today.
+    // A module of no weight offers nothing, unless it is due today.
     if (weight <= 0 && mandatory !== "due_today") continue;
     const { remaining: _remaining, ...rest } = raw;
     void _remaining;
@@ -471,8 +448,8 @@ export function candidatesOf(input: PlanInput): {
 function markFloorWork(input: PlanInput, candidates: Candidate[], modules: Map<string, ModuleRow>) {
   const daysLeft = 8 - weekdayOf(input.date);
   for (const mod of modules.values()) {
-    if (mod.kind !== "lifelong" || input.lifeMode === "holiday") continue;
-    const floor = weeklyFloor(mod, input.lifeMode);
+    if (mod.kind !== "lifelong") continue;
+    const floor = weeklyFloor(mod);
     const needed = floor - (input.spentThisWeek?.[mod.id] ?? 0);
     if (needed <= 0) continue;
     if (daysLeft > Math.ceil(needed / FLOOR_SITTING_MINUTES)) continue;

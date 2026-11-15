@@ -3,6 +3,7 @@ import { dayStartClock, plannerSettings, planningDay } from "@/core/planner";
 import type { BedUndo, DayFrameRecord } from "@/core/contract/types";
 import {
   check,
+  type Context,
   type Db,
   type DayRow,
   toJson,
@@ -151,6 +152,24 @@ export async function saveDayFrame(db: Db, frame: FrameSettings | null): Promise
       .from("settings")
       .upsert(
         { day_frame: frame ? toJson(toStoredFrame(frame)) : null },
+        { onConflict: "user_id" },
+      ),
+  );
+}
+
+/**
+ * Ç4a: where the phone was reported to be (`core/context`): kept on the settings row, with its
+ * moment. A report older than the one kept does not replace it.
+ */
+export async function saveReportedContext(db: Db, context: Context, at: Date): Promise<void> {
+  const { data, error } = await db.from("settings").select("reported_context_at").maybeSingle();
+  if (error) throw new Error(error.message);
+  if (data?.reported_context_at && Date.parse(data.reported_context_at) > at.getTime()) return;
+  check(
+    await db
+      .from("settings")
+      .upsert(
+        { reported_context: context, reported_context_at: at.toISOString() },
         { onConflict: "user_id" },
       ),
   );

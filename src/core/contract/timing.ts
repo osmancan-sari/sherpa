@@ -23,7 +23,10 @@ export type Timing = {
   anchor?: "wake" | "bed";
   /** The place among work on the same anchor (1 first); only with `anchor`. */
   order?: number;
-  /** Ç3c: may also go after the finish line, into the evening. Only `true` is written. */
+  /**
+   * Ç3c: may also go after the finish line, into the evening. Ç4a: the day has no finish line;
+   * the field is still accepted (a module that sends it is not refused) but nothing reads it.
+   */
   after_finish?: true;
 };
 
@@ -365,23 +368,5 @@ export function timingSummary(timing: Timing | null | undefined): string {
     const where = timing.anchor === "wake" ? "uyanınca" : "yatmadan önce";
     parts.push(timing.order ? `${where} (${timing.order}.)` : where);
   }
-  if (timing.after_finish) parts.push("akşam da olur");
   return parts.join(" · ");
-}
-
-/**
- * The windows never meet the planned day: on every day they lie before its start or after its
- * finish line ("HH:mm"), so the planner can never place the work (docs/04-planlayici.md, rule 9).
- */
-export function outsideDay(
-  timing: Timing | null | undefined,
-  dayStart: string,
-  finishLine: string,
-): boolean {
-  if (!timing?.windows) return false;
-  const start = clockMinutes(dayStart);
-  const end = clockMinutes(finishLine);
-  return timing.windows.every(
-    (range) => clockMinutes(range.to) <= start || clockMinutes(range.from) >= end,
-  );
 }

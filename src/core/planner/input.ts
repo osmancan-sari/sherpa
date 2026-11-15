@@ -3,8 +3,6 @@ import type {
   Context,
   DayRow,
   InboxEntry,
-  LifeMode,
-  LifeModePeriod,
   ModuleRow,
   PlannerStatRow,
   Prompt,
@@ -19,7 +17,7 @@ import type {
 import { istanbulInstant, shiftDay, weekStart } from "@/lib/date";
 import { dayFrameOf, dayStartClock } from "./frame";
 import { planningDay } from "./plan";
-import { dayTypeOf, plannerSettings } from "./slots";
+import { bedInstant, dayTypeOf, plannerSettings } from "./slots";
 import type { PlanAdvice, PlanInput, PlannerSettings, WeekShare } from "./types";
 
 // The planner's input put together from the rows the app reads. Pure, and the same for the
@@ -40,7 +38,6 @@ export type PlanRows = {
   inbox: InboxEntry[];
   days: DayRow[];
   weekPlans: WeekPlanRow[];
-  lifeModes: LifeModePeriod[];
   stats: PlannerStatRow[];
 };
 
@@ -72,14 +69,6 @@ export function readShares(value: unknown): Record<string, WeekShare> {
     }
   }
   return shares;
-}
-
-/** The life mode of a day: the period that covers it, else normal. */
-export function lifeModeOn(periods: LifeModePeriod[], day: string): LifeMode {
-  const covering = periods
-    .filter((period) => period.starts_on <= day && period.ends_on >= day)
-    .sort((a, b) => b.created_at.localeCompare(a.created_at));
-  return covering[0]?.mode ?? "normal";
 }
 
 /**
@@ -128,9 +117,13 @@ export function minutesThisWeek(
   return totals;
 }
 
+/**
+ * Ç4a: the life modes (`life_mode_periods`), the day's finish line (`settings.finish_line_default`,
+ * `days.finish_line`) and the day's three (`days.top3`) are not read; their columns stay unused.
+ */
 export function planInput(
   rows: PlanRows,
-  options: { date: string; now: Date; context: Context },
+  options: { date: string; now: Date; context: Context | null },
 ): PlanInput {
   const { date, now, context } = options;
   const settings = plannerSettings(rows.settings);
@@ -144,9 +137,8 @@ export function planInput(
     // Derived from the day's blocks (docs/03-veri-modeli.md, "Türetilen değerler"); the
     // record's `day_type` is the type the day was planned with, for learning.
     dayType: dayTypeOf(date, rows.blocks, settings),
-    lifeMode: lifeModeOn(rows.lifeModes, date),
     dayStart: day?.started_at ? new Date(day.started_at) : istanbulInstant(date, settings.dayStart),
-    finishLine: istanbulInstant(date, (day?.finish_line ?? settings.finishLine).slice(0, 5)),
+    bedtime: bedInstant(date, settings.bedtime),
     closed: day?.closed_at != null,
     blocks: rows.blocks,
     tasks: rows.tasks,
@@ -164,7 +156,6 @@ export function planInput(
     spentThisWeek: minutesThisWeek(rows.sessions, date, now),
     committed: week ? week.committed : null,
     shares: week ? readShares(week.shares) : {},
-    top3: day && day.top3.length > 0 ? day.top3 : undefined,
     skipped: stored.skipped ?? [],
     openSession: rows.openSession,
     prompt:
@@ -180,14 +171,16 @@ export function planInput(
     advice: stored.advice ?? undefined,
   };
   // The day's frame (Ç3c): the day starts at the waking and its morning work, not at the first
-  // touch; the days ahead start where their wakings are expected.
+  // touch; the days ahead start where their wakings are expected. Ç4a: each day's work ends at
+  // its bedtime less its bed-bound work; today's bedtime is the frame's.
   if (!settings.frame) return base;
-  const { frame, dayStarts } = dayFrameOf(base, settings.frame, rows.days);
+  const { frame, dayStarts, dayEnds } = dayFrameOf(base, settings.frame, rows.days);
   return {
     ...base,
     frame,
     dayStart: new Date(dayStarts[date]),
-    settings: { ...settings, dayStarts },
+    bedtime: frame.bed,
+    settings: { ...settings, dayStarts, dayEnds },
   };
 }
 
@@ -203,7 +196,10 @@ export function weekSettings(rows: PlanRows, now: Date): PlannerSettings {
 }
 
 /** Tomorrow's input at the evening closing (and for the night screen's "first thing tomorrow"). */
-export function tomorrowInput(rows: PlanRows, options: { now: Date; context: Context }): PlanInput {
+export function tomorrowInput(
+  rows: PlanRows,
+  options: { now: Date; context: Context | null },
+): PlanInput {
   // After midnight, before the night ends, "tomorrow" is the day that is starting.
   const date = shiftDay(planningDay(options.now, dayStartClock(plannerSettings(rows.settings))), 1);
   return {

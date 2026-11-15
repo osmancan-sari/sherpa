@@ -1,4 +1,4 @@
-import { readFrame } from "@/core/contract/frame";
+import { clockOf, DEFAULT_FRAME, readFrame } from "@/core/contract/frame";
 import type { Block, DayType, Settings } from "@/core/types";
 import { istanbulInstant, shiftDay } from "@/lib/date";
 import { overlapMinutes, type Range } from "./timing";
@@ -11,7 +11,7 @@ const MINUTE = 60_000;
 
 export const DEFAULT_SETTINGS: PlannerSettings = {
   dayStart: "08:00",
-  finishLine: "19:00",
+  bedtime: DEFAULT_FRAME.bed[0],
   capacityFactors: { home: 0.7, office: 0.4, campus: 0.5 },
   slot: { deepMin: 45, deepMax: 90, lightMin: 15, breakMin: 15 },
   defaultDayType: "home",
@@ -34,9 +34,11 @@ export function plannerSettings(row: Settings | null | undefined): PlannerSettin
   const factors = (row.capacity_factors ?? {}) as Record<string, unknown>;
   const slot = (row.slot ?? {}) as Record<string, unknown>;
   const d = DEFAULT_SETTINGS;
+  const frame = readFrame(row.day_frame);
   return {
     dayStart: hhmm(row.day_start_default, d.dayStart),
-    finishLine: hhmm(row.finish_line_default, d.finishLine),
+    // Ç4a: `finish_line_default` is not read; the day runs to the bedtime range's start.
+    bedtime: frame ? frame.bed[0] : d.bedtime,
     capacityFactors: {
       home: num(factors.home, d.capacityFactors.home),
       office: num(factors.office, d.capacityFactors.office),
@@ -50,7 +52,7 @@ export function plannerSettings(row: Settings | null | undefined): PlannerSettin
     },
     defaultDayType: row.default_day_type ?? d.defaultDayType,
     returnAfterDays: row.return_after_days ?? d.returnAfterDays,
-    frame: readFrame(row.day_frame),
+    frame,
   };
 }
 
@@ -153,11 +155,34 @@ export function buildSlots(
 
 export const slotMinutes = (slots: Slot[]) => slots.reduce((sum, slot) => sum + slot.minutes, 0);
 
-/** Slot minutes of a whole day, from its start to its finish line, whatever the time now. */
+/** A bedtime of the night after `day`: a time before noon is on the next calendar day. */
+export function bedInstant(day: string, time: string): Date {
+  return clockOf(time) < 12 * 60
+    ? istanbulInstant(shiftDay(day, 1), time)
+    : istanbulInstant(day, time);
+}
+
+/**
+ * Where a day's work starts when the day itself is not being planned: what the frame worked out,
+ * else the end of the waking range (with the frame) or the default start.
+ */
+export function dayStartOf(day: string, settings: PlannerSettings): Date {
+  const own = settings.dayStarts?.[day];
+  if (own !== undefined) return new Date(own);
+  return istanbulInstant(day, settings.frame ? settings.frame.wake[1] : settings.dayStart);
+}
+
+/** Where a day's work ends (Ç4a): what the frame worked out, else the settings' bedtime. */
+export function dayEndOf(day: string, settings: PlannerSettings): Date {
+  const own = settings.dayEnds?.[day];
+  return own !== undefined ? new Date(own) : bedInstant(day, settings.bedtime);
+}
+
+/** Slot minutes of a whole day, from its start to where its work ends, whatever the time now. */
 export function wholeDaySlotMinutes(input: {
   date: string;
   dayStart: Date;
-  finishLine: Date;
+  dayEnd: Date;
   blocks: Block[];
   settings: PlannerSettings;
 }): number {
@@ -167,7 +192,7 @@ export function wholeDaySlotMinutes(input: {
     (block) => Date.parse(block.starts_at) < end && Date.parse(block.ends_at) > start,
   );
   return slotMinutes(
-    buildSlots({ start: input.dayStart, end: input.finishLine }, ofDay, input.settings),
+    buildSlots({ start: input.dayStart, end: input.dayEnd }, ofDay, input.settings),
   );
 }
 
@@ -189,8 +214,9 @@ export function dayTypeOf(day: string, blocks: Block[], settings: PlannerSetting
 }
 
 /**
- * Minutes of work a whole day holds: its slots between the default start and finish line,
- * times the day type's capacity factor. `from` cuts the start (today: now), `until` the end
+ * Minutes of work a whole day holds: its slots between its start and where its work ends (Ç4a:
+ * the bedtime, less the bed-bound work when the frame knows it), times the day type's capacity
+ * factor. `from` cuts the start (today: now), `until` the end
  * (the day of a deadline).
  */
 export function dayCapacity(
@@ -204,12 +230,8 @@ export function dayCapacity(
 ): number {
   // With the day's frame the day starts where the frame says (its waking and morning work).
   // Days the frame did not work out start at the end of their waking range.
-  const own = settings.dayStarts?.[day];
-  const start =
-    own !== undefined
-      ? new Date(own)
-      : istanbulInstant(day, settings.frame ? settings.frame.wake[1] : settings.dayStart);
-  const end = istanbulInstant(day, settings.finishLine);
+  const start = dayStartOf(day, settings);
+  const end = dayEndOf(day, settings);
   const window = {
     start: bounds.from && bounds.from > start ? bounds.from : start,
     end: bounds.until && bounds.until < end ? bounds.until : end,

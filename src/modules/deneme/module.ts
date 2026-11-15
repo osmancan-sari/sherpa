@@ -182,17 +182,7 @@ export const deneme: ModuleDefinition = {
   emits: [EVENTS.itemAdded, EVENTS.itemRemoved],
   on: listeners,
 
-  // 4. Reaction to the life mode
-  modeBehavior: {
-    normal: { weightMultiplier: 1, floorMultiplier: 1 },
-    busy: {
-      weightMultiplier: 0.5,
-      floorMultiplier: 0.5,
-      note: "Yalnızca tarihli kayıtlar öne çıkar.",
-    },
-    minimum: { weightMultiplier: 0.2, floorMultiplier: 0, note: "Alışkanlıklar durur." },
-    holiday: { weightMultiplier: 0, floorMultiplier: 0, note: "Hiçbir şey önerilmez." },
-  },
+  // 4. (Ç4a: no life modes; nothing to declare here.)
 
   // 5. Weekly report
   async weeklyReport(ctx, week) {

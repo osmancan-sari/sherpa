@@ -28,9 +28,8 @@ function input(overrides: Partial<PlanInput> = {}): PlanInput {
     now: at("08:00"),
     date: DATE,
     dayType: "home",
-    lifeMode: "normal",
     dayStart: at("08:00"),
-    finishLine: at("19:00"),
+    bedtime: at("19:00"),
     blocks: [],
     tasks: [],
     workItems: [],
@@ -38,7 +37,8 @@ function input(overrides: Partial<PlanInput> = {}): PlanInput {
     rhythmLogs: [],
     modules: [moduleRow()],
     context: "desk",
-    settings: DEFAULT_SETTINGS,
+    // Ç4a: the day runs to its bedtime; 19:00 here keeps the days as they were measured.
+    settings: { ...DEFAULT_SETTINGS, bedtime: "19:00" },
     stats: [],
     ...overrides,
   };
@@ -53,6 +53,11 @@ const shape = (slots: Slot[]) =>
   ]);
 const placedIds = (plan: ReturnType<typeof buildPlan>) =>
   plan.slots.flatMap((slot) => (slot.assignment ? [slot.assignment.candidate.id] : []));
+/** Candidates the plan did not place (Ç4a: no "vakit kalırsa" list; they are not on the day). */
+const unplaced = (plan: ReturnType<typeof buildPlan>) => {
+  const placed = new Set(placedIds(plan));
+  return plan.candidates.filter((row) => !placed.has(row.id)).map((row) => row.id);
+};
 
 describe("slots", () => {
   it("takes out the blocks with their travel time and drops gaps under 15 minutes", () => {
@@ -91,7 +96,7 @@ describe("slots", () => {
     ]);
   });
 
-  it("opens no slot after the finish line", () => {
+  it("opens no slot after the bedtime (Ç4a: no finish line)", () => {
     const plan = buildPlan(input({ now: at("18:30"), tasks: [task({ est_minutes: 20 })] }));
     expect(plan.slots.every((slot) => slot.end <= at("19:00"))).toBe(true);
     expect(buildPlan(input({ now: at("19:05"), tasks: [task()] })).slots).toEqual([]);
@@ -135,7 +140,7 @@ describe("filters", () => {
         // 40 minutes × 1.5 = 60: too long for the only slot (45 minutes).
         tasks: [task({ est_minutes: 40, kind: "prep" })],
         stats: [{ key: `est_multiplier:${mod.slug}:prep`, value: 1.5, sample_size: 6 }],
-        finishLine: at("08:45"),
+        bedtime: at("08:45"),
       }),
     );
     expect(plan.candidates[0].minutes).toBe(60);
@@ -159,13 +164,23 @@ describe("filters", () => {
     expect(fits(candidate({ energy: "deep", minutes: 15 }), slot("break", 15), "desk")).toBe(false);
   });
 
-  it("context: the second screen sees desk, home and any; the phone what the user chose", () => {
+  it("context: the second screen sees desk, home and any; the phone where it is inferred to be", () => {
     const deep = slot("deep", 60);
     expect(fits(candidate({ context: "desk" }), deep, "desk")).toBe(true);
     expect(fits(candidate({ context: "home" }), deep, "desk")).toBe(true);
     expect(fits(candidate({ context: "office" }), deep, "desk")).toBe(false);
     expect(fits(candidate({ context: "campus" }), deep, "campus")).toBe(true);
     expect(fits(candidate({ context: "home" }), deep, "campus")).toBe(false);
+  });
+
+  it("context: unknown (Ç4a, null) turns the filter off", () => {
+    const deep = slot("deep", 60);
+    for (const context of ["desk", "home", "office", "campus", "out", "commute"] as const) {
+      expect(fits(candidate({ context }), deep, null)).toBe(true);
+    }
+    const office = task({ context: "office" });
+    expect(placedIds(buildPlan(input({ tasks: [office], context: null })))).toEqual([office.id]);
+    expect(placedIds(buildPlan(input({ tasks: [office] })))).toEqual([]);
   });
 
   it("puts deep work only where a deep slot is", () => {
@@ -175,7 +190,7 @@ describe("filters", () => {
       input({
         tasks: [deep],
         blocks: [block({ starts_at: iso("08:40"), ends_at: iso("09:00") })],
-        finishLine: at("09:45"),
+        bedtime: at("09:45"),
       }),
     );
     const slotOf = plan.slots.find((row) => row.assignment?.candidate.id === deep.id)!;
@@ -192,11 +207,10 @@ describe("mandatory work", () => {
     });
     const due = task({ title: "Bugün teslim", importance: 1, due_at: iso("17:00") });
     // One 45-minute slot; the capacity factor leaves room for one of the two.
-    const plan = buildPlan(input({ tasks: [old, due], finishLine: at("08:45") }));
+    const plan = buildPlan(input({ tasks: [old, due], bedtime: at("08:45") }));
     expect(plan.candidates[0]).toMatchObject({ id: due.id, mandatory: "due_today" });
     expect(placedIds(plan)).toEqual([due.id]);
-    expect(plan.overflow.map((row) => row.id)).toEqual([old.id]);
-    expect(plan.top3[0]).toBe(due.id);
+    expect(unplaced(plan)).toEqual([old.id]);
   });
 
   it("includes work that would not make its deadline if not started today", () => {
@@ -226,11 +240,10 @@ describe("floors", () => {
     kind: "lifelong",
     weight: 1,
     weekly_floor_minutes: 90,
-    mode_behavior: { busy: { weightMultiplier: 0.2, floorMultiplier: 0 } },
   });
   const school: ModuleRow = moduleRow({ slug: "okul", kind: "term", weight: 2 });
 
-  it("keeps a lifelong module's weekly floor in busy mode", () => {
+  it("keeps a lifelong module's weekly floor while other work presses", () => {
     const run = task({ module_id: sport.id, title: "Koşu", energy: "light", est_minutes: 45 });
     const exams = [1, 2, 3].map((n) =>
       task({
@@ -246,8 +259,7 @@ describe("floors", () => {
         date: SUNDAY,
         now: at("08:00", SUNDAY),
         dayStart: at("08:00", SUNDAY),
-        finishLine: at("10:00", SUNDAY),
-        lifeMode: "busy",
+        bedtime: at("10:00", SUNDAY),
         modules: [sport, school],
         tasks: [run, ...exams],
         spentThisWeek: { [sport.id]: 0 },
@@ -263,64 +275,107 @@ describe("floors", () => {
     const [candidate] = buildCandidates(
       input({
         date: SUNDAY,
-        lifeMode: "busy",
         modules: [sport],
         tasks: [run],
-        spentThisWeek: { [sport.id]: 60 },
+        spentThisWeek: { [sport.id]: 90 },
       }),
     );
     expect(candidate.mandatory).toBeNull();
   });
 
-  it("keeps a rhythm's floor in busy mode, below its busy target", () => {
+  it("keeps a rhythm's floor once the days left are no more than the doings it needs", () => {
+    // Ç4a: no life mode; a stored mode target is not read.
     const stretch = rhythm({ target_count: 4, floor_count: 2, mode_targets: { busy: 1 } });
     // Saturday: two days left, two still needed for the floor.
     const saturday = "2026-11-14";
-    const [candidate] = buildCandidates(
-      input({ date: saturday, lifeMode: "busy", rhythms: [stretch] }),
-    );
-    expect(candidate).toMatchObject({ id: stretch.id, mandatory: "floor", progress: "0/2" });
+    const [candidate] = buildCandidates(input({ date: saturday, rhythms: [stretch] }));
+    expect(candidate).toMatchObject({ id: stretch.id, mandatory: "floor", progress: "0/4" });
     // On Thursday there is still time: not mandatory.
-    const [thursday] = buildCandidates(input({ lifeMode: "busy", rhythms: [stretch] }));
+    const [thursday] = buildCandidates(input({ rhythms: [stretch] }));
     expect(thursday.mandatory).toBeNull();
   });
 
-  it("offers nothing of a module the life mode switches off, except what is due today", () => {
+  it("offers nothing of a module of no weight, except what is due today", () => {
+    // Ç4a: a stored mode behaviour is not read; the weight alone counts.
     const off = moduleRow({
-      mode_behavior: { holiday: { weightMultiplier: 0, floorMultiplier: 0 } },
+      weight: 0,
+      mode_behavior: { normal: { weightMultiplier: 2 } },
     });
     const idle = task({ module_id: off.id });
     const due = task({ module_id: off.id, due_at: iso("18:00") });
-    const ids = buildCandidates(
-      input({ lifeMode: "holiday", modules: [off], tasks: [idle, due] }),
-    ).map((row) => row.id);
+    const ids = buildCandidates(input({ modules: [off], tasks: [idle, due] })).map((row) => row.id);
     expect(ids).toEqual([due.id]);
   });
 });
 
 describe("the end of the day", () => {
-  it("says the day is done once the three and the mandatory work are finished", () => {
+  it("says the day is done once no work of the plan is left (Ç4a)", () => {
     const [a, b, c] = [1, 2, 3].map((n) =>
       task({ title: `İş ${n}`, status: "done", done_at: iso("10:00") }),
     );
-    const extra = task({ title: "Vakit kalırsa" });
-    const plan = buildPlan(
-      input({ now: at("11:00"), tasks: [a, b, c, extra], top3: [a.id, b.id, c.id] }),
-    );
-    expect(plan.top3Done).toBe(3);
+    const plan = buildPlan(input({ now: at("11:00"), tasks: [a, b, c] }));
     expect(plan.now).toMatchObject({ kind: "done", finished: 3 });
   });
 
-  it("is not done while mandatory work is left", () => {
+  it("is not done while work that fits is left: the plan is the day's rest", () => {
     const [a, b, c] = [1, 2, 3].map(() => task({ status: "done", done_at: iso("10:00") }));
+    const more = task({ title: "Bir iş daha" });
+    const plan = buildPlan(input({ now: at("11:00"), tasks: [a, b, c, more] }));
+    expect(plan.now).toMatchObject({
+      kind: "suggest",
+      assignment: { candidate: { id: more.id } },
+    });
     const due = task({ due_at: iso("18:00") });
-    const plan = buildPlan(
-      input({ now: at("11:00"), tasks: [a, b, c, due], top3: [a.id, b.id, c.id] }),
-    );
-    expect(plan.now.kind).toBe("suggest");
+    expect(buildPlan(input({ now: at("11:00"), tasks: [a, b, c, due] })).now.kind).toBe("suggest");
   });
 
-  it("is night after the finish line and after the evening closing", () => {
+  it("is done when what is left does not fit the rest of the window", () => {
+    const done = task({ status: "done", done_at: iso("10:00") });
+    // 18:50: ten minutes to the bedtime (19:00 here); a 30-minute task does not fit.
+    const left = task({ est_minutes: 30 });
+    const plan = buildPlan(input({ now: at("18:50"), tasks: [done, left] }));
+    expect(placedIds(plan)).toEqual([]);
+    expect(plan.now).toMatchObject({ kind: "done", finished: 1 });
+  });
+
+  it("is done when everything was put off or dropped today, empty when nothing was there", () => {
+    const stamp = iso("09:30");
+    const deferred = task({
+      planned_date: shiftDay(DATE, 1),
+      defer_count: 1,
+      updated_at: stamp,
+    });
+    expect(buildPlan(input({ now: at("10:00"), tasks: [deferred] })).now.kind).toBe("done");
+    const dropped = task({ status: "dropped", updated_at: stamp });
+    expect(buildPlan(input({ now: at("10:00"), tasks: [dropped] })).now.kind).toBe("done");
+    const item = workItem();
+    expect(
+      buildPlan(input({ now: at("10:00"), workItems: [item], skipped: [item.id] })).now.kind,
+    ).toBe("done");
+    // Put off on another day: nothing of today's.
+    const before = { ...deferred, updated_at: iso("09:30", shiftDay(DATE, -1)) };
+    expect(buildPlan(input({ now: at("10:00"), tasks: [before] })).now.kind).toBe("empty");
+  });
+
+  it("counts a rhythm done today, but not one bound to the waking or the bedtime", () => {
+    const walk = rhythm({ title: "Yürüyüş", period: "day", target_count: 1 });
+    const morning = rhythm({
+      title: "Sabah",
+      period: "day",
+      target_count: 1,
+      timing: { anchor: "wake" },
+    });
+    const walked = [rhythmLog(walk.id, DATE)];
+    expect(
+      buildPlan(input({ now: at("12:00"), rhythms: [walk], rhythmLogs: walked })).now.kind,
+    ).toBe("done");
+    const routine = [rhythmLog(morning.id, DATE)];
+    expect(
+      buildPlan(input({ now: at("12:00"), rhythms: [morning], rhythmLogs: routine })).now.kind,
+    ).toBe("empty");
+  });
+
+  it("is night after the bedtime and after the evening closing", () => {
     expect(buildPlan(input({ now: at("19:30"), tasks: [task()] })).now.kind).toBe("night");
     expect(buildPlan(input({ now: at("15:00"), closed: true, tasks: [task()] })).now.kind).toBe(
       "night",
@@ -363,7 +418,6 @@ describe("the automatic plan", () => {
     const closing = buildPlan(input({ ...base, now: at("21:30", shiftDay(DATE, -1)) }));
     // …and on the day's first touch, from the same data.
     const auto = buildPlan(input({ ...base, now: at("08:00") }));
-    expect(auto.top3).toEqual(closing.top3);
     expect(shape(auto.slots)).toEqual(shape(closing.slots));
     expect(placedIds(auto)).toEqual(placedIds(closing));
   });
@@ -383,8 +437,17 @@ describe("the return state", () => {
     const plan = buildPlan(input({ ...away, tasks: [missed, planned, fresh] }));
     expect(plan.now.kind).toBe("return");
     expect(plan.candidates.every((row) => row.mandatory === null)).toBe(true);
-    expect(plan.top3.length).toBeLessThanOrEqual(3);
-    if (plan.now.kind === "return") expect(plan.now.top3.length).toBe(plan.top3.length);
+    // Ç4a: the card holds the day's next work, not three.
+    const first = plan.slots.find((slot) => slot.assignment)!.assignment!;
+    expect(plan.now).toMatchObject({
+      kind: "return",
+      next: { candidate: { id: first.candidate.id } },
+    });
+  });
+
+  it("holds no next work when nothing fits the day", () => {
+    const plan = buildPlan(input({ ...away }));
+    expect(plan.now).toEqual({ kind: "return", next: null });
   });
 
   it("forgets the days planned during the absence", () => {
@@ -439,7 +502,7 @@ describe("the AI's advice", () => {
         date: sunday,
         now: at("08:00", sunday),
         dayStart: at("08:00", sunday),
-        finishLine: at("12:00", sunday),
+        bedtime: at("12:00", sunday),
         modules: [sport],
         tasks: [run],
         spentThisWeek: {},
@@ -448,18 +511,6 @@ describe("the AI's advice", () => {
     );
     expect(placedIds(plan)).toEqual([run.id]);
     expect(plan.warnings).toMatchObject([{ kind: "advice_rejected", subjectId: run.id }]);
-  });
-
-  it("puts its three after the mandatory work, cut at the capacity", () => {
-    const tasks = [1, 2, 3, 4].map((n) => task({ title: `İş ${n}`, est_minutes: 30 }));
-    const ai = [tasks[3].id, tasks[2].id, tasks[1].id];
-    // 90 minutes of slots × 0.7: room for two of the three.
-    const plan = buildPlan(input({ tasks, advice: { top3: ai }, finishLine: at("09:30") }));
-    // Two of the AI's three fit (the scores are equal: which two is the engine's order, not the
-    // AI's); the fourth task, not chosen, does not get in.
-    const two = [tasks[1].id, tasks[2].id].sort();
-    expect([...placedIds(plan)].sort()).toEqual(two);
-    expect([...plan.top3].sort()).toEqual(two);
   });
 
   it("raises what it prefers", () => {
@@ -485,21 +536,20 @@ describe("the AI's advice", () => {
     const tasks = [task({ est_minutes: 30 }), task({ est_minutes: 45, energy: "deep" })];
     const plan = buildPlan(input({ tasks }));
     expect(placedIds(plan).sort()).toEqual(tasks.map((row) => row.id).sort());
-    expect(plan.top3.length).toBe(2);
     expect(plan.now.kind).toBe("suggest");
     expect(plan.plannedMinutes).toBeLessThanOrEqual(plan.usableMinutes);
   });
 });
 
 describe("capacity", () => {
-  it("never plans more than the slots times the day's factor; the rest is overflow", () => {
+  it("never plans more than the slots times the day's factor; the rest is not on the day", () => {
     const tasks = Array.from({ length: 12 }, (_, n) =>
       task({ title: `İş ${n}`, est_minutes: 60, energy: "deep" }),
     );
     const plan = buildPlan(input({ tasks }));
     // 08:00–19:00 is 660 minutes, minus breaks it is still more than 400; × 0.7.
     expect(plan.plannedMinutes).toBeLessThanOrEqual(plan.usableMinutes);
-    expect(plan.overflow.length).toBeGreaterThan(0);
+    expect(unplaced(plan).length).toBeGreaterThan(0);
   });
 
   it("uses the learned factor once five days stand behind it", () => {
@@ -551,25 +601,16 @@ describe("work items and the week", () => {
     );
     expect(ids).toEqual([inWeek.id]);
   });
-
-  it("knows a member of the day's three by its sitting", () => {
-    const item = workItem({ title: "Kalem" });
-    const done = task({ work_item_id: item.id, status: "done", done_at: iso("10:00") });
-    const plan = buildPlan(
-      input({ now: at("11:00"), workItems: [item], tasks: [done], top3: [item.id] }),
-    );
-    expect(plan.top3Done).toBe(1);
-  });
 });
 
 describe("the learned multiplier", () => {
-  it("sends work longer than any slot to the overflow instead of squeezing it in", () => {
+  it("leaves work longer than any slot off the day instead of squeezing it in", () => {
     const mod = moduleRow();
     const long = task({ est_minutes: 80, kind: "prep" });
     const stats = [{ key: `est_multiplier:${mod.slug}:prep`, value: 2, sample_size: 8 }];
     const plan = buildPlan(input({ modules: [mod], tasks: [long], stats }));
     expect(plan.candidates[0].minutes).toBe(160);
-    expect(plan.overflow.map((row) => row.id)).toEqual([long.id]);
+    expect(unplaced(plan)).toEqual([long.id]);
   });
 
   it("still starts such work today when it is due today, in the longest deep slot", () => {
@@ -739,23 +780,11 @@ describe("the 'Bitti mi?' question", () => {
   it("is asked before the day can be done", () => {
     const finished = task({ status: "done", done_at: iso("09:00") });
     const spent = workItem({ title: "Dolan", effort_total_minutes: 60, effort_done_minutes: 60 });
-    const plan = buildPlan(
-      input({ now: at("10:00"), tasks: [finished], workItems: [spent], top3: [finished.id] }),
-    );
+    const plan = buildPlan(input({ now: at("10:00"), tasks: [finished], workItems: [spent] }));
     expect(plan.now).toMatchObject({
       kind: "suggest",
       assignment: { candidate: { id: spent.id } },
     });
-  });
-});
-
-describe("the day's three, fixed", () => {
-  it("are placed by their score now: a deadline moved forward puts its work first", () => {
-    const later = task({ title: "Sonra", due_at: iso("18:00", shiftDay(DATE, 6)) });
-    const sooner = task({ title: "Öne çekilen", due_at: iso("18:00", shiftDay(DATE, 1)) });
-    const plan = buildPlan(input({ tasks: [later, sooner], top3: [later.id, sooner.id] }));
-    expect(placedIds(plan)).toEqual([sooner.id, later.id]);
-    expect(plan.top3).toEqual([later.id, sooner.id]);
   });
 });
 
@@ -794,51 +823,5 @@ describe("a sitting and its item", () => {
     const done = workItem({ status: "done" });
     const sitting = task({ work_item_id: done.id });
     expect(buildCandidates(input({ workItems: [done], tasks: [sitting] }))).toEqual([]);
-  });
-});
-
-describe("the day's three", () => {
-  const saturday = "2026-11-14";
-  const onSaturday = (overrides: Partial<PlanInput>) =>
-    input({
-      date: saturday,
-      now: at("08:00", saturday),
-      dayStart: at("08:00", saturday),
-      finishLine: at("19:00", saturday),
-      ...overrides,
-    });
-
-  it("keeps a rhythm out of the three, on the strip, unless its floor is at risk", () => {
-    const habit = rhythm({ target_count: 4, floor_count: 2 });
-    const work = task({ title: "İş" });
-    // Thursday: the floor is safe; the rhythm is placed but the three hold only the task.
-    const plan = buildPlan(input({ tasks: [work], rhythms: [habit] }));
-    expect(placedIds(plan)).toContain(habit.id);
-    expect(plan.top3).toEqual([work.id]);
-    // Even when the AI picks it.
-    const picked = buildPlan(
-      input({ tasks: [work], rhythms: [habit], advice: { top3: [habit.id, work.id] } }),
-    );
-    expect(picked.top3).toEqual([work.id]);
-    // Saturday: two days left, two still needed: the floor is at risk and it joins the three.
-    const risky = buildPlan(onSaturday({ tasks: [work], rhythms: [habit] }));
-    expect(risky.candidates.find((row) => row.id === habit.id)?.mandatory).toBe("floor");
-    expect(risky.top3).toContain(habit.id);
-  });
-
-  it("puts work due today first, then the AI's choice, then the engine's other mandatory work", () => {
-    const habit = rhythm({ target_count: 4, floor_count: 2 });
-    const due = task({ title: "Bugün teslim", importance: 1, due_at: iso("17:00", saturday) });
-    const [a, b] = [task({ title: "A", importance: 1 }), task({ title: "B", importance: 1 })];
-    const plan = buildPlan(
-      onSaturday({ tasks: [due, a, b], rhythms: [habit], advice: { top3: [b.id, a.id] } }),
-    );
-    // The rhythm keeping its floor is still placed, outside the three.
-    expect(placedIds(plan)).toContain(habit.id);
-    expect(plan.top3[0]).toBe(due.id);
-    expect([...plan.top3.slice(1)].sort()).toEqual([a.id, b.id].sort());
-    // Without the AI's choice the engine's own mandatory work comes before the best score.
-    const own = buildPlan(onSaturday({ tasks: [due, a, b], rhythms: [habit] }));
-    expect(own.top3.slice(0, 2)).toEqual([due.id, habit.id]);
   });
 });

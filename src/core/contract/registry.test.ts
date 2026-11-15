@@ -108,15 +108,6 @@ describe("createRegistry", () => {
         },
         /no label/,
       ],
-      [
-        {
-          modeBehavior: {
-            ...definition().modeBehavior,
-            busy: { weightMultiplier: 1, floorMultiplier: 1.5 },
-          },
-        },
-        /between 0 and 1/,
-      ],
     ];
     for (const [overrides, message] of cases) {
       expect(definitionProblems(definition(overrides)).join("\n"), String(message)).toMatch(
@@ -125,6 +116,17 @@ describe("createRegistry", () => {
       expect(() => createRegistry([definition(overrides)])).toThrow(/Module contract problems/);
     }
     expect(definitionProblems(definition())).toEqual([]);
+  });
+
+  it("accepts a module that still declares its life mode behaviour, or none (Ç4a)", () => {
+    // Written before the life modes went: not refused, whatever it says.
+    const old = definition({
+      modeBehavior: { busy: { weightMultiplier: 1, floorMultiplier: 1.5 } },
+    });
+    expect(definitionProblems(old)).toEqual([]);
+    const none = definition();
+    delete none.modeBehavior;
+    expect(definitionProblems(none)).toEqual([]);
   });
 });
 

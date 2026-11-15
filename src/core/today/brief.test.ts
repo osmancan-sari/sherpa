@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { dayRow, moduleRow, settingsRow } from "@/core/testing/factories";
+import { dayRow, moduleRow, settingsRow, task } from "@/core/testing/factories";
 import {
   buildPlan,
   dayStartClock,
@@ -20,11 +20,15 @@ const DATE = "2026-11-12";
 const NEXT = "2026-11-13";
 const at = (time: string, day = DATE) => istanbulInstant(day, time);
 
-function rows(days: Partial<DayRow>[] = [], settings: Settings | null = settingsRow()): PlanRows {
+function rows(
+  days: Partial<DayRow>[] = [],
+  settings: Settings | null = settingsRow(),
+  tasks: PlanRows["tasks"] = [],
+): PlanRows {
   return {
     settings,
     modules: [moduleRow()],
-    tasks: [],
+    tasks,
     workItems: [],
     rhythms: [],
     rhythmLogs: [],
@@ -35,7 +39,6 @@ function rows(days: Partial<DayRow>[] = [], settings: Settings | null = settings
     inbox: [],
     days: days.map((day) => dayRow({ date: DATE, ...day })),
     weekPlans: [],
-    lifeModes: [],
     stats: [],
   };
 }
@@ -87,5 +90,34 @@ describe("the day in short (Ç3g)", () => {
     expect(off.wokeAt).toBeNull();
     expect(off.tomorrow).toBeNull();
     expect(off.wokeFrom).toBeNull();
+  });
+});
+
+describe("the day's work in short (Ç4a)", () => {
+  it("counts the planned work still ahead and names the first; no day's three", () => {
+    const woke = { woke_at: at("07:00").toISOString() };
+    const work = [
+      task({ title: "Proje önerisi", est_minutes: 45, importance: 4 }),
+      task({ title: "Okuma", est_minutes: 30 }),
+      task({ title: "Rutin", est_minutes: 15, timing: { anchor: "wake" } }),
+    ];
+    const morning = brief("07:01", rows([woke], settingsRow(), work), DATE);
+    // The wake-bound routine is not counted: two pieces of work, the first by time.
+    expect(morning.work.count).toBe(2);
+    expect(morning.work.first?.title).toBe("Proje önerisi");
+    expect(morning).not.toHaveProperty("top");
+    expect(brief("07:01", rows([woke])).work).toEqual({ count: 0, first: null });
+  });
+
+  it("gives tonight's bedtime with the frame, none without it; no finish line", () => {
+    const woke = { woke_at: at("07:00").toISOString() };
+    // A light tomorrow: up at 09:00, so bed at 01:00.
+    expect(brief("21:00", rows([woke])).bedtime).toEqual(at("01:00", NEXT));
+    expect(brief("21:00", rows([{ ...woke, expected_bed: "23:00:00" }])).bedtime).toEqual(
+      at("23:00"),
+    );
+    const off = brief("21:00", rows([woke], settingsRow({ day_frame: null })));
+    expect(off.bedtime).toBeNull();
+    expect(off).not.toHaveProperty("finishLine");
   });
 });

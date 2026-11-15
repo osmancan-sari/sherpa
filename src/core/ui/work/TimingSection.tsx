@@ -10,7 +10,6 @@ import {
   checkTiming,
   daysLabel,
   normalizeTiming,
-  outsideDay,
   readTiming,
   type TimeWindow,
   type Timing,
@@ -69,6 +68,7 @@ export function draftOf(timing: Timing | null): TimingDraft {
     rest: timing?.rest_days ? String(timing.rest_days) : "",
     anchor: timing?.anchor ?? "",
     order: timing?.order ? String(timing.order) : "",
+    // Ç4a: not read by the planner and not offered; a value a module wrote is kept as it was.
     afterFinish: timing?.after_finish === true,
   };
 }
@@ -160,7 +160,7 @@ export function issueText(issue: TimingIssue): string {
     case "not_used":
       return "Günlük ritimde dinlenme günü olmaz.";
     case "anchor":
-      return "Uyanışa ya da yatışa bağlı iş saat aralığı, yol ve akşam almaz.";
+      return "Uyanışa ya da yatışa bağlı iş saat aralığı ve yol almaz.";
     default:
       return "Aralıklardan biri geçersiz.";
   }
@@ -172,8 +172,6 @@ export function TimingSection({
   form,
   issues,
   timing,
-  dayStart,
-  finishLine,
   inherited,
   note,
 }: {
@@ -183,8 +181,6 @@ export function TimingSection({
   issues: TimingIssue[];
   /** The checked value (null when empty or invalid). */
   timing: Timing | null;
-  dayStart: string;
-  finishLine: string;
   /** A sitting without its own: the item's constraint, which then holds. */
   inherited?: Timing | null;
   /** Where the stored value came from ("Modülün ayarından"), or the AI's reason. */
@@ -341,11 +337,6 @@ export function TimingSection({
         {issues.length > 0 ? (
           <p role="alert" className="health-behind">
             {issueText(issues[0])}
-          </p>
-        ) : null}
-        {outsideDay(timing, dayStart, finishLine) ? (
-          <p className="health-attention">
-            Bu saatler bitiş çizgisinden ({finishLine}) sonra; planlayıcı bu işi yerleştiremez.
           </p>
         ) : null}
       </div>

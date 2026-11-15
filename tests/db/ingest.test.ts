@@ -450,6 +450,36 @@ describe("the core's kinds", () => {
     expect(await ownerRows("days")).toEqual([]);
   });
 
+  it("core/context keeps the report for the phone's screens; an older one does not replace it (Ç4a)", async () => {
+    const token = await tokenWith(["core/context"]);
+    const kept = async () =>
+      ok(await owner.from("settings").select("reported_context, reported_context_at"))[0];
+    const at = (time: string) => new Date(`2026-11-12T${time}:00+03:00`);
+    await call({
+      path: "core/context",
+      token,
+      body: { context: "campus", at: at("10:00").toISOString() },
+      now: at("10:01"),
+    });
+    expect(await kept()).toMatchObject({ reported_context: "campus" });
+    expect(Date.parse((await kept()).reported_context_at!)).toBe(at("10:00").getTime());
+    // A report from before (sent late) leaves the newer one.
+    await call({
+      path: "core/context",
+      token,
+      body: { context: "home", at: at("09:00").toISOString() },
+      now: at("10:05"),
+    });
+    expect(await kept()).toMatchObject({ reported_context: "campus" });
+    await call({
+      path: "core/context",
+      token,
+      body: { context: "office", at: at("11:00").toISOString() },
+      now: at("11:00"),
+    });
+    expect(await kept()).toMatchObject({ reported_context: "office" });
+  });
+
   it("core/bed records tonight's bedtime; a late one shortens tomorrow and re-commits the week", async () => {
     // The day's frame on (the column's default), up at 07:00 on Thursday.
     ok(await owner.from("settings").insert({}).select());

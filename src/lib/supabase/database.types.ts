@@ -1331,6 +1331,8 @@ export type Database = {
           default_day_type: Database["public"]["Enums"]["day_type"];
           finish_line_default: string;
           id: string;
+          reported_context: Database["public"]["Enums"]["context_kind"] | null;
+          reported_context_at: string | null;
           return_after_days: number;
           slot: NonNullable<Json>;
           updated_at: string;
@@ -1347,6 +1349,8 @@ export type Database = {
           default_day_type?: Database["public"]["Enums"]["day_type"];
           finish_line_default?: string;
           id?: string;
+          reported_context?: Database["public"]["Enums"]["context_kind"] | null;
+          reported_context_at?: string | null;
           return_after_days?: number;
           slot?: NonNullable<Json>;
           updated_at?: string;
@@ -1362,6 +1366,8 @@ export type Database = {
           default_day_type?: Database["public"]["Enums"]["day_type"];
           finish_line_default?: string;
           id?: string;
+          reported_context?: Database["public"]["Enums"]["context_kind"] | null;
+          reported_context_at?: string | null;
           return_after_days?: number;
           slot?: NonNullable<Json>;
           updated_at?: string;

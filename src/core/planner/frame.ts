@@ -1,9 +1,9 @@
-import { type ClockRange, clockOf, type FrameSettings, rangesFor } from "@/core/contract/frame";
+import { type ClockRange, type FrameSettings, rangesFor } from "@/core/contract/frame";
 import { readTiming } from "@/core/contract/timing";
 import { type Block, type DayRow, wakeSourceOf } from "@/core/types";
 import { istanbulInstant, shiftDay, weekdayOf } from "@/lib/date";
 import { candidatesOf } from "./candidates";
-import { dayCapacity, dayTypeOf } from "./slots";
+import { bedInstant, dayCapacity, dayTypeOf } from "./slots";
 import type { Candidate, DayFrame, PlanInput, PlannerSettings, SleepPlan } from "./types";
 
 // The day's frame (docs/04-planlayici.md, "Günün çerçevesi (Ç3c)"): the sleep plan of each
@@ -18,12 +18,7 @@ export const MORNING_GRACE = 60;
 /** Days ahead whose start the frame works out (the rest start at the waking range's end). */
 const DAYS_AHEAD = 8;
 
-/** A bedtime of the night after `day`: a time before noon is on the next calendar day. */
-export function bedInstant(day: string, time: string): Date {
-  return clockOf(time) < 12 * 60
-    ? istanbulInstant(shiftDay(day, 1), time)
-    : istanbulInstant(day, time);
-}
+export { bedInstant };
 
 const later = (a: Date, b: Date) => (a > b ? a : b);
 const earlier = (a: Date, b: Date) => (a < b ? a : b);
@@ -149,18 +144,18 @@ export function dayLoad(input: PlanInput, candidates: Candidate[]): number {
   return mandatory + share / (8 - weekdayOf(input.date));
 }
 
-/** A rough morning footprint for a day further ahead: its wake-bound rhythms and tasks. */
-function roughFootprint(input: PlanInput, day: string): number {
+/** A rough footprint of a day further ahead on one anchor: its anchored rhythms and tasks. */
+function roughFootprint(input: PlanInput, day: string, anchor: "wake" | "bed" = "wake"): number {
   const active = new Set(input.modules.map((mod) => mod.id));
   let total = 0;
   for (const rhythm of input.rhythms) {
     if (!rhythm.active || !active.has(rhythm.module_id)) continue;
-    if (readTiming(rhythm.timing)?.anchor === "wake") total += Math.min(90, rhythm.est_minutes);
+    if (readTiming(rhythm.timing)?.anchor === anchor) total += Math.min(90, rhythm.est_minutes);
   }
   for (const task of input.tasks) {
     if (task.status !== "todo" || !active.has(task.module_id)) continue;
     if (task.planned_date !== null && task.planned_date !== day) continue;
-    if (readTiming(task.timing)?.anchor === "wake") total += task.est_minutes;
+    if (readTiming(task.timing)?.anchor === anchor) total += task.est_minutes;
   }
   return total;
 }
@@ -182,9 +177,8 @@ export function inputFor(base: PlanInput, day: string, start: Date): PlanInput {
     date: day,
     dayType: dayTypeOf(day, base.blocks, base.settings),
     dayStart: start,
-    finishLine: istanbulInstant(day, base.settings.finishLine),
+    bedtime: bedInstant(day, base.settings.bedtime),
     closed: false,
-    top3: undefined,
     skipped: [],
     openSession: null,
     prompt: null,
@@ -195,15 +189,17 @@ export function inputFor(base: PlanInput, day: string, start: Date): PlanInput {
 }
 
 /**
- * The frame of the input's day, and where each day's work starts from it (for the day
+ * The frame of the input's day, and where each day's work starts and ends from it (for the day
  * capacities): today from its waking, tomorrow from its expected waking, the days after from
- * their latest waking (the load's pull is not worked out that far).
+ * their latest waking (the load's pull is not worked out that far). Ç4a: today's work ends at its
+ * bedtime less its bed-bound work; the days after at the bedtime their next morning's latest
+ * waking allows (inside the night's range), less their bed-bound work.
  */
 export function dayFrameOf(
   base: PlanInput,
   frame: FrameSettings,
   days: FrameDay[],
-): { frame: DayFrame; dayStarts: Record<string, number> } {
+): { frame: DayFrame; dayStarts: Record<string, number>; dayEnds: Record<string, number> } {
   const { settings } = base;
   const rowOf = (day: string) => days.find((row) => row.date === day) ?? null;
   const typeOf = (day: string) => dayTypeOf(day, base.blocks, settings);
@@ -216,6 +212,7 @@ export function dayFrameOf(
     const dayInput = inputFor(base, day, istanbulInstant(day, wakeRange[1]));
     const { candidates } = candidatesOf(dayInput);
     const footprint = sumMinutes(anchoredIn(candidates, "wake"));
+    const bedFootprint = sumMinutes(anchoredIn(candidates, "bed"));
     const own = rowOf(day);
     const night = rowOf(before);
     const ownWake = clockText(own?.expected_wake);
@@ -247,7 +244,21 @@ export function dayFrameOf(
     // tomorrow and moves its waking back, which must not read as lost capacity (plan stability).
     // A real bedtime or the user's own waking does count.
     const steady = bedAt || ownWake ? plan.expectedWake : plan.latestWake;
-    return { plan, footprint, steady };
+    return { plan, footprint, bedFootprint, steady };
+  };
+
+  /** The latest waking of a day further ahead: its first obligation less its morning, in range. */
+  const latestWakeOf = (day: string) => {
+    let latest = istanbulInstant(day, rangesOn(day).wake[1]);
+    const obligation = firstObligation(base.blocks, day);
+    if (obligation) latest = earlier(latest, plus(obligation, -roughFootprint(base, day)));
+    return latest;
+  };
+  /** The bedtime of the night after a day further ahead, from its next morning's latest waking. */
+  const roughBed = (day: string) => {
+    const [from, to] = rangesOn(day).bed;
+    const wanted = plus(latestWakeOf(shiftDay(day, 1)), -frame.sleepMinutes);
+    return earlier(later(wanted, bedInstant(day, from)), bedInstant(day, to));
   };
 
   const date = base.date;
@@ -265,13 +276,16 @@ export function dayFrameOf(
     [date]: plus(wake, last.footprint).getTime(),
     [tomorrow]: plus(next.steady, next.footprint).getTime(),
   };
-  for (let index = 2; index < DAYS_AHEAD; index++) {
+  const dayEnds: Record<string, number> = {
+    [date]: plus(bed, -last.bedFootprint).getTime(),
+  };
+  for (let index = 1; index < DAYS_AHEAD; index++) {
     const day = shiftDay(date, index);
-    const footprint = roughFootprint(base, day);
-    let start = istanbulInstant(day, rangesOn(day).wake[1]);
-    const obligation = firstObligation(base.blocks, day);
-    if (obligation) start = earlier(start, plus(obligation, -footprint));
-    dayStarts[day] = plus(start, footprint).getTime();
+    if (index >= 2) {
+      const footprint = roughFootprint(base, day);
+      dayStarts[day] = plus(latestWakeOf(day), footprint).getTime();
+    }
+    dayEnds[day] = plus(roughBed(day), -roughFootprint(base, day, "bed")).getTime();
   }
 
   return {
@@ -289,6 +303,7 @@ export function dayFrameOf(
       tonight: next.plan,
     },
     dayStarts,
+    dayEnds,
   };
 }
 

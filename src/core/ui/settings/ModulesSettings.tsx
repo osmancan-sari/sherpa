@@ -9,7 +9,7 @@ import { useRegistry } from "@/core/app/CoreProvider";
 import { type KnownModule, useCoreMutation, useModules } from "@/core/app/hooks";
 import type { ModuleDefinition } from "@/core/contract/types";
 import { activateModule, archiveModule, setModuleStatus } from "@/core/data/module-rows";
-import type { LifeMode, ModuleRow } from "@/core/types";
+import type { ModuleRow } from "@/core/types";
 import { ClientOnly } from "../ClientOnly";
 import { ModuleProvider } from "../module/ModuleProvider";
 import { SAVE_FAILED, useNotify } from "../Notices";
@@ -200,13 +200,6 @@ export function ModuleSettingsScreen() {
   );
 }
 
-const MODE_LABEL: Record<LifeMode, string> = {
-  normal: "Normal",
-  busy: "Yoğun",
-  minimum: "Minimum",
-  holiday: "Tatil",
-};
-
 function ModuleSettingsRoute() {
   const { slug } = useParams<{ slug: string }>();
   const { modules, isLoading } = useModules();
@@ -228,7 +221,6 @@ function ModuleSettingsRoute() {
 
 function ModuleSettingsBody({ mod }: { mod: KnownModule }) {
   const Form = mod.definition?.ui.settings;
-  const behavior = mod.definition?.modeBehavior;
 
   return (
     <PageShell title={`${mod.row.name} ayarları`}>
@@ -255,26 +247,6 @@ function ModuleSettingsBody({ mod }: { mod: KnownModule }) {
           <p className="text-muted-foreground text-sm">Bu modülün kendi ayarı yok.</p>
         )}
       </section>
-
-      {behavior ? (
-        <section
-          aria-label="Hayat modları"
-          className="border-border flex flex-col gap-3 rounded-xl border p-5"
-        >
-          <h2 className="text-sm font-medium">Hayat modlarında</h2>
-          <dl className="flex flex-col gap-2 text-sm">
-            {(Object.keys(MODE_LABEL) as LifeMode[]).map((mode) => (
-              <div key={mode} className="flex flex-wrap gap-x-3">
-                <dt className="w-20 font-medium">{MODE_LABEL[mode]}</dt>
-                <dd className="text-muted-foreground">
-                  {behavior[mode].note ??
-                    `önem ×${behavior[mode].weightMultiplier}, taban ×${behavior[mode].floorMultiplier}`}
-                </dd>
-              </div>
-            ))}
-          </dl>
-        </section>
-      ) : null}
     </PageShell>
   );
 }

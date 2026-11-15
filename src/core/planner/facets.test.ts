@@ -25,9 +25,8 @@ function input(withFacets: boolean): PlanInput {
     now: at("08:00"),
     date: DATE,
     dayType: "home",
-    lifeMode: "normal",
     dayStart: at("08:00"),
-    finishLine: at("19:00"),
+    bedtime: at("19:00"),
     blocks: [
       block({
         starts_at: at("12:00").toISOString(),
@@ -68,7 +67,8 @@ function input(withFacets: boolean): PlanInput {
     rhythmLogs: [],
     modules: [moduleRow({ facet_colors: withFacets ? { sabah: "#e11d48" } : {} })],
     context: "desk",
-    settings: DEFAULT_SETTINGS,
+    // Ç4a: the day runs to its bedtime; 19:00 here keeps the days as they were measured.
+    settings: { ...DEFAULT_SETTINGS, bedtime: "19:00" },
     stats: [],
   };
 }
@@ -82,9 +82,7 @@ const decisions = (plan: Plan) => ({
     slot.assignment?.candidate.id ?? null,
     slot.assignment?.minutes ?? null,
   ]),
-  top3: plan.top3,
   now: plan.now.kind,
-  overflow: plan.overflow.map((candidate) => candidate.id),
   candidates: plan.candidates.map((candidate) => [candidate.id, candidate.score]),
   warnings: plan.warnings.map((warning) => [warning.kind, warning.subjectId]),
   usable: plan.usableMinutes,

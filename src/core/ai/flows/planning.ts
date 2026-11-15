@@ -6,7 +6,6 @@ import { saveDayPlan } from "@/core/data/planning";
 import {
   buildPlan,
   commitWeek,
-  isFinished,
   loadByWeek,
   type Plan,
   type PlanAdvice,
@@ -60,21 +59,19 @@ export function planCallInput(
   return {
     date: input.date,
     weekday: WEEKDAYS[weekdayOf(input.date)],
-    life_mode: input.lifeMode,
     capacity_minutes: base.usableMinutes,
     // The day's window and bedtime only; the sleep history stays here (Ç3c).
     ...(input.frame
       ? {
           day: {
             start: formatTime(input.dayStart),
-            finish: formatTime(input.finishLine),
+            end: formatTime(base.frame?.workEnd ?? input.bedtime),
             bed: formatTime(input.frame.bed),
           },
         }
       : {}),
     base: {
-      top3: base.top3,
-      // The working window only: anchored and evening work are not the AI's to choose.
+      // The working window only: anchored work is not the AI's to choose.
       placed: base.slots.flatMap((slot) =>
         slot.assignment && !slot.part ? [slot.assignment.candidate.id] : [],
       ),
@@ -100,14 +97,7 @@ export function planCallInput(
         start: formatTime(new Date(block.starts_at)),
         end: formatTime(new Date(block.ends_at)),
       })),
-    yesterday: yesterday
-      ? {
-          planned: yesterday.top3.length,
-          done: yesterday.top3.filter((id) =>
-            rows.tasks.some((task) => task.id === id && task.status === "done"),
-          ).length,
-        }
-      : null,
+    yesterday: yesterday ? doneOn(rows, yesterday.date) : null,
     // The user's note: the one given now, else the one left at the evening closing.
     note: note ?? yesterday?.closing_note ?? null,
     ...(replan
@@ -125,15 +115,23 @@ export function planCallInput(
   };
 }
 
+/** Work finished on a day: how many pieces and their minutes (Ç4a: there are no three). */
+function doneOn(rows: PlanRows, date: string): { done: number; minutes: number } {
+  const done = rows.tasks.filter(
+    (task) => task.status === "done" && task.done_at && dayKey(new Date(task.done_at)) === date,
+  );
+  return { done: done.length, minutes: done.reduce((sum, task) => sum + task.est_minutes, 0) };
+}
+
 /** The AI's answer as the engine's advice: only ids the engine knows. */
 export function adviceOf(output: PlanOutput, plan: Plan): PlanAdvice {
   const known = new Set(plan.candidates.map((candidate) => candidate.id));
   const ids = (rows: { id: string }[]) => rows.map((row) => row.id).filter((id) => known.has(id));
   const reasons: Record<string, string> = {};
-  for (const row of [...output.top3, ...output.prefer, ...output.defer]) {
+  for (const row of [...output.prefer, ...output.defer]) {
     if (known.has(row.id) && row.reason) reasons[row.id] = row.reason;
   }
-  return { top3: ids(output.top3), prefer: ids(output.prefer), defer: ids(output.defer), reasons };
+  return { prefer: ids(output.prefer), defer: ids(output.defer), reasons };
 }
 
 /**
@@ -180,7 +178,7 @@ export type PlanFlowResult =
  * `plan` (the day's plan, asked once a day; the closing's draft with `preview`) and `replan`
  * ("Yeniden planla"). With `preview`, the advice is returned and nothing is written (the closing
  * shows it and writes it when the user confirms). A day the closing planned is not planned
- * again by `plan`; what is finished of the day's three always stays in them.
+ * again by `plan`.
  */
 export async function planDayFlow(
   deps: AiDeps,
@@ -189,12 +187,13 @@ export async function planDayFlow(
     kind: "plan" | "replan";
     note?: string | null;
     preview?: boolean;
-    context?: Context;
+    /** Ç4a: inferred on the phone; null when unknown (the filter is off). */
+    context?: Context | null;
   },
   now: Date,
 ): Promise<PlanFlowResult> {
   const rows = await loadPlanRows(deps.db, now);
-  const context = options.context ?? "desk";
+  const context = options.context === undefined ? "desk" : options.context;
   // The day the screen means: tomorrow's as the closing sees it, or the day itself.
   const tomorrow = tomorrowInput(rows, { now, context });
   const own =
@@ -218,7 +217,7 @@ export async function planDayFlow(
       );
     }
   }
-  const base = buildPlan({ ...input, top3: undefined });
+  const base = buildPlan(input);
   // Nothing to plan, nothing to ask (and nothing to pay for).
   if (base.candidates.length === 0) return { status: "skipped", reason: "nothing_to_plan" };
   const result = await runAiCall(
@@ -240,12 +239,9 @@ export async function planDayFlow(
   // The engine again, with the advice: it keeps the rules, the AI only chooses within them.
   const fresh = await loadPlanRows(deps.db, now);
   const again = planInput(fresh, { date: options.date, now, context });
-  const planned = buildPlan({ ...again, top3: undefined, advice });
-  // What is finished of the day's three stays in them.
-  const finished = (again.top3 ?? []).filter((id) => isFinished(id, again));
-  const top3 = [...finished, ...planned.top3.filter((id) => !finished.includes(id))].slice(0, 3);
+  const planned = buildPlan({ ...again, advice });
   await saveDayPlan(deps.db, {
-    plan: { ...planned, top3 },
+    plan: planned,
     day: again,
     source: "ai",
     stored: { advice, aiAsked: true },
@@ -280,7 +276,6 @@ export function weekCallInput(input: WeekInput, base: WeekPlan, rows: PlanRows):
   const lastWeek = rows.weekPlans.find((row) => row.week_start === shiftDay(input.weekStart, -7));
   return {
     week_start: input.weekStart,
-    life_mode: base.lifeMode,
     capacity_minutes: load.capacityMinutes,
     fixed_minutes: fixed,
     items: input.items
@@ -436,7 +431,6 @@ export async function reviewFlow(deps: AiDeps, registry: ModuleRegistry, now: Da
       capacity: load.capacityMinutes,
       demand: load.demandMinutes,
     })),
-    life_mode: planInput(rows, { date: dayKey(now), now, context: "desk" }).lifeMode,
   };
   // The week is looked back at from Saturday on (docs/10-yapay-zeka.md, "Akışlar (Ç3)").
   if (weekdayOf(dayKey(now)) < 6) return { status: "skipped" as const, reason: "too_early" };

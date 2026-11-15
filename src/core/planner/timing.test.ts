@@ -23,9 +23,8 @@ function input(overrides: Partial<PlanInput> = {}): PlanInput {
     now: at("08:00"),
     date: DATE,
     dayType: "home",
-    lifeMode: "normal",
     dayStart: at("08:00"),
-    finishLine: at("19:00"),
+    bedtime: at("19:00"),
     blocks: [],
     tasks: [],
     workItems: [],
@@ -33,7 +32,8 @@ function input(overrides: Partial<PlanInput> = {}): PlanInput {
     rhythmLogs: [],
     modules: [moduleRow()],
     context: "desk",
-    settings: DEFAULT_SETTINGS,
+    // Ç4a: the day runs to its bedtime; 19:00 here keeps the days as they were measured.
+    settings: { ...DEFAULT_SETTINGS, bedtime: "19:00" },
     stats: [],
     ...overrides,
   };
@@ -69,8 +69,6 @@ describe("no timing, no change", () => {
       assignments: plan.slots.map((slot) =>
         slot.assignment ? { ...slot.assignment, candidate: slot.assignment.candidate.id } : null,
       ),
-      top3: plan.top3,
-      overflow: plan.overflow.map((row) => row.id),
       warnings: plan.warnings,
       now: plan.now.kind,
       usable: plan.usableMinutes,
@@ -103,7 +101,7 @@ describe("the time filter (hard)", () => {
     const call = timed({ windows: [{ from: "16:00", to: "17:15" }] }, { est_minutes: 45 });
     const plan = buildPlan(input({ tasks: [call] }));
     expect(placement(plan, call.id)).toBeNull();
-    expect(plan.overflow.map((row) => row.id)).toContain(call.id);
+    expect(plan.candidates.map((row) => row.id)).toContain(call.id);
   });
 
   it("is no candidate on a day its windows do not cover", () => {
@@ -250,9 +248,7 @@ describe("the footprint: travel, work, travel", () => {
     );
     // Busy 09:30–11:00: 08:00–09:30 holds 90 of the 100 minutes.
     expect(placement(withTravel, gym.id)).toBe("11:20–12:20");
-    expect(
-      placement(buildPlan(input({ tasks: [gym], finishLine: at("09:30") })), gym.id),
-    ).toBeNull();
+    expect(placement(buildPlan(input({ tasks: [gym], bedtime: at("09:30") })), gym.id)).toBeNull();
   });
 
   it("never starts in a break", () => {
@@ -269,7 +265,7 @@ describe("the footprint: travel, work, travel", () => {
     // 08:00–08:40 is a light slot: deep work does not start there, physical work does.
     const deep = trip(20, { before: 5, after: 5 }, { energy: "deep" });
     const physical = trip(20, { before: 5, after: 5 });
-    const day = { finishLine: at("08:40") };
+    const day = { bedtime: at("08:40") };
     expect(placement(buildPlan(input({ ...day, tasks: [deep] })), deep.id)).toBeNull();
     expect(placement(buildPlan(input({ ...day, tasks: [physical] })), physical.id)).toBe(
       "08:05–08:25",
@@ -335,7 +331,7 @@ describe("rest days", () => {
           date: "2026-11-10",
           now: at("08:00", "2026-11-10"),
           dayStart: at("08:00", "2026-11-10"),
-          finishLine: at("19:00", "2026-11-10"),
+          bedtime: at("19:00", "2026-11-10"),
           rhythms: [sunday],
           rhythmLogs: [rhythmLog(sunday.id, "2026-11-08")],
         }),
@@ -346,24 +342,23 @@ describe("rest days", () => {
   it("the floor is in danger by the doings still reachable, not by the days left", () => {
     // Thursday: four days left in the week. Two needed, so no danger without constraints.
     const plain = rhythm({ target_count: 3, floor_count: 2 });
-    expect(rhythmState(plain, [], DATE, "normal").floorInDanger).toBe(false);
+    expect(rhythmState(plain, [], DATE).floorInDanger).toBe(false);
     // Only on weekends: Saturday and Sunday reach two, which is all that is needed.
     const weekend = rhythm({
       target_count: 3,
       floor_count: 2,
       timing: { windows: [{ days: [6, 7], from: "09:00", to: "18:00" }] },
     });
-    expect(rhythmState(weekend, [], DATE, "normal").floorInDanger).toBe(true);
+    expect(rhythmState(weekend, [], DATE).floorInDanger).toBe(true);
     // Three needed with a day between: Thursday and Saturday reach only two.
     const rest = rhythm({ target_count: 3, floor_count: 3, timing: { rest_days: 1 } });
-    expect(rhythmState(rest, [], DATE, "normal").floorInDanger).toBe(true);
+    expect(rhythmState(rest, [], DATE).floorInDanger).toBe(true);
     const restTwo = rhythm({ target_count: 3, floor_count: 2, timing: { rest_days: 1 } });
-    expect(rhythmState(restTwo, [], DATE, "normal").floorInDanger).toBe(true);
+    expect(rhythmState(restTwo, [], DATE).floorInDanger).toBe(true);
     // Done Monday: needed one more, Wednesday on is free: Thursday to Sunday reach two. No danger.
     const doneMonday = rhythm({ target_count: 2, floor_count: 2, timing: { rest_days: 1 } });
     expect(
-      rhythmState(doneMonday, [rhythmLog(doneMonday.id, "2026-11-09")], DATE, "normal")
-        .floorInDanger,
+      rhythmState(doneMonday, [rhythmLog(doneMonday.id, "2026-11-09")], DATE).floorInDanger,
     ).toBe(false);
   });
 });
@@ -433,7 +428,7 @@ describe("conflicts", () => {
         due_at: iso("19:00"),
       },
     );
-    const plan = buildPlan(input({ tasks: [gym], finishLine: at("09:20") }));
+    const plan = buildPlan(input({ tasks: [gym], bedtime: at("09:20") }));
     expect(placement(plan, gym.id)).toBeNull();
     expect(plan.warnings.map((row) => row.text)).toContain("Bugün uygun saat kalmadı: Salon.");
   });
@@ -523,29 +518,9 @@ describe("conflicts", () => {
       }),
     );
     expect(blocked.warnings.map((row) => row.kind)).toEqual(["no_time_week"]);
-    // Not committed and not due this week: no warning.
-    // (Its window lies before the day's start: that is said on its own.)
+    // Not committed and not due this week: no warning (Ç4a: nor one for hours outside the day).
     const loose = buildPlan(input({ workItems: [early], committed: [] }));
-    expect(loose.warnings.map((row) => row.kind)).toEqual(["outside_day"]);
-  });
-
-  it("work whose windows lie wholly after the finish line is said to be unplannable", () => {
-    const gym = timed({ windows: [{ from: "20:00", to: "24:00" }] }, { title: "Salon" });
-    const early = timed({ windows: [{ from: "05:00", to: "07:00" }] }, { title: "Koşu" });
-    const plan = buildPlan(input({ tasks: [gym, early] }));
-    expect(placement(plan, gym.id)).toBeNull();
-    expect(plan.warnings.map((row) => row.text)).toEqual([
-      "Saatleri bitiş çizgisinden sonra: Salon.",
-      "Saatleri bitiş çizgisinden sonra: Koşu.",
-    ]);
-    // One range inside the day is enough to plan it on some day.
-    const mixed = timed({
-      windows: [
-        { from: "20:00", to: "24:00" },
-        { days: [6], from: "10:00", to: "12:00" },
-      ],
-    });
-    expect(buildPlan(input({ tasks: [mixed] })).warnings).toEqual([]);
+    expect(loose.warnings).toEqual([]);
   });
 
   it("the AI may not plan work outside its window: the advice is dropped and said", () => {
@@ -561,10 +536,9 @@ describe("conflicts", () => {
     const plan = buildPlan(
       input({
         tasks: [monday, evening, other],
-        advice: { top3: [monday.id], prefer: [evening.id] },
+        advice: { prefer: [monday.id, evening.id] },
       }),
     );
-    expect(plan.top3).not.toContain(monday.id);
     expect(placement(plan, monday.id)).toBeNull();
     expect(plan.warnings.filter((row) => row.kind === "advice_rejected")).toEqual([
       expect.objectContaining({ subjectId: monday.id }),

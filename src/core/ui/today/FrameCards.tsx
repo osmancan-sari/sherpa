@@ -86,9 +86,7 @@ export function MorningCard({
           aria-label="Bugünün özeti"
           className="text-muted-foreground flex flex-col gap-1 md:text-lg"
         >
-          {brief.top.length > 0 ? <li>Günün işleri: {brief.top.join(", ")}</li> : null}
           {brief.firstBlock ? <li>İlk blok: {brief.firstBlock}</li> : null}
-          <li>Bitiş {brief.finishLine}</li>
           {first ? (
             <li>
               Önce: {first.candidate.title}

@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 import {
   block,
   dayRow,
-  lifeModePeriod,
   moduleRow,
   prompt,
   rhythmLog,
@@ -11,7 +10,7 @@ import {
   workItem,
 } from "@/core/testing/factories";
 import { istanbulInstant } from "@/lib/date";
-import { lifeModeOn, type PlanRows, planInput, tomorrowInput } from "./input";
+import { type PlanRows, planInput, tomorrowInput } from "./input";
 import { buildPlan } from "./plan";
 
 // The planner's input put together from the rows (src/core/planner/input.ts).
@@ -34,26 +33,27 @@ function rows(overrides: Partial<PlanRows> = {}): PlanRows {
     inbox: [],
     days: [],
     weekPlans: [],
-    lifeModes: [],
     stats: [],
     ...overrides,
   };
 }
 
 describe("planInput", () => {
-  it("starts the day at its first touch, else at the default; ends it at the finish line", () => {
+  it("starts the day at its first touch, else at the default; ends it at the bedtime (Ç4a)", () => {
     const plain = planInput(rows(), { date: DATE, now: at("09:00"), context: "desk" });
     expect(plain.dayStart).toEqual(at("08:00"));
-    expect(plain.finishLine).toEqual(at("19:00"));
+    // No frame: the default bedtime range's start; the stored finish lines are not read.
+    expect(plain.bedtime).toEqual(at("22:00"));
     const touched = planInput(
       rows({ days: [dayRow({ started_at: at("06:30").toISOString(), finish_line: "17:30:00" })] }),
       { date: DATE, now: at("09:00"), context: "desk" },
     );
     expect(touched.dayStart).toEqual(at("06:30"));
-    expect(touched.finishLine).toEqual(at("17:30"));
+    expect(touched.bedtime).toEqual(at("22:00"));
+    expect(touched).not.toHaveProperty("finishLine");
   });
 
-  it("takes the day's three, its skips and the AI's advice from the day's record", () => {
+  it("takes the day's skips and the AI's advice from the day's record, not its three", () => {
     const day = dayRow({
       top3: ["a", "b"],
       plan: { version: 1, skipped: ["c"], advice: { prefer: ["d"] } },
@@ -65,22 +65,22 @@ describe("planInput", () => {
       context: "desk",
     });
     expect(input).toMatchObject({
-      top3: ["a", "b"],
       skipped: ["c"],
       advice: { prefer: ["d"] },
       closed: true,
     });
+    expect(input).not.toHaveProperty("top3");
   });
 
-  it("reads the day type from the blocks and the life mode from the periods", () => {
+  it("reads the day type from the blocks; no life mode (Ç4a)", () => {
     const office = block({ day_type: "office" });
-    const input = planInput(rows({ blocks: [office], lifeModes: [lifeModePeriod()] }), {
+    const input = planInput(rows({ blocks: [office] }), {
       date: DATE,
       now: at("09:00"),
       context: "desk",
     });
-    expect(input).toMatchObject({ dayType: "office", lifeMode: "busy" });
-    expect(lifeModeOn([lifeModePeriod()], "2026-11-16")).toBe("normal");
+    expect(input).toMatchObject({ dayType: "office" });
+    expect(input).not.toHaveProperty("lifeMode");
   });
 
   it("sees the last use before today: sessions, rhythm logs, entries, finished work", () => {
@@ -212,10 +212,9 @@ describe("the automatic plan, from the rows", () => {
     const auto = buildPlan(
       planInput(touched, { date: day, now: at("08:00", day), context: "desk" }),
     );
-    expect(auto.top3).toEqual(closing.top3);
-    expect(auto.top3).toContain(startsTomorrow.id);
     const ids = (plan: typeof auto) =>
       plan.slots.flatMap((slot) => (slot.assignment ? [slot.assignment.candidate.id] : []));
     expect(ids(auto)).toEqual(ids(closing));
+    expect(ids(auto)).toContain(startsTomorrow.id);
   });
 });

@@ -57,7 +57,6 @@ function rows(overrides: Partial<PlanRows> = {}): PlanRows {
     inbox: [],
     days: [],
     weekPlans: [],
-    lifeModes: [],
     stats: [],
     ...overrides,
   };

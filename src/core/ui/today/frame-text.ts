@@ -1,4 +1,4 @@
-import type { Assignment, DayFrame, Plan, PlanInput, SleepPlan } from "@/core/planner";
+import type { Assignment, DayFrame, PlanInput, SleepPlan } from "@/core/planner";
 import { blocksOfDay } from "@/core/today/select";
 import { formatMinutes, formatTime, shiftDay } from "@/lib/date";
 
@@ -36,21 +36,18 @@ export function wakeText(frame: DayFrame): string {
   return `uyanış ${frame.estimated ? "~" : ""}${formatTime(frame.wake)}`;
 }
 
-export type TodayBriefLine = { top: string[]; firstBlock: string | null; finishLine: string };
+export type TodayBriefLine = { firstBlock: string | null };
 
-/** The morning's short summary: the day's three, the first block, the finish line. */
-export function briefLine(input: PlanInput, plan: Plan): TodayBriefLine {
-  const top = plan.top3.flatMap((id) => {
-    const candidate = plan.candidates.find((row) => row.id === id || row.task?.work_item_id === id);
-    return candidate ? [candidate.title] : [];
-  });
+/**
+ * The morning's short summary: the first block. Ç4a: no day's three ("Günün işleri") and no
+ * finish line any more.
+ */
+export function briefLine(input: PlanInput): TodayBriefLine {
   const first = blocksOfDay(input.blocks, input.date)
     .filter((block) => block.status !== "cancelled")
     .sort((a, b) => Date.parse(a.starts_at) - Date.parse(b.starts_at))[0];
   return {
-    top,
     firstBlock: first ? `${formatTime(new Date(first.starts_at))} ${first.title}` : null,
-    finishLine: formatTime(input.finishLine),
   };
 }
 

@@ -1,11 +1,10 @@
-import type { Block, LifeMode, ModuleRow, Rhythm, RhythmLog, Task, WorkItem } from "@/core/types";
+import type { Block, ModuleRow, Rhythm, RhythmLog, Task, WorkItem } from "@/core/types";
 import { isBlocked } from "@/core/today/select";
 import { dayKey, istanbulInstant, shiftDay, weekStart } from "@/lib/date";
 import { nextSessionMinutes } from "@/core/contract/envelope";
 import { readTiming, type Timing } from "@/core/contract/timing";
 import { moduleWeight, rhythmState, rhythmTarget, shareWorked, weeklyFloor } from "./candidates";
-import { busyRanges, dayCapacity, freeRanges } from "./slots";
-import { bedInstant } from "./frame";
+import { busyRanges, dayCapacity, dayEndOf, freeRanges } from "./slots";
 import { allowedOn } from "./timing";
 import type { PlannerSettings, PlannerStat, WeekShare } from "./types";
 
@@ -39,11 +38,7 @@ export type LoadInput = {
   blocks: Block[];
   settings: PlannerSettings;
   stats: PlannerStat[];
-  lifeMode: LifeMode | ((weekStart: string) => LifeMode);
 };
-
-const modeOf = (input: LoadInput, week: string) =>
-  typeof input.lifeMode === "function" ? input.lifeMode(week) : input.lifeMode;
 
 /** Capacity of a week from the given moment on: past days of it count for nothing. */
 export function weekCapacity(
@@ -139,11 +134,10 @@ export function fixedDemand(
   week: string,
   daysInWeek: number,
 ): number {
-  const mode = modeOf(input, week);
   let rhythms = 0;
   for (const rhythm of input.rhythms) {
     if (!rhythm.active || rhythm.module_id !== mod.id) continue;
-    const target = rhythmTarget(rhythm, mode);
+    const target = rhythmTarget(rhythm);
     const perWeek =
       rhythm.period === "day"
         ? target * daysInWeek
@@ -153,7 +147,7 @@ export function fixedDemand(
     // Each doing brings its travel along (docs/04-planlayici.md, "Zaman kısıtları", rule 8).
     rhythms += perWeek * (rhythm.est_minutes + travelMinutes(readTiming(rhythm.timing)));
   }
-  const floor = mod.kind === "lifelong" ? weeklyFloor(mod, mode) * (daysInWeek / 7) : 0;
+  const floor = mod.kind === "lifelong" ? weeklyFloor(mod) * (daysInWeek / 7) : 0;
   return Math.max(rhythms, floor);
 }
 
@@ -220,7 +214,7 @@ export function loadByWeek(input: LoadInput, range: WeekRange): WeekLoad[] {
   // Deadlines per week: dated items and standalone tasks.
   const weightOf = (moduleId: string, importance: number) => {
     const mod = input.modules.find((row) => row.id === moduleId);
-    return (mod ? moduleWeight(mod, modeOf(input, weeks[0])) : 1) * importance;
+    return (mod ? moduleWeight(mod) : 1) * importance;
   };
   const dated = [
     ...plannableItems(input.items, active).map((item) => ({
@@ -291,7 +285,6 @@ export function weekNoTime(
 ): NoTime[] {
   const week = weekStart(input.weekStart);
   const weekEnd = istanbulInstant(shiftDay(week, 7)).getTime();
-  const mode = modeOf(input, week);
   const active = new Set(
     input.modules.filter((mod) => mod.status === "active").map((mod) => mod.id),
   );
@@ -304,8 +297,8 @@ export function weekNoTime(
   }
   const busy = busyRanges(input.blocks);
   const { settings } = input;
-  // With the day's frame (Ç3c) a day starts where the frame expects it, and work that may go
-  // into the evening has the evening as well, up to the end of the bedtime range.
+  // With the day's frame (Ç3c) a day starts where the frame expects it; it ends where its work
+  // ends (Ç4a: the bedtime, less the bed-bound work; there is no evening).
   const startOf = (day: string) =>
     settings.dayStarts?.[day] ??
     istanbulInstant(day, settings.frame ? settings.frame.wake[1] : settings.dayStart).getTime();
@@ -314,31 +307,15 @@ export function weekNoTime(
   const free = new Map(
     days.map((day) => [
       day,
-      freeIn(
-        Math.max(input.now.getTime(), startOf(day)),
-        istanbulInstant(day, settings.finishLine).getTime(),
-      ),
-    ]),
-  );
-  const evening = new Map(
-    days.map((day) => [
-      day,
-      settings.frame
-        ? freeIn(
-            Math.max(input.now.getTime(), istanbulInstant(day, settings.finishLine).getTime()),
-            bedInstant(day, settings.frame.bed[1]).getTime(),
-          )
-        : [],
+      freeIn(Math.max(input.now.getTime(), startOf(day)), dayEndOf(day, settings).getTime()),
     ]),
   );
   const holds = (timing: Timing, minutes: number) => {
     const before = (timing.travel?.before ?? 0) * 60_000;
     const after = (timing.travel?.after ?? 0) * 60_000;
-    const ranges = (day: string) =>
-      timing.after_finish ? [...free.get(day)!, ...evening.get(day)!] : free.get(day)!;
     return days.some((day) =>
       (allowedOn(timing, day) ?? []).some((window) =>
-        ranges(day).some((range) => {
+        free.get(day)!.some((range) => {
           const workStart = Math.max(range.start + before, window.start);
           const workEnd = workStart + minutes * 60_000;
           return workEnd <= window.end && workEnd + after <= range.end;
@@ -362,18 +339,16 @@ export function weekNoTime(
       found.push({ id: item.id, title: item.title, moduleId: item.module_id });
     }
   }
-  if (mode !== "holiday") {
-    for (const rhythm of input.rhythms) {
-      // A weekly floor that is still owed; a month's or a day's rhythm is not judged by a week.
-      if (!rhythm.active || !active.has(rhythm.module_id) || rhythm.floor_count <= 0) continue;
-      if (rhythm.period !== "week") continue;
-      const timing = readTiming(rhythm.timing);
-      if (!timing?.windows) continue;
-      const state = rhythmState(rhythm, input.rhythmLogs ?? [], today, mode);
-      if (state.done >= Math.min(rhythm.floor_count, state.target)) continue;
-      if (!holds(timing, rhythm.est_minutes)) {
-        found.push({ id: rhythm.id, title: rhythm.title, moduleId: rhythm.module_id });
-      }
+  for (const rhythm of input.rhythms) {
+    // A weekly floor that is still owed; a month's or a day's rhythm is not judged by a week.
+    if (!rhythm.active || !active.has(rhythm.module_id) || rhythm.floor_count <= 0) continue;
+    if (rhythm.period !== "week") continue;
+    const timing = readTiming(rhythm.timing);
+    if (!timing?.windows) continue;
+    const state = rhythmState(rhythm, input.rhythmLogs ?? [], today);
+    if (state.done >= Math.min(rhythm.floor_count, state.target)) continue;
+    if (!holds(timing, rhythm.est_minutes)) {
+      found.push({ id: rhythm.id, title: rhythm.title, moduleId: rhythm.module_id });
     }
   }
   return found;
@@ -424,8 +399,6 @@ export type WeekPlan = {
   capacityByDay: Record<string, number>;
   /** Items that did not fit this week. */
   left: string[];
-  /** The life mode the commitment was made in (a change of mode re-commits). */
-  lifeMode: LifeMode;
   source: "ai" | "auto";
   reasons: Record<string, string>;
 };
@@ -451,7 +424,6 @@ export function cutSittings(minutes: number, sessionMinutes: number | null): num
 export function commitWeek(input: WeekInput, advice?: WeekAdvice): WeekPlan {
   const week = weekStart(input.weekStart);
   const weekEnd = istanbulInstant(shiftDay(week, 7)).getTime();
-  const mode = modeOf(input, week);
   const loads = loadByWeek(input, { from: week, weeks: 8 });
   const [load] = loads;
   const active = new Set(
@@ -565,7 +537,6 @@ export function commitWeek(input: WeekInput, advice?: WeekAdvice): WeekPlan {
     capacityMinutes: load.capacityMinutes,
     capacityByDay: dayCapacities(input, week),
     left,
-    lifeMode: mode,
     source: advice ? "ai" : "auto",
     reasons: advice?.reasons ?? {},
   };
@@ -621,7 +592,6 @@ export type StoredWeek = {
   capacityMinutes: number | null;
   /** `WeekPlan.capacityByDay` as it was stored; empty for a commitment without it. */
   capacityByDay: Record<string, number>;
-  lifeMode: LifeMode | null;
 };
 
 /** The whole capacity of each day from today to the end of the week. */
@@ -636,20 +606,19 @@ export function dayCapacities(input: LoadInput, week: string): Record<string, nu
   return days;
 }
 
-export type RecommitReason = "new_required" | "capacity_lost" | "mode_changed";
+/** Ç4a: a change of life mode no longer re-commits: there are none. */
+export type RecommitReason = "new_required" | "capacity_lost";
 
 /** Capacity may shrink by this much before the week is committed again. */
 export const CAPACITY_SLACK = 30;
 
 /**
- * Plan stability: a week's commitment changes on its own only for a new required item, lost
- * capacity or a change of life mode (and when the user asks, which the caller handles).
+ * Plan stability: a week's commitment changes on its own only for a new required item or lost
+ * capacity (and when the user asks, which the caller handles).
  */
 export function recommitReason(stored: StoredWeek, input: WeekInput): RecommitReason | null {
   const week = weekStart(input.weekStart);
   const weekEnd = istanbulInstant(shiftDay(week, 7)).getTime();
-  const mode = modeOf(input, week);
-  if (stored.lifeMode !== null && stored.lifeMode !== mode) return "mode_changed";
   const active = new Set(
     input.modules.filter((mod) => mod.status === "active").map((mod) => mod.id),
   );
@@ -792,4 +761,100 @@ function fixedTotal(input: WeekInput, week: string): number {
   return input.modules
     .filter((mod) => mod.status === "active")
     .reduce((sum, mod) => sum + Math.round(fixedDemand(input, mod, week, daysLeft)), 0);
+}
+
+// --- The week's work (Takvim, Ç4a) ----------------------------------------------------------
+
+export type WeekWorkRow = {
+  id: string;
+  type: "item" | "task";
+  title: string;
+  moduleId: string;
+  dueAt: string | null;
+  /** Minutes the week asks of it: a committed item's share, else what the spreading gives this week (all that is left when it is due in the week); a task's estimate. */
+  shareMinutes: number;
+  /** Minutes worked toward it this week (a committed item since its commitment; a finished task's estimate). */
+  workedMinutes: number;
+  done: boolean;
+  /** The AI's one-line note of the week on it (`week_plans.reasons`), when there is one. */
+  note: string | null;
+};
+
+/**
+ * The week's work by deadline (docs/04-planlayici.md, "Takvim'in verisi"): this week's committed
+ * items and everything due in the week (items and single tasks); for a later week, the items its
+ * spreading gives a share and the work due in it. Undated work comes last. Pure.
+ */
+export function weekWork(
+  input: LoadInput & {
+    /** This week's commitment (only for the current week). */
+    committed: string[] | null;
+    shares?: Record<string, WeekShare>;
+    reasons?: Record<string, string>;
+  },
+  week: string,
+): WeekWorkRow[] {
+  const from = weekStart(week);
+  const weekBegins = istanbulInstant(from).getTime();
+  const weekEnd = istanbulInstant(shiftDay(from, 7)).getTime();
+  const current = from === weekStart(dayKey(input.now));
+  const active = new Set(
+    input.modules.filter((mod) => mod.status === "active").map((mod) => mod.id),
+  );
+  const dueIn = (due: string | null) =>
+    due !== null && Date.parse(due) >= weekBegins && Date.parse(due) < weekEnd;
+  const rows: WeekWorkRow[] = [];
+  const committed = new Set(current ? (input.committed ?? []) : []);
+
+  const weeks = Array.from({ length: 8 }, (_, index) =>
+    shiftDay(weekStart(dayKey(input.now)), 7 * index),
+  );
+  const capacityOf = (w: string, until?: Date) =>
+    weekCapacity(w, input.now, input.blocks, input.settings, input.stats, until);
+  for (const item of input.items) {
+    if (!active.has(item.module_id)) continue;
+    if (item.status !== "active" && !(item.status === "done" && committed.has(item.id))) continue;
+    const share = current ? input.shares?.[item.id] : undefined;
+    let shareMinutes = 0;
+    let workedMinutes = 0;
+    if (committed.has(item.id) && share) {
+      shareMinutes = share.minutes;
+      workedMinutes = Math.min(share.minutes, Math.max(0, item.effort_done_minutes - share.from));
+    } else if (item.status === "active") {
+      const spread = weeks.includes(from)
+        ? (spreadItem(item, weeks, capacityOf, input.now).get(from) ?? 0)
+        : 0;
+      shareMinutes = dueIn(item.due_at) ? remainingEffort(item) : Math.round(spread);
+    }
+    if (shareMinutes <= 0 && !dueIn(item.due_at)) continue;
+    rows.push({
+      id: item.id,
+      type: "item",
+      title: item.title,
+      moduleId: item.module_id,
+      dueAt: item.due_at,
+      shareMinutes,
+      workedMinutes,
+      done: item.status === "done",
+      note: input.reasons?.[item.id] ?? null,
+    });
+  }
+  for (const task of input.tasks) {
+    if (task.work_item_id !== null || !active.has(task.module_id) || !dueIn(task.due_at)) continue;
+    if (task.status !== "todo" && task.status !== "doing" && task.status !== "done") continue;
+    rows.push({
+      id: task.id,
+      type: "task",
+      title: task.title,
+      moduleId: task.module_id,
+      dueAt: task.due_at,
+      shareMinutes: task.est_minutes,
+      workedMinutes: task.status === "done" ? task.est_minutes : 0,
+      done: task.status === "done",
+      note: null,
+    });
+  }
+  const dueOf = (row: WeekWorkRow) =>
+    row.dueAt === null ? Number.MAX_SAFE_INTEGER : Date.parse(row.dueAt);
+  return rows.sort((a, b) => dueOf(a) - dueOf(b) || a.title.localeCompare(b.title, "tr"));
 }

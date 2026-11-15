@@ -155,7 +155,6 @@ function rows(overrides: Partial<PlanRows> & { settings?: Settings | null } = {}
     inbox: [],
     days: [],
     weekPlans: [],
-    lifeModes: [],
     stats: [],
     ...overrides,
   };
@@ -213,7 +212,7 @@ describe("the day's start", () => {
     expect(late.usableMinutes).toBeLessThan(early.usableMinutes);
   });
 
-  it("inside the window the plan is Ç3b's plan with the same window (no record, no anchor, no after_finish)", () => {
+  it("inside the window the plan is Ç3b's plan with the same window (no record, no anchor)", () => {
     const work = [
       task({ est_minutes: 30 }),
       task({ est_minutes: 60, importance: 3 }),
@@ -225,12 +224,9 @@ describe("the day's start", () => {
     const framed = buildPlan(input);
     const plain = buildPlan({ ...input, frame: undefined });
     const shape = (plan: Plan) => ({
-      // Inside the window: the evening's free slots are the frame's own.
       slots: plan.slots
         .filter((slot) => !slot.part)
         .map((slot) => [slot.start, slot.end, slot.kind, slot.assignment?.candidate.id]),
-      top3: plan.top3,
-      overflow: plan.overflow.map((row) => row.id),
       warnings: plan.warnings,
       usable: plan.usableMinutes,
       planned: plan.plannedMinutes,
@@ -246,7 +242,7 @@ describe("the day's start", () => {
 });
 
 describe("anchored work", () => {
-  it("wake-bound work follows the waking in its order, then by score; it is not spread, not in the three", () => {
+  it("wake-bound work follows the waking in its order, then by score; it is not spread", () => {
     const second = anchored("wake", { est_minutes: 30, importance: 4 }, { order: 2 });
     const first = anchored("wake", { est_minutes: 15 }, { order: 1 });
     const loose = anchored("wake", { est_minutes: 10, importance: 4 });
@@ -261,7 +257,6 @@ describe("anchored work", () => {
     expect(placement(plan, loose.id)).toBe("07:55–08:05 wake");
     expect(plan.frame?.workStart).toEqual(at("08:05"));
     expect(placement(plan, work.id)).toBe("08:05–08:35 work");
-    expect(plan.top3).toEqual([work.id]);
     expect(plan.plannedMinutes).toBe(30);
   });
 
@@ -304,7 +299,7 @@ describe("anchored work", () => {
     expect(placement(plan, routine.id)).toBe("07:00–07:20 wake");
   });
 
-  it("bed-bound work ends at the expected bedtime; the evening ends before it", () => {
+  it("bed-bound work ends at the expected bedtime; the working window ends before it (Ç4a)", () => {
     const winddown = anchored("bed", { est_minutes: 20 });
     const plan = planAt(
       "20:00",
@@ -313,7 +308,10 @@ describe("anchored work", () => {
     // Tomorrow is light: waking 09:00, so bed at 01:00.
     expect(plan.frame?.bed).toEqual(at("01:00", NEXT));
     expect(placement(plan, winddown.id)).toBe("00:40–01:00 bed");
-    expect(plan.frame?.eveningEnd).toEqual(at("00:40", NEXT));
+    expect(plan.frame?.workEnd).toEqual(at("00:40", NEXT));
+    expect(
+      plan.slots.filter((slot) => !slot.part).every((slot) => slot.end <= at("00:40", NEXT)),
+    ).toBe(true);
     const own = planAt(
       "20:00",
       rows({
@@ -366,14 +364,13 @@ describe("anchored work without the frame, and bed-bound work's lead (Ç3g)", ()
     expect(placement(morning, work.id)).toBe("08:10–08:40 work");
     const afternoon = planAt("16:33", off({ rhythms: [routine], tasks: [work] }));
     expect(placement(afternoon, routine.id)).toBeNull();
-    expect(afternoon.overflow.map((row) => row.id)).not.toContain(routine.id);
     expect(afternoon.now).toMatchObject({
       kind: "suggest",
       assignment: { candidate: { id: work.id } },
     });
   });
 
-  it("without the frame, bed-bound work ends at the finish line and is offered only shortly before it", () => {
+  it("without the frame, bed-bound work ends at the default bedtime and is offered only shortly before it (Ç4a)", () => {
     const winddown = rhythm({
       period: "day",
       target_count: 1,
@@ -382,7 +379,8 @@ describe("anchored work without the frame, and bed-bound work's lead (Ç3g)", ()
     });
     const work = task({ est_minutes: 30 });
     const early = planAt("16:48", off({ rhythms: [winddown], tasks: [work] }));
-    expect(placement(early, winddown.id)).toBe("18:50–19:00 bed");
+    // Ç4a: no finish line; the default bedtime range starts at 22:00.
+    expect(placement(early, winddown.id)).toBe("21:50–22:00 bed");
     expect(early.now).toMatchObject({
       kind: "suggest",
       assignment: { candidate: { id: work.id } },
@@ -390,31 +388,43 @@ describe("anchored work without the frame, and bed-bound work's lead (Ç3g)", ()
     // Nothing else left: still not before its lead (its minutes and 15 more).
     const idle = planAt("16:48", off({ rhythms: [winddown] }));
     expect(idle.now).not.toMatchObject({ assignment: { candidate: { id: winddown.id } } });
-    const near = planAt("18:36", off({ rhythms: [winddown] }));
+    const near = planAt("21:36", off({ rhythms: [winddown] }));
     expect(near.now).toMatchObject({
       kind: "suggest",
       assignment: { candidate: { id: winddown.id } },
     });
   });
 
-  it("with the frame, the evening offers bed-bound work only shortly before it; until then it says when", () => {
+  it("with the frame, bed-bound work is offered only shortly before it; a closed day's evening says when", () => {
     const woke = today({ woke_at: iso("07:00") });
     const winddown = anchored("bed", { est_minutes: 20 });
     // Tomorrow is light: bed at 01:00, the work from 00:40.
-    const evening = planAt("21:00", rows({ tasks: [winddown], days: [woke] }));
-    expect(evening.now).toMatchObject({ kind: "evening", next: null });
-    expect(evening.now).toMatchObject({
-      later: { assignment: { candidate: { id: winddown.id } }, at: at("00:40", NEXT) },
-    });
+    const late = planAt("21:00", rows({ tasks: [winddown], days: [woke] }));
+    expect(late.now).not.toMatchObject({ assignment: { candidate: { id: winddown.id } } });
     const near = planAt("00:25", rows({ tasks: [winddown], days: [woke] }), NEXT);
     expect(near.now).toMatchObject({
+      kind: "suggest",
+      assignment: { candidate: { id: winddown.id } },
+    });
+    const due = planAt("00:41", rows({ tasks: [winddown], days: [woke] }), NEXT);
+    expect(due.now).toMatchObject({
       kind: "evening",
       next: { candidate: { id: winddown.id } },
       later: null,
     });
+    // Closed early: the evening, and when the bed-bound work comes.
+    const closed = planAt(
+      "21:00",
+      rows({ tasks: [winddown], days: [{ ...woke, closed_at: iso("20:55") }] }),
+    );
+    expect(closed.now).toMatchObject({
+      kind: "evening",
+      next: null,
+      later: { assignment: { candidate: { id: winddown.id } }, at: at("00:40", NEXT) },
+    });
   });
 
-  it("evening work in the evening is offered as before; the bed-bound work waits behind it", () => {
+  it("after_finish is not read (Ç4a): such work is planned in the day like any other", () => {
     const woke = today({ woke_at: iso("07:00") });
     const gym = task({
       est_minutes: 60,
@@ -423,14 +433,27 @@ describe("anchored work without the frame, and bed-bound work's lead (Ç3g)", ()
     });
     const winddown = anchored("bed", { est_minutes: 20 });
     const plan = planAt("19:30", rows({ days: [woke], tasks: [gym, winddown] }));
-    expect(plan.now).toMatchObject({ kind: "evening", next: { candidate: { id: gym.id } } });
+    expect(placement(plan, gym.id)).toBe("20:00–21:00 work");
+    expect(plan.now).toMatchObject({
+      kind: "suggest",
+      assignment: { candidate: { id: gym.id } },
+      at: at("20:00"),
+    });
+    const same = planAt(
+      "19:30",
+      rows({
+        days: [woke],
+        tasks: [{ ...gym, timing: { windows: [{ from: "20:00", to: "22:00" }] } }, winddown],
+      }),
+    );
+    expect(placement(same, gym.id)).toBe("20:00–21:00 work");
   });
 });
 
-describe("the evening", () => {
+describe("the hours after the old finish line (Ç4a)", () => {
   const woke = [today({ woke_at: iso("07:00") })];
 
-  it("takes after_finish work whose hours are in the evening; nothing else goes past the finish line", () => {
+  it("are in the day: work whose hours lie there is planned there, with or without after_finish", () => {
     const gym = task({
       est_minutes: 60,
       energy: "physical",
@@ -439,20 +462,15 @@ describe("the evening", () => {
     const plain = task({
       est_minutes: 60,
       energy: "physical",
-      timing: { windows: [{ from: "20:00", to: "22:00" }] },
+      timing: { windows: [{ from: "21:00", to: "24:00" }] },
     });
     const plan = planAt("10:00", rows({ days: woke, tasks: [gym, plain] }));
-    // The evening is cut into slots like the day (19:00–20:30, a break, 20:45–…): the hour
-    // inside 20:00–22:00 that fits one is 20:45–21:45.
-    expect(placement(plan, gym.id)).toBe("20:45–21:45 evening");
-    expect(placement(plan, plain.id)).toBeNull();
-    expect(plan.warnings.map((warning) => warning.subjectId)).toEqual([plain.id]);
-    // The evening is not capacity: the day's usable minutes are what they were.
-    const without = planAt("10:00", rows({ days: woke, tasks: [plain] }));
-    expect(plan.usableMinutes).toBe(without.usableMinutes);
+    expect(placement(plan, gym.id)).toMatch(/work$/);
+    expect(placement(plan, plain.id)).toMatch(/work$/);
+    expect(plan.warnings).toEqual([]);
   });
 
-  it("an evening-only weekly floor that may go after the finish line is not 'no time this week' (Ç3c audit)", () => {
+  it("hold an evening-only weekly floor: it is not 'no time this week', with or without after_finish", () => {
     const evening = (afterFinish: boolean) =>
       rhythm({
         period: "week",
@@ -470,7 +488,7 @@ describe("the evening", () => {
         (warning) => warning.kind,
       );
     expect(kinds(true)).not.toContain("no_time_week");
-    expect(kinds(false)).toContain("no_time_week");
+    expect(kinds(false)).not.toContain("no_time_week");
   });
 
   it("after_finish work with room in the day is done in the day", () => {
@@ -479,18 +497,17 @@ describe("the evening", () => {
     expect(placement(plan, loose.id)).toMatch(/work$/);
   });
 
-  it("goes to the evening when the day is full", () => {
-    // 10:00–19:00 is 540 slot minutes, 378 usable: twelve half hours fit, the rest does not.
-    const fill = Array.from({ length: 13 }, () => task({ est_minutes: 30 }));
-    const extra = task({ est_minutes: 30, timing: { after_finish: true }, importance: 1 });
-    const plan = planAt("10:00", rows({ days: woke, tasks: [...fill, extra] }));
-    expect(placement(plan, extra.id)).toBe("19:00–19:30 evening");
-    const latest = Math.max(
-      ...plan.slots
-        .filter((slot) => slot.assignment && slot.assignment.candidate.id !== extra.id)
-        .map((slot) => slot.end.getTime()),
-    );
-    expect(latest).toBeLessThanOrEqual(at("19:00").getTime());
+  it("count as capacity: the window runs to the bedtime less the bed-bound work", () => {
+    const winddown = anchored("bed", { est_minutes: 20 });
+    // Bed at 23:30 (the user's value), the work from 23:10: the window is 10:00–23:10.
+    const own = rows({
+      days: [today({ woke_at: iso("07:00"), expected_bed: "23:30:00" })],
+      tasks: [winddown],
+    });
+    const plan = planAt("10:00", own);
+    expect(plan.frame?.workEnd).toEqual(at("23:10"));
+    const free = plan.slots.filter((slot) => !slot.part);
+    expect(free[free.length - 1].end).toEqual(at("23:10"));
   });
 });
 
@@ -510,19 +527,22 @@ describe("the states of the day", () => {
     expect(plan.now).toMatchObject({ kind: "morning", first: { candidate: { id: routine.id } } });
   });
 
-  it("evening: past the finish line, or closed, until bed; the evening's next work rides along", () => {
-    const woke = today({ woke_at: iso("07:00") });
-    const gym = task({
-      est_minutes: 60,
-      energy: "physical",
-      timing: { after_finish: true, windows: [{ from: "20:00", to: "22:00" }] },
-    });
-    const evening = planAt("19:30", rows({ days: [woke], tasks: [gym] }));
+  it("evening: once the working window is over (Ç4a: where the bed-bound work begins), or closed, until bed", () => {
+    const woke = today({ woke_at: iso("07:00"), expected_bed: "23:30:00" });
+    const winddown = anchored("bed", { est_minutes: 20 });
+    // Bed at 23:30, the work from 23:10: the window is over at 23:10.
+    expect(planAt("23:00", rows({ days: [woke], tasks: [winddown, task()] })).now.kind).not.toBe(
+      "evening",
+    );
+    const evening = planAt("23:12", rows({ days: [woke], tasks: [winddown] }));
     expect(evening.now).toMatchObject({
       kind: "evening",
-      next: { candidate: { id: gym.id } },
+      next: { candidate: { id: winddown.id } },
       closed: false,
     });
+    // No bed-bound work: the evening comes at the expected bedtime.
+    expect(planAt("23:29", rows({ days: [woke] })).now.kind).not.toBe("evening");
+    expect(planAt("23:31", rows({ days: [woke] })).now.kind).toBe("evening");
     const closed = planAt("17:00", rows({ days: [{ ...woke, closed_at: iso("16:55") }] }));
     expect(closed.now).toMatchObject({ kind: "evening", closed: true });
   });
@@ -532,8 +552,27 @@ describe("the states of the day", () => {
     expect(planAt("23:05", rows({ days: [{ ...woke, bed_at: iso("23:00") }] })).now.kind).toBe(
       "night",
     );
-    expect(planAt("00:59", rows({ days: [woke] }), NEXT).now.kind).toBe("evening");
-    expect(planAt("01:01", rows({ days: [woke] }), NEXT).now.kind).toBe("night");
+    const own = today({ woke_at: iso("07:00"), expected_bed: "23:30:00" });
+    expect(planAt("00:59", rows({ days: [own] }), NEXT).now.kind).toBe("evening");
+    expect(planAt("01:01", rows({ days: [own] }), NEXT).now.kind).toBe("night");
+  });
+
+  it("done does not wait for bed-bound work; the evening comes at its own time (Ç4a)", () => {
+    const woke = today({ woke_at: iso("07:00"), expected_bed: "23:30:00" });
+    const finished = task({ status: "done", done_at: iso("15:00") });
+    const winddown = anchored("bed", { est_minutes: 20 });
+    // 23:00: the bed-bound work is due within its lead, but the day's work is done.
+    expect(planAt("23:00", rows({ days: [woke], tasks: [finished, winddown] })).now.kind).toBe(
+      "done",
+    );
+    expect(planAt("23:12", rows({ days: [woke], tasks: [finished, winddown] })).now).toMatchObject({
+      kind: "evening",
+      next: { candidate: { id: winddown.id } },
+    });
+    // A morning routine still to do does not keep the day from being done either.
+    const routine = anchored("wake", { est_minutes: 30 });
+    const morning = planAt("07:05", rows({ days: [woke], tasks: [finished, routine] }));
+    expect(morning.now).toMatchObject({ kind: "done" });
   });
 
   it("the night ends at 05:00 or at the start of the waking range, whichever is earlier", () => {
@@ -558,7 +597,6 @@ describe("the week's capacity with the frame", () => {
       blocks: source.blocks,
       settings: weekSettings(source, now),
       stats: [],
-      lifeMode: "normal" as const,
     });
     // In bed at 22:30: up at 06:30 tomorrow. In bed at 00:30: up at 08:30, two hours less.
     const early = dayCapacities(loadInput(data(iso("22:30")), at("22:35")), week);
@@ -566,14 +604,15 @@ describe("the week's capacity with the frame", () => {
     expect(late[NEXT]).toBeLessThan(early[NEXT] - 30);
     expect(
       recommitReason(
-        { committed: [], capacityMinutes: null, capacityByDay: early, lifeMode: "normal" },
+        { committed: [], capacityMinutes: null, capacityByDay: early },
         loadInput(data(iso("00:30", NEXT)), at("00:35", NEXT)),
       ),
     ).toBe("capacity_lost");
     // The load's pull is not capacity: a heavy tomorrow that pulls the waking earlier and then
     // lightens (work finished today) loses nothing.
     const heavy = rows({
-      tasks: Array.from({ length: 6 }, () => task({ est_minutes: 90, due_at: iso("18:00", NEXT) })),
+      // Ç4a: the day runs to the bedtime, so it takes eight to pull the waking.
+      tasks: Array.from({ length: 8 }, () => task({ est_minutes: 90, due_at: iso("18:00", NEXT) })),
       days: [today({ woke_at: iso("07:00") })],
     });
     const pulled = inputAt("20:00", heavy).frame!.tonight;

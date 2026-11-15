@@ -292,8 +292,8 @@ function Scene(props: SceneProps) {
   }, [stampStart]);
 
   // The day's summary: said on the touched screen, and always written.
-  const plannedBed = data.data?.days.find((row) => row.date === day)?.plannedBed ?? null;
-  const summary = briefText(today, new Date(now), plannedBed);
+  // Ç4a: tonight's bedtime comes with the core's brief (`today.bedtime`).
+  const summary = briefText(today, new Date(now));
   const [speakingUntil, setSpeakingUntil] = useState(0);
   const tell = () => {
     say(summary, { interrupt: true });

@@ -14,6 +14,7 @@ import {
   missingSittings,
   weekAction,
   weekNoTime,
+  weekWork,
 } from "./week";
 
 // The far horizons (docs/04-planlayici.md, "Plan ufukları", "Test kapsamı").
@@ -30,9 +31,9 @@ function load(overrides: Partial<LoadInput> = {}): LoadInput {
     rhythms: [],
     modules: [moduleRow()],
     blocks: [],
-    settings: DEFAULT_SETTINGS,
+    // Ç4a: the day runs to its bedtime; 19:00 here keeps the days as they were measured.
+    settings: { ...DEFAULT_SETTINGS, bedtime: "19:00" },
     stats: [],
-    lifeMode: "normal",
     ...overrides,
   };
 }
@@ -265,7 +266,6 @@ describe("plan stability", () => {
     committed: plan.committed.map((row) => row.itemId),
     capacityMinutes: plan.capacityMinutes,
     capacityByDay: plan.capacityByDay,
-    lifeMode: plan.lifeMode,
   };
 
   it("does not change in the week without a trigger", () => {
@@ -283,12 +283,11 @@ describe("plan stability", () => {
     ).toBeNull();
   });
 
-  it("re-commits for new required work, lost capacity or a new life mode", () => {
+  it("re-commits for new required work or lost capacity (Ç4a: no life modes)", () => {
     const urgent = workItem({ title: "Yarın teslim", due_at: due(shiftDay(MONDAY, 1)) });
     expect(recommitReason(stored, { ...input, items: [item, urgent] })).toBe("new_required");
     const blocks = [fullDay(shiftDay(MONDAY, 3))];
     expect(recommitReason(stored, { ...input, blocks })).toBe("capacity_lost");
-    expect(recommitReason(stored, { ...input, lifeMode: "busy" })).toBe("mode_changed");
   });
 
   it("sees capacity lost after a commitment made in the middle of the week", () => {
@@ -299,7 +298,6 @@ describe("plan stability", () => {
       committed: made.committed.map((row) => row.itemId),
       capacityMinutes: made.capacityMinutes,
       capacityByDay: made.capacityByDay,
-      lifeMode: made.lifeMode,
     };
     // Friday afternoon, nothing new: the hours gone by are not a loss.
     expect(recommitReason(kept, { ...midweek, now: at(shiftDay(MONDAY, 4), "15:00") })).toBeNull();
@@ -321,7 +319,6 @@ describe("new items in the week", () => {
     committed: plan.committed.map((row) => row.itemId),
     capacityMinutes: plan.capacityMinutes,
     capacityByDay: plan.capacityByDay,
-    lifeMode: plan.lifeMode,
     shares: Object.fromEntries(
       plan.committed.map((row) => [row.itemId, { minutes: row.minutes, from: row.from }]),
     ),
@@ -394,7 +391,6 @@ describe("a committed item without its sittings", () => {
     committed: [item.id],
     capacityMinutes: 1000,
     capacityByDay: {},
-    lifeMode: "normal" as const,
     shares: { [item.id]: { minutes: 135, from: 0 } },
     committedAt: at(MONDAY, "08:00").toISOString(),
   };
@@ -576,6 +572,106 @@ describe("time constraints in the week (Ç3b)", () => {
     });
     expect(weekNoTime({ ...week({ rhythms: [yoga, free] }), committed: [] })).toEqual([
       expect.objectContaining({ id: yoga.id, title: "Yoga" }),
+    ]);
+  });
+});
+
+describe("weekWork (Takvim, Ç4a)", () => {
+  const mod = moduleRow();
+  const base = (overrides: Partial<LoadInput> = {}) => ({
+    ...load({ modules: [mod], ...overrides }),
+    committed: null as string[] | null,
+  });
+
+  it("lists this week's committed items and the work due in it, by deadline; undated last", () => {
+    const thesis = workItem({
+      module_id: mod.id,
+      title: "Tez",
+      effort_total_minutes: 600,
+      effort_done_minutes: 150,
+      due_at: due(shiftDay(MONDAY, 20)),
+    });
+    const homework = workItem({
+      module_id: mod.id,
+      title: "Ödev",
+      effort_total_minutes: 120,
+      due_at: due(shiftDay(MONDAY, 4)),
+    });
+    const undated = workItem({ module_id: mod.id, title: "Okuma", effort_total_minutes: 90 });
+    const form = task({
+      module_id: mod.id,
+      title: "Form",
+      est_minutes: 20,
+      due_at: due(shiftDay(MONDAY, 2)),
+    });
+    const nextWeek = task({ module_id: mod.id, title: "Sonra", due_at: due(shiftDay(MONDAY, 9)) });
+    const rows = weekWork(
+      {
+        ...base({ items: [thesis, homework, undated], tasks: [form, nextWeek] }),
+        committed: [thesis.id, undated.id],
+        shares: {
+          [thesis.id]: { minutes: 180, from: 60 },
+          [undated.id]: { minutes: 45, from: 0 },
+        },
+        reasons: { [thesis.id]: "Bu hafta iki oturum yeter." },
+      },
+      MONDAY,
+    );
+    expect(rows.map((row) => row.title)).toEqual(["Form", "Ödev", "Tez", "Okuma"]);
+    expect(rows.find((row) => row.id === thesis.id)).toMatchObject({
+      shareMinutes: 180,
+      workedMinutes: 90,
+      note: "Bu hafta iki oturum yeter.",
+      done: false,
+    });
+    // Due this week: all that is left is asked.
+    expect(rows.find((row) => row.id === homework.id)).toMatchObject({
+      shareMinutes: 120,
+      workedMinutes: 0,
+    });
+    expect(rows.find((row) => row.id === form.id)).toMatchObject({
+      type: "task",
+      shareMinutes: 20,
+    });
+  });
+
+  it("for a later week: what the spreading gives it, and the work due in it", () => {
+    const thesis = workItem({
+      module_id: mod.id,
+      title: "Tez",
+      effort_total_minutes: 600,
+      due_at: due(shiftDay(MONDAY, 20)),
+    });
+    const later = task({ module_id: mod.id, title: "Sonra", due_at: due(shiftDay(MONDAY, 9)) });
+    const rows = weekWork(base({ items: [thesis], tasks: [later] }), shiftDay(MONDAY, 7));
+    expect(rows.map((row) => row.title)).toEqual(["Sonra", "Tez"]);
+    const share = rows.find((row) => row.id === thesis.id)!.shareMinutes;
+    expect(share).toBeGreaterThan(0);
+    expect(share).toBeLessThan(600);
+  });
+
+  it("keeps a finished task of the week with its time worked; leaves out other modules' and closed work", () => {
+    const off = moduleRow({
+      id: "44444444-4444-4444-8444-444444444444",
+      slug: "durgun",
+      status: "paused",
+    });
+    const done = task({
+      module_id: mod.id,
+      title: "Bitti",
+      status: "done",
+      est_minutes: 30,
+      due_at: due(shiftDay(MONDAY, 1)),
+    });
+    const elsewhere = task({ module_id: off.id, due_at: due(shiftDay(MONDAY, 1)) });
+    const dropped = task({
+      module_id: mod.id,
+      status: "dropped",
+      due_at: due(shiftDay(MONDAY, 1)),
+    });
+    const rows = weekWork(base({ modules: [mod, off], tasks: [done, elsewhere, dropped] }), MONDAY);
+    expect(rows).toEqual([
+      expect.objectContaining({ id: done.id, done: true, workedMinutes: 30, shareMinutes: 30 }),
     ]);
   });
 });

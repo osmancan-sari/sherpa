@@ -7,7 +7,6 @@ export {
   pickForMinutes,
   fits,
   contextFits,
-  isFinished,
   planningDay,
   slotLabel,
   DEFER_LIMIT,
@@ -16,6 +15,7 @@ export { buildCandidates, compareScored, isReturning, rhythmState } from "./cand
 export {
   buildSlots,
   dayCapacity,
+  dayEndOf,
   dayTypeOf,
   plannerSettings,
   wholeDaySlotMinutes,
@@ -29,19 +29,32 @@ export {
   sittingChanges,
   weekCapacity,
   weekNoTime,
+  weekWork,
 } from "./week";
-export type { WeekAdvice, WeekInput, WeekLoad, WeekPlan, LoadInput, RecommitReason } from "./week";
+export type {
+  WeekAdvice,
+  WeekInput,
+  WeekLoad,
+  WeekPlan,
+  WeekWorkRow,
+  LoadInput,
+  RecommitReason,
+} from "./week";
+export { FORECAST_WEEKS, forecastDays } from "./forecast";
+export type { ForecastDay } from "./forecast";
+export {
+  BLOCK_AHEAD_MINUTES,
+  REPORT_HOURS,
+  inferContext,
+  placeContext,
+  reportedOf,
+  statedDayType,
+} from "./context";
+export type { ContextArgs, ReportedContext } from "./context";
 export { capacityFactors, estimateMultipliers } from "./learn";
 export { ANSWER_MINUTES, OVERRUN_FACTOR, overrun } from "./overrun";
 export type { Overrun } from "./overrun";
-export {
-  planInput,
-  tomorrowInput,
-  lifeModeOn,
-  readShares,
-  storedPlan,
-  weekSettings,
-} from "./input";
+export { planInput, tomorrowInput, readShares, storedPlan, weekSettings } from "./input";
 export { bedInstant, dayStartClock, sleepPlan, MORNING_GRACE } from "./frame";
 export type { FrameDay, SleepArgs } from "./frame";
 export type { PlanRows, StoredDayPlan } from "./input";

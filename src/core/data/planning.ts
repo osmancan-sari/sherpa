@@ -5,8 +5,6 @@ import {
   check,
   type DayRow,
   type Db,
-  type LifeMode,
-  type LifeModePeriod,
   type PlannerStatRow,
   type Task,
   toJson,
@@ -16,9 +14,11 @@ import {
 } from "@/core/types";
 import { shiftDay } from "@/lib/date";
 
-// What the planner keeps: the day's record (its first touch, plan, three, closing), the week's
-// commitment and its sittings, life mode periods and learned values. The planner itself is pure
-// (src/core/planner/); these functions only write what it decided.
+// What the planner keeps: the day's record (its first touch, plan, closing), the week's
+// commitment and its sittings, and learned values. The planner itself is pure
+// (src/core/planner/); these functions only write what it decided. Ç4a: the day's three
+// (`days.top3`), the life modes (`days.life_mode`, `week_plans.life_mode`, `life_mode_periods`)
+// are no longer written or read; the columns stay unused until Ç4d.
 
 // --- Days ------------------------------------------------------------------------------------
 
@@ -35,35 +35,33 @@ async function getDay(db: Db, date: string): Promise<DayRow | null> {
 
 type PlanSource = "closing" | "ai" | "auto";
 
-/** What a day is planned in: the input's day, its type and mode (docs/03, `days`). */
+/** What a day is planned in: the input's day and its type (docs/03, `days`). */
 export type PlannedDay = Pick<
   PlanInput,
-  "date" | "dayType" | "lifeMode" | "dayStart" | "finishLine" | "blocks" | "settings"
+  "date" | "dayType" | "dayStart" | "bedtime" | "blocks" | "settings"
 >;
 
 /**
- * The record's columns for a plan: its three, the day's type and mode, and what the day held.
- * The day's slot minutes are the whole day's (start to finish line), kept from the first
- * record: the capacity learning divides the day's work by them.
+ * The record's columns for a plan: the day's type and what the day held. The day's slot minutes
+ * are the whole day's (start to where its work ends: Ç4a, the bedtime less the bed-bound work),
+ * kept from the first record: the capacity learning divides the day's work by them.
  */
-function planColumns(
-  plan: Plan,
-  day: PlannedDay,
-  previous: DayRow | null,
-  extra: Partial<StoredDayPlan>,
-) {
+function planColumns(day: PlannedDay, previous: DayRow | null, extra: Partial<StoredDayPlan>) {
   const stored = storedPlan(previous);
   const kept: StoredDayPlan = {
     ...stored,
     ...extra,
     version: 1,
-    slotMinutes: stored.slotMinutes ?? wholeDaySlotMinutes(day),
+    slotMinutes:
+      stored.slotMinutes ??
+      wholeDaySlotMinutes({
+        ...day,
+        dayEnd: new Date(day.settings.dayEnds?.[day.date] ?? day.bedtime.getTime()),
+      }),
   };
   return {
     date: day.date,
-    top3: plan.top3,
     day_type: day.dayType,
-    life_mode: day.lifeMode,
     plan: toJson(kept),
   };
 }
@@ -80,7 +78,7 @@ export async function planDay(db: Db, input: { plan: Plan; day: PlannedDay }): P
     await db
       .from("days")
       .upsert(
-        { ...planColumns(input.plan, input.day, current, {}), plan_source: "auto" },
+        { ...planColumns(input.day, current, {}), plan_source: "auto" },
         { onConflict: "user_id,date" },
       )
       .select()
@@ -124,7 +122,7 @@ export async function saveDayPlan(
       .from("days")
       .upsert(
         {
-          ...planColumns(input.plan, input.day, previous, input.stored ?? {}),
+          ...planColumns(input.day, previous, input.stored ?? {}),
           plan_source: input.source,
           ...(input.reasons === undefined ? {} : { plan_reasons: toJson(input.reasons) }),
         },
@@ -311,7 +309,6 @@ export async function saveWeekPlan(
           day_capacity: toJson(plan.capacityByDay),
           module_budgets: toJson(plan.moduleBudgets),
           capacity_minutes: plan.capacityMinutes,
-          life_mode: plan.lifeMode,
           plan_source: plan.source,
           reasons: toJson(plan.reasons),
         },
@@ -336,59 +333,6 @@ export async function saveWeekPlan(
   if (result.error?.code === DEADLOCK) result = await write();
   check(result);
   return row;
-}
-
-// --- Life modes ------------------------------------------------------------------------------
-
-export async function listLifeModes(db: Db): Promise<LifeModePeriod[]> {
-  return unwrap(await db.from("life_mode_periods").select("*").order("starts_on"));
-}
-
-/**
- * A life mode for a range of days. Periods it overlaps are cut back (or removed) so that one
- * day has one mode; `normal` only clears the range.
- */
-export async function setLifeMode(
-  db: Db,
-  input: { mode: LifeMode; from: string; to: string; note?: string | null },
-  existing: LifeModePeriod[],
-): Promise<void> {
-  for (const period of existing) {
-    if (period.ends_on < input.from || period.starts_on > input.to) continue;
-    const before = period.starts_on < input.from;
-    const after = period.ends_on > input.to;
-    if (before) {
-      check(
-        await db
-          .from("life_mode_periods")
-          .update({ ends_on: shiftDay(input.from, -1) })
-          .eq("id", period.id),
-      );
-    }
-    if (after) {
-      const rest = { starts_on: shiftDay(input.to, 1), ends_on: period.ends_on };
-      check(
-        before
-          ? await db
-              .from("life_mode_periods")
-              .insert({ mode: period.mode, note: period.note, ...rest })
-          : await db.from("life_mode_periods").update(rest).eq("id", period.id),
-      );
-    }
-    if (!before && !after) {
-      check(await db.from("life_mode_periods").delete().eq("id", period.id));
-    }
-  }
-  if (input.mode !== "normal") {
-    check(
-      await db.from("life_mode_periods").insert({
-        mode: input.mode,
-        starts_on: input.from,
-        ends_on: input.to,
-        note: input.note ?? null,
-      }),
-    );
-  }
 }
 
 // --- Learned values --------------------------------------------------------------------------

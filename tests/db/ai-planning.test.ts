@@ -36,7 +36,7 @@ const day = async (date: string) =>
   (await db.from("days").select("*").eq("date", date).maybeSingle()).data;
 
 describe("plan", () => {
-  it("gives the day the AI's three with their reasons; the engine places them", async () => {
+  it("gives the day the AI's advice with its reasons; the engine places the work (Ç4a: no three)", async () => {
     const mod = await makeModule(db);
     const tasks = [];
     for (const title of ["Rapor", "Okuma", "Fatura", "Mesaj"]) {
@@ -46,9 +46,11 @@ describe("plan", () => {
     expect(result.status).toBe("applied");
     const row = await day(TODAY);
     expect(row).toMatchObject({ plan_source: "ai" });
-    expect(row!.top3.length).toBe(3);
+    // The day's three are no longer written: the column keeps its default.
+    expect(row!.top3).toEqual([]);
     const advice = storedPlan(row).advice!;
-    expect(advice.top3).toEqual(row!.top3);
+    expect(advice.prefer).toHaveLength(3);
+    expect(advice).not.toHaveProperty("top3");
     expect(Object.values(row!.plan_reasons as Record<string, string>)).toContain(
       "Yapay zeka: günün en önemli işi bu.",
     );
@@ -106,12 +108,11 @@ describe("plan", () => {
     expect(await day(TODAY)).toMatchObject({ plan_source: "auto" });
   });
 
-  it("replan keeps what is finished of the day's three", async () => {
+  it("replan plans the rest of the day after the morning's plan (Ç4a: no three to keep)", async () => {
     const mod = await makeModule(db);
     const done = await createTask(db, { module_id: mod.id, title: "Bitti" });
-    await createTask(db, { module_id: mod.id, title: "Kalan" });
+    const left = await createTask(db, { module_id: mod.id, title: "Kalan" });
     await planDayFlow(deps(), { date: TODAY, kind: "plan" }, NOW);
-    expect((await day(TODAY))!.top3).toContain(done.id);
     await completeTask(db, done.id);
     const later = istanbulInstant(TODAY, "14:00");
     const result = await planDayFlow(
@@ -120,7 +121,10 @@ describe("plan", () => {
       later,
     );
     expect(result.status).toBe("applied");
-    expect((await day(TODAY))!.top3[0]).toBe(done.id);
+    const row = await day(TODAY);
+    expect(row!.top3).toEqual([]);
+    // The rest of the day: the open task, with the AI's reason; the finished one is not asked for.
+    expect(storedPlan(row).advice?.prefer).toEqual([left.id]);
     const kinds = ok(await db.from("ai_calls").select("kind").order("created_at")).map(
       (row) => row.kind,
     );
@@ -289,10 +293,11 @@ describe("month and review", () => {
     expect(month).toEqual({ status: "applied", proposals: 1 });
     const [horizon] = ok(await db.from("horizon_reviews").select("scope, period_start, proposals"));
     expect(horizon).toMatchObject({ scope: "month", period_start: "2026-11-01" });
-    expect((horizon.proposals as { kind: string }[])[0]).toMatchObject({
-      kind: "mode",
-      mode: "busy",
-    });
+    // Ç4a: no life mode is proposed; the fake starts the tight week's item earlier.
+    expect((horizon.proposals as { kind: string }[])[0]).toMatchObject({ kind: "advance" });
+    expect(horizon.proposals as object[]).not.toContainEqual(
+      expect.objectContaining({ kind: "mode" }),
+    );
 
     const definition = {
       slug: mod.slug,

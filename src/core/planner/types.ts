@@ -5,7 +5,6 @@ import type {
   Context,
   DayType,
   Energy,
-  LifeMode,
   ModuleRow,
   Prompt,
   Rhythm,
@@ -23,7 +22,11 @@ import type {
 export type PlannerSettings = {
   /** Wall-clock times in Istanbul, "HH:mm". */
   dayStart: string;
-  finishLine: string;
+  /**
+   * Ç4a: where a day's work runs to when nothing better is known: the start of the bedtime range
+   * (the frame's, else the default frame's). Not a setting: the user sets no finish line.
+   */
+  bedtime: string;
   capacityFactors: Record<DayType, number>;
   slot: { deepMin: number; deepMax: number; lightMin: number; breakMin: number };
   defaultDayType: DayType;
@@ -36,14 +39,21 @@ export type PlannerSettings = {
    * their latest waking. Day capacities read it.
    */
   dayStarts?: Record<string, number>;
+  /**
+   * Ç4a: where each day's work ends (instants in ms by day key), when the frame knows: its
+   * bedtime less its bed-bound work. Days without an entry end at `bedtime`.
+   */
+  dayEnds?: Record<string, number>;
 };
 
 /** A learned value (`planner_stats`): `est_multiplier:<module slug>:<task kind>`, `capacity:<day type>`. */
 export type PlannerStat = { key: string; value: number; sample_size: number };
 
-/** What the AI suggests for a day (`plan`, `replan`); the engine applies it within its rules. */
+/**
+ * What the AI suggests for a day (`plan`, `replan`); the engine applies it within its rules.
+ * Ç4a: a `top3` in advice stored before is read past (the day's three are gone).
+ */
 export type PlanAdvice = {
-  top3?: string[];
   prefer?: string[];
   defer?: string[];
   /** Why, per id; shown behind "neden?". */
@@ -55,10 +65,13 @@ export type PlanInput = {
   /** The day being planned, `yyyy-MM-dd` in Istanbul. */
   date: string;
   dayType: DayType;
-  lifeMode: LifeMode;
   /** The day's first touch, or the default start. */
   dayStart: Date;
-  finishLine: Date;
+  /**
+   * Ç4a: tonight's expected bedtime: with the frame its `bed`, else the default bedtime range's
+   * start. The working window runs to it, less the bed-bound work; there is no finish line.
+   */
+  bedtime: Date;
   /** The evening closing was done for this day: the screen is in its night state. */
   closed?: boolean;
   /** The day's frame (Ç3c): waking, bedtime, the sleep plans. Absent when the frame is off. */
@@ -72,8 +85,11 @@ export type PlanInput = {
   rhythmLogs: RhythmLog[];
   /** Active modules only; work of other modules is not planned. */
   modules: ModuleRow[];
-  /** The device's context: the second screen is `desk`; on the phone, what the user chose. */
-  context: Context;
+  /**
+   * Where the device is (Ç4a): the second screen is `desk`; on the phone it is inferred
+   * (`inferContext`). Null: unknown, the context filter is off and every work is a candidate.
+   */
+  context: Context | null;
   settings: PlannerSettings;
   stats: PlannerStat[];
   /** Minutes worked this week per module id (sessions), for the weekly floors. */
@@ -85,8 +101,6 @@ export type PlanInput = {
    * the share is worked, the item waits for next week (no warning, not offered).
    */
   shares?: Record<string, WeekShare>;
-  /** The day's three, as fixed when the day was planned (days.top3). */
-  top3?: string[];
   /** Put off for today with "Ertele" (work items and rhythms; tasks move to tomorrow instead). */
   skipped?: string[];
   openSession?: Session | null;
@@ -198,15 +212,14 @@ export type Slot = {
   minutes: number;
   kind: SlotKind;
   assignment: Assignment | null;
-  /** Outside the working window (Ç3c): wake-bound work, the evening, bed-bound work. */
-  part?: "wake" | "evening" | "bed";
+  /** Outside the working window (Ç3c): wake-bound work, bed-bound work (Ç4a: no evening). */
+  part?: "wake" | "bed";
 };
 
 export type WarningKind =
   | "deadline"
   | "no_time_today"
   | "no_time_week"
-  | "outside_day"
   | "floor"
   | "next_step"
   | "deferred_often"
@@ -230,7 +243,11 @@ export type NowState =
   | { kind: "night" }
   /** Ç3c: the day has begun and nobody said "Uyandım"; `first` is the first wake-bound work. */
   | { kind: "morning"; first: Assignment | null }
-  /** Ç3c: past the finish line (or closed), before bed; `next` is the evening's next work. */
+  /**
+   * Ç3c: the evening: the working window is over (Ç4a: it ends where the bed-bound work begins,
+   * else at the expected bedtime), or the day was closed; before bed. `next` is the bed-bound
+   * work once it is due.
+   */
   | {
       kind: "evening";
       next: Assignment | null;
@@ -241,20 +258,18 @@ export type NowState =
        */
       later?: { assignment: Assignment; at: Date } | null;
     }
-  | { kind: "return"; top3: Candidate[] }
+  /** Ç4a: back after days away: the day's next work and "Başla". */
+  | { kind: "return"; next: Assignment | null }
   | { kind: "empty" };
 
 export type Plan = {
   date: string;
-  /** In time order; an assigned slot is cut to its work, the rest of it is a slot of its own. */
+  /**
+   * In time order; an assigned slot is cut to its work, the rest of it is a slot of its own.
+   * Ç4a: the plan is the day's rest ("Sıradakiler"); work that does not fit is not kept aside.
+   */
   slots: Slot[];
-  /** The day's three (ids of tasks, work items or rhythms); mandatory ones come first. */
-  top3: string[];
-  /** How many of the three are finished. */
-  top3Done: number;
   now: NowState;
-  /** Candidates that did not fit: "vakit kalırsa". */
-  overflow: Candidate[];
   warnings: Warning[];
   usableMinutes: number;
   plannedMinutes: number;
@@ -265,9 +280,8 @@ export type Plan = {
     wake: Date;
     /** Where the working window begins: the waking plus the wake-bound work. */
     workStart: Date;
-    finishLine: Date;
-    /** Where the evening ends: the bedtime minus the bed-bound work. */
-    eveningEnd: Date;
+    /** Ç4a: where the working window ends: the bedtime minus the bed-bound work. */
+    workEnd: Date;
     bed: Date;
   };
 };

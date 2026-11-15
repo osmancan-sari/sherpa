@@ -1,3 +1,4 @@
+import { readTiming } from "@/core/contract/timing";
 import type { Context } from "@/core/types";
 import { blocksOfDay, currentBlock, effortUsedUp } from "@/core/today/select";
 import { dayKey, formatDue, formatTime, istanbulInstant, shiftDay } from "@/lib/date";
@@ -7,19 +8,18 @@ import {
   candidatesOf,
   compareScored,
   isReturning,
-  rhythmState,
   shareWorked,
 } from "./candidates";
 import { buildSlots, capacityFactor, kindOf, slotMinutes } from "./slots";
 import { anchoredIn, dayStartClock } from "./frame";
 import { allowedOn, betterState, TIME_FACTOR, type TimeState, timeState } from "./timing";
 import { weekNoTime } from "./week";
-import { outsideDay, readTiming } from "@/core/contract/timing";
 import type { Assignment, Candidate, NowState, Plan, PlanInput, Slot, Warning } from "./types";
 
 // The day plan (docs/04-planlayici.md, "Gün nasıl kurulur"): slots, capacity, the mandatory
-// work first, then the rest by score, the day's three, the "now" state and at most two
-// warnings. Pure: the same input always gives the same plan.
+// work first, then the rest by score, the "now" state and at most two warnings. Pure: the same
+// input always gives the same plan. Ç4a: the working window runs to the bedtime (less the
+// bed-bound work), the plan is the day's rest; there are no three, no "vakit kalırsa", no evening.
 
 const MINUTE = 60_000;
 /** Before this hour a touch belongs to the night before, not to a new day. */
@@ -39,9 +39,12 @@ export function planningDay(now: Date, dayStart: string): string {
   return now < ends ? shiftDay(today, -1) : today;
 }
 
-/** The device context sees work of these contexts. The second screen is at the desk at home. */
-export function contextFits(work: Context, device: Context): boolean {
-  if (work === "any" || work === device) return true;
+/**
+ * The device context sees work of these contexts. The second screen is at the desk at home.
+ * Ç4a: an unknown context (null) turns the filter off.
+ */
+export function contextFits(work: Context, device: Context | null): boolean {
+  if (device === null || work === "any" || work === device) return true;
   return device === "desk" && work === "home";
 }
 
@@ -56,7 +59,7 @@ const travels = (candidate: Candidate) =>
 const bound = (candidate: Candidate) => Boolean(candidate.timing?.windows) || travels(candidate);
 
 /** The three filters: length, energy, context (docs/04-planlayici.md, "Süzgeçler"). */
-export function fits(candidate: Candidate, slot: Slot, device: Context): boolean {
+export function fits(candidate: Candidate, slot: Slot, device: Context | null): boolean {
   if (candidate.minutes > slot.minutes) return false;
   if (!travels(candidate) && !contextFits(candidate.context, device)) return false;
   // Physical work (a run, a workout) is not desk work: it fits any slot it is short enough
@@ -281,51 +284,23 @@ function engineReasons(candidate: Candidate, input: PlanInput): string[] {
   return reasons;
 }
 
-/** Whether a member of the day's three is finished (or gone). */
-export function isFinished(id: string, input: PlanInput): boolean {
-  const task = input.tasks.find((row) => row.id === id);
-  if (task) return task.status === "done" || task.status === "dropped";
-  const rhythm = input.rhythms.find((row) => row.id === id);
-  if (rhythm) {
-    return rhythmState(rhythm, input.rhythmLogs, input.date, input.lifeMode).doneToday > 0;
-  }
-  const item = input.workItems.find((row) => row.id === id);
-  if (item) {
-    if (item.status === "done" || item.status === "dropped") return true;
-    // An item stands in the three for its sitting of the day.
-    return input.tasks.some(
-      (row) =>
-        row.work_item_id === id &&
-        row.status === "done" &&
-        row.done_at !== null &&
-        dayKey(new Date(row.done_at)) === input.date,
-    );
-  }
-  return true;
-}
-
-/** The id the day's three know a candidate by: a sitting stands for its work item. */
-function matches(id: string, candidate: Candidate): boolean {
-  return candidate.id === id || candidate.task?.work_item_id === id;
-}
-
-export function buildPlan(input: PlanInput): Plan {
+export function buildPlan(input: PlanInput, options: { warnings?: boolean } = {}): Plan {
   const { settings } = input;
   const found = candidatesOf(input);
   const { closed } = found;
   // Ç3g: without the frame an anchor still keeps its hour (docs/04-planlayici.md, "Çerçeve
   // kapalıyken çapalı iş"): wake-bound work at the day's set start, bed-bound work before the
-  // finish line; it is never spread over the day's slots.
+  // bedtime; it is never spread over the day's slots.
   const unframed = input.frame ? [] : found.candidates.filter((row) => row.timing?.anchor);
   const candidates = input.frame
     ? found.candidates
     : found.candidates.filter((row) => !row.timing?.anchor);
   const anchored = input.frame ? found.anchored : unframed;
-  const loose = input.frame ? null : unframedLines(input, unframed);
+  const lines = input.frame ? framedLines(input, anchored) : unframedLines(input, anchored);
   let windowStart = input.now > input.dayStart ? input.now : input.dayStart;
-  if (loose?.workFrom && loose.workFrom > windowStart) windowStart = loose.workFrom;
+  if (lines.workFrom && lines.workFrom > windowStart) windowStart = lines.workFrom;
   const slots = buildSlots(
-    { start: windowStart, end: loose?.workEnd ?? input.finishLine },
+    { start: windowStart, end: lines.workEnd },
     blocksOfDay(input.blocks, input.date),
     settings,
   );
@@ -334,7 +309,7 @@ export function buildPlan(input: PlanInput): Plan {
   );
 
   // The AI's advice that the windows do not allow today (rule 9): it is not followed.
-  const advised = [...(input.advice?.top3 ?? []), ...(input.advice?.prefer ?? [])];
+  const advised = input.advice?.prefer ?? [];
   const outOfTime = advised.filter((id, at) => {
     if (advised.indexOf(id) !== at) return false;
     if (closed.some((row) => row.id === id)) return true;
@@ -406,15 +381,7 @@ export function buildPlan(input: PlanInput): Plan {
   const mandatory = candidates.filter((candidate) => candidate.mandatory !== null);
   for (const candidate of mandatory) tryPlace(candidate, true);
 
-  // 2. The day's three as fixed when the day was planned, else the AI's three; cut at capacity.
-  // They are placed by their score now, not in the order they were chosen in: a deadline that
-  // moved since puts its work first.
-  const chosen = input.top3 ?? input.advice?.top3 ?? [];
-  for (const candidate of candidates) {
-    if (chosen.some((id) => matches(id, candidate))) tryPlace(candidate, false);
-  }
-
-  // 3. Fill: each free slot in time order takes the best candidate that fits it. Work with
+  // 2. Fill: each free slot in time order takes the best candidate that fits it. Work with
   // time constraints counts with its time factor here, and waits when a slot further on today
   // suits it better (rule 4).
   for (let index = 0; index < slots.length; index++) {
@@ -456,46 +423,34 @@ export function buildPlan(input: PlanInput): Plan {
     if (keptBefore) index--;
   }
 
-  const assignments = slots.filter((slot) => slot.assignment).map((slot) => slot.assignment!);
-  const top3 = input.top3 ?? pickTop3(assignments, chosen);
-  const top3Done = top3.filter((id) => isFinished(id, input)).length;
-
-  // The day's frame (Ç3c): anchored work at the waking and the bedtime, the evening.
-  const framed = input.frame ? frameParts(input, anchored, candidates, placed) : null;
-  const overflow = candidates.filter((candidate) => !placed.has(candidate.id));
-  const all = framed
-    ? [...framed.wake, ...slots, ...framed.evening, ...framed.bed].sort(
-        (a, b) => a.start.getTime() - b.start.getTime(),
-      )
-    : loose
-      ? [...loose.wake, ...slots, ...loose.bed].sort(
-          (a, b) => a.start.getTime() - b.start.getTime(),
-        )
-      : slots;
+  // Anchored work at the waking and the bedtime (Ç3c, Ç3g), around the working window.
+  const all = [...lines.wake, ...slots, ...lines.bed].sort(
+    (a, b) => a.start.getTime() - b.start.getTime(),
+  );
 
   return {
     date: input.date,
     slots: all,
-    top3,
-    top3Done,
-    now: nowOf(input, all, candidates, top3, top3Done),
-    overflow,
-    warnings: warningsOf(input, candidates, placed, closed, outOfTime),
+    now: nowOf(input, all, lines.workEnd),
+    warnings:
+      options.warnings === false ? [] : warningsOf(input, candidates, placed, closed, outOfTime),
     usableMinutes,
     plannedMinutes,
     // Ç3g: every candidate of the day, anchored work without the frame included (as before).
     candidates: found.candidates,
-    ...(framed ? { frame: framed.marks } : {}),
+    ...(input.frame
+      ? {
+          frame: {
+            wake: input.frame.wake,
+            workStart: input.dayStart,
+            workEnd: lines.workEnd,
+            bed: input.frame.bed,
+          },
+        }
+      : {}),
   };
 }
 
-/**
- * The parts of a framed day outside its working window (docs/04-planlayici.md, "Günün
- * çerçevesi"): wake-bound work one after another from the waking, bed-bound work ending at the
- * bedtime, and the evening between the finish line and the bed-bound work, which takes only
- * `after_finish` work the day did not place. Anchored work whose time has gone by is left out:
- * a missed routine is not offered all day. The evening is no capacity.
- */
 /** Minutes past its end the morning's line is still offered (Ç3c). */
 export const WAKE_GRACE = 60;
 
@@ -540,109 +495,74 @@ function lineOf(
     : [];
 }
 
+type Lines = { wake: Slot[]; bed: Slot[]; workFrom: Date | null; workEnd: Date };
+
+/** Bed-bound work back to back, ending at the bedtime; the working window ends where it begins. */
+function bedLine(input: PlanInput, anchored: Candidate[], bedtime: Date) {
+  const bedWork = anchoredIn(anchored, "bed");
+  const bedMinutes = bedWork.reduce((sum, candidate) => sum + candidate.minutes, 0);
+  const bedFrom = bedtime.getTime() - bedMinutes * MINUTE;
+  return { bed: lineOf(input, bedWork, bedFrom, "bed"), workEnd: new Date(bedFrom) };
+}
+
 /**
  * Ç3g: anchored work on a day without the frame. The waking is the day's set start (the
  * settings', not the first touch: a module switched on in the afternoon does not bring the
- * morning back), the bedtime is the finish line. The working window starts after the morning's
- * line while it is offered and ends before the bed-bound work.
+ * morning back), the bedtime is the default bedtime (Ç4a; before, the finish line). The working
+ * window starts after the morning's line while it is offered and ends before the bed-bound work.
  */
-function unframedLines(input: PlanInput, anchored: Candidate[]) {
+function unframedLines(input: PlanInput, anchored: Candidate[]): Lines {
   const wakeAt = istanbulInstant(input.date, input.settings.dayStart).getTime();
   const wake = lineOf(input, anchoredIn(anchored, "wake"), wakeAt, "wake", WAKE_GRACE);
-  const bedWork = anchoredIn(anchored, "bed");
-  const bedMinutes = bedWork.reduce((sum, candidate) => sum + candidate.minutes, 0);
-  const bedFrom = input.finishLine.getTime() - bedMinutes * MINUTE;
-  const bed = lineOf(input, bedWork, bedFrom, "bed");
   const wakeEnd = wake.length > 0 ? wake[wake.length - 1].end : null;
-  return { wake, bed, workFrom: wakeEnd, workEnd: new Date(bedFrom) };
-}
-
-function frameParts(
-  input: PlanInput,
-  anchored: Candidate[],
-  candidates: Candidate[],
-  placed: Set<string>,
-) {
-  const frame = input.frame!;
-  const now = input.now.getTime();
-  const line = (list: Candidate[], from: number, part: "wake" | "bed", grace = 0) =>
-    lineOf(input, list, from, part, grace);
-  // A morning said late ("Biraz önce: 30 dk") still gets its routine: the line stays offered
-  // until an hour after it would have ended.
-  const wake = line(anchoredIn(anchored, "wake"), frame.wake.getTime(), "wake", WAKE_GRACE);
-  const bedWork = anchoredIn(anchored, "bed");
-  const bedMinutes = bedWork.reduce((sum, candidate) => sum + candidate.minutes, 0);
-  const eveningEnd = frame.bed.getTime() - bedMinutes * MINUTE;
-  const bed = line(bedWork, eveningEnd, "bed");
-
-  const evening = buildSlots(
-    { start: new Date(Math.max(now, input.finishLine.getTime())), end: new Date(eveningEnd) },
-    blocksOfDay(input.blocks, input.date),
-    input.settings,
-  );
-  for (const candidate of candidates) {
-    if (placed.has(candidate.id) || !candidate.timing?.after_finish) continue;
-    if (candidate.timing.windows || travels(candidate)) {
-      const spot = bestSpot(spotsOf(evening, candidate, input));
-      if (!spot) continue;
-      placeAt(evening, spot, assignmentAt(candidate, input), input);
-    } else {
-      const index = evening.findIndex(
-        (slot) => !slot.assignment && fits(candidate, slot, input.context),
-      );
-      if (index < 0) continue;
-      place(evening, index, assignmentAt(candidate, input), input);
-    }
-    placed.add(candidate.id);
-  }
-  for (const slot of evening) slot.part = "evening";
-
-  return {
-    wake,
-    evening,
-    bed,
-    marks: {
-      wake: frame.wake,
-      workStart: input.dayStart,
-      finishLine: input.finishLine,
-      eveningEnd: new Date(eveningEnd),
-      bed: frame.bed,
-    },
-  };
+  return { wake, ...bedLine(input, anchored, input.bedtime), workFrom: wakeEnd };
 }
 
 /**
- * The day's three (docs/04-planlayici.md, "Günün 3 işi"): work due today first, then the AI's
- * or the user's choice, then the engine's (other mandatory work, then the best score). A rhythm
- * stays on the strip and in the list; it joins the three only when its floor is at risk.
+ * The parts of a framed day outside its working window (docs/04-planlayici.md, "Günün
+ * çerçevesi"): wake-bound work one after another from the waking, bed-bound work ending at the
+ * expected bedtime; the working window (from `dayStart`, which holds the morning's work) ends
+ * where the bed-bound work begins (Ç4a: no finish line, no evening). Anchored work whose time
+ * has gone by is left out: a missed routine is not offered all day.
  */
-function pickTop3(assignments: Assignment[], chosen: string[]): string[] {
-  const ordered = [
-    ...assignments.filter((row) => row.candidate.mandatory === "due_today"),
-    ...chosen.flatMap((id) => assignments.filter((row) => matches(id, row.candidate))),
-    ...assignments.filter((row) => row.candidate.mandatory !== null),
-    ...[...assignments].sort((a, b) => b.candidate.score - a.candidate.score),
-  ];
-  const ids: string[] = [];
-  for (const { candidate } of ordered) {
-    if (!ids.includes(candidate.id) && inTop3(candidate)) ids.push(candidate.id);
-    if (ids.length === 3) break;
+function framedLines(input: PlanInput, anchored: Candidate[]): Lines {
+  const frame = input.frame!;
+  // A morning said late ("Biraz önce: 30 dk") still gets its routine: the line stays offered
+  // until an hour after it would have ended.
+  const wakeWork = anchoredIn(anchored, "wake");
+  const wake = lineOf(input, wakeWork, frame.wake.getTime(), "wake", WAKE_GRACE);
+  return { wake, ...bedLine(input, anchored, frame.bed), workFrom: null };
+}
+
+/**
+ * Ç4a: the day had work to finish: a task done, dropped or put off today, or a work item or
+ * rhythm put off ("Ertele"); a rhythm done today that is not bound to the waking or the bedtime.
+ * With nothing of it left in the plan the day is done ("Bugün tamam"), else it is empty.
+ */
+function dayHadWork(input: PlanInput): boolean {
+  const today = (stamp: string | null | undefined) =>
+    stamp !== null && stamp !== undefined && dayKey(new Date(stamp)) === input.date;
+  if ((input.skipped ?? []).length > 0) return true;
+  for (const task of input.tasks) {
+    if (task.status === "done" && today(task.done_at)) return true;
+    if (task.status === "dropped" && today(task.updated_at)) return true;
+    if (
+      task.status === "todo" &&
+      task.defer_count > 0 &&
+      task.planned_date !== null &&
+      task.planned_date > input.date &&
+      today(task.updated_at)
+    ) {
+      return true;
+    }
   }
-  return ids;
+  const loose = new Set(
+    input.rhythms.filter((rhythm) => !readTiming(rhythm.timing)?.anchor).map((rhythm) => rhythm.id),
+  );
+  return input.rhythmLogs.some((log) => log.done_on === input.date && loose.has(log.rhythm_id));
 }
 
-function inTop3(candidate: Candidate): boolean {
-  if (candidate.type === "follow_up") return false;
-  return candidate.type !== "rhythm" || candidate.mandatory === "floor";
-}
-
-function nowOf(
-  input: PlanInput,
-  slots: Slot[],
-  candidates: Candidate[],
-  top3: string[],
-  top3Done: number,
-): NowState {
+function nowOf(input: PlanInput, slots: Slot[], workEnd: Date): NowState {
   const session = input.openSession ?? null;
   if (session) {
     return {
@@ -659,16 +579,17 @@ function nowOf(
   const nightEnds = istanbulInstant(input.date, start < NIGHT_ENDS ? start : NIGHT_ENDS);
   if (input.now < nightEnds) return { kind: "night" };
   const frame = input.frame;
-  const parted = (part: "wake" | "evening" | "bed") => (slot: Slot) =>
+  const parted = (part: "wake" | "bed") => (slot: Slot) =>
     slot.part === part && slot.assignment !== null && slot.end > input.now;
   // Ç3g: bed-bound work is offered from shortly before its place on (BED_LEAD).
   const bedDue = (slot: Slot) =>
     parted("bed")(slot) && input.now.getTime() >= slot.start.getTime() - BED_LEAD * MINUTE;
   if (frame) {
-    // Ç3c: night comes with bed, or once the bedtime range is over; the evening before it.
+    // Ç3c: night comes with bed, or once the bedtime range is over; the evening before it, once
+    // the working window is over (Ç4a: where the bed-bound work begins) or the day was closed.
     if (frame.bedAt || input.now >= frame.bedEnd) return { kind: "night" };
-    if (input.closed || input.now >= input.finishLine) {
-      const next = slots.find((slot) => parted("evening")(slot) || bedDue(slot))?.assignment;
+    if (input.closed || input.now >= workEnd) {
+      const next = slots.find(bedDue)?.assignment;
       const waiting = next ? undefined : slots.find((slot) => parted("bed")(slot));
       return {
         kind: "evening",
@@ -680,15 +601,11 @@ function nowOf(
     if (!frame.woke && input.now < frame.morningUntil) {
       return { kind: "morning", first: slots.find(parted("wake"))?.assignment ?? null };
     }
-  } else if (input.closed || input.now >= input.finishLine) return { kind: "night" };
-  if (isReturning(input)) {
-    return {
-      kind: "return",
-      top3: top3.flatMap((id) =>
-        candidates.filter((candidate) => matches(id, candidate)).slice(0, 1),
-      ),
-    };
-  }
+  } else if (input.closed || input.now >= input.bedtime) return { kind: "night" };
+
+  // The working window's work still ahead (Ç4a: the plan is the day's rest).
+  const loose = slots.find((slot) => slot.part === undefined && slot.assignment)?.assignment;
+  if (isReturning(input)) return { kind: "return", next: loose ?? null };
   if (input.prompt) return { kind: "prompt", prompt: input.prompt };
 
   // A work item whose effort is used up asks "Bitti mi?" in its own slot, and before the day
@@ -701,14 +618,17 @@ function nowOf(
       effortUsedUp(slot.assignment.candidate.item),
   )?.assignment;
 
-  const mandatoryLeft = candidates.some((candidate) => candidate.mandatory !== null);
   const finishedToday = input.tasks.filter(
     (task) =>
       task.status === "done" &&
       task.done_at !== null &&
       dayKey(new Date(task.done_at)) === input.date,
   );
-  if (top3.length > 0 && top3Done === top3.length && !mandatoryLeft) {
+  // Ç4a: "Bugün tamam" once no work of the working window is left in the plan (done, put off or
+  // dropped) and none that is left fits what is left of the window: the plan is made again
+  // every minute, so nothing placed means nothing fits. Work bound to the waking or the bedtime
+  // is not waited for; the evening comes at its own time.
+  if (!loose && dayHadWork(input)) {
     if (usedUp) return { kind: "suggest", assignment: usedUp };
     return {
       kind: "done",
@@ -728,20 +648,13 @@ function nowOf(
     }
     return { kind: "suggest", assignment: next.assignment };
   }
-  if (finishedToday.length > 0 && !mandatoryLeft) {
-    if (usedUp) return { kind: "suggest", assignment: usedUp };
-    return {
-      kind: "done",
-      finished: finishedToday.length,
-      minutes: finishedToday.reduce((sum, task) => sum + task.est_minutes, 0),
-    };
-  }
   return { kind: "empty" };
 }
 
 /**
- * At most two, in order: a deadline that will not be met, no time left today, a floor in
- * danger, no next step, rejected advice, work put off too often.
+ * At most two, in order: a deadline that will not be met, no time left today (or this week), a
+ * floor in danger, no next step, rejected advice, work put off too often. Ç4a: "Saatleri bitiş
+ * çizgisinden sonra" is gone with the finish line.
  */
 function warningsOf(
   input: PlanInput,
@@ -802,7 +715,6 @@ function warningsOf(
     blocks: input.blocks,
     settings: input.settings,
     stats: input.stats,
-    lifeMode: input.lifeMode,
     committed: input.committed ?? null,
     shares: input.shares,
     rhythmLogs: input.rhythmLogs,
@@ -822,50 +734,6 @@ function warningsOf(
       kind: "no_time_week",
       subjectId: row.id,
       text: `Bu hafta uygun saat yok: ${row.title}.`,
-      moduleId: row.moduleId,
-    });
-  }
-
-  // Work whose windows lie wholly outside the day's hours can never be planned: said until the
-  // windows or the finish line change (rule 9).
-  const { dayStart, finishLine } = input.settings;
-  const active = new Set(input.modules.map((mod) => mod.id));
-  const outside = [
-    ...input.tasks
-      .filter((task) => task.status === "todo" || task.status === "doing")
-      .filter((task) => active.has(task.module_id))
-      .map((task) => ({
-        id: task.id,
-        title: task.title,
-        moduleId: task.module_id,
-        timing: readTiming(task.timing),
-      })),
-    ...input.workItems
-      .filter((item) => item.status === "active" && active.has(item.module_id))
-      .map((item) => ({
-        id: item.id,
-        title: item.title,
-        moduleId: item.module_id,
-        timing: readTiming(item.timing),
-      })),
-    ...input.rhythms
-      .filter((rhythm) => rhythm.active && active.has(rhythm.module_id))
-      .map((rhythm) => ({
-        id: rhythm.id,
-        title: rhythm.title,
-        moduleId: rhythm.module_id,
-        timing: readTiming(rhythm.timing),
-      })),
-  ]
-    // With the frame, work that may go into the evening is planned there (Ç3c).
-    .filter((row) => !(input.frame && row.timing?.after_finish))
-    .filter((row) => outsideDay(row.timing, dayStart, finishLine));
-  for (const row of outside) {
-    if (spoken(row.id)) continue;
-    warnings.push({
-      kind: "outside_day",
-      subjectId: row.id,
-      text: `Saatleri bitiş çizgisinden sonra: ${row.title}.`,
       moduleId: row.moduleId,
     });
   }

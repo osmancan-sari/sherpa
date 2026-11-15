@@ -6,7 +6,6 @@ import {
   closeDay,
   deferTask,
   saveDayPlan,
-  setLifeMode,
   skipToday,
   waitOnTask,
 } from "@/core/data/planning";
@@ -17,8 +16,8 @@ import type { ModuleRegistry } from "@/core/contract/types";
 import type { Db } from "@/core/types";
 import { useRegistry } from "./CoreProvider";
 import { createTask } from "@/core/data/work";
-import { buildPlan, type Candidate, isFinished, type PlanInput } from "@/core/planner";
-import type { LifeMode, LifeModePeriod, Session, Task } from "@/core/types";
+import { buildPlan, type Candidate, type PlanInput } from "@/core/planner";
+import type { Session, Task } from "@/core/types";
 import { shiftDay } from "@/lib/date";
 import { SAVE_FAILED, useNotify } from "@/core/ui/Notices";
 import { startedDraft } from "./actions";
@@ -174,16 +173,6 @@ export function useAnswerFollowUp() {
   });
 }
 
-/** A life mode for a range of days (Hafta). A change of mode commits the week again. */
-export function useSetLifeMode() {
-  const onError = useFailureNotice();
-  return useCoreMutation({
-    mutate: (db, input: { mode: LifeMode; from: string; to: string; existing: LifeModePeriod[] }) =>
-      setLifeMode(db, input, input.existing),
-    onError,
-  });
-}
-
 /** "Haftayı yeniden kur": the user's request is a trigger of its own. */
 export function useRecommitWeek() {
   const onError = useFailureNotice();
@@ -207,21 +196,17 @@ export function useCloseDay() {
 }
 
 /**
- * "Yeniden planla" without the AI: the day's three are chosen again from where the day stands
- * now (what was put off stays off).
+ * "Yeniden planla" without the AI: the day is planned again from where it stands now (what was
+ * put off stays off), without the morning's advice. Ç4a: there are no three to keep.
  */
 export function useReplan() {
   const onError = useFailureNotice();
   return useCoreMutation({
     mutate: async (db, { input, ai }: { input: PlanInput; ai: boolean }) => {
-      // The engine plans again here at once: the screen does not wait for the AI. What is
-      // finished of the day's three stays in it (the day's progress is kept); the rest is
-      // chosen again.
-      const finished = (input.top3 ?? []).filter((id) => isFinished(id, input));
-      const plan = buildPlan({ ...input, top3: undefined });
-      const top3 = [...finished, ...plan.top3.filter((id) => !finished.includes(id))].slice(0, 3);
+      // The engine plans again here at once: the screen does not wait for the AI.
+      const plan = buildPlan({ ...input, advice: undefined });
       const saved = await saveDayPlan(db, {
-        plan: { ...plan, top3 },
+        plan,
         day: input,
         source: "auto",
         // The user's own new plan: the morning's AI plan is not asked for again over it, and

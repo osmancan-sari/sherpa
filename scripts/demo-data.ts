@@ -9,7 +9,7 @@ import { propose } from "@/core/data/propose";
 import { keepWeek } from "@/core/data/keep";
 import { createTask } from "@/core/data/work";
 import { check, type Db, type ModuleRow, unwrap } from "@/core/types";
-import { dayKey, END_OF_DAY, istanbulInstant, shiftDay, weekdayOf, weekStart } from "@/lib/date";
+import { dayKey, END_OF_DAY, istanbulInstant, shiftDay, weekStart } from "@/lib/date";
 
 // Sample data for trying the core without real modules (docs/07-yol-haritasi.md, Ç1): a few
 // made-up modules with realistic work items, rhythms, blocks and some history. The module rows
@@ -445,16 +445,8 @@ export async function seedDemo(db: Db, now: Date): Promise<DemoSummary> {
     if (error) throw new Error(`${table}: ${error.message}`);
     return total ?? 0;
   };
-  // The planner (Ç3): a busy week ahead, and this week committed the way the screen does it
-  // on its first opening (the work items' share of the week cut into sittings).
-  check(
-    await db.from("life_mode_periods").insert({
-      mode: "busy",
-      starts_on: day(7 - weekdayOf(today) + 1),
-      ends_on: day(7 - weekdayOf(today) + 7),
-      note: "Vize haftası",
-    }),
-  );
+  // The planner (Ç3): this week committed the way the screen does it on its first opening (the
+  // work items' share of the week cut into sittings). Ç4a: no life modes.
   await keepWeek(db, now);
 
   return {

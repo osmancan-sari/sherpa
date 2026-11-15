@@ -51,7 +51,7 @@ export async function activateModule(
           kind: def.kind,
           color: def.color,
           area_id: def.area ? await ensureArea(db, def.area) : null,
-          mode_behavior: toJson(def.modeBehavior),
+          // Ç4a: `mode_behavior` is no longer written (no life modes); the column keeps '{}'.
         })
         .select()
         .single(),

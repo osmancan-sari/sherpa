@@ -5,12 +5,10 @@ import {
   clearPastPlannedDays,
   closeDay,
   deferTask,
-  listLifeModes,
   planDay,
   saveDayPlan,
   saveStats,
   saveWeekPlan,
-  setLifeMode,
   skipToday,
   touchDay,
   waitOnTask,
@@ -41,23 +39,24 @@ const day = async (date: string) =>
   (await db.from("days").select("*").eq("date", date).maybeSingle()).data;
 
 describe("the day's record", () => {
-  it("gets the engine's plan once, with the day's type and mode; a plan written meanwhile stays", async () => {
+  it("gets the engine's plan once, with the day's type; a plan written meanwhile stays", async () => {
     const mod = await makeModule(db);
-    const work = await createTask(db, { module_id: mod.id, title: "Rapor" });
+    await createTask(db, { module_id: mod.id, title: "Rapor" });
     const first = await plan();
     const row = await planDay(db, { plan: first.plan, day: first.input });
+    // Ç4a: the day's three and its life mode are not written; the columns keep their defaults.
     expect(row).toMatchObject({
       plan_source: "auto",
-      top3: [work.id],
+      top3: [],
       day_type: "home",
       life_mode: "normal",
       started_at: null,
     });
-    // The whole day's slots (08:00–19:00), not what is left of it at 09:00.
-    expect(storedPlan(row).slotMinutes).toBeGreaterThan(600);
-    await db.from("days").update({ plan_source: "closing", top3: [] }).eq("id", row.id);
+    // The whole day's slots (08:00 to the bedtime, 22:00), not what is left of it at 09:00.
+    expect(storedPlan(row).slotMinutes).toBeGreaterThan(700);
+    await db.from("days").update({ plan_source: "closing" }).eq("id", row.id);
     const again = await planDay(db, { plan: first.plan, day: first.input });
-    expect(again).toMatchObject({ plan_source: "closing", top3: [] });
+    expect(again).toMatchObject({ plan_source: "closing" });
   });
 
   it("writes the first touch once", async () => {
@@ -78,7 +77,7 @@ describe("the day's record", () => {
 
   it("keeps the evening's plan for tomorrow and closes today", async () => {
     const mod = await makeModule(db);
-    const work = await createTask(db, { module_id: mod.id, title: "Okuma" });
+    await createTask(db, { module_id: mod.id, title: "Okuma" });
     const evening = istanbulInstant(TODAY, "21:00");
     const rows = await loadPlanRows(db, evening);
     const input = tomorrowInput(rows, { now: evening, context: "desk" });
@@ -88,10 +87,8 @@ describe("the day's record", () => {
       tomorrow: { plan: buildPlan(input), day: input },
       note: "Yarın erken",
     });
-    expect(await day(shiftDay(TODAY, 1))).toMatchObject({
-      plan_source: "closing",
-      top3: [work.id],
-    });
+    // Ç4a: the plan is kept as the day's record; there are no three written with it.
+    expect(await day(shiftDay(TODAY, 1))).toMatchObject({ plan_source: "closing", top3: [] });
     const today = await day(TODAY);
     expect(today).toMatchObject({ closing_note: "Yarın erken" });
     expect(today!.closed_at).not.toBeNull();
@@ -99,7 +96,7 @@ describe("the day's record", () => {
     const morning = istanbulInstant(shiftDay(TODAY, 1), "08:30");
     const next = await plan(morning);
     const kept = await planDay(db, { plan: next.plan, day: next.input });
-    expect(kept).toMatchObject({ plan_source: "closing", top3: [work.id] });
+    expect(kept).toMatchObject({ plan_source: "closing" });
   });
 
   it("puts work off: a task to tomorrow with its count, an item or rhythm off today's list", async () => {
@@ -238,7 +235,8 @@ describe("the week", () => {
       committed: [item.id],
       shares: { [item.id]: { minutes: 120, from: 0 } },
       plan_source: "auto",
-      life_mode: "normal",
+      // Ç4a: not written.
+      life_mode: null,
     });
     const sittings = ok(
       await db
@@ -291,28 +289,6 @@ describe("the week", () => {
     expect(ok(await db.from("tasks").select("est_minutes").eq("work_item_id", fresh.id))).toEqual([
       { est_minutes: 45 },
     ]);
-  });
-
-  it("is committed again when the life mode changes, and drops sittings no longer needed", async () => {
-    const mod = await makeModule(db);
-    await db
-      .from("modules")
-      .update({ mode_behavior: { busy: { weightMultiplier: 0.5, floorMultiplier: 0.5 } } })
-      .eq("id", mod.id);
-    const item = await createWorkItem(db, {
-      module_id: mod.id,
-      title: "Tarihsiz",
-      effort_total_minutes: 300,
-    });
-    await keepWeek(db, NOW);
-    await setLifeMode(db, { mode: "busy", from: TODAY, to: shiftDay(TODAY, 4) }, []);
-    const result = await keepWeek(db, istanbulInstant(TODAY, "11:00"));
-    expect(result.action).toEqual({ kind: "commit", reason: "mode_changed" });
-    expect(result.plan).toMatchObject({ life_mode: "busy" });
-    const open = ok(
-      await db.from("tasks").select("status").eq("work_item_id", item.id).eq("status", "todo"),
-    );
-    expect(open.length).toBeGreaterThan(0);
   });
 
   it("is committed again when asked, and follows the AI's advice within the rules", async () => {
@@ -394,32 +370,6 @@ describe("the week", () => {
   });
 });
 
-describe("life modes", () => {
-  it("one mode per day: a new period cuts the ones it overlaps", async () => {
-    await setLifeMode(db, { mode: "busy", from: "2026-11-16", to: "2026-11-29" }, []);
-    await setLifeMode(
-      db,
-      { mode: "holiday", from: "2026-11-20", to: "2026-11-22" },
-      await listLifeModes(db),
-    );
-    const periods = (await listLifeModes(db)).map((row) => [row.mode, row.starts_on, row.ends_on]);
-    expect(periods).toEqual([
-      ["busy", "2026-11-16", "2026-11-19"],
-      ["holiday", "2026-11-20", "2026-11-22"],
-      ["busy", "2026-11-23", "2026-11-29"],
-    ]);
-    // "Normal" clears its range.
-    await setLifeMode(
-      db,
-      { mode: "normal", from: "2026-11-16", to: "2026-11-22" },
-      await listLifeModes(db),
-    );
-    expect((await listLifeModes(db)).map((row) => [row.mode, row.starts_on, row.ends_on])).toEqual([
-      ["busy", "2026-11-23", "2026-11-29"],
-    ]);
-  });
-});
-
 describe("a session nobody answered for", () => {
   it("is closed at its estimate, unmeasured; the task goes back, the item counts the estimate", async () => {
     const mod = await makeModule(db);
@@ -485,7 +435,6 @@ describe("the week's sittings and a sitting started meanwhile (Ç3b audit)", () 
         capacityMinutes: 600,
         capacityByDay: {},
         left: [],
-        lifeMode: "normal",
         source: "auto",
         reasons: {},
       },
@@ -518,7 +467,6 @@ describe("the week's sittings and a sitting started meanwhile (Ç3b audit)", () 
             capacityMinutes: 600,
             capacityByDay: {},
             left: [],
-            lifeMode: "normal",
             source: "auto",
             reasons: {},
           },

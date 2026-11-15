@@ -185,20 +185,20 @@ function extract(input: unknown, request: ProviderRequest): ExtractOutput<unknow
 // --- Planning (Ç3) -----------------------------------------------------------------------------
 
 /**
- * The day: the three are the engine's candidates in its order, the first one with a reason;
- * a candidate whose title carries "[ai:defer]" is put off (the engine refuses it when it is
- * mandatory). Enough to see the advice and its reasons arrive end to end.
+ * The day: the engine's first three candidates in its order are brought forward, the first one
+ * with its own reason; a candidate whose title carries "[ai:defer]" is put off (the engine
+ * refuses it when it is mandatory). Enough to see the advice and its reasons arrive end to end.
+ * Ç4a: no day's three.
  */
 function plan(input: unknown): PlanOutput {
   const { candidates } = input as PlanCallInput;
   const deferred = candidates.filter((row) => row.title.includes("[ai:defer]"));
   const chosen = candidates.filter((row) => !row.title.includes("[ai:defer]")).slice(0, 3);
   return {
-    top3: chosen.map((row, index) => ({
+    prefer: chosen.map((row, index) => ({
       id: row.id,
       reason: index === 0 ? "Yapay zeka: günün en önemli işi bu." : "Yapay zeka: bugün sığıyor.",
     })),
-    prefer: [],
     defer: deferred.map((row) => ({ id: row.id, reason: "Yapay zeka: yarına kalabilir." })),
     estimates: [],
     warnings: [],
@@ -215,22 +215,23 @@ function week(input: unknown): WeekOutput {
   };
 }
 
-/** The coming weeks: a busy week where demand is over capacity. */
+/** The coming weeks: where demand is over capacity, the first item is started a week earlier. */
 function month(input: unknown): MonthOutput {
-  const { weeks } = input as MonthCallInput;
+  const { weeks, items } = input as MonthCallInput;
   const tight = weeks.find((row) => row.demand > row.capacity);
+  const item = items[0];
   return {
-    proposals: tight
-      ? [
-          {
-            kind: "mode",
-            item_id: null,
-            week_start: tight.week_start,
-            mode: "busy",
-            text: `${tight.week_start} haftası sıkışık; o hafta Yoğun mod önerilir.`,
-          },
-        ]
-      : [],
+    proposals:
+      tight && item
+        ? [
+            {
+              kind: "advance",
+              item_id: item.id,
+              week_start: tight.week_start,
+              text: `${tight.week_start} haftası sıkışık; ${item.title} bir hafta önce başlayabilir.`,
+            },
+          ]
+        : [],
   };
 }
 
@@ -241,7 +242,6 @@ function review(input: unknown): ReviewOutput {
   return {
     summary: `Bu hafta ${modules.length} modülde ${minutes} dakika çalışıldı.`,
     suggestions: ["Önümüzdeki hafta en yakın son tarihten başla."],
-    mode: null,
   };
 }
 

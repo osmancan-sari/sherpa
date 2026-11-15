@@ -59,7 +59,9 @@ function FocusScene({ subject, session, controls, say, today, device, keys }: Sc
   });
   if (title.includes("[hata]")) throw new Error("deneme: the scene fails on purpose");
   const tell = () => {
-    const next = today.top.find((row) => row.title !== title);
+    // Ç4a: the day's next planned work (no day's three).
+    const first = today.work.first;
+    const next = first && first.title !== title ? first : null;
     const text = next ? `${title} sürüyor. Sonra sırada ${next.title} var.` : `${title} sürüyor.`;
     setSaid(text);
     say(text, { interrupt: true });

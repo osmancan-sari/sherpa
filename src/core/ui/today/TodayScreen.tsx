@@ -70,7 +70,6 @@ function TodayBody() {
   const aiOn = useAiStatus().data?.state === "on";
   const notify = useNotify();
   const [minutesOpen, setMinutesOpen] = useState(false);
-  const [restOpen, setRestOpen] = useState(false);
   const moduleMap = useMemo(() => new Map(modules.map((mod) => [mod.row.id, mod])), [modules]);
   // The scene (Ç3c): left on this device ("Çık"), or failed, per session.
   const [exitedScene, setExitedScene] = useSceneExit();
@@ -275,14 +274,13 @@ function TodayBody() {
   const chainText = currentChain && currentId ? chainLine(currentChain, currentId) : null;
   const assignments = plan.slots.flatMap((slot) => (slot.assignment ? [slot.assignment] : []));
   const ahead = assignments.filter((row) => row.candidate.id !== currentId);
-  // When the day is done, what is still planned waits behind "Vakit kalırsa" with the rest.
+  // Ç4a: "Sıradakiler" is the day's rest of the plan, in order; there is no "Vakit kalırsa".
   const finished = state.kind === "done";
-  // At night and on the return the screen is quiet: the card alone (with the day's three on
-  // the return), no list, no strip, no warnings (docs/04-planlayici.md, "Geri dönüş").
+  // At night and on the return the screen is quiet: the card alone (with the next work on the
+  // return), no list, no strip, no warnings (docs/04-planlayici.md, "Geri dönüş").
   // The evening is calm too (Ç3c): its card has what the evening holds.
   const quiet = state.kind === "night" || state.kind === "return" || state.kind === "evening";
-  const upNext = quiet || finished ? [] : ahead.slice(0, 3);
-  const rest = [...ahead.slice(finished ? 0 : 3).map((row) => row.candidate), ...plan.overflow];
+  const upNext = quiet || finished ? [] : ahead;
   const doneToday = input.tasks.filter(
     (task) =>
       task.status === "done" && task.done_at && dayKey(new Date(task.done_at)) === input.date,
@@ -290,7 +288,7 @@ function TodayBody() {
 
   return (
     <>
-      <TopBar input={input} plan={plan} now={now} />
+      <TopBar input={input} now={now} />
 
       <AiBudgetNotice />
 
@@ -311,7 +309,7 @@ function TodayBody() {
             onStuckChange={setStuck}
             frame={input.frame}
             startOnWake={input.settings.frame?.startOnWake ?? false}
-            brief={briefLine(input, plan)}
+            brief={briefLine(input)}
             chainLine={chainText}
             nextOf={nextOf}
             onReturnToScene={
@@ -323,7 +321,6 @@ function TodayBody() {
             date={input.date}
             modules={moduleMap}
             tomorrowFirst={tomorrowFirst}
-            onShowRest={rest.length > 0 ? () => setRestOpen(true) : undefined}
           />
         </div>
 
@@ -351,28 +348,6 @@ function TodayBody() {
               ))}
             </ul>
           )}
-          {rest.length > 0 && !quiet ? (
-            <details
-              className="text-sm"
-              open={restOpen}
-              onToggle={(event) => setRestOpen((event.target as HTMLDetailsElement).open)}
-            >
-              <summary className="text-muted-foreground hover:text-foreground flex min-h-11 cursor-pointer items-center md:min-h-9">
-                Vakit kalırsa ({rest.length})
-              </summary>
-              <ul className="divide-border border-border divide-y rounded-xl border">
-                {rest.map((candidate) => (
-                  <CandidateRow
-                    key={`${candidate.type}-${candidate.id}`}
-                    candidate={candidate}
-                    date={input.date}
-                    mod={moduleMap.get(candidate.moduleId)}
-                    now={now}
-                  />
-                ))}
-              </ul>
-            </details>
-          ) : null}
           {doneToday.length > 0 ? <DoneToday tasks={doneToday} /> : null}
         </section>
       </div>

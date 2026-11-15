@@ -58,7 +58,7 @@ export function BedAskDialog() {
       title={current ? `Saat ${formatTime(current.at)}. Şimdi yatıyor musun?` : ""}
       description={
         current
-          ? `${current.framed ? "Yatış aralığının başı" : "Günün bitişi"}: ${formatTime(current.start)}.`
+          ? `${current.framed ? "Yatış aralığının başı" : "Yatış saati"}: ${formatTime(current.start)}.`
           : undefined
       }
     >

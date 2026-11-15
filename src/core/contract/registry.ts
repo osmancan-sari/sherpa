@@ -77,14 +77,7 @@ export function definitionProblems(def: ModuleDefinition): string[] {
   for (const type of def.emits) {
     if (!type.startsWith(`${def.slug}.`)) say(`event "${type}" must start with "${def.slug}."`);
   }
-  for (const mode of ["normal", "busy", "minimum", "holiday"] as const) {
-    const behavior = def.modeBehavior[mode];
-    if (!behavior) {
-      say(`mode behaviour for "${mode}" is missing`);
-    } else if (behavior.floorMultiplier < 0 || behavior.floorMultiplier > 1) {
-      say(`floorMultiplier for "${mode}" must be between 0 and 1`);
-    }
-  }
+  // Ç4a: `modeBehavior` is not checked: there are no life modes and nothing reads it.
   // Ç3d: data from outside and scheduled work.
   const kinds = new Set<string>();
   for (const type of def.ingest ?? []) {

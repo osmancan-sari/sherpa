@@ -29,7 +29,6 @@ function rowsWith(extra: Partial<PlanRows> = {}): PlanRows {
     inbox: [],
     days: [dayRow({ date: "2026-11-13", bed_at: BED.toISOString(), bed_session_id: closed.id })],
     weekPlans: [],
-    lifeModes: [],
     stats: [],
     ...extra,
   };
@@ -74,7 +73,7 @@ describe("the scene after its bedtime", () => {
 
 describe("Yatıyorum far before bedtime asks first (Ç3g)", () => {
   const at = (time: string, day = "2026-11-14") => new Date(`${day}T${time}:00+03:00`);
-  const framed = { frame: { bedStart: at("22:00") } as never, finishLine: at("19:00") };
+  const framed = { frame: { bedStart: at("22:00") } as never, bedtime: at("23:30") };
 
   it("asks more than two hours before the bedtime range; one tap in it and near it", () => {
     expect(bedAsks(framed, at("16:49"))).toEqual({ start: at("22:00"), framed: true });
@@ -84,9 +83,9 @@ describe("Yatıyorum far before bedtime asks first (Ç3g)", () => {
     expect(bedAsks(framed, at("00:40", "2026-11-15"))).toBeNull();
   });
 
-  it("without the frame the finish line stands for the range", () => {
-    const off = { frame: undefined, finishLine: at("19:00") };
-    expect(bedAsks(off, at("16:49"))).toEqual({ start: at("19:00"), framed: false });
-    expect(bedAsks(off, at("17:30"))).toBeNull();
+  it("without the frame the default bedtime stands for the range (Ç4a: no finish line)", () => {
+    const off = { frame: undefined, bedtime: at("22:00") };
+    expect(bedAsks(off, at("16:49"))).toEqual({ start: at("22:00"), framed: false });
+    expect(bedAsks(off, at("20:30"))).toBeNull();
   });
 });

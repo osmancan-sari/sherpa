@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { TodayBrief } from "@/core/contract/types";
 import { istanbulInstant } from "@/lib/date";
-import { atTime, briefLines, briefText, nextOfDay } from "./brief";
+import { atTime, briefLines, briefText, countWord, nextOfDay } from "./brief";
 
 // The morning's summary (docs/moduller/rutin.md, 8.3): a pattern over the scene's `today`.
 
@@ -9,34 +9,49 @@ const at = (time: string) => istanbulInstant("2026-11-13", time);
 
 const today: TodayBrief = {
   date: "2026-11-13",
-  top: [
-    { title: "Proje önerisi taslağı", module: "Okul", reason: null },
-    { title: "İstatistik ödevi", module: "Okul", reason: null },
-    { title: "Rapor: yöntem bölümü", module: "İş", reason: null },
-  ],
+  work: { count: 4, first: { title: "proje önerisi", module: "Okul" } },
   blocks: [{ title: "Derin Öğrenme dersi", startsAt: at("10:30"), endsAt: at("12:30") }],
-  finishLine: at("19:00"),
+  bedtime: at("23:00"),
   wokeAt: at("07:00"),
   wokeFrom: "screen",
   closed: false,
   tomorrow: null,
 };
 
-describe("the morning's summary", () => {
-  it("says the first block, the three, the finish line and tonight's bedtime", () => {
-    expect(briefText(today, at("07:02"), "23:00")).toBe(
-      "Günaydın. 10:30'da Derin Öğrenme dersi var. Bugünün üç işi: Proje önerisi taslağı, " +
-        "İstatistik ödevi ve Rapor: yöntem bölümü. Gün 19:00'da bitiyor. Bu gece yatış 23:00.",
+describe("the morning's summary (Ç4a)", () => {
+  it("says the first block, how much work the day has and the first of it, tonight's bedtime", () => {
+    expect(briefText(today, at("07:02"))).toBe(
+      "Günaydın. 10:30'da Derin Öğrenme dersi var. Bugün dört iş var; ilki proje önerisi. " +
+        "Yatış 23:00.",
     );
   });
 
-  it("leaves out what the day does not have", () => {
-    expect(briefText({ ...today, top: [], blocks: [] }, at("07:02"), null)).toBe(
-      "Günaydın. Gün 19:00'da bitiyor.",
+  it("leaves out what the day does not have; one work is said by itself", () => {
+    expect(
+      briefText(
+        { ...today, work: { count: 0, first: null }, blocks: [], bedtime: null },
+        at("07:02"),
+      ),
+    ).toBe("Günaydın.");
+    expect(briefText({ ...today, work: { count: 1, first: today.work.first } }, at("13:00"))).toBe(
+      "Günaydın. Bugün bir iş var: proje önerisi. Yatış 23:00.",
     );
-    expect(briefText({ ...today, top: today.top.slice(0, 1) }, at("13:00"), null)).toBe(
-      "Günaydın. Bugünün işi: Proje önerisi taslağı. Gün 19:00'da bitiyor.",
+    expect(briefText({ ...today, work: { count: 12, first: today.work.first } }, at("13:00"))).toBe(
+      "Günaydın. Bugün on iki iş var; ilki proje önerisi. Yatış 23:00.",
     );
+  });
+
+  it("says counts as words", () => {
+    expect([1, 4, 10, 12, 20, 37, 99, 100].map(countWord)).toEqual([
+      "bir",
+      "dört",
+      "on",
+      "on iki",
+      "yirmi",
+      "otuz yedi",
+      "doksan dokuz",
+      "100",
+    ]);
   });
 
   it("reads a clock time with the right ending", () => {
@@ -57,10 +72,10 @@ describe("the morning's summary", () => {
   it("gives the board's rows and the morning's next thing", () => {
     expect(briefLines(today, at("07:02"))).toEqual([
       { left: "10:30", right: "Derin Öğrenme dersi" },
-      { left: "3 iş", right: "Proje önerisi taslağı · İstatistik ödevi · Rapor: yöntem bölümü" },
-      { left: "19:00", right: "Gün biter" },
+      { left: "4 iş", right: "İlki proje önerisi" },
+      { left: "23:00", right: "Yatış" },
     ]);
     expect(nextOfDay(today, at("07:52"))).toBe("10:30 Derin Öğrenme dersi");
-    expect(nextOfDay(today, at("11:00"))).toBe("Proje önerisi taslağı");
+    expect(nextOfDay(today, at("11:00"))).toBe("proje önerisi");
   });
 });

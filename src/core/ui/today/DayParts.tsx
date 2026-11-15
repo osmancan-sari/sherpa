@@ -5,12 +5,11 @@ import { type FormEvent, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useStartSession } from "@/core/app/actions";
-import { type KnownModule, setDeviceContext } from "@/core/app/hooks";
+import type { KnownModule } from "@/core/app/hooks";
 import type { Candidate, Plan, PlanInput, Warning } from "@/core/planner";
 import { useColors } from "@/core/app/facets";
 import { pickForMinutes } from "@/core/planner";
 import { blocksOfDay } from "@/core/today/select";
-import type { Context, LifeMode } from "@/core/types";
 import { formatDayLabel, formatMinutes, formatTime } from "@/lib/date";
 import { rangesFor } from "@/core/contract/frame";
 import { Dialog } from "../Dialog";
@@ -19,25 +18,11 @@ import { sessionTargetOf } from "./NowCard";
 
 // The pieces of the Today screen around the "now" card (docs/05-arayuz.md, "Bileşenler").
 
-export const MODE_LABEL: Record<LifeMode, string> = {
-  normal: "Normal",
-  busy: "Yoğun",
-  minimum: "Minimum",
-  holiday: "Tatil",
-};
-
-const CONTEXT_LABEL: Record<Context, string> = {
-  any: "Her yer",
-  desk: "Masa",
-  home: "Ev",
-  office: "Ofis",
-  campus: "Kampüs",
-  out: "Dışarıda",
-  commute: "Yolda",
-};
-
-/** Date and time, the day's progress, the finish line, the life mode, the device's context. */
-export function TopBar({ input, plan, now }: { input: PlanInput; plan: Plan; now: Date }) {
+/**
+ * Date and time; with the day's frame its waking and bedtime range. Ç4a: no progress of three,
+ * no finish line, no life mode, no context picker (Ç4c draws the new top line).
+ */
+export function TopBar({ input, now }: { input: PlanInput; now: Date }) {
   return (
     <header className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2">
       <div className="flex flex-wrap items-baseline gap-x-3">
@@ -47,42 +32,12 @@ export function TopBar({ input, plan, now }: { input: PlanInput; plan: Plan; now
         </p>
       </div>
       <div className="text-muted-foreground flex flex-wrap items-center gap-x-3 gap-y-1 text-sm tabular-nums md:text-base">
-        {plan.top3.length > 0 ? (
-          <span aria-label="Günün ilerlemesi">
-            Bugün {plan.top3Done}/{plan.top3.length}
-          </span>
-        ) : null}
         {input.frame ? <span data-testid="wake-line">{wakeText(input.frame)}</span> : null}
-        <span>bitiş {formatTime(input.finishLine)}</span>
         {input.frame && input.settings.frame ? (
           <span data-testid="bed-range">
             yatış {rangesFor(input.settings.frame, input.dayType).bed.join("–")}
           </span>
         ) : null}
-        <Link
-          href="/hafta"
-          className="border-border hover:bg-muted rounded-full border px-3 py-0.5"
-          aria-label={`Hayat modu: ${MODE_LABEL[input.lifeMode]}`}
-        >
-          {MODE_LABEL[input.lifeMode]}
-        </Link>
-        <label className="flex items-center gap-1 md:hidden">
-          <span className="sr-only">Bağlam</span>
-          <select
-            aria-label="Bağlam"
-            value={input.context}
-            onChange={(event) => setDeviceContext(event.target.value as Context)}
-            className="border-border bg-background h-9 rounded-md border px-2"
-          >
-            {(Object.keys(CONTEXT_LABEL) as Context[])
-              .filter((context) => context !== "any")
-              .map((context) => (
-                <option key={context} value={context}>
-                  {CONTEXT_LABEL[context]}
-                </option>
-              ))}
-          </select>
-        </label>
       </div>
     </header>
   );
@@ -104,10 +59,11 @@ export function DayStrip({
 }) {
   // Ç3e: each piece of work in its facet's colour, else its module's.
   const colors = useColors();
-  // With the day's frame (Ç3c) the strip runs from the waking to the expected bedtime.
+  // With the day's frame (Ç3c) the strip runs from the waking to the expected bedtime; without
+  // it to the default bedtime (Ç4a: no finish line).
   const marks = plan.frame;
   const from = Math.min((marks?.wake ?? input.dayStart).getTime(), now.getTime());
-  const to = Math.max((marks?.bed ?? input.finishLine).getTime(), from + 60 * 60_000);
+  const to = Math.max((marks?.bed ?? input.bedtime).getTime(), from + 60 * 60_000);
   const span = to - from;
   const left = (time: number) => `${Math.max(0, Math.min(100, ((time - from) / span) * 100))}%`;
   const width = (start: number, end: number) =>
@@ -129,8 +85,7 @@ export function DayStrip({
           {marks
             ? [
                 { key: "wake", from: marks.wake, to: marks.workStart, label: "uyanışa bağlı" },
-                { key: "evening", from: marks.finishLine, to: marks.eveningEnd, label: "akşam" },
-                { key: "bed", from: marks.eveningEnd, to: marks.bed, label: "yatışa bağlı" },
+                { key: "bed", from: marks.workEnd, to: marks.bed, label: "yatışa bağlı" },
               ]
                 .filter((part) => part.to > part.from)
                 .map((part) => (
@@ -146,14 +101,6 @@ export function DayStrip({
                   />
                 ))
             : null}
-          {marks ? (
-            <span
-              aria-hidden
-              data-testid="strip-finish"
-              className="bg-foreground/40 absolute inset-y-0 w-px"
-              style={{ left: left(marks.finishLine.getTime()) }}
-            />
-          ) : null}
           {plan.slots.flatMap((slot) => {
             const assignment = slot.assignment;
             if (!assignment) return [];

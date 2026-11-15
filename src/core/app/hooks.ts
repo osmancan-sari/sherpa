@@ -16,18 +16,20 @@ import { createModuleContext } from "@/core/data/context";
 import { getSettings, listDuePrompts, listInbox } from "@/core/data/inbox";
 import { listModules } from "@/core/data/module-rows";
 import { getOpenSession, listSessions } from "@/core/data/sessions";
-import { listDays, listLifeModes, listStats, listWeekPlans } from "@/core/data/planning";
+import { listDays, listStats, listWeekPlans } from "@/core/data/planning";
 import { listDeviceTokens } from "@/core/data/tokens";
 import { listRhythmLogs, listRhythms, listTasks, listWorkItems } from "@/core/data/work";
 import {
   buildPlan,
   dayStartClock,
+  inferContext,
   type PlanRows,
   planInput,
   plannerSettings,
   planningDay,
+  reportedOf,
 } from "@/core/planner";
-import { type Context, type Db, type ModuleRow, unwrap } from "@/core/types";
+import { type Db, type ModuleRow, unwrap } from "@/core/types";
 import { dayKey, shiftDay, weekStart } from "@/lib/date";
 import { readClock, readServerClock, subscribeClock } from "./clock";
 import { CORE, MODULE, useDb, useRegistry } from "./CoreProvider";
@@ -76,7 +78,6 @@ export const keys = {
   aiUsage: [CORE, "settings", "ai_usage"] as const,
   days: [CORE, "days"] as const,
   weekPlans: [CORE, "week_plans"] as const,
-  lifeModes: [CORE, "life_mode_periods"] as const,
   stats: [CORE, "planner_stats"] as const,
   weeklyReviews: [CORE, "weekly_reviews"] as const,
   horizonReviews: [CORE, "horizon_reviews"] as const,
@@ -191,11 +192,6 @@ export function useWeekPlans() {
   });
 }
 
-export function useLifeModes() {
-  const db = useDb();
-  return useQuery({ queryKey: keys.lifeModes, queryFn: () => listLifeModes(db) });
-}
-
 export function usePlannerStats() {
   const db = useDb();
   return useQuery({ queryKey: keys.stats, queryFn: () => listStats(db) });
@@ -236,44 +232,25 @@ export function useHorizonReviews() {
 
 // --- The device's context ------------------------------------------------------------------
 
-const CONTEXT_KEY = "sherpa:context";
-const CONTEXT_EVENT = "sherpa:context";
-const CONTEXTS: readonly Context[] = ["desk", "home", "office", "campus", "out", "commute"];
+/** A phone: a narrow screen or a touch screen. The second screen is neither. */
+const PHONE_QUERY = "(max-width: 767px), (pointer: coarse)";
 
-function readContext(): Context {
-  try {
-    const value = window.localStorage.getItem(CONTEXT_KEY);
-    if (value && (CONTEXTS as readonly string[]).includes(value)) return value as Context;
-  } catch {
-    // Storage can be unavailable (private window); the default stands.
-  }
-  return "desk";
-}
-
-function subscribeContext(listener: () => void) {
-  window.addEventListener(CONTEXT_EVENT, listener);
-  window.addEventListener("storage", listener);
-  return () => {
-    window.removeEventListener(CONTEXT_EVENT, listener);
-    window.removeEventListener("storage", listener);
-  };
+function subscribeDevice(listener: () => void) {
+  const query = window.matchMedia(PHONE_QUERY);
+  query.addEventListener("change", listener);
+  return () => query.removeEventListener("change", listener);
 }
 
 /**
- * Where this device is (docs/04-planlayici.md, "Bağlam eşleşmesi"): the second screen is at the
- * desk; on the phone the user chooses. Kept on the device, not in the database.
+ * Which device this is (docs/04-planlayici.md, "Bağlam tahmini"): the second screen ("desk")
+ * or the phone. Ç4a: nobody picks a context; the phone's is inferred (`inferContext`).
  */
-export function useDeviceContext(): Context {
-  return useSyncExternalStore(subscribeContext, readContext, () => "desk" as Context);
-}
-
-export function setDeviceContext(context: Context): void {
-  try {
-    window.localStorage.setItem(CONTEXT_KEY, context);
-  } catch {
-    // Not kept, but this screen still follows the choice until it closes.
-  }
-  window.dispatchEvent(new Event(CONTEXT_EVENT));
+export function useDeviceKind(): "desk" | "phone" {
+  return useSyncExternalStore(
+    subscribeDevice,
+    () => (window.matchMedia(PHONE_QUERY).matches ? "phone" : "desk"),
+    () => "desk" as const,
+  );
 }
 
 // --- The plan ------------------------------------------------------------------------------
@@ -294,7 +271,6 @@ export function usePlanRows() {
     inbox: useInbox(),
     days: useDays(),
     weekPlans: useWeekPlans(),
-    lifeModes: useLifeModes(),
     stats: usePlannerStats(),
   };
   const all = Object.values(queries);
@@ -320,7 +296,6 @@ export function usePlanRows() {
             inbox: q.inbox.data ?? [],
             days: q.days.data ?? [],
             weekPlans: q.weekPlans.data ?? [],
-            lifeModes: q.lifeModes.data ?? [],
             stats: q.stats.data ?? [],
           },
     [
@@ -339,7 +314,6 @@ export function usePlanRows() {
       q.inbox.data,
       q.days.data,
       q.weekPlans.data,
-      q.lifeModes.data,
       q.stats.data,
     ],
   );
@@ -353,16 +327,24 @@ export function usePlanRows() {
  */
 export function useTodayPlan() {
   const now = useNow();
-  const context = useDeviceContext();
+  const device = useDeviceKind();
   const { rows, loading, failed, retry } = usePlanRows();
   const result = useMemo(() => {
     if (!rows || now.getTime() === 0) return null;
     const settings = plannerSettings(rows.settings);
     const date = planningDay(now, dayStartClock(settings));
+    // Ç4a: the context is inferred, never chosen (the second screen is at the desk).
+    const context = inferContext({
+      device,
+      now,
+      date,
+      reported: reportedOf(rows.settings),
+      blocks: rows.blocks,
+    });
     const input = planInput(rows, { date, now, context });
-    return { input, plan: buildPlan(input), rows };
-  }, [rows, now, context]);
-  return { ...result, loading, failed, retry, now, context };
+    return { input, plan: buildPlan(input), rows, context };
+  }, [rows, now, device]);
+  return { ...result, loading, failed, retry, now, context: result?.context ?? null };
 }
 
 /** This month's AI calls by kind and model. */

@@ -21,9 +21,8 @@ function input(overrides: Partial<PlanInput> = {}): PlanInput {
     now: at("08:00"),
     date: DATE,
     dayType: "home",
-    lifeMode: "normal",
     dayStart: at("08:00"),
-    finishLine: at("19:00"),
+    bedtime: at("19:00"),
     blocks: [],
     tasks: [],
     workItems: [],
@@ -31,7 +30,7 @@ function input(overrides: Partial<PlanInput> = {}): PlanInput {
     rhythmLogs: [],
     modules: [moduleRow()],
     context: "desk",
-    settings: DEFAULT_SETTINGS,
+    settings: { ...DEFAULT_SETTINGS, bedtime: "19:00" },
     stats: [],
     ...overrides,
   };
@@ -51,7 +50,6 @@ const rows = (overrides: Partial<PlanRows> = {}): PlanRows => ({
   inbox: [],
   days: [],
   weekPlans: [],
-  lifeModes: [],
   stats: [],
   ...overrides,
 });
@@ -64,7 +62,11 @@ describe("the plan call's input", () => {
     expect(call.candidates).toHaveLength(MAX_CANDIDATES);
     expect(call.candidates[0]).toMatchObject({ module: "Deneme", minutes: 15, mandatory: null });
     expect(call).toMatchObject({ date: DATE, weekday: "perşembe", note: "Erken kalk" });
-    expect(call.base.top3).toEqual(plan.top3);
+    // Ç4a: what the engine placed, in order; no day's three, no life mode.
+    expect(call.base).toEqual({
+      placed: plan.slots.flatMap((slot) => (slot.assignment ? [slot.assignment.candidate.id] : [])),
+    });
+    expect(call).not.toHaveProperty("life_mode");
     expect(call).not.toHaveProperty("done_today");
   });
 });
@@ -103,7 +105,6 @@ describe("time constraints in the planning calls (Ç3b)", () => {
       blocks: [],
       settings: DEFAULT_SETTINGS,
       stats: [],
-      lifeMode: "normal" as const,
     };
     const weekCall = weekCallInput(week, commitWeek(week), rows({ workItems: [item] }));
     expect(weekCall.items[0]).toMatchObject({ id: item.id, time: "kaçın: 18:00–20:00" });
@@ -116,11 +117,10 @@ describe("the AI's answer as advice", () => {
     const plan = buildPlan(input({ tasks: [known] }));
     const advice = adviceOf(
       {
-        top3: [
+        prefer: [
           { id: known.id, reason: "En önemlisi." },
           { id: "uydurma", reason: "Yok." },
         ],
-        prefer: [],
         defer: [{ id: "baska", reason: "Yok." }],
         estimates: [],
         warnings: [],
@@ -128,8 +128,7 @@ describe("the AI's answer as advice", () => {
       plan,
     );
     expect(advice).toEqual({
-      top3: [known.id],
-      prefer: [],
+      prefer: [known.id],
       defer: [],
       reasons: { [known.id]: "En önemlisi." },
     });
@@ -152,7 +151,6 @@ describe("the week call's input", () => {
       blocks: [],
       settings: DEFAULT_SETTINGS,
       stats: [],
-      lifeMode: "normal" as const,
     };
     const base = commitWeek(week);
     const call = weekCallInput(
@@ -167,6 +165,7 @@ describe("the week call's input", () => {
     ]);
     expect(call.base).toEqual([item.id]);
     expect(call.last_week).toBeNull();
+    expect(call).not.toHaveProperty("life_mode");
   });
 });
 
@@ -184,7 +183,8 @@ describe("the day's frame in the plan call (Ç3c)", () => {
     });
     const framed = planInput(data, { date: DATE, now: at("09:00"), context: "desk" });
     const call = planCallInput(data, framed, buildPlan(framed), null, false);
-    expect(call.day).toEqual({ start: "07:10", finish: "19:00", bed: "01:00" });
+    // Ç4a: the window runs to the bedtime (no bed-bound work here), not to a finish line.
+    expect(call.day).toEqual({ start: "07:10", end: "01:00", bed: "01:00" });
     const text = JSON.stringify(call);
     expect(text).not.toMatch(/woke|bed_at|23:40|sleep|estimated/);
     // Without the frame there is no "day" at all.

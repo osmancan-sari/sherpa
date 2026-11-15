@@ -87,7 +87,8 @@ export function timeState(timing: Timing | null, work: Range, day: string): Time
 export function travelOf(
   timing: Timing | null,
   context: Context,
-  device: Context,
+  /** Ç4a: null when the device's context is unknown; travel then counts. */
+  device: Context | null,
 ): { before: number; after: number } {
   if (!timing?.travel || context === device) return { before: 0, after: 0 };
   return { before: timing.travel.before ?? 0, after: timing.travel.after ?? 0 };

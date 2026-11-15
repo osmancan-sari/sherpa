@@ -3,7 +3,7 @@
 import { useColors } from "@/core/app/facets";
 import { moduleColor } from "@/core/contract/colors";
 import Link from "next/link";
-import { type FormEvent, useMemo, useState } from "react";
+import { useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import {
   type KnownModule,
@@ -13,29 +13,20 @@ import {
   useTodayPlan,
   useWeeklyReviews,
 } from "@/core/app/hooks";
-import { useRecommitWeek, useSetLifeMode } from "@/core/app/plan-actions";
+import { useRecommitWeek } from "@/core/app/plan-actions";
 import { weekInput } from "@/core/data/keep";
-import {
-  dayCapacity,
-  lifeModeOn,
-  loadByWeek,
-  readShares,
-  type WeekLoad,
-  weekNoTime,
-} from "@/core/planner";
+import { dayCapacity, loadByWeek, readShares, type WeekLoad, weekNoTime } from "@/core/planner";
 import { blocksOfDay } from "@/core/today/select";
-import type { LifeMode } from "@/core/types";
 import { dayKey, formatDue, formatMinutes, shiftDay, weekStart } from "@/lib/date";
 import { cn } from "@/lib/utils";
 import { ClientOnly } from "../ClientOnly";
 import { useNotify } from "../Notices";
-import { MODE_LABEL } from "../today/DayParts";
 import { LoadFailed } from "../today/TodayScreen";
 import { sleepSummary } from "../today/frame-text";
 
 // The week (docs/05-arayuz.md, "Hafta"): the seven days with their blocks and usable time, the
-// week's capacity against what the modules want, the week's items and module budgets, the life
-// mode, and the load of the coming eight weeks.
+// week's capacity against what the modules want, the week's items and module budgets, and the
+// load of the coming eight weeks. Ç4a: no life mode (Ç4c redraws the page as "Takvim").
 
 const WEEKS_AHEAD = 8;
 const DAY_NAMES = ["Pzt", "Sal", "Çar", "Per", "Cum", "Cmt", "Paz"];
@@ -208,8 +199,6 @@ function WeekBody() {
         ) : null}
       </section>
 
-      <LifeModePicker rows={rows} today={input.date} />
-
       <Horizon loads={loads} />
 
       <AiNotes week={week} month={`${(date ?? dayKey(now)).slice(0, 7)}-01`} />
@@ -348,84 +337,6 @@ function CapacityBar({ load, modules }: { load: WeekLoad; modules: Map<string, K
   );
 }
 
-const MODES: LifeMode[] = ["normal", "busy", "minimum", "holiday"];
-
-/** The life mode, for a range of days. */
-function LifeModePicker({
-  rows,
-  today,
-}: {
-  rows: NonNullable<ReturnType<typeof useTodayPlan>["rows"]>;
-  today: string;
-}) {
-  const setMode = useSetLifeMode();
-  const notify = useNotify();
-  const current = lifeModeOn(rows.lifeModes, today);
-  const [mode, setModeValue] = useState<LifeMode>(current === "normal" ? "busy" : "normal");
-  const [from, setFrom] = useState(today);
-  const [to, setTo] = useState(shiftDay(today, 6));
-  const coming = rows.lifeModes.filter((period) => period.ends_on >= today);
-  const submit = (event: FormEvent) => {
-    event.preventDefault();
-    if (to < from) return;
-    setMode.mutate(
-      { mode, from, to, existing: rows.lifeModes },
-      { onSuccess: () => notify("Hayat modu kaydedildi.") },
-    );
-  };
-  return (
-    <section aria-label="Hayat modu" className="flex flex-col gap-3">
-      <h2 className="text-muted-foreground text-xs font-medium tracking-widest uppercase">
-        Hayat modu
-      </h2>
-      <p className="text-sm">
-        Bugün: <span className="font-medium">{MODE_LABEL[current]}</span>
-        {coming.length > 0
-          ? ` · ${coming.map((period) => `${MODE_LABEL[period.mode]} ${period.starts_on.slice(8)}.${period.starts_on.slice(5, 7)}–${period.ends_on.slice(8)}.${period.ends_on.slice(5, 7)}`).join(", ")}`
-          : ""}
-      </p>
-      <form onSubmit={submit} className="flex flex-wrap items-end gap-2">
-        <label className="flex flex-col gap-1 text-sm">
-          Mod
-          <select
-            value={mode}
-            onChange={(event) => setModeValue(event.target.value as LifeMode)}
-            className="border-input bg-background h-11 rounded-lg border px-2 md:h-9"
-          >
-            {MODES.map((value) => (
-              <option key={value} value={value}>
-                {MODE_LABEL[value]}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="flex flex-col gap-1 text-sm">
-          Başlangıç
-          <input
-            type="date"
-            value={from}
-            onChange={(event) => setFrom(event.target.value)}
-            className="border-input bg-background h-11 rounded-lg border px-2 md:h-9"
-          />
-        </label>
-        <label className="flex flex-col gap-1 text-sm">
-          Bitiş
-          <input
-            type="date"
-            value={to}
-            min={from}
-            onChange={(event) => setTo(event.target.value)}
-            className="border-input bg-background h-11 rounded-lg border px-2 md:h-9"
-          />
-        </label>
-        <Button type="submit" className="h-11 md:h-9" disabled={setMode.isPending || to < from}>
-          Kaydet
-        </Button>
-      </form>
-    </section>
-  );
-}
-
 /** The coming weeks: demand against capacity, and the deadlines each week holds. */
 function Horizon({ loads }: { loads: WeekLoad[] }) {
   const scale = Math.max(1, ...loads.flatMap((load) => [load.capacityMinutes, load.demandMinutes]));
@@ -475,12 +386,10 @@ function Horizon({ loads }: { loads: WeekLoad[] }) {
   );
 }
 
-type ReviewSummary = {
-  summary?: string;
-  suggestions?: string[];
-  mode?: { mode: LifeMode; reason: string } | null;
-};
-type MonthProposal = { text?: string };
+/** A stored review; Ç4a: a life mode an older one suggested is not shown. */
+type ReviewSummary = { summary?: string; suggestions?: string[] };
+/** A stored proposal; Ç4a: an older one of kind "mode" (a life mode) is not shown. */
+type MonthProposal = { kind?: string; text?: string };
 
 /**
  * What the AI said about the week behind (`review`, from Saturday) and the coming weeks
@@ -493,7 +402,7 @@ function AiNotes({ week, month }: { week: string; month: string }) {
     ReviewSummary | undefined;
   const proposals = (
     (horizons.data?.find((row) => row.period_start === month)?.proposals ?? []) as MonthProposal[]
-  ).filter((row) => row.text);
+  ).filter((row) => row.text && row.kind !== "mode");
   if (!review?.summary && proposals.length === 0) return null;
   return (
     <section aria-label="Yapay zekanın notları" className="flex flex-col gap-3">
@@ -508,11 +417,6 @@ function AiNotes({ week, month }: { week: string; month: string }) {
               {suggestion}
             </p>
           ))}
-          {review.mode ? (
-            <p className="text-muted-foreground">
-              Mod önerisi: {MODE_LABEL[review.mode.mode]}. {review.mode.reason}
-            </p>
-          ) : null}
         </div>
       ) : null}
       {proposals.length > 0 ? (

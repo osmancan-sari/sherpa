@@ -11,9 +11,8 @@ import {
   useEditWorkItem,
 } from "@/core/app/actions";
 import { useFacets } from "@/core/app/facets";
-import { useRhythms, useSettings, useWorkItems } from "@/core/app/hooks";
+import { useRhythms, useWorkItems } from "@/core/app/hooks";
 import { readTiming, type TimingForm } from "@/core/contract/timing";
-import { plannerSettings } from "@/core/planner";
 import type { RhythmEdit, TaskEdit, WorkItemEdit } from "@/core/data/work";
 import { dueAtEndOfDay } from "@/core/intake/parse";
 import type { Candidate } from "@/core/today/select";
@@ -172,7 +171,6 @@ function useTimingSection(
   },
 ) {
   const state = useTimingDraft(stored);
-  const settings = plannerSettings(useSettings().data);
   const section = (values: EditValues) => {
     const checked = state.check(options.form(values));
     return {
@@ -185,8 +183,6 @@ function useTimingSection(
           form={options.form(values)}
           issues={checked.issues}
           timing={checked.timing}
-          dayStart={settings.dayStart}
-          finishLine={settings.finishLine}
           inherited={options.inherited === undefined ? undefined : readTiming(options.inherited)}
           note={options.note}
         />

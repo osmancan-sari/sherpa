@@ -2,7 +2,6 @@ import {
   capacityFactors,
   commitWeek,
   estimateMultipliers,
-  lifeModeOn,
   type PlannerStat,
   type PlanRows,
   weekSettings,
@@ -25,14 +24,7 @@ import { dayKey, shiftDay, weekStart } from "@/lib/date";
 import { listBlocks } from "./blocks";
 import { getSettings, listDuePrompts, listInbox } from "./inbox";
 import { listModules } from "./module-rows";
-import {
-  listDays,
-  listLifeModes,
-  listStats,
-  listWeekPlans,
-  saveStats,
-  saveWeekPlan,
-} from "./planning";
+import { listDays, listStats, listWeekPlans, saveStats, saveWeekPlan } from "./planning";
 import { getOpenSession, listSessions } from "./sessions";
 import { listRhythmLogs, listRhythms, listTasks, listWorkItems } from "./work";
 
@@ -57,7 +49,6 @@ export async function loadPlanRows(db: Db, now: Date): Promise<PlanRows> {
     inbox,
     days,
     weekPlans,
-    lifeModes,
     stats,
   ] = await Promise.all([
     getSettings(db),
@@ -73,7 +64,6 @@ export async function loadPlanRows(db: Db, now: Date): Promise<PlanRows> {
     listInbox(db),
     listDays(db, shiftDay(today, -56)),
     listWeekPlans(db, shiftDay(weekStart(today), -7)),
-    listLifeModes(db),
     listStats(db),
   ]);
   return {
@@ -90,7 +80,6 @@ export async function loadPlanRows(db: Db, now: Date): Promise<PlanRows> {
     inbox,
     days,
     weekPlans,
-    lifeModes,
     stats,
   };
 }
@@ -113,8 +102,6 @@ export function weekInput(rows: PlanRows, now: Date): WeekInput {
       value: Number(row.value),
       sample_size: row.sample_size,
     })),
-    // The current week in today's mode; later weeks in their Monday's.
-    lifeMode: (week) => lifeModeOn(rows.lifeModes, week === weekStart(today) ? today : week),
   };
 }
 
@@ -124,7 +111,6 @@ export function storedWeek(row: WeekPlanRow | undefined): StoredWeekPlan | null 
     committed: row.committed,
     capacityMinutes: row.capacity_minutes,
     capacityByDay: (row.day_capacity ?? {}) as Record<string, number>,
-    lifeMode: row.life_mode,
     shares: readShares(row.shares),
     committedAt: row.updated_at,
   };
@@ -179,7 +165,6 @@ export async function keepWeek(
       capacityMinutes: row.capacity_minutes ?? 0,
       capacityByDay: stored.capacityByDay,
       left: [],
-      lifeMode: row.life_mode ?? "normal",
       source: (row.plan_source as WeekPlan["source"]) ?? "auto",
       reasons: (row.reasons as Record<string, string> | null) ?? {},
     };

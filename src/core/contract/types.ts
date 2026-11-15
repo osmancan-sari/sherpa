@@ -194,11 +194,18 @@ export type Say = (text: string, options?: { interrupt?: boolean }) => void;
 export type TodayBrief = {
   /** Ç3g: the core's planning day ("YYYY-MM-DD"): past midnight, until the night ends, the evening's day. */
   date: string;
-  /** The day's three. */
-  top: { title: string; module: string; reason: string | null }[];
+  /**
+   * Ç4a: today's planned work still ahead (the working window's, routines bound to the waking or
+   * the bedtime not counted), how much of it and the first of it. There are no "day's three".
+   */
+  work: { count: number; first: { title: string; module: string } | null };
   /** Today's fixed blocks. */
   blocks: { title: string; startsAt: Date; endsAt: Date }[];
-  finishLine: Date;
+  /**
+   * Ç4a: tonight's expected bedtime (recorded, the user's own value, else the sleep plan's); null
+   * when the day's frame is off. The day has no finish line any more.
+   */
+  bedtime: Date | null;
   wokeAt: Date | null;
   /**
    * Ç3g: where today's waking came from: a screen ("Uyandım", "Biraz önce"), outside (`core/wake`,
@@ -429,6 +436,10 @@ export type ModuleJob = {
   run: (ctx: ModuleContext) => Promise<void>;
 };
 
+/**
+ * Ç4a: no longer used. There are no life modes; a module that still declares its behaviour is
+ * accepted, but nothing reads it.
+ */
 export type ModeBehavior = {
   /** Multiplier on the module's weight in the planner. */
   weightMultiplier: number;
@@ -519,8 +530,9 @@ export type ModuleDefinition = {
   emits: string[];
   on?: Record<string, (event: AppEvent, ctx: ModuleContext) => Promise<void>>;
 
-  // 4. Reaction to the life mode
-  modeBehavior: Record<LifeMode, ModeBehavior>;
+  // 4. Reaction to the life mode. Ç4a: gone with the life modes; optional, accepted and not
+  // read (a module written before is not refused).
+  modeBehavior?: Partial<Record<LifeMode, ModeBehavior>>;
 
   // 5. Weekly report
   weeklyReport: (ctx: ModuleContext, week: DateRange) => Promise<ModuleReport>;

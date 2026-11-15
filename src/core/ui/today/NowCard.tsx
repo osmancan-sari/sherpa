@@ -47,7 +47,6 @@ type Props = {
   /** The first work of tomorrow, for the night state. */
   tomorrowFirst?: Candidate | null;
   /** Opens the "vakit kalırsa" list (done state). */
-  onShowRest?: () => void;
   /** The running work has a scene this device left ("Çık"): "Sahneye dön" (Ç3c). */
   onReturnToScene?: () => void;
   /** "Takıldım" held by the screen (a scene opens it too); the card keeps its own without. */
@@ -95,7 +94,6 @@ function CardFor({
   date,
   modules,
   tomorrowFirst,
-  onShowRest,
   onStuck,
   onReturnToScene,
   frame,
@@ -111,7 +109,7 @@ function CardFor({
         now={now}
         first={state.first}
         startOnWake={startOnWake ?? false}
-        brief={brief ?? { top: [], firstBlock: null, finishLine: "" }}
+        brief={brief ?? { firstBlock: null }}
         modules={modules}
       />
     );
@@ -181,13 +179,6 @@ function CardFor({
             {state.finished} iş · {formatMinutes(state.minutes)}
           </p>
         </div>
-        {onShowRest ? (
-          <div>
-            <Button variant="outline" className={SECOND} onClick={onShowRest}>
-              Vakit kalırsa
-            </Button>
-          </div>
-        ) : null}
       </Frame>
     );
   }
@@ -221,7 +212,7 @@ function CardFor({
       </Frame>
     );
   }
-  if (state.kind === "return") return <Return top3={state.top3} modules={modules} />;
+  if (state.kind === "return") return <Return next={state.next} modules={modules} />;
   return <Empty />;
 }
 
@@ -674,33 +665,31 @@ function PromptState({
   );
 }
 
-function Return({ top3 }: { top3: Candidate[]; modules: Map<string, KnownModule> }) {
+/** Back after days away (Ç4a): the day's next work and "Başla", no list of three. */
+function Return({ next }: { next: Assignment | null; modules: Map<string, KnownModule> }) {
   const start = useStartSession();
   const colors = useColors();
+  const candidate = next?.candidate ?? null;
   return (
     <Frame>
       <div className="flex flex-col gap-3">
         <h2 className={TITLE}>Kaldığın yerden devam</h2>
-        {top3.length > 0 ? (
-          <ol className="flex flex-col gap-1 md:text-lg">
-            {top3.map((candidate) => (
-              <li key={candidate.id} className="flex items-center gap-2">
-                <span
-                  aria-hidden
-                  className="size-2 rounded-full"
-                  style={{ backgroundColor: colors.of(candidate.moduleId, candidate) }}
-                />
-                {candidate.title}
-              </li>
-            ))}
-          </ol>
+        {candidate ? (
+          <p className="flex items-center gap-2 md:text-lg">
+            <span
+              aria-hidden
+              className="size-2 rounded-full"
+              style={{ backgroundColor: colors.of(candidate.moduleId, candidate) }}
+            />
+            {candidate.title}
+          </p>
         ) : (
           <p className="text-muted-foreground md:text-lg">Bugün için planlanan bir şey yok.</p>
         )}
       </div>
-      {top3.length > 0 ? (
+      {candidate ? (
         <div>
-          <Button className={BIG} onClick={() => start.mutate(sessionTargetOf(top3[0]))}>
+          <Button className={BIG} onClick={() => start.mutate(sessionTargetOf(candidate))}>
             Başla
           </Button>
         </div>

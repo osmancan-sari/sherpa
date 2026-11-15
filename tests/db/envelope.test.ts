@@ -488,7 +488,8 @@ describe("what the core tells a module", () => {
       status: "active",
       color: "#2563eb",
     });
-    expect(row.mode_behavior).toMatchObject({ busy: { weightMultiplier: 0.5 } });
+    // Ç4a: no life modes; the module's behaviour in them is not written.
+    expect(row.mode_behavior).toEqual({});
     expect(ok(await db.from("areas").select("slug")).map((area) => area.slug)).toEqual(["saglik"]);
     expect(row.area_id).not.toBeNull();
 

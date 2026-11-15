@@ -28,13 +28,7 @@ export const sablon: ModuleDefinition = {
   emits: [],
   on: listeners,
 
-  // 4. How the module behaves in each life mode.
-  modeBehavior: {
-    normal: { weightMultiplier: 1, floorMultiplier: 1 },
-    busy: { weightMultiplier: 0.5, floorMultiplier: 0.5 },
-    minimum: { weightMultiplier: 0.2, floorMultiplier: 0 },
-    holiday: { weightMultiplier: 0, floorMultiplier: 0 },
-  },
+  // 4. (Ç4a: no life modes; nothing to declare here.)
 
   // 5. Weekly report: a few numbers and at most two suggestions.
   async weeklyReport(ctx) {

@@ -279,9 +279,7 @@ export function userTexts(kind: ToneKind, output: unknown): string[] {
     case "replan": {
       const plan = output as PlanOutput;
       return [
-        ...[...plan.top3, ...plan.prefer, ...plan.defer, ...plan.estimates].map(
-          (row) => row.reason,
-        ),
+        ...[...plan.prefer, ...plan.defer, ...plan.estimates].map((row) => row.reason),
         ...plan.warnings,
       ];
     }
@@ -293,7 +291,7 @@ export function userTexts(kind: ToneKind, output: unknown): string[] {
       return (output as MonthOutput).proposals.map((row) => row.text);
     case "review": {
       const review = output as ReviewOutput;
-      return [review.summary, ...review.suggestions, ...(review.mode ? [review.mode.reason] : [])];
+      return [review.summary, ...review.suggestions];
     }
   }
 }

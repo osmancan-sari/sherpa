@@ -41,14 +41,14 @@ export const BED_ASK_MINUTES = 120;
 
 /**
  * Ç3g: whether a "Yatıyorum" at `at` asks first: when it is more than two hours before tonight's
- * bedtime range starts (without the frame: the finish line). Null when one tap is enough; else
- * the range's start and whether it is the frame's.
+ * bedtime range starts (without the frame: the default bedtime, Ç4a; before, the finish line).
+ * Null when one tap is enough; else the range's start and whether it is the frame's.
  */
 export function bedAsks(
-  input: Pick<PlanInput, "frame" | "finishLine">,
+  input: Pick<PlanInput, "frame" | "bedtime">,
   at: Date,
 ): { start: Date; framed: boolean } | null {
-  const start = input.frame?.bedStart ?? input.finishLine;
+  const start = input.frame?.bedStart ?? input.bedtime;
   if (at.getTime() >= start.getTime() - BED_ASK_MINUTES * 60_000) return null;
   return { start, framed: Boolean(input.frame?.bedStart) };
 }
