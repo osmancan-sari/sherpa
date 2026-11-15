@@ -1,7 +1,7 @@
 import { token } from "@/core/ui/tokens";
 import type { ModuleDefinition, ModuleFacet } from "@/core/contract/types";
 import { EveningTab, MorningTab } from "./components/StepsTab";
-import { listRoutines, listRuns } from "./queries";
+import { listRoutines, listRuns, listSteps } from "./queries";
 import { listeners, proposeAll, writeStartList } from "./rules";
 import { rutinScene } from "./scene";
 
@@ -49,6 +49,23 @@ export const rutin: ModuleDefinition = {
             ? "akşam yapıldı"
             : "bugün henüz başlamadı";
     return { text, health: "ok" };
+  },
+
+  // Ç4c: the evening closing is a step of the evening ("Yarının listesi", `kind: closing`): while
+  // that step is on, the evening's scene holds it and Today's evening card offers no "Kapanış".
+  async hostsClosing(ctx) {
+    const [routines, steps] = await Promise.all([listRoutines(ctx), listSteps(ctx)]);
+    const evening = routines.find((row) => row.key === "aksam" && row.active);
+    return Boolean(
+      evening &&
+      steps.some(
+        (row) =>
+          row.routine_id === evening.id &&
+          row.kind === "closing" &&
+          row.active &&
+          row.parent_id === null,
+      ),
+    );
   },
 
   // 2. No entries: the steps are edited on the module page; quick add adds none (rutin.md, 7).

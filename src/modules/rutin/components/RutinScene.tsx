@@ -393,6 +393,10 @@ function Scene(props: SceneProps) {
 
   function next(force = false) {
     if (!step || !line) return;
+    if (step.kind === "closing" && !today.closed) {
+      openClosing();
+      return;
+    }
     if (held && !force) return;
     if (partIndex < step.lines.length - 1) apply(at(stepIndex, partIndex + 1, false));
     else stepDone("done");
@@ -404,6 +408,27 @@ function Scene(props: SceneProps) {
       .flatMap((row, index) => recordsOf(row, "done", index === 0 ? partIndex : 0, true));
     finish(records, ending());
   }
+
+  // Ç4c: "Yarının listesi" (`kind: closing`): the scene opens the core's evening closing in its
+  // place (`controls.closing()`); confirmed, the step is done; given up ("Vazgeç"), it is passed.
+  // When the day was closed already, the step is done at once. Opened once per run and step on
+  // this device (the scene is drawn again when the closing ends; the button opens it again).
+  const closingKey = view && step?.kind === "closing" ? `${view.id}:${stepIndex}` : null;
+  function openClosing() {
+    if (!closingKey) return;
+    OPENED_CLOSINGS.add(closingKey);
+    void controls.closing().then((result) => stepDone(result === "confirmed" ? "done" : "skipped"));
+  }
+  useEffect(() => {
+    if (!closingKey || bedtime || greeting || OPENED_CLOSINGS.has(closingKey)) return;
+    if (today.closed) {
+      OPENED_CLOSINGS.add(closingKey);
+      stepDone("done");
+      return;
+    }
+    openClosing();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [closingKey]);
 
   function togglePause() {
     if (!view || startedAt === null) return;
@@ -722,7 +747,14 @@ function Scene(props: SceneProps) {
 
   // The buttons: "Sonraki" (the last step "Bitti", the evening's "Yatıyorum"), "Atla", "Hepsini yaptım".
   const finalBed = evening && lastStep && lastUnit;
-  const label = lastStep && lastUnit ? (evening ? "Yatıyorum" : "Bitti") : "Sonraki";
+  const label =
+    step.kind === "closing" && !today.closed
+      ? "Kapanış"
+      : lastStep && lastUnit
+        ? evening
+          ? "Yatıyorum"
+          : "Bitti"
+        : "Sonraki";
   const height = board ? "h-14" : "h-15";
   const buttons = finalBed ? (
     <div className="flex flex-col items-center px-4 pb-8.5">
@@ -1246,6 +1278,9 @@ function sleepHours(minutes: number, long = false): string {
 // The scene's buttons (docs/tasarim/ekranlar/rutin.md): sizes as classes, the tone's colours as
 // styles.
 const MAIN_BUTTON = "rounded-full border font-semibold tracking-tight";
+
+/** Ç4c: the closing steps this device opened the core's closing on ("run:step"). */
+const OPENED_CLOSINGS = new Set<string>();
 const EARLY_BUTTON = "border-edge-pressed rounded-full border text-base font-semibold";
 const SKIP_BUTTON = "border-edge-button text-lead rounded-full border font-medium";
 const PLAIN_BUTTON = "text-note min-h-11 px-4 font-medium";

@@ -116,12 +116,14 @@ test("the pool is ordered by deadline, then importance", async ({ page }) => {
   await expect(
     page.getByRole("region", { name: "Şimdi" }).getByRole("heading", { name: "Bugün yüksek" }),
   ).toBeVisible();
+  // Ç4c: closed, the list shows its first rows; "Hepsini göster" opens all of it.
   const list = page.getByRole("region", { name: "Sıradakiler" });
-  await expect(list.locator("li p:first-child")).toHaveText([
-    "Bugün düşük",
-    "Yarın",
-    "Tarihsiz önemli",
-    "Tarihsiz",
+  await list.getByRole("button", { name: "Hepsini göster" }).click();
+  await expect(list.getByRole("listitem")).toHaveText([
+    /^Bugün düşük/,
+    /^Yarın/,
+    /^Tarihsiz önemli/,
+    /^Tarihsiz/,
   ]);
   await expect(list).not.toContainText("Bekleyen");
   // The title exactly: after 22:00 "Bugün düşük" (due in two hours) reads "yarın 00:…" too.
@@ -242,8 +244,10 @@ test("a work item is started as its next sitting, and the time counts towards it
   expect(tasks).toHaveLength(Math.ceil(share / 60));
   expect(tasks.every((task) => task.work_item_id === item.id)).toBe(true);
   expect(tasks.every((task) => task.status === "todo")).toBe(true);
-  // One sitting stands for the item: it is listed once, not once per sitting.
-  await expect(page.getByRole("main").getByText("Midterm hazırlığı")).toHaveCount(1);
+  // One sitting stands for the item: it is on the card, and no other sitting is listed.
+  await expect(
+    page.getByRole("region", { name: "Sıradakiler" }).getByText("Midterm hazırlığı"),
+  ).toHaveCount(0);
 });
 
 test("a fixed block that is running takes the card; the day's blocks are listed", async ({
@@ -275,12 +279,10 @@ test("a fixed block that is running takes the card; the day's blocks are listed"
   await expect(page.getByRole("region", { name: "Sıradakiler" })).toContainText(
     "Sırada bekleyen iş",
   );
-  const blocks = page.getByRole("region", { name: "Bugünün sabit blokları" });
-  await expect(blocks.getByRole("listitem").filter({ hasText: "YZV406E dersi" })).toHaveAttribute(
-    "aria-current",
-    "time",
-  );
-  await expect(blocks).not.toContainText("İptal edilen");
+  // Ç4c: on the board the day's blocks are in the day's flow (the phone lists them too).
+  const flow = page.getByRole("region", { name: "Günün akışı" });
+  await expect(flow.getByLabel(/YZV406E dersi/)).toHaveCount(1);
+  await expect(flow.getByLabel(/İptal edilen/)).toHaveCount(0);
 });
 
 test("a rhythm is offered while it has debt and can be ticked off", async ({ page }) => {
@@ -329,7 +331,8 @@ test("a module's question is shown once and answered with one touch", async ({ p
 
   await page.goto("/");
   const card = page.getByRole("region", { name: "Soru" });
-  await expect(card).toContainText("Okul · YZV406E dersine girdin mi?");
+  await expect(card).toContainText("Okul");
+  await expect(card.getByRole("heading")).toHaveText("YZV406E dersine girdin mi?");
   await expect(page.getByRole("region", { name: "Soru" })).toHaveCount(1);
   await card.getByRole("button", { name: "Girdim" }).click();
   await expect(card).toBeHidden();

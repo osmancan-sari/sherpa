@@ -152,12 +152,12 @@
         {
           "title": "Yarının listesi",
           "kind": "closing",
-          "seconds": 0,
+          "seconds": 240,
           "minimum": true,
-          "active": false,
-          "phase": 2,
+          "active": true,
+          "phase": 1,
           "ref": "A8",
-          "hint": "Çekirdeğin kapanışına geçer."
+          "hint": "Yarının planına bak; aklında kalanları yaz."
         },
         {
           "title": "Telefonu salona bırak",

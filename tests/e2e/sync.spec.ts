@@ -173,19 +173,21 @@ test("what the ingest endpoint writes reaches open screens: the waking, a record
   browser,
   baseURL,
 }) => {
-  // The day's frame on, so the top bar shows the waking.
+  // The day's frame on: the day's flow writes the waking (Ç4c), expected until it comes.
   const [settings] = await rows("settings");
   await update("settings", settings.id as string, {
     day_frame: { wake: ["06:00", "09:00"], bed: ["22:00", "01:00"], sleep_minutes: 480 },
   });
-  await insert("modules", { slug: "deneme", name: "Deneme", color: "#6250d6" });
+  const [deneme] = await insert("modules", { slug: "deneme", name: "Deneme", color: "#6250d6" });
+  // A piece of work: the day's flow is drawn (an empty day shows no flow).
+  await insert("tasks", { module_id: deneme.id, title: "Okuma", est_minutes: 30 });
   const { token } = await deviceToken(["core/wake", "deneme/kayit"]);
 
   // The server stamps the waking with the real time: the page holds that day.
   await roomInTheDay(page);
   await page.goto("/");
-  const wake = page.getByTestId("wake-line");
-  await expect(wake).toHaveText(/^beklenen uyanış/);
+  const ends = page.getByTestId("flow-ends");
+  await expect(ends).toHaveText(/^09:00 uyanış · /);
   const other = await browser.newContext({ baseURL, storageState: STORAGE_STATE });
   const moduleTab = await other.newPage();
   await moduleTab.goto("/m/deneme");
@@ -197,7 +199,8 @@ test("what the ingest endpoint writes reaches open screens: the waking, a record
 
   // The phone's alarm automation: Today shows the waking.
   expect((await postIngest(baseURL!, "core/wake", token)).status).toBe(200);
-  await expect(wake).toHaveText(/^uyanış \d\d:\d\d$/);
+  await expect(ends).not.toHaveText(/^09:00 uyanış · /);
+  await expect(ends).toHaveText(/^\d\d:\d\d uyanış · /);
 
   // A collector's record: the module's page lists it, and its work is proposed.
   const sent = await postIngest(baseURL!, "deneme/kayit", token, {

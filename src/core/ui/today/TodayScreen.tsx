@@ -370,7 +370,7 @@ function TodayBody() {
         <>
           <DayFlowPanel input={input} plan={plan} sessions={rows?.sessions ?? []} now={now} />
           <AlertBar warnings={plan.warnings} modules={moduleMap} />
-          <DayBlocks blocks={blocksOfDay(input.blocks, input.date)} />
+          <DayBlocks blocks={blocksOfDay(input.blocks, input.date)} now={now} />
         </>
       )}
 
@@ -642,8 +642,9 @@ function DoneToday({
 }
 
 /** "Bugünün sabit blokları" on the phone (BT31); the board has them in the day's flow. */
-function DayBlocks({ blocks }: { blocks: Block[] }) {
+function DayBlocks({ blocks, now }: { blocks: Block[]; now: Date }) {
   const shown = blocks.filter((block) => block.status !== "cancelled");
+  const time = now.getTime();
   if (shown.length === 0) return null;
   return (
     <section
@@ -655,6 +656,11 @@ function DayBlocks({ blocks }: { blocks: Block[] }) {
         {shown.map((block) => (
           <li key={block.id}>
             <ListRow
+              aria-current={
+                Date.parse(block.starts_at) <= time && Date.parse(block.ends_at) > time
+                  ? "time"
+                  : undefined
+              }
               title={block.title}
               subtitle={
                 <span className="tabular-nums">

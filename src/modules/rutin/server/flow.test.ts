@@ -96,21 +96,23 @@ describe("every_days (criterion 6)", () => {
 });
 
 describe("the day's steps", () => {
-  it("are the open steps of the routine in order, add-ons and the closing step left out", () => {
+  it("are the open steps of the routine in order, the closing step among them, add-ons left out", () => {
     const a = step({ position: 2, title: "B" });
     const b = step({ position: 1, title: "A" });
     const off = step({ position: 3, active: false });
-    const closing = step({ position: 4, kind: "closing" });
+    const closing = step({ position: 4, kind: "closing", title: "Yarının listesi" });
+    const closingOff = step({ position: 5, kind: "closing", active: false });
     const other = step({ routine_id: "x" });
     const addOn = step({ parent_id: a.id });
     const offAddOn = step({ parent_id: a.id, active: false });
     const list = dayStepsOf(
-      [a, b, off, closing, other, addOn, offAddOn],
+      [a, b, off, closing, closingOff, other, addOn, offAddOn],
       "r",
       "2026-11-14",
       new Map(),
     );
-    expect(list.map((row) => row.title)).toEqual(["A", "B"]);
+    expect(list.map((row) => row.title)).toEqual(["A", "B", "Yarının listesi"]);
+    expect(list[2].kind).toBe("closing");
     expect(list[1].addOns.map((row) => row.id)).toEqual([addOn.id]);
   });
 

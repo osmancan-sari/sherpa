@@ -369,6 +369,61 @@ test("a waking told from outside shows Günaydın; Kalktım brings the teeth and
   await expect.poll(async () => (await spoken(page)).join(" ")).toContain("Günaydın.");
 });
 
+test("Yarının listesi opens the core's closing in the evening's scene: Vazgeç passes the step, Onayla does it (Ç4c)", async ({
+  page,
+}) => {
+  await switchOn(page);
+  const [settings] = await rows("settings");
+  await update("settings", settings.id as string, { day_frame: FRAME });
+  const evening = await rhythmOf("aksam");
+  const [mod] = await rows("modules");
+  await insert("sessions", { rhythm_id: evening.id, module_id: mod.id, started_at: runAt(-5) });
+  await page.goto("/");
+  await expect(scene(page)).toHaveAttribute("data-routine", "aksam");
+  const run = await waitFor(
+    () => runOf("aksam"),
+    (row) => Boolean(row),
+  );
+  // The step after "Yüz": the closing opens by itself in the scene's place, the strip stays.
+  await update("rutin_runs", run!.id, { step_position: 3, part_position: 0 });
+  await page.reload();
+  const closing = page.getByRole("region", { name: "Sahne" });
+  await expect(closing.getByRole("heading", { name: "Kapanış" })).toBeVisible();
+  await expect(page.getByLabel("Sahne şeridi")).toContainText("Akşam kapanışı");
+  await expect(closing.getByRole("button", { name: "Onayla ve yat" })).toHaveCount(0);
+
+  // "Vazgeç": the step is passed, the scene goes on to "Telefonu salona bırak".
+  await closing.getByRole("button", { name: "Vazgeç" }).click();
+  await expect(scene(page).getByRole("heading", { name: "Telefonu salona bırak" })).toBeVisible();
+  const steps = await rows("rutin_steps");
+  const list = steps.find((row) => row.title === "Yarının listesi")!;
+  await waitFor(
+    () => rows("rutin_run_steps"),
+    (records) => records.some((row) => row.step_id === list.id && row.result === "skipped"),
+  );
+  expect((await rows("days")).every((row) => row.closed_at === null)).toBe(true);
+
+  // Back on the step (written from outside): this time it is confirmed; the day is closed.
+  await update("rutin_runs", run!.id, { step_position: 3, part_position: 0 });
+  await page.reload();
+  await expect(closing.getByRole("heading", { name: "Kapanış" })).toBeVisible();
+  for (let step = 0; step < 4; step++) {
+    await closing.getByRole("button", { name: "İleri" }).click();
+  }
+  await closing.getByRole("button", { name: "Onayla", exact: true }).click();
+  await expect(scene(page).getByRole("heading", { name: "Telefonu salona bırak" })).toBeVisible();
+  await waitFor(
+    () => rows("days"),
+    (days) => days.some((row) => row.closed_at !== null),
+  );
+  await waitFor(
+    () => rows("rutin_run_steps"),
+    (records) => records.some((row) => row.step_id === list.id && row.result === "done"),
+  );
+  // The session goes on: the evening is not over.
+  expect(await open()).toHaveLength(1);
+});
+
 test("Yatıyorum writes the bedtime, İyi geceler stays after a reload, Geri al opens the last step again", async ({
   page,
 }) => {
@@ -395,12 +450,13 @@ test("Yatıyorum writes the bedtime, İyi geceler stays after a reload, Geri al 
   // Ç3g: the evening's strip is its routine's name, counted from its first step.
   await expect(page.getByTestId("strip-title")).toHaveText("Akşam kapanışı");
   await expect(page.getByTestId("strip-minutes")).toHaveText("· 5 dk");
-  await expect(page.getByTestId("rutin-count")).toHaveText(/1 \/ 4$/);
+  await expect(page.getByTestId("rutin-count")).toHaveText(/1 \/ 5$/);
   const run = await waitFor(
     () => runOf("aksam"),
     (row) => Boolean(row),
   );
-  await update("rutin_runs", run!.id, { step_position: 3, part_position: 1 });
+  // Ç4c: "Yarının listesi" (3) comes before "Telefonu salona bırak" (4).
+  await update("rutin_runs", run!.id, { step_position: 4, part_position: 1 });
   // Written from outside the app: read again (the live sync has its own test, sync.spec.ts).
   await page.reload();
   await expect(scene(page).getByRole("heading", { name: "Telefonu salona bırak" })).toBeVisible();
@@ -554,7 +610,8 @@ test("the module page: a step is renamed, lengthened, made every other day and b
   await add.getByRole("button", { name: "Ekle", exact: true }).click();
   await expect(add).toBeHidden();
   await expect(page.getByTestId("rutin-aksam")).toContainText("Göz damlası");
-  await expect.poll(async () => (await rhythmOf("aksam")).est_minutes).toBe(10);
+  // Ç4c: 1 + 3 + 3 + 4 ("Yarının listesi") + 2 + 1.
+  await expect.poll(async () => (await rhythmOf("aksam")).est_minutes).toBe(14);
 
   // Deleted: the confirmation offers to close instead; "Sil" deletes.
   await page
@@ -570,7 +627,7 @@ test("the module page: a step is renamed, lengthened, made every other day and b
   await expect(confirm.getByRole("button", { name: "Kapat" })).toBeVisible();
   await confirm.getByRole("button", { name: "Sil" }).click();
   await expect(page.getByTestId("rutin-aksam")).not.toContainText("Göz damlası");
-  await expect.poll(async () => (await rhythmOf("aksam")).est_minutes).toBe(9);
+  await expect.poll(async () => (await rhythmOf("aksam")).est_minutes).toBe(13);
 });
 
 test("the scene uses the list as edited: a renamed step, a new order dragged on the page", async ({
@@ -639,7 +696,8 @@ test("on a short phone the scene covers the screen and its panels end above the 
     () => runOf("aksam"),
     (row) => Boolean(row),
   );
-  await update("rutin_runs", run!.id, { step_position: 3, part_position: 1 });
+  // Ç4c: "Yarının listesi" (3) comes before "Telefonu salona bırak" (4).
+  await update("rutin_runs", run!.id, { step_position: 4, part_position: 1 });
   await phone.reload();
   await expect(view.getByRole("button", { name: "Yatıyorum" })).toBeVisible();
   // The whole screen: no bottom menu, no "+".

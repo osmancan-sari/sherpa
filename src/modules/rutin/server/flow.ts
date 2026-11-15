@@ -101,8 +101,12 @@ export type DayStep = Step & {
 export type Line =
   { kind: "part"; index: number; part: Part } | { kind: "addon"; step: Step; part: Part };
 
-/** A step of the scene: switched on, of the routine's own kind, no add-on. */
-const onScreen = (step: Step) => step.active && step.parent_id === null && step.kind === "tap";
+/**
+ * A step of the scene: switched on, no add-on. Ç4c: the closing step ("Yarının listesi", `kind:
+ * closing`) is one too: on it the scene opens the core's evening closing.
+ */
+const onScreen = (step: Step) =>
+  step.active && step.parent_id === null && (step.kind === "tap" || step.kind === "closing");
 
 /**
  * The steps a run of the routine has on a day, in order: the open steps that are due, each with

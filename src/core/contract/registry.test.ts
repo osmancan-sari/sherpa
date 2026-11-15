@@ -298,3 +298,44 @@ describe("module paths", () => {
     expect(resolveModulePath(def, ["liste", "fazla"])).toEqual({ kind: "missing" });
   });
 });
+
+describe("the closing's host and the area page's views (Ç4c)", () => {
+  const view = () => null;
+
+  it("accepts a hostsClosing function and area views with keys and titles", () => {
+    expect(() =>
+      createRegistry([
+        definition({
+          hostsClosing: async () => true,
+          ui: {
+            ...definition().ui,
+            areaViews: [{ key: "duzen", title: "Son 14 gün", component: view, wide: true }],
+          },
+        }),
+      ]),
+    ).not.toThrow();
+  });
+
+  it("names a hostsClosing that is not a function, a bad or doubled view key, a view without a title", () => {
+    const problems = definitionProblems(
+      definition({
+        hostsClosing: true as never,
+        ui: {
+          ...definition().ui,
+          areaViews: [
+            { key: "Bad Key", title: "A", component: view },
+            { key: "iki", title: "B", component: view },
+            { key: "iki", title: "C", component: view },
+            { key: "bos", title: "", component: view },
+          ],
+        },
+      }),
+    );
+    expect(problems).toEqual([
+      "ornek: hostsClosing must be a function of the module's context",
+      'ornek: area view key "Bad Key" is not a valid key',
+      'ornek: area view key "iki" is used twice',
+      'ornek: area view "bos" needs a title and a component',
+    ]);
+  });
+});

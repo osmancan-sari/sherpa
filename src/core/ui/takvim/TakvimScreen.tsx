@@ -268,7 +268,7 @@ function Week({
                       action={{ label: "Modüle git", href: slug ? `/m/${slug}` : "/m" }}
                     >
                       <span className="font-semibold">Uyarı</span> · Bu hafta uygun saat yok:{" "}
-                      {row.title}
+                      {row.title}.
                     </AlertRow>
                   );
                 })}

@@ -125,8 +125,13 @@ export async function openClosing(page: Page): Promise<string> {
     day_frame: CLOSING_FRAME,
     day_start_default: "08:00",
   });
+  // Tonight's bed is the user's own 22:00, so at 22:10 the working window is over: evening.
   if (!(await rows("days")).some((row) => row.date === day)) {
-    await insert("days", { date: day, woke_at: new Date(`${day}T07:00:00+03:00`).toISOString() });
+    await insert("days", {
+      date: day,
+      woke_at: new Date(`${day}T07:00:00+03:00`).toISOString(),
+      expected_bed: "22:00:00",
+    });
   }
   await page.clock.setFixedTime(new Date(`${day}T22:10:00+03:00`));
   await page.goto("/");

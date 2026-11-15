@@ -70,6 +70,14 @@ export const deneme: ModuleDefinition = {
   },
 
   // 1. What it gives the main screen
+  // Ç4c: the closing is held by the night scene when an evening routine of this module is open
+  // (its night scene has "Günü kapat"); otherwise Today's evening card offers "Kapanış".
+  async hostsClosing(ctx) {
+    return (await listItems(ctx)).some(
+      (item) => item.kind === "rutin" && item.facet === "aksam" && !item.done,
+    );
+  },
+
   async chip(ctx) {
     const items = await listItems(ctx);
     const open = items.filter((item) => !item.done);

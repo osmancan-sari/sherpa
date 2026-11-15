@@ -89,10 +89,12 @@ describe("the starting list", () => {
       ["Dercos şampuan", 3, true],
       ["Nasır kremi", 2, false],
     ]);
+    // Ç4c (the user's decision, 15 Nov 2026): the closing is part of the evening: on.
     expect(steps.find((step) => step.title === "Yarının listesi")).toMatchObject({
       kind: "closing",
-      active: false,
+      active: true,
       minimum: true,
+      seconds: 240,
     });
     const teeth = steps.find((step) => step.ref === "S1")!;
     expect(teeth.parts).toEqual([
@@ -155,8 +157,8 @@ describe("the three rhythms", () => {
       title: "Akşam kapanışı",
       facet: "aksam",
       timing: { anchor: "bed", order: 10 },
-      // 1 + 3 + 3 + 2: the closed "Yarının listesi" is not counted.
-      est_minutes: 9,
+      // 1 + 3 + 3 + 4 + 2: Ç4c, "Yarının listesi" is on and counted.
+      est_minutes: 13,
     });
     expect(byKey("sabah").source_id).toBe((await routineByKey(ctx, "sabah")).id);
   });

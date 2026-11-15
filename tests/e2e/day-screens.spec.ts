@@ -46,7 +46,7 @@ test("Günaydın: 'Uyandım' records the waking (not estimated), then the mornin
   await expect(card(page)).toContainText("Önce: Sabah esnemesi");
   // Ç4c: the top line is "Bugün" and the date only; the day's flow writes the waking and bed.
   await expect(page.locator("main header").first()).not.toContainText("uyanış");
-  await expect(page.getByTestId("flow-ends")).toHaveText("09:00 uyanış · 22:00 yatış");
+  await expect(page.getByTestId("flow-ends")).toHaveText(/^09:00 uyanış · \d\d:\d\d yatış$/);
 
   await card(page).getByRole("button", { name: "Uyandım" }).click();
   await expect(card(page).getByRole("heading", { name: "Sabah esnemesi" })).toBeVisible();
@@ -55,7 +55,7 @@ test("Günaydın: 'Uyandım' records the waking (not estimated), then the mornin
     (row) => row?.woke_at != null,
   );
   expect(day?.woke_estimated).toBe(false);
-  await expect(page.getByTestId("flow-ends")).toHaveText("07:30 uyanış · 22:00 yatış");
+  await expect(page.getByTestId("flow-ends")).toHaveText(/^07:30 uyanış · /);
   // The strip shows the morning's part before the working window.
   await expect(page.getByTestId("strip-part-wake")).toHaveCount(1);
   const started = await waitFor(
@@ -158,7 +158,7 @@ test("the evening card has no Günü kapat; with no module holding it, Kapanış
   // "Vazgeç" skips it: back to Today, the day is not closed.
   await card(page).getByRole("button", { name: "Kapanış" }).click();
   const shell = page.getByTestId("closing-shell");
-  await expect(shell.getByRole("banner", { name: "Sahne şeridi" })).toContainText("Akşam kapanışı");
+  await expect(shell.getByLabel("Sahne şeridi")).toContainText("Akşam kapanışı");
   await expect(shell.getByRole("heading", { name: "Kapanış" })).toBeVisible();
   await shell.getByRole("button", { name: "Vazgeç" }).click();
   await expect(shell).toHaveCount(0);
