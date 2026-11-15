@@ -698,7 +698,7 @@ test("rutin screens", async ({ page }, testInfo) => {
   const shot = async (name: string) => {
     await page.mouse.move(0, 0);
     await page.screenshot({
-      path: path.join(folder, `${testInfo.project.name}-${name}-dark.png`),
+      path: path.join(folder, `${testInfo.project.name}-${name}.png`),
       fullPage: !phone,
       animations: "disabled",
     });
@@ -804,7 +804,7 @@ test("c3g screens", async ({ page }, testInfo) => {
   const shot = async (name: string) => {
     await page.mouse.move(0, 0);
     await page.screenshot({
-      path: path.join(folder, `${testInfo.project.name}-${name}-dark.png`),
+      path: path.join(folder, `${testInfo.project.name}-${name}.png`),
       fullPage: !phone,
       animations: "disabled",
     });
@@ -868,7 +868,7 @@ base("login screens", async ({ browser }, testInfo) => {
     // Move the pointer off the button it just clicked, so the picture shows the resting state.
     await page.mouse.move(0, 0);
     await page.screenshot({
-      path: path.join(folder, `${testInfo.project.name}-${name}-dark.png`),
+      path: path.join(folder, `${testInfo.project.name}-${name}.png`),
       animations: "disabled",
     });
   };

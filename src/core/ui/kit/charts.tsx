@@ -111,7 +111,7 @@ function Axis({
               x2={width - PAD.after}
               y1={y}
               y2={y}
-              stroke="var(--border)"
+              stroke="var(--color-line)"
               strokeWidth={1}
             />
             <text
@@ -309,7 +309,7 @@ export function LineChart({
                   x2={shown.x}
                   y1={PAD.above}
                   y2={PAD.above + plotHeight}
-                  stroke="var(--muted-foreground)"
+                  stroke="var(--color-ink-2)"
                   strokeWidth={1}
                   aria-hidden
                 />
@@ -333,7 +333,7 @@ export function LineChart({
                     cy={point.y}
                     r={4}
                     fill={color}
-                    stroke="var(--background)"
+                    stroke="var(--color-solid)"
                     strokeWidth={2}
                     aria-hidden
                   />

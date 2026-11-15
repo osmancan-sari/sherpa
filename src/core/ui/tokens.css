@@ -10,9 +10,12 @@
  * (`npm run tokens`; a test keeps the two equal).
  *
  * One colour system (docs/tasarim/ilkeler.md): light text on dark glass at every hour.
+ *
+ * "static": every variable is written to the page, also those only code reads (inline styles of
+ * the scene, the sky), not only those a class uses.
  */
 
-@theme {
+@theme static {
   /* Only these colours exist: Tailwind's palette is switched off. */
   --color-*: initial;
 
