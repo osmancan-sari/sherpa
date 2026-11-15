@@ -121,22 +121,26 @@ test("phone: at the end of a page its last item stands above the menu, not behin
   for (const { path, ready } of pages) {
     await page.goto(path);
     await expect(ready).toBeVisible();
-    await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
-    const top = (await menu.boundingBox())!.y;
-    // The lowest thing the page draws (fixed pieces such as the menu and "+" left out).
-    const bottom = await page.evaluate(() => {
-      let lowest = 0;
-      for (const element of document.querySelectorAll("main *")) {
-        const style = getComputedStyle(element);
-        if (style.position === "fixed" || style.visibility === "hidden") continue;
-        if (element.closest("[role=dialog]")) continue;
-        const box = element.getBoundingClientRect();
-        if (box.width === 0 || box.height === 0) continue;
-        lowest = Math.max(lowest, box.bottom);
-      }
-      return lowest;
-    });
-    expect(bottom, path).toBeLessThanOrEqual(top - 8);
+    // A list can arrive after the heading and lengthen the page: scroll to the end and measure
+    // until the page has settled.
+    await expect(async () => {
+      await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+      const top = (await menu.boundingBox())!.y;
+      // The lowest thing the page draws (fixed pieces such as the menu and "+" left out).
+      const bottom = await page.evaluate(() => {
+        let lowest = 0;
+        for (const element of document.querySelectorAll("main *")) {
+          const style = getComputedStyle(element);
+          if (style.position === "fixed" || style.visibility === "hidden") continue;
+          if (element.closest("[role=dialog]")) continue;
+          const box = element.getBoundingClientRect();
+          if (box.width === 0 || box.height === 0) continue;
+          lowest = Math.max(lowest, box.bottom);
+        }
+        return lowest;
+      });
+      expect(bottom, path).toBeLessThanOrEqual(top - 8);
+    }).toPass({ timeout: 5_000 });
   }
 });
 

@@ -232,12 +232,12 @@ export function TimingSection({
                 );
               const known = DAY_OPTIONS.some((option) => option.value === range.days);
               return (
-                <div key={index} className="flex flex-wrap items-center gap-1.5">
+                <div key={index} className="flex flex-wrap items-center gap-1">
                   <Select
                     aria-label={`${name}: günler`}
                     value={range.days}
                     onChange={(event) => update({ days: event.target.value })}
-                    className="w-auto max-w-40 [&_select]:pr-9 [&_svg]:right-3"
+                    className="w-auto max-w-36 [&_select]:pr-8 [&_select]:pl-3 [&_svg]:right-2.5"
                   >
                     {known ? null : (
                       <option value={range.days}>
@@ -251,19 +251,19 @@ export function TimingSection({
                     ))}
                   </Select>
                   {/* The two times and the remove button wrap together on a narrow screen. */}
-                  <span className="flex items-center gap-1.5">
+                  <span className="flex items-center gap-1">
                     <TimeInput
                       aria-label={`${name}: başlangıç`}
                       value={range.from}
                       onChange={(from) => update({ from })}
-                      className="w-18 px-2 text-center tabular-nums"
+                      className="w-15 px-1 text-center tabular-nums"
                     />
                     <span aria-hidden>–</span>
                     <TimeInput
                       aria-label={`${name}: bitiş`}
                       value={range.to}
                       onChange={(to) => update({ to })}
-                      className="w-18 px-2 text-center tabular-nums"
+                      className="w-15 px-1 text-center tabular-nums"
                     />
                     <Button
                       type="button"
