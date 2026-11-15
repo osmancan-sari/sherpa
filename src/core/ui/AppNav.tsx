@@ -21,6 +21,8 @@ const items = [
 ] as const;
 
 function isActive(pathname: string, href: string): boolean {
+  // Ç4c: an area's page (/a/<area>) belongs to Modüller, as its frames draw it (MP4).
+  if (href === "/m" && pathname.startsWith("/a/")) return true;
   return href === "/" ? pathname === "/" : pathname === href || pathname.startsWith(`${href}/`);
 }
 

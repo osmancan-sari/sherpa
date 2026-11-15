@@ -763,6 +763,10 @@ test("the Sağlık area's page: its members, their numbers, Rutin's view; reache
   await page.waitForURL("/a/saglik");
   await expect(page.getByRole("heading", { level: 1, name: "Sağlık" })).toBeVisible();
   await expect(page.getByTestId("area-members")).toHaveText("Alan · Rutin");
+  // The area's page belongs to Modüller in the menu (MP4).
+  await expect(
+    page.locator('nav[aria-label="Ana gezinme"] a[aria-current="page"]:visible'),
+  ).toHaveAccessibleName("Modüller");
   const members = page.getByRole("list", { name: "Üyeler" });
   await expect(members.getByRole("link", { name: /^Rutin/ })).toBeVisible();
   await expect(members).toContainText("Sabah yapılan gün");

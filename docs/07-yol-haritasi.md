@@ -285,6 +285,8 @@ Tasarım: `docs/12-sahne-ve-otomasyon.md`, bölüm G. İstem `prompts/c3f-capali
 
 İstem `prompts/c4c-bugun-takvim-kapanis.md`. Bugün'ün yeni yerleşimi ve durumları, saatli şerit ve açılır Sıradakiler, Takvim, kapanışın akşam sahnesine taşınması (Rutin'in "Yarının listesi" adımı dahil), alan sayfasının kabuğu.
 
+Kuruldu (16 Kas 2026, `c4c-tamam`): `/takvim` (`/hafta` ve `/kapanis` yönlenir), kapanış sahnede (`controls.closing()` sonucu döndürür, `hostsClosing`, barındıran yoksa akşam kartında "Kapanış" ve standart kabuk), Rutin'in "Yarının listesi" adımı açık (migration `20261116090000_rutin_closing_step_on.sql`), alan sayfası `/a/<alan>` ve `ui.areaViews`. Rapor `docs/ILERLEME.md`.
+
 ### Ç4d: Teknik cila
 
 Tasarım: `docs/05-arayuz.md`, `docs/11-yayin-ve-cihazlar.md`. Eski Ç4'ün görünüş dışında kalan işi.
@@ -331,7 +333,7 @@ Bir modülün süreci: tasarım oturumu (bkz. `prompts/modul-tasarim-oturumu.md`
 | --- | --- | --- |
 | Okul | 1: dönem takibi ve Notion aktarımı · 2: Ninova · 3: hazırlık dokümanı otomasyonu | Taslak hazır; ayrı oturumda ayrıntılanacak |
 | Beslenme | 1: plan, prep, alışveriş · 2 ve 3: belirlenecek | Taslak |
-| Rutin (sabah ve akşam) | 1: tablolar, üç ritim, iki sahne, modül sayfası, kayıt (Ç3f'den sonra) · 2: Kestirmeler bağlantısı, Düzenlilik, sürelerin öğrenilmesi (Ç4'ün parçaları arasına alınabilir) · 3: faz 2 (modül sayfasının cam görünüşü Ç4b'ye, "Yarının listesi" adımı Ç4c'ye taşındı) | Onaylandı (14 Kas 2026; `docs/moduller/rutin.md`); 1. adım kuruldu (14 Kas 2026, `rutin-1-tamam`) |
+| Rutin (sabah ve akşam) | 1: tablolar, üç ritim, iki sahne, modül sayfası, kayıt (Ç3f'den sonra) · 2: Kestirmeler bağlantısı, Düzenlilik, sürelerin öğrenilmesi (Ç4'ün parçaları arasına alınabilir) · 3: faz 2 (modül sayfasının cam görünüşü Ç4b'de, "Yarının listesi" adımı Ç4c'de kuruldu) | Onaylandı (14 Kas 2026; `docs/moduller/rutin.md`); 1. adım kuruldu (14 Kas 2026, `rutin-1-tamam`); "Yarının listesi" ve alan görünümü Ç4c'de (16 Kas 2026) |
 | Spor | 1: duruş programı ve koç sahnesi | Bekliyor |
 | Ev | 1: ritimler | Taslak |
 | İş | 1: çalışma blokları | Taslak |

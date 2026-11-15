@@ -225,11 +225,11 @@ Kısıtların çoğunu modüller kendi ayarlarından yazar; kullanıcı bunları
 - ~~Aralıkların hepsi bitiş çizgisinden sonraya düşüyorsa uyarı.~~ Ç4a'da kalktı (gün bitiş çizgisi taşımaz). Akşam seçeneği (`after_finish`) formda sunulmaz; bir modülün yazdığı değer olduğu gibi saklanır, iş uyanışa ya da yatışa bağlanırsa form onu düşürür (ikisi birlikte olmaz).
 - Oturum işinde bölüm boşken "kalemin saatleri geçerli" yazar.
 
-**Zaman çizelgesi (DayStrip).** Yol süresi, işin önünde ve arkasında aynı modül renginin soluk, taralı hali olarak çizilir; üzerine gelince (telefonda dokununca) "yol 20 dk" yazar.
+**Günün akışı (saatli şerit, kit'in `TimeStrip`'i; Ç4c).** Yol süresi, işin önünde ve arkasında `color-flow-travel` ile taralı ayrı bir parça olarak çizilir; üzerine gelince (telefonda dokununca) balonda "yol 20 dk" yazar.
 
 **Şimdi kartı ve Sıradakiler.** Yol süresi olan işte süre satırı `Modül · 60 dk · yol 20+20 dk` biçimindedir. Kart, işin çalışma aralığı değil ayak izi başladığında önerir (yola çıkma zamanı). Planın sıradaki işi pencereye ya da yola bağlıysa ve ayak izi henüz başlamadıysa kart onu saatiyle gösterir ("Yola çıkış 16:40"; yolu yoksa "Başlangıç 16:45"); kullanıcı yine de hemen başlatabilir. **Görüşün gerek.**
 
-**Uyarılar.** "Bugün uygun saat kalmadı: …" ve "Bu hafta uygun saat yok: …" AlertBar'da ve Hafta ekranında öbür uyarılar gibi görünür; eylemi "Modüle git".
+**Uyarılar.** "Bugün uygun saat kalmadı: …" ve "Bu hafta uygun saat yok: …" Bugün'ün uyarılarında ve Takvim'de öbür uyarılar gibi görünür; eylemi "Modüle git".
 
 **Hızlı giriş.** Yapay zeka açıkken satırda açıkça yazılan saat kısıtı işe işlenir ("spor akşam 8'den sonra"); yapılı kullanımda ayrı bir kısaltma yoktur, kısıt formdan girilir.
 
