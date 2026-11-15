@@ -38,12 +38,14 @@
   --color-glass-main: rgba(14, 18, 44, 0.42); /* main panel, over the full landscape */
   --color-glass-dense: rgba(14, 18, 44, 0.5); /* lists, tables, forms */
   --color-glass-soft: rgba(14, 18, 44, 0.34); /* notes, summaries, tabs, alert rows */
-  --color-glass-nav: rgba(14, 18, 44, 0.46); /* menus */
+  --color-glass-nav: rgba(14, 18, 44, 0.46); /* the phone's menu and "+" */
+  --color-glass-rail: rgba(14, 18, 44, 0.4); /* the board's menu */
   --color-glass-sheet: rgba(14, 18, 44, 0.66); /* bottom sheet, side panel */
   --color-glass-dialog: rgba(20, 26, 58, 0.8);
   --color-glass-toast: rgba(20, 26, 58, 0.86);
   --color-solid: #141b38; /* every glass with "Saydamlığı azalt" */
   --color-focus-tone: #0a0d1e; /* the focus tone of a scene: dark and flat */
+  --color-energy-base: #070a16; /* the energy tone: the module's colour fading into this */
 
   /* --- Light fills on glass --------------------------------------------------------------- */
   --color-light: rgba(
@@ -72,7 +74,10 @@
   --color-edge-quiet: rgba(255, 255, 255, 0.16); /* disabled button */
   --color-edge-ai: rgba(255, 255, 255, 0.45); /* dashed: a value the AI set */
   --color-edge-pressed: rgba(255, 255, 255, 0.5);
+  --color-edge-strip: rgba(255, 255, 255, 0.18); /* the scene's strip on the board */
+  --color-edge-placeholder: rgba(255, 255, 255, 0.4); /* dashed: the module fills this */
   --color-edge-light: rgba(255, 255, 255, 0.7); /* edge of the opaque light */
+  --color-edge-light-night: rgba(255, 255, 255, 0.65);
   --color-line: rgba(255, 255, 255, 0.14); /* divider in lists */
   --color-line-soft: rgba(255, 255, 255, 0.12); /* divider in settings */
   --color-focus: #ffffff; /* focused field edge */
@@ -81,6 +86,7 @@
   /* --- Over the screen -------------------------------------------------------------------- */
   --color-scrim: rgba(4, 6, 20, 0.45); /* behind a dialog or a sheet */
   --color-night-dim: rgba(0, 0, 0, 0.38); /* the board's night state */
+  --color-blackout: #000000; /* "İyi geceler" dims the screen to this */
 
   /* --- The scene's two glass tones (Rutin's morning and evening; docs/tasarim/ekranlar/sahne.md) */
   --color-warm-ink: #f7f5ff;
@@ -226,6 +232,8 @@
   --text-6xl--line-height: 1;
   --text-7xl: 72px;
   --text-7xl--line-height: 1;
+  --text-counter-xs: 52px; /* the scene's counter on a short phone */
+  --text-counter-sm: 64px;
   --text-counter: 84px; /* the scene's counter on the phone */
   --text-counter--line-height: 1;
   --text-8xl: 96px;
@@ -252,6 +260,7 @@
   --radius-soft: 22px; /* soft panel */
   --radius-dense: 24px; /* dense panel */
   --radius-rail: 26px; /* board menu */
+  --radius-scene: 26px; /* the scene's "Bu adımda" panel */
   --radius-panel: 28px; /* main panel, dialog */
   --radius-sheet: 30px; /* bottom sheet, side panel */
   --radius-3xl: 34px;
@@ -272,6 +281,7 @@
   --spacing-login: 342px;
   --spacing-login-board: 420px;
   --spacing-read: 760px; /* inbox column on the board */
+  --spacing-board: 980px; /* content width of list pages on the board */
   --spacing-strip: 52px; /* the scene's strip */
   --spacing-nav-space: 112px; /* room under the content for the phone menu */
 
@@ -284,6 +294,8 @@
   --shadow-primary: inset 0 1px 0 rgba(255, 255, 255, 0.9), 0 8px 22px rgba(0, 0, 0, 0.28);
   --shadow-nav: inset 0 1px 0 rgba(255, 255, 255, 0.36), 0 12px 30px rgba(0, 0, 0, 0.35);
   --shadow-rail: inset 0 1px 0 rgba(255, 255, 255, 0.32), 0 14px 36px rgba(4, 6, 20, 0.28);
+  --shadow-selected: inset 0 1px 0 rgba(255, 255, 255, 0.9), 0 6px 16px rgba(0, 0, 0, 0.3);
+  --shadow-selected-rail: inset 0 1px 0 rgba(255, 255, 255, 0.9), 0 4px 12px rgba(0, 0, 0, 0.25);
   --shadow-sheet: inset 0 1px 0 rgba(255, 255, 255, 0.36), 0 -10px 40px rgba(0, 0, 0, 0.4);
   --shadow-side: inset 0 1px 0 rgba(255, 255, 255, 0.36), -10px 0 40px rgba(0, 0, 0, 0.4);
   --shadow-dialog: inset 0 1px 0 rgba(255, 255, 255, 0.4), 0 20px 50px rgba(0, 0, 0, 0.5);
@@ -305,6 +317,8 @@
 
   /* --- Blur ------------------------------------------------------------------------------ */
   --blur-soft: 22px;
+  --blur-skip: 18px; /* the scene's "Atla" */
+  --blur-strip: 24px;
   --blur-panel: 26px;
   --blur-nav: 28px;
   --blur-toast: 30px;
@@ -328,6 +342,8 @@
   --motion-sky: 60s; /* the sky moves once a minute */
   --toast-time: 4s;
   --underline-offset: 3px;
+  --stroke-step: 1.5px; /* the ring of a step not reached */
+  --glass-saturate-soft: 160%;
 
   /* Saturation of glass. */
   --glass-saturate: 170%;
@@ -429,6 +445,7 @@
   --sky-night-glow-2: #607cd2;
   --sky-dawn-fog: #ffc79a;
   --sky-night-fog: #7f97e6;
+  --sky-shade: #080614;
   --sky-owl: #070b1f;
   --sky-owl-branch: #050817;
   --sky-owl-light: #c8d4ff;

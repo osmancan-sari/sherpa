@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
+import { Backdrop } from "@/core/ui/sky/Backdrop";
 import { LoginForm } from "./login-form";
 import { readPendingLogin } from "./pending";
 import { initialLoginState, type LoginState } from "./state";
@@ -9,6 +10,7 @@ export const metadata: Metadata = { title: "Giriş" };
 export default function LoginPage() {
   return (
     <main className="flex min-h-dvh flex-1 items-center justify-center px-6 py-[max(1.5rem,env(safe-area-inset-top))]">
+      <Backdrop kind={{ kind: "full" }} />
       <div className="flex w-full max-w-sm flex-col gap-8">
         <div className="flex flex-col gap-1">
           <h1 className="text-2xl font-semibold tracking-tight">Sherpa</h1>

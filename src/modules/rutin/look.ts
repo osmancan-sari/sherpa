@@ -1,13 +1,29 @@
-// The scene's glass (docs/moduller/rutin-cizimler/degerler.md, section 2: the dark tone), as
-// values: the components draw with them and the contrast test measures them. The morning has the
-// dawn's warm glass, the evening the night's cool one. Kept in the module until the core has the
-// glass language (Rutin step 3, core note 14).
+import { token, type TokenName } from "@/core/ui/tokens";
+
+// The scene's glass (docs/tasarim/ekranlar/rutin-sahne.md; the dark tone of the morning and the
+// evening), as values the components draw with and the contrast test measures. The morning has the
+// dawn's warm glass, the evening the night's cool one. Every value is a token (--color-warm-*,
+// --color-cool-*, --color-scene-*, --shadow-*).
 
 export type Tone = "sabah" | "aksam";
 
 export type Rgba = { rgb: [number, number, number]; alpha: number };
 
-const rgba = (r: number, g: number, b: number, alpha: number): Rgba => ({ rgb: [r, g, b], alpha });
+/** A token holding "rgba(r, g, b, a)" (or "#rrggbb") as numbers. */
+function rgbaOf(name: TokenName): Rgba {
+  const value = token(name);
+  if (value.startsWith("#")) {
+    const hex = value.slice(1);
+    return {
+      rgb: [0, 2, 4].map((i) => parseInt(hex.slice(i, i + 2), 16)) as Rgba["rgb"],
+      alpha: 1,
+    };
+  }
+  const [r, g, b, a = 1] = (value.match(/[\d.]+/g) ?? []).map(Number);
+  return { rgb: [r, g, b], alpha: a };
+}
+
+/** An Rgba back to CSS, for an opacity worked out at run time (the glass over a bright sky). */
 export const css = ({ rgb: [r, g, b], alpha }: Rgba) => `rgba(${r},${g},${b},${alpha})`;
 
 export type Glass = {
@@ -39,75 +55,76 @@ export type Glass = {
   now: string;
 };
 
+const v = (name: TokenName) => `var(--${name})`;
+
 export const GLASS: Record<Tone, Glass> = {
   sabah: {
-    text: "#f7f5ff",
-    secondary: "#d2cfe3",
-    stripSecondary: "#d2cfe3",
-    line: "#ece7d8",
-    note: "#e6e2f2",
-    voice: "#dcd9ec",
-    accent: "#ffd58a",
-    onAccent: "#2a1c05",
-    panel: rgba(18, 16, 46, 0.4),
-    panelBorder: "rgba(255,255,255,0.26)",
-    panelShadow:
-      "inset 0 1px 0 rgba(255,255,255,0.38), inset 0 -1px 0 rgba(255,255,255,0.08), 0 14px 36px rgba(8,6,24,0.3)",
-    small: rgba(18, 16, 46, 0.32),
-    smallBorder: "rgba(255,255,255,0.2)",
-    smallShadow: "inset 0 1px 0 rgba(255,255,255,0.28)",
-    active: rgba(255, 213, 138, 0.2),
-    activeShadow: "inset 0 1px 0 rgba(255,255,255,0.22)",
-    empty: "rgba(255,255,255,0.24)",
+    text: token("color-warm-ink"),
+    secondary: token("color-warm-ink-2"),
+    stripSecondary: token("color-warm-ink-2"),
+    line: token("color-warm-line"),
+    note: token("color-warm-note"),
+    voice: token("color-warm-voice"),
+    accent: token("color-warm-accent"),
+    onAccent: token("color-warm-on-accent"),
+    panel: rgbaOf("color-warm-panel"),
+    panelBorder: v("color-scene-edge"),
+    panelShadow: v("shadow-warm-panel"),
+    small: rgbaOf("color-warm-small"),
+    smallBorder: v("color-scene-small-edge"),
+    smallShadow: v("shadow-warm-small"),
+    active: rgbaOf("color-warm-active"),
+    activeShadow: v("shadow-scene-active"),
+    empty: v("color-scene-empty"),
     button: {
-      fill: "rgba(255,244,222,0.9)",
-      text: "#1a1426",
-      border: "rgba(255,255,255,0.7)",
-      shadow: "inset 0 1px 0 rgba(255,255,255,0.9), 0 10px 28px rgba(0,0,0,0.3)",
+      fill: v("color-warm-button"),
+      text: token("color-warm-on-button"),
+      border: v("color-edge-light"),
+      shadow: v("shadow-scene-button"),
     },
     early: {
-      fill: "rgba(255,244,222,0.26)",
-      text: "#f7f5ff",
-      shadow: "inset 0 1px 0 rgba(255,255,255,0.4)",
+      fill: v("color-warm-early"),
+      text: v("color-warm-ink"),
+      shadow: v("shadow-scene-early"),
     },
-    skip: { fill: "rgba(255,255,255,0.14)", shadow: "inset 0 1px 0 rgba(255,255,255,0.3)" },
-    plain: "#e2ddef",
-    boardLabel: "#ffe2ab",
-    now: "#ffe2ab",
+    skip: { fill: v("color-scene-skip"), shadow: v("shadow-button") },
+    plain: token("color-warm-plain"),
+    boardLabel: v("color-warm-label"),
+    now: v("color-warm-label"),
   },
   aksam: {
-    text: "#f4f6ff",
-    secondary: "#c6cde8",
-    stripSecondary: "#b9c2de",
-    line: "#dfe4f6",
-    note: "#dfe4f6",
-    voice: "#dfe4f6",
-    accent: "#aab6ff",
-    onAccent: "#0a1030",
-    panel: rgba(14, 20, 54, 0.38),
-    panelBorder: "rgba(255,255,255,0.22)",
-    panelShadow: "inset 0 1px 0 rgba(255,255,255,0.3), 0 14px 36px rgba(2,4,14,0.35)",
-    small: rgba(14, 20, 54, 0.3),
-    smallBorder: "rgba(255,255,255,0.18)",
-    smallShadow: "inset 0 1px 0 rgba(255,255,255,0.26)",
-    active: rgba(170, 182, 255, 0.2),
-    activeShadow: "inset 0 1px 0 rgba(255,255,255,0.2)",
-    empty: "rgba(255,255,255,0.22)",
+    text: token("color-cool-ink"),
+    secondary: token("color-cool-ink-2"),
+    stripSecondary: token("color-cool-strip"),
+    line: token("color-cool-line"),
+    note: token("color-cool-line"),
+    voice: token("color-cool-line"),
+    accent: token("color-cool-accent"),
+    onAccent: token("color-cool-on-accent"),
+    panel: rgbaOf("color-cool-panel"),
+    panelBorder: v("color-scene-edge-night"),
+    panelShadow: v("shadow-cool-panel"),
+    small: rgbaOf("color-cool-small"),
+    smallBorder: v("color-scene-small-edge-night"),
+    smallShadow: v("shadow-cool-small"),
+    active: rgbaOf("color-cool-active"),
+    activeShadow: v("shadow-scene-active"),
+    empty: v("color-scene-empty-night"),
     button: {
-      fill: "rgba(223,229,251,0.9)",
-      text: "#0a1030",
-      border: "rgba(255,255,255,0.65)",
-      shadow: "inset 0 1px 0 rgba(255,255,255,0.9), 0 10px 28px rgba(0,0,0,0.35)",
+      fill: v("color-cool-button"),
+      text: token("color-cool-on-accent"),
+      border: v("color-edge-light-night"),
+      shadow: v("shadow-scene-button-night"),
     },
     early: {
-      fill: "rgba(223,229,251,0.24)",
-      text: "#f4f6ff",
-      shadow: "inset 0 1px 0 rgba(255,255,255,0.4)",
+      fill: v("color-cool-early"),
+      text: v("color-cool-ink"),
+      shadow: v("shadow-scene-early"),
     },
-    skip: { fill: "rgba(255,255,255,0.12)", shadow: "inset 0 1px 0 rgba(255,255,255,0.28)" },
-    plain: "#d5dbf0",
-    boardLabel: "#dfe4ff",
-    now: "#dfe4ff",
+    skip: { fill: v("color-scene-skip-night"), shadow: v("shadow-soft") },
+    plain: token("color-cool-plain"),
+    boardLabel: v("color-cool-label"),
+    now: v("color-cool-label"),
   },
 };
 
@@ -115,4 +132,7 @@ export const GLASS: Record<Tone, Glass> = {
  * With "reduce transparency" the panels are drawn opaque (the glass's colour over the darkest of
  * the sky): no blur, no see-through.
  */
-export const SOLID: Record<Tone, string> = { sabah: "#1b1934", aksam: "#111834" };
+export const SOLID: Record<Tone, string> = {
+  sabah: v("color-warm-solid"),
+  aksam: v("color-cool-solid"),
+};

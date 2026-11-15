@@ -1,5 +1,7 @@
 "use client";
 
+import { Backdrop, useBackdrop } from "@/core/ui/sky/Backdrop";
+import { sceneBackdrop } from "@/core/ui/sky/moduleBackdrop";
 import { TOKENS } from "@/core/ui/tokens";
 import {
   Component,
@@ -11,7 +13,6 @@ import {
   useState,
   useSyncExternalStore,
 } from "react";
-import { Button } from "@/components/ui/button";
 import { useEndSession } from "@/core/app/actions";
 import { useRecordBed, useUndoBed } from "@/core/app/frame-actions";
 import { ClosingInScene } from "../closing/ClosingScreen";
@@ -126,12 +127,6 @@ export function useDevice(): SceneProps["device"] {
     () => "pano",
   );
 }
-
-const TONE: Record<"calm" | "focus" | "energy", string> = {
-  calm: "bg-muted/40",
-  focus: "bg-card",
-  energy: "",
-};
 
 export function SceneFrame({
   mod,
@@ -251,6 +246,12 @@ export function SceneFrame({
   const tone = sceneTone(scene, facet);
   const color = facet ? facetColor(mod.row, facet) : moduleColor(mod);
   const Scene = scene.component;
+  // Ç4b: the scene stands on its tone's backdrop (calm: the hour's full landscape; focus: dark
+  // and flat; energy: the work's colour fading to dark), or on the module's own. On the board it
+  // is the page's backdrop (the menu stays over it); the phone's scene covers the screen and
+  // carries it.
+  const backdrop = sceneBackdrop(mod, tone, color);
+  useBackdrop(device === "pano" ? backdrop : null);
 
   const props: SceneProps = {
     subject,
@@ -306,50 +307,57 @@ export function SceneFrame({
       data-tone={tone}
       data-facet={facet?.key}
       data-device={device}
+      data-backdrop={backdrop.kind}
       className={cn(
         "animate-in fade-in flex flex-col duration-300 motion-reduce:animate-none",
-        TONE[tone],
         // The phone gives the whole screen to the scene: the bottom menu and "+" stay under it
         // (dialogs still open above it). The second screen keeps it in the page, beside the menu.
         device === "telefon"
-          ? "bg-background fixed inset-0 z-30 overflow-x-hidden overflow-y-auto overscroll-contain pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]"
-          : "min-h-[70vh] flex-1 overflow-hidden rounded-2xl border",
+          ? "bg-solid fixed inset-0 z-30 overflow-x-hidden overflow-y-auto overscroll-contain pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]"
+          : "min-h-[70vh] flex-1",
       )}
-      style={
-        tone === "energy"
-          ? { backgroundColor: `color-mix(in oklab, ${color} 12%, var(--background))` }
-          : undefined
-      }
     >
+      {device === "telefon" ? <Backdrop kind={backdrop} contained /> : null}
       {bedtime || strip?.hidden ? null : (
         <header
           aria-label="Sahne şeridi"
-          className="border-border bg-background/80 flex items-center gap-3 border-b px-4 py-2 text-sm md:px-6"
+          className={cn(
+            "h-strip backdrop-blur-strip relative z-10 flex shrink-0 items-center gap-2.5 backdrop-saturate-170",
+            device === "telefon"
+              ? "bg-scene-strip-night border-line border-b pr-2 pl-5 text-sm"
+              : "bg-scene-strip border-edge-strip rounded-rail text-note gap-3 border pr-3 pl-5.5",
+          )}
         >
-          <span className="tabular-nums">{formatTime(new Date(now))}</span>
+          <span className="font-medium tabular-nums">{formatTime(new Date(now))}</span>
           <span
             aria-hidden
             data-testid="work-dot"
-            className="size-2 rounded-full"
+            className="size-2 shrink-0 rounded-full"
             style={{ backgroundColor: color }}
           />
-          <span className="min-w-0 flex-1 truncate">
-            <span className="font-medium" data-testid="strip-title">
+          <span className="flex min-w-0 flex-1 items-baseline gap-1.5">
+            <span className="truncate font-semibold" data-testid="strip-title">
               {title}
             </span>
             {stripMinutes === null ? null : (
-              <span className="text-muted-foreground tabular-nums" data-testid="strip-minutes">
-                {" "}
+              <span
+                className="text-ink-2 whitespace-nowrap tabular-nums"
+                data-testid="strip-minutes"
+              >
                 · {formatMinutes(stripMinutes)}
               </span>
             )}
           </span>
-          <Button variant="ghost" className="h-11 md:h-8" onClick={onExit}>
+          <button
+            type="button"
+            onClick={onExit}
+            className="text-note min-h-touch focus-visible:shadow-focus rounded-full px-3 font-semibold outline-none"
+          >
             Çık
-          </Button>
+          </button>
         </header>
       )}
-      <section aria-label="Sahne" className="flex flex-1 flex-col p-5 md:p-10">
+      <section aria-label="Sahne" className="relative z-10 flex flex-1 flex-col p-5 md:p-10">
         {closing ? (
           <div data-scene-closing="">
             <ClosingInScene onDone={() => setClosing(false)} />

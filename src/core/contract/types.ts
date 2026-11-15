@@ -501,6 +501,21 @@ export type ModuleUi = {
   scene?: ModuleScene;
   /** Ç3e: named scenes the module's facets choose from (`ModuleFacet.scene`). */
   scenes?: Record<string, ModuleScene>;
+  /**
+   * Ç4b: the module's own backdrop (docs/tasarim/ilkeler.md, decision 4), drawn behind its page
+   * and its scenes instead of the calm backdrop and the scene's tone. Still, no motion; colours
+   * from tokens or the module's own colour. Absent: the calm backdrop and the tones.
+   */
+  backdrop?: ComponentType<ModuleBackdropProps>;
+};
+
+/** Ç4b: what a module's backdrop is drawn with. */
+export type ModuleBackdropProps = {
+  device: "pano" | "telefon";
+  /** The module's colour (the user's, else its default). */
+  color: string;
+  /** The hour's sky: its phase and the sun's height, if the backdrop follows the clock. */
+  sky: { phase: "night" | "dawn" | "day" | "dusk"; elevation: number };
 };
 
 export type ModuleDefinition = {

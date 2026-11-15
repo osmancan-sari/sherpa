@@ -15,6 +15,7 @@ const ALLOWED: Record<string, string> = {
   "src/core/ui/tokens.css": "the one place the values live",
   "src/core/ui/tokens.gen.ts": "generated mirror of tokens.css",
   "src/lib/supabase/database.types.ts": "generated database types",
+  "src/core/ui/sky/Landscape.tsx": "SVG drawing data: the landscape's viewBox sizes and paths",
 };
 
 /**
@@ -23,12 +24,7 @@ const ALLOWED: Record<string, string> = {
  * is empty.
  */
 const PENDING: Record<string, string> = {
-  "src/modules/rutin/components/RutinScene.tsx": "step 2: the scene on the core's sky and tokens",
-  "src/modules/rutin/components/Sky.tsx": "step 2: Rutin wears the core's sky",
-  "src/modules/rutin/sky.ts": "step 2: the sky moves to the core",
-  "src/modules/rutin/look.ts": "step 2: the scene's glass tones come from tokens",
   "src/modules/rutin/components/StepsTab.tsx": "step 6: Rutin's module page",
-  "src/modules/deneme/components/Scenes.tsx": "step 2: the scene's tones",
   "src/components/ui/button.tsx": "step 3: the kit's buttons",
   "src/core/ui/kit/pieces.tsx": "step 3: the kit",
   "src/core/ui/kit/charts.tsx": "step 3: the kit",
@@ -58,11 +54,17 @@ const RULES: { rule: string; pattern: RegExp; css?: boolean; code?: boolean }[] 
     rule: "colour code",
     pattern: /(?<![\w&/#-])#(?:[0-9a-f]{8}|[0-9a-f]{6}|[0-9a-f]{4}|[0-9a-f]{3})(?![\w-])/i,
   },
-  { rule: "colour function", pattern: /\b(?:rgba?|hsla?|oklch|oklab|lab|lch|hwb)\(/i },
+  // A colour function with numbers in it (one built from computed values is not a written value).
+  { rule: "colour function", pattern: /\b(?:rgba?|hsla?|oklch|oklab|lab|lch|hwb)\(\s*[\d.]/i },
   // Tailwind arbitrary values with a length: text-[15px], rounded-[28px], pb-[calc(9rem+…)].
   { rule: "arbitrary length", pattern: /-\[[^\]]*\d(?:px|rem|em)\b[^\]]*\]/, code: true },
   // A length written in a string: style={{ padding: "8px 20px" }}, `${x} 12px`.
-  { rule: "pixel in a string", pattern: /["'`][^"'`\n]*\b\d+(?:\.\d+)?(?:px|rem)\b/, code: true },
+  // (A hairline, 1px, is not a size.)
+  {
+    rule: "pixel in a string",
+    pattern: /["'`][^"'`\n]*\b(?!1px\b)\d+(?:\.\d+)?(?:px|rem)\b/,
+    code: true,
+  },
   // A number given to a length in a style object: style={{ fontSize: 17, top: 300 }}.
   {
     rule: "number in a style",

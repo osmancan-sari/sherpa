@@ -360,7 +360,7 @@ export function SunScene(props: SceneProps) {
       {...props}
       testId="deneme-gunes"
       greeting="güne başlarken"
-      sky="radial-gradient(circle at 35% 35%, #fde68a, $color)"
+      sky="radial-gradient(circle at 35% 35%, var(--sky-sun), $color)"
     />
   );
 }
@@ -372,7 +372,7 @@ export function NightScene(props: SceneProps) {
       testId="deneme-gece"
       greeting="gün biterken"
       evening
-      sky="radial-gradient(circle at 70% 30%, #e2e8f0 0 18%, $color 20%)"
+      sky="radial-gradient(circle at 70% 30%, var(--sky-moon) 0 18%, $color 20%)"
     />
   );
 }

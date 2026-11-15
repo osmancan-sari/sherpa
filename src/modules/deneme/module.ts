@@ -1,6 +1,7 @@
 import { token } from "@/core/ui/tokens";
 import type { ModuleDefinition, ModuleFacet } from "@/core/contract/types";
 import { dayKey, shiftDay } from "@/lib/date";
+import { DenemeBackdrop } from "./components/Backdrop";
 import { ExtractPage } from "./components/ExtractPage";
 import { ItemsTab } from "./components/ItemsTab";
 import { KitTab } from "./components/KitTab";
@@ -245,6 +246,8 @@ export const deneme: ModuleDefinition = {
 
   // Interface
   ui: {
+    // Ç4b: the module's own backdrop, on its page and its scenes (docs/06, "Modülün zemini").
+    backdrop: DenemeBackdrop,
     tabs: [
       { key: "kayitlar", label: "Kayıtlar", component: ItemsTab },
       { key: "bilesenler", label: "Bileşenler", component: KitTab },

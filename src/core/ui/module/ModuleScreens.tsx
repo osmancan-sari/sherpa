@@ -10,6 +10,8 @@ import { resolveModulePath } from "@/core/contract/registry";
 import { ClientOnly } from "../ClientOnly";
 import { EmptyState, PageShell } from "../PageShell";
 import { ModuleChip } from "../today/TodayScreen";
+import { useBackdrop } from "@/core/ui/sky/Backdrop";
+import { modulePageBackdrop } from "@/core/ui/sky/moduleBackdrop";
 import { ModulePageShell } from "./ModulePageShell";
 import { ModuleProvider } from "./ModuleProvider";
 
@@ -117,6 +119,8 @@ function ModuleRoute() {
   const params = useParams<{ slug: string; path?: string[] }>();
   const segments = (params.path ?? []).map(decodeURIComponent);
   const { mod, fallback } = useNamedModule(params.slug);
+  // Ç4b: a module with a backdrop of its own stands on it on its page (decision 4).
+  useBackdrop(mod ? modulePageBackdrop(mod) : null);
   if (!mod) return fallback;
 
   // A module row without code behind it has a page with the core's defaults and nothing else.
@@ -191,6 +195,8 @@ export function ModuleFullscreenScreen() {
 function FullscreenRoute() {
   const params = useParams<{ slug: string; key: string }>();
   const { mod, fallback } = useNamedModule(params.slug);
+  // Ç4b: a module with a backdrop of its own stands on it on its page (decision 4).
+  useBackdrop(mod ? modulePageBackdrop(mod) : null);
   if (!mod) return fallback;
 
   const view = mod.definition?.ui.fullscreen?.find((candidate) => candidate.key === params.key);

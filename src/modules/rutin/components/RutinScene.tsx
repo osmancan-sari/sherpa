@@ -1,18 +1,19 @@
 "use client";
 
 import { Check, Volume2 } from "lucide-react";
-import {
-  type CSSProperties,
-  type ReactNode,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  useSyncExternalStore,
-} from "react";
+import { type CSSProperties, type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { useRefreshAll } from "@/core/app/actions";
 import { useModuleQuery } from "@/core/app/hooks";
 import type { SceneKey, SceneProps } from "@/core/contract/types";
+import {
+  glassAlpha,
+  PANEL_RANGE,
+  skyOf,
+  sunElevation,
+  sunRising,
+  useReducedMotion,
+  useReducedTransparency,
+} from "@/core/ui/kit";
 import { SAVE_FAILED, useNotify } from "@/core/ui/Notices";
 import { dayKey, formatDayLabel, formatTime, shiftDay } from "@/lib/date";
 import { briefLines, briefText, nextOfDay } from "../brief";
@@ -43,10 +44,9 @@ import {
   type Unit,
   unitsOf,
 } from "../server/flow";
-import { glassAlpha, PANEL_RANGE, skyOf, sunElevation } from "../sky";
-import { Sky } from "./Sky";
+import { RutinSky } from "./RutinSky";
 
-// The routine's scene (docs/moduller/rutin.md, 8.2–8.5; values: rutin-cizimler/degerler.md): one
+// The routine's scene (docs/moduller/rutin.md, 8.2–8.5; look: docs/tasarim/ekranlar/rutin.md): one
 // step on the screen, its sub-steps in the "Bu adımda" panel, the morning (or the evening) as one
 // list in "Sıradaki"; the sky by the clock. Where the run stands lives in the module's own row
 // (rutin_runs), so both screens follow it; a timed sub-step counts from its stored start, so a
@@ -62,18 +62,6 @@ if (typeof window !== "undefined") {
   window.addEventListener("keydown", touched, { capture: true, passive: true });
 }
 const touchedWithin = (ms: number) => Date.now() - lastTouch < ms;
-
-function useMedia(query: string): boolean {
-  return useSyncExternalStore(
-    (listener) => {
-      const media = window.matchMedia(query);
-      media.addEventListener("change", listener);
-      return () => media.removeEventListener("change", listener);
-    },
-    () => window.matchMedia(query).matches,
-    () => false,
-  );
-}
 
 /** A ticking clock while `fast` (a timer runs), else every 20 seconds (the sky moves slowly). */
 function useTick(fast: boolean): number {
@@ -153,8 +141,8 @@ function Scene(props: SceneProps) {
   } = props;
   const refreshAll = useRefreshAll();
   const notify = useNotify();
-  const reduceMotion = useMedia("(prefers-reduced-motion: reduce)");
-  const solid = useMedia("(prefers-reduced-transparency: reduce)");
+  const reduceMotion = useReducedMotion();
+  const solid = useReducedTransparency();
   const board = device === "pano";
 
   const meta = subject.kind === "rhythm" ? (subject.rhythm.meta as Record<string, unknown>) : {};
@@ -241,10 +229,10 @@ function Scene(props: SceneProps) {
   const held = timed !== null && line?.part.hold === true && remaining > 0;
   useWakeLock(ticking && remaining > 0);
 
-  const sky = useMemo(
-    () => skyOf(sunElevation(new Date(Math.floor(now / 60_000) * 60_000)), evening),
-    [now, evening],
-  );
+  const sky = useMemo(() => {
+    const minute = new Date(Math.floor(now / 60_000) * 60_000);
+    return skyOf(sunElevation(minute), { night: evening, rising: sunRising(minute) });
+  }, [now, evening]);
   const alphas = useMemo(() => {
     const texts = [glass.text, glass.secondary, glass.line, glass.note];
     return {
@@ -501,12 +489,13 @@ function Scene(props: SceneProps) {
   const panel = (kind: "big" | "small"): CSSProperties => {
     const fill = kind === "big" ? glass.panel : glass.small;
     if (solid) return { background: SOLID[tone], border: `1px solid ${glass.panelBorder}` };
+    const blur = `blur(var(${kind === "big" ? "--blur-panel" : "--blur-soft"})) saturate(var(--glass-saturate))`;
     return {
       background: css({ ...fill, alpha: alphas[kind] }),
       border: `1px solid ${kind === "big" ? glass.panelBorder : glass.smallBorder}`,
       boxShadow: kind === "big" ? glass.panelShadow : glass.smallShadow,
-      backdropFilter: `blur(${kind === "big" ? 26 : 22}px) saturate(170%)`,
-      WebkitBackdropFilter: `blur(${kind === "big" ? 26 : 22}px) saturate(170%)`,
+      backdropFilter: blur,
+      WebkitBackdropFilter: blur,
     };
   };
 
@@ -521,8 +510,7 @@ function Scene(props: SceneProps) {
       className="relative -m-5 flex flex-1 flex-col overflow-hidden md:-m-10 md:min-h-[82vh]"
       style={{ color: glass.text }}
     >
-      <style>{TWINKLE}</style>
-      <Sky sky={sky} device={device} evening={evening} owlAsleep={Boolean(bedtime)} />
+      <RutinSky sky={sky} device={device} evening={evening} owlAsleep={Boolean(bedtime)} />
       <div className="relative z-10 flex flex-1 flex-col">{children}</div>
     </div>
   );
@@ -555,7 +543,7 @@ function Scene(props: SceneProps) {
   if (!data.data || !view || !routine) return frame(null, { "data-screen": "yukleniyor" });
 
   if (screen === "goodbye") {
-    return frame(<Centered text="İyi günler" top={board ? 340 : 300} fade={!reduceMotion} />, {
+    return frame(<Centered text="İyi günler" board={board} fade={!reduceMotion} />, {
       "data-screen": "iyi-gunler",
     });
   }
@@ -563,18 +551,16 @@ function Scene(props: SceneProps) {
   if (greeting) {
     return frame(
       <div className="flex flex-1 flex-col items-center px-6" data-screen="gunaydin">
-        <div className="flex flex-col items-center gap-2" style={{ marginTop: board ? 220 : 150 }}>
-          <h2 style={{ fontSize: 48, fontWeight: 600, letterSpacing: "-0.03em" }}>Günaydın</h2>
-          <p style={{ fontSize: 17, fontWeight: 500, color: "#d6d3ea" }}>
-            {formatDayLabel(new Date(now))}
-          </p>
+        <div className={`flex flex-col items-center gap-2 ${board ? "mt-55" : "mt-37.5"}`}>
+          <h2 className="text-greet tracking-greet font-semibold">Günaydın</h2>
+          <p className="text-lead text-warm-date font-medium">{formatDayLabel(new Date(now))}</p>
         </div>
         <div className="flex-1" />
         <button
           type="button"
           onClick={wake}
-          className="w-full max-w-md"
-          style={{ ...mainButton(glass, 64), marginBottom: 34 }}
+          className={`${MAIN_BUTTON} text-heading mb-8.5 h-16 w-full max-w-md`}
+          style={mainButton(glass)}
         >
           Kalktım
         </button>
@@ -598,20 +584,25 @@ function Scene(props: SceneProps) {
         onClick={togglePause}
         aria-label={pausedAt === null ? "Sayacı durdur" : "Sayacı sürdür"}
         data-testid="rutin-timer"
-        className="self-start text-left tabular-nums"
-        style={{
-          fontSize: board ? 168 : roomy ? 84 : tight ? 52 : 64,
-          fontWeight: 500,
-          letterSpacing: "-0.045em",
-          lineHeight: 1,
-          opacity: pausedAt === null ? 1 : 0.6,
-        }}
+        className={`tracking-counter self-start text-left leading-none font-medium tabular-nums ${
+          board
+            ? "text-counter-board"
+            : roomy
+              ? "text-counter"
+              : tight
+                ? "text-counter-xs"
+                : "text-counter-sm"
+        }`}
+        style={{ opacity: pausedAt === null ? 1 : 0.6 }}
       >
         {clock(remaining)}
       </button>
     ) : null;
   const hint = step.hint ? (
-    <p style={{ fontSize: board ? 22 : 19, fontWeight: 500, lineHeight: 1.4, color: glass.note }}>
+    <p
+      className={`leading-snug font-medium ${board ? "text-section" : "text-heading"}`}
+      style={{ color: glass.note }}
+    >
       {step.hint}
     </p>
   ) : null;
@@ -619,8 +610,8 @@ function Scene(props: SceneProps) {
   const voice =
     key === "sabah" ? (
       <div
-        className="flex flex-wrap items-center gap-x-2"
-        style={{ fontSize: 15, color: glass.voice, marginTop: 10 }}
+        className="text-note mt-2.5 flex flex-wrap items-center gap-x-2"
+        style={{ color: glass.voice }}
       >
         <Volume2 aria-hidden size={18} />
         {speaking ? (
@@ -640,19 +631,16 @@ function Scene(props: SceneProps) {
   const stepPanel = (
     <section
       aria-label="Bu adımda"
-      className="flex flex-col"
-      style={{ ...panel("big"), borderRadius: 26, padding: "12px 8px 8px", gap: 4 }}
+      className="rounded-scene flex flex-col gap-1 px-2 pt-3 pb-2"
+      style={panel("big")}
     >
-      <div
-        className="flex items-center justify-between"
-        style={{ padding: "0 10px 6px", fontSize: 12, fontWeight: 600, letterSpacing: "0.08em" }}
-      >
+      <div className="tracking-label flex items-center justify-between px-2.5 pb-1.5 text-xs font-semibold">
         <span style={{ color: glass.secondary }}>BU ADIMDA</span>
         {step.lines.length > 1 ? (
           <span
-            className="tabular-nums"
+            className="text-meta font-normal tracking-normal tabular-nums"
             data-testid="rutin-part-count"
-            style={{ fontSize: 13, fontWeight: 400, letterSpacing: 0, color: glass.secondary }}
+            style={{ color: glass.secondary }}
           >
             {partIndex + 1} / {step.lines.length}
           </span>
@@ -696,40 +684,35 @@ function Scene(props: SceneProps) {
     <section
       aria-label={lastUnit ? (evening ? "Yarın" : "Sonra") : "Sıradaki"}
       data-testid="rutin-next"
-      style={{ ...panel("small"), borderRadius: 22, padding: "12px 18px", marginTop: 12 }}
+      className="rounded-soft mt-3 px-4.5 py-3"
+      style={panel("small")}
     >
       <div className="flex flex-wrap items-baseline gap-x-2">
-        <span
-          style={{ fontSize: 12, fontWeight: 600, letterSpacing: "0.08em", color: glass.secondary }}
-        >
+        <span className="tracking-label text-xs font-semibold" style={{ color: glass.secondary }}>
           {lastUnit ? (evening ? "YARIN" : "SONRA") : "SIRADAKİ"}
         </span>
-        <span className="min-w-0 flex-1" style={{ fontSize: 15, fontWeight: 600 }}>
+        <span className="text-note min-w-0 flex-1 font-semibold">
           {lastUnit ? (lastText ?? (evening ? "Uyanış saati henüz yok" : null)) : nextUnit?.title}
         </span>
         <span
-          className="tabular-nums"
+          className="text-meta tabular-nums"
           data-testid="rutin-count"
-          style={{ fontSize: 13, color: glass.secondary }}
+          style={{ color: glass.secondary }}
         >
           {count}
         </span>
       </div>
-      <div className="flex" style={{ gap: 6, marginTop: 10 }} aria-hidden>
+      <div className="mt-2.5 flex gap-1.5" aria-hidden>
         {units.map((unit, index) => (
           <span
             key={unit.key}
-            style={{
-              flex: 1,
-              height: 4,
-              borderRadius: 2,
-              background: index <= current ? glass.accent : glass.empty,
-            }}
+            className="h-1 flex-1 rounded-xs"
+            style={{ background: index <= current ? glass.accent : glass.empty }}
           />
         ))}
       </div>
       {!lastUnit && after.length > 0 && !tight ? (
-        <p className="truncate" style={{ fontSize: 13, marginTop: 8, color: glass.line }}>
+        <p className="text-meta mt-2 truncate" style={{ color: glass.line }}>
           Sonra: {after.join(" · ")}
         </p>
       ) : null}
@@ -739,32 +722,29 @@ function Scene(props: SceneProps) {
   // The buttons: "Sonraki" (the last step "Bitti", the evening's "Yatıyorum"), "Atla", "Hepsini yaptım".
   const finalBed = evening && lastStep && lastUnit;
   const label = lastStep && lastUnit ? (evening ? "Yatıyorum" : "Bitti") : "Sonraki";
-  const height = board ? 56 : 60;
+  const height = board ? "h-14" : "h-15";
   const buttons = finalBed ? (
-    <div
-      className="flex flex-col items-center"
-      style={{ padding: board ? "0 16px 34px" : "0 16px 34px" }}
-    >
-      <p style={{ fontSize: 15, color: glass.secondary, marginBottom: 8 }}>Işık kapalı.</p>
+    <div className="flex flex-col items-center px-4 pb-8.5">
+      <p className="text-note mb-2" style={{ color: glass.secondary }}>
+        Işık kapalı.
+      </p>
       <button
         type="button"
         onClick={() => next(true)}
-        className="w-full max-w-md"
-        style={mainButton(glass, 64)}
+        className={`${MAIN_BUTTON} text-heading h-16 w-full max-w-md`}
+        style={mainButton(glass)}
       >
         Yatıyorum
       </button>
     </div>
   ) : (
-    <div style={{ padding: board ? "0 48px 34px" : "0 16px 30px" }}>
-      <div className={board ? "flex items-center gap-3" : "flex gap-[10px]"}>
+    <div className={board ? "px-12 pb-8.5" : "px-4 pb-7.5"}>
+      <div className={board ? "flex items-center gap-3" : "flex gap-2.5"}>
         {held ? (
           <HoldButton
             onDone={() => next(true)}
-            style={{
-              ...earlyButton(glass, height),
-              ...(board ? { padding: "0 32px" } : { flex: 2 }),
-            }}
+            className={`${EARLY_BUTTON} ${height} ${board ? "px-8" : "flex-2"}`}
+            style={earlyButton(glass)}
           >
             Erken geç · basılı tut
           </HoldButton>
@@ -772,10 +752,8 @@ function Scene(props: SceneProps) {
           <button
             type="button"
             onClick={() => next()}
-            style={{
-              ...mainButton(glass, height),
-              ...(board ? { padding: "0 32px" } : { flex: 2 }),
-            }}
+            className={`${MAIN_BUTTON} text-lg ${height} ${board ? "px-8" : "flex-2"}`}
+            style={mainButton(glass)}
           >
             {label}
           </button>
@@ -783,15 +761,18 @@ function Scene(props: SceneProps) {
         <button
           type="button"
           onClick={() => stepDone("skipped")}
-          style={{
-            ...skipButton(glass, height, solid),
-            ...(board ? { padding: "0 28px" } : { flex: 1 }),
-          }}
+          className={`${SKIP_BUTTON} ${height} ${board ? "px-7" : "flex-1"}`}
+          style={skipButton(glass, solid)}
         >
           Atla
         </button>
         {board && !lastStep ? (
-          <button type="button" onClick={all} style={plainButton(glass)}>
+          <button
+            type="button"
+            onClick={all}
+            className={PLAIN_BUTTON}
+            style={{ color: glass.plain }}
+          >
             Hepsini yaptım
           </button>
         ) : null}
@@ -800,8 +781,8 @@ function Scene(props: SceneProps) {
         <button
           type="button"
           onClick={all}
-          className="mt-[6px] w-full"
-          style={{ ...plainButton(glass), height: 44 }}
+          className={`${PLAIN_BUTTON} mt-1.5 h-11 w-full`}
+          style={{ color: glass.plain }}
         >
           Hepsini yaptım
         </button>
@@ -827,54 +808,35 @@ function Scene(props: SceneProps) {
       : briefLines(today, new Date(now));
     return frame(
       <>
-        <div className="grid flex-1 grid-cols-[5fr_4fr] gap-12" style={{ padding: "40px 48px 0" }}>
-          <div className="flex min-w-0 flex-col" style={{ gap: 10 }}>
-            <h2
-              style={{ fontSize: 52, fontWeight: 700, letterSpacing: "-0.02em", lineHeight: 1.1 }}
-            >
-              {step.title}
-            </h2>
+        <div className="grid flex-1 grid-cols-[5fr_4fr] gap-12 px-12 pt-10">
+          <div className="flex min-w-0 flex-col gap-2.5">
+            <h2 className="text-board-title tracking-title font-bold">{step.title}</h2>
             {counter ?? hint}
-            <div style={{ marginTop: 14, maxWidth: 480 }}>{stepPanel}</div>
+            <div className="mt-3.5 max-w-120">{stepPanel}</div>
           </div>
-          <div className="flex min-w-0 flex-col" style={{ gap: 18 }}>
+          <div className="flex min-w-0 flex-col gap-4.5">
             <section
               aria-label={evening ? "Yarın" : "Günün planı"}
-              style={{ ...panel("big"), borderRadius: 28, padding: "22px 24px" }}
+              className="rounded-panel px-6 py-5.5"
+              style={panel("big")}
             >
               <div className="flex items-center justify-between">
                 <span
-                  style={{
-                    fontSize: 12,
-                    fontWeight: 600,
-                    letterSpacing: "0.08em",
-                    color: glass.boardLabel,
-                  }}
+                  className="tracking-label text-xs font-semibold"
+                  style={{ color: glass.boardLabel }}
                 >
                   {evening ? "YARIN" : speaking ? "GÜNÜN PLANI OKUNUYOR" : "GÜNÜN PLANI"}
                 </span>
                 {evening ? null : (
-                  <button
-                    type="button"
-                    onClick={tell}
-                    className="min-h-11"
-                    style={{ fontSize: 14 }}
-                  >
+                  <button type="button" onClick={tell} className="min-h-11 text-sm">
                     Tekrar anlat
                   </button>
                 )}
               </div>
-              <div className="flex flex-col" style={{ gap: 10, marginTop: 12, fontSize: 17 }}>
+              <div className="text-lead mt-3 flex flex-col gap-2.5">
                 {lines.map((row) => (
-                  <div
-                    key={`${row.left}-${row.right}`}
-                    className="flex"
-                    style={{ lineHeight: 1.4 }}
-                  >
-                    <span
-                      className="shrink-0 tabular-nums"
-                      style={{ width: 64, color: glass.secondary }}
-                    >
+                  <div key={`${row.left}-${row.right}`} className="flex leading-snug">
+                    <span className="w-16 shrink-0 tabular-nums" style={{ color: glass.secondary }}>
                       {row.left}
                     </span>
                     <span className="min-w-0">{row.right}</span>
@@ -901,42 +863,29 @@ function Scene(props: SceneProps) {
   return frame(
     <>
       {/* Above the horizon (73%): the header and the panels end here, however short the screen. */}
-      <div className="flex min-h-0 flex-col overflow-hidden" style={{ maxHeight: "71%" }}>
+      <div className="flex max-h-[71%] min-h-0 flex-col overflow-hidden">
         <header
-          className="flex shrink-0 flex-col"
-          style={{
-            padding: tight ? "14px 20px 0" : "26px 24px 0",
-            gap: 4,
-            minHeight: roomy ? 200 : undefined,
-          }}
+          className={`flex shrink-0 flex-col gap-1 ${tight ? "px-5 pt-3.5" : "px-6 pt-6.5"} ${roomy ? "min-h-50" : ""}`}
         >
           <h2
-            style={{
-              fontSize: roomy ? 34 : tight ? 26 : 30,
-              fontWeight: 700,
-              letterSpacing: "-0.02em",
-              lineHeight: 1.2,
-            }}
+            className={`tracking-title leading-tight font-bold ${roomy ? "text-scene" : tight ? "text-title" : "text-4xl"}`}
           >
             {step.title}
           </h2>
           {counter ?? (tight ? null : hint)}
           {tight ? null : voice}
           {key === "sabah" && !counter && roomy ? (
-            <p
-              data-testid="rutin-summary"
-              style={{ fontSize: 14, color: glass.note, marginTop: 6 }}
-            >
+            <p data-testid="rutin-summary" className="mt-1.5 text-sm" style={{ color: glass.note }}>
               {summary}
             </p>
           ) : null}
         </header>
-        <div className="min-h-0" style={{ padding: tight ? "10px 16px 0" : "16px 16px 0" }}>
+        <div className={`min-h-0 px-4 ${tight ? "pt-2.5" : "pt-4"}`}>
           {stepPanel}
           {nextPanel}
         </div>
       </div>
-      <div className="flex-1" style={{ minHeight: 12 }} />
+      <div className="min-h-3 flex-1" />
       {buttons}
     </>,
     extra,
@@ -944,9 +893,6 @@ function Scene(props: SceneProps) {
 }
 
 // --- Pieces ----------------------------------------------------------------------------------------
-
-const TWINKLE =
-  "@keyframes rutin-twinkle{50%{opacity:.25}}@media (prefers-reduced-motion:no-preference){.rutin-twinkle{animation:rutin-twinkle 7s ease-in-out infinite}}";
 
 /**
  * At most three rows: the one before (done) when there is one, the current one, what comes. A
@@ -982,36 +928,22 @@ function PartRow({
       data-state={state}
       data-kind={line.kind}
       aria-current={active ? "step" : undefined}
-      className={
+      className={`rounded-step flex items-center gap-3 px-2.5 ${active ? "min-h-15" : "min-h-10.5"} ${big ? "text-lead" : "text-base"} ${
         active && !reduceMotion ? "animate-in fade-in slide-in-from-bottom-1 duration-300" : ""
-      }
+      }`}
       style={{
-        display: "flex",
-        alignItems: "center",
-        gap: 12,
-        minHeight: active ? 60 : 42,
-        padding: "0 10px",
-        borderRadius: 14,
         opacity: state === "done" ? 0.5 : 1,
         background: active ? css(glass.active) : undefined,
         boxShadow: active ? glass.activeShadow : undefined,
-        fontSize: big ? 17 : 16,
       }}
     >
       <span
         aria-hidden
-        className="flex shrink-0 items-center justify-center rounded-full"
+        className={`flex size-6.5 shrink-0 items-center justify-center rounded-full text-sm font-semibold ${
+          active ? "" : "border-scene-ring border-[length:var(--stroke-step)]"
+        } ${state === "done" ? "bg-scene-done" : ""}`}
         style={{
-          width: 26,
-          height: 26,
-          fontSize: 14,
-          fontWeight: 600,
-          border: active ? undefined : "1.5px solid rgba(255,255,255,0.5)",
-          background: active
-            ? glass.accent
-            : state === "done"
-              ? "rgba(255,255,255,0.16)"
-              : undefined,
+          background: active ? glass.accent : undefined,
           color: active ? glass.onAccent : glass.text,
         }}
       >
@@ -1024,9 +956,12 @@ function PartRow({
         )}
       </span>
       <span className="flex min-w-0 flex-col">
-        <span style={{ fontWeight: active ? 600 : 500 }}>{title}</span>
+        <span className={active ? "font-semibold" : "font-medium"}>{title}</span>
         {active && note ? (
-          <span style={{ fontSize: big ? 15 : 14, color: big ? "#ece9f6" : glass.line }}>
+          <span
+            className={big ? "text-note text-warm-step" : "text-sm"}
+            style={big ? undefined : { color: glass.line }}
+          >
             {note}
           </span>
         ) : null}
@@ -1054,23 +989,15 @@ function ChainPanel({
     <section
       aria-label={evening ? "Bu akşam" : "Bu sabah"}
       data-testid="rutin-chain"
-      style={{ ...style, borderRadius: 28, padding: "16px 10px 10px", fontSize: 17 }}
+      className="rounded-panel text-lead px-2.5 pt-4 pb-2.5"
+      style={style}
     >
-      <div
-        className="flex items-center justify-between"
-        style={{
-          height: 28,
-          padding: "0 14px",
-          fontSize: 12,
-          fontWeight: 600,
-          letterSpacing: "0.08em",
-        }}
-      >
+      <div className="tracking-label flex h-7 items-center justify-between px-3.5 text-xs font-semibold">
         <span style={{ color: glass.secondary }}>{title}</span>
         <span
-          className="tabular-nums"
+          className="text-meta font-normal tabular-nums"
           data-testid="rutin-count"
-          style={{ fontSize: 13, fontWeight: 400, color: glass.secondary }}
+          style={{ color: glass.secondary }}
         >
           {count}
         </span>
@@ -1086,47 +1013,32 @@ function ChainPanel({
             key={unit.key}
             data-state={unit.state}
             data-mine={unit.mine ? "true" : "false"}
-            className="flex items-center"
+            className={`rounded-step flex h-11 items-center gap-3 px-3.5 ${current ? "font-semibold" : "font-normal"}`}
             style={{
-              height: 44,
-              padding: "0 14px",
-              gap: 12,
-              borderRadius: 14,
               opacity: unit.state === "done" ? 0.6 : 1,
               background: current ? css(glass.active) : undefined,
               boxShadow: current ? glass.activeShadow : undefined,
-              fontWeight: current ? 600 : 400,
             }}
           >
             {unit.state === "done" ? (
               <span
                 aria-hidden
-                className="flex items-center justify-center rounded-full"
-                style={{ width: 14, height: 14, background: "rgba(255,255,255,0.2)" }}
+                className="bg-fill-active flex size-3.5 items-center justify-center rounded-full"
               >
                 <Check size={10} strokeWidth={2.4} />
               </span>
             ) : (
               <span
                 aria-hidden
-                className="rounded-full"
-                style={{
-                  width: 10,
-                  height: 10,
-                  margin: "0 2px",
-                  background: current ? glass.accent : undefined,
-                  border: current ? undefined : "1.5px solid rgba(255,255,255,0.55)",
-                }}
+                className={`mx-0.5 size-2.5 rounded-full ${current ? "" : "border-scene-ring-next border-[length:var(--stroke-step)]"}`}
+                style={{ background: current ? glass.accent : undefined }}
               />
             )}
             <span className="min-w-0 flex-1 truncate">{unit.title}</span>
             {note ? (
               <span
-                style={{
-                  fontSize: 14,
-                  fontWeight: 500,
-                  color: current ? glass.now : glass.secondary,
-                }}
+                className="text-sm font-medium"
+                style={{ color: current ? glass.now : glass.secondary }}
               >
                 {note}
               </span>
@@ -1141,10 +1053,12 @@ function ChainPanel({
 /** "Erken geç · basılı tut": a short tap does nothing; held for 0.8 s it passes. */
 function HoldButton({
   onDone,
+  className,
   style,
   children,
 }: {
   onDone: () => void;
+  className: string;
   style: CSSProperties;
   children: ReactNode;
 }) {
@@ -1174,29 +1088,25 @@ function HoldButton({
       onPointerCancel={stop}
       onPointerLeave={stop}
       onContextMenu={(event) => event.preventDefault()}
-      className="relative overflow-hidden select-none"
-      style={{ ...style, touchAction: "none" }}
+      className={`relative touch-none overflow-hidden select-none ${className}`}
+      style={style}
     >
       <span
         aria-hidden
-        className="absolute inset-y-0 left-0"
-        style={{
-          width: holding ? "100%" : "0%",
-          transition: holding ? "width 0.8s linear" : "none",
-          background: "rgba(255,255,255,0.18)",
-        }}
+        className={`bg-fill-off absolute inset-y-0 left-0 ${holding ? "w-full transition-[width] duration-800 ease-linear" : "w-0"}`}
       />
       <span className="relative">{children}</span>
     </button>
   );
 }
 
-function Centered({ text, top, fade }: { text: string; top: number; fade: boolean }) {
+function Centered({ text, board, fade }: { text: string; board: boolean; fade: boolean }) {
   return (
     <div className="flex flex-1 justify-center">
       <h2
-        className={fade ? "animate-out fade-out fill-mode-forwards delay-1000 duration-600" : ""}
-        style={{ marginTop: top, fontSize: 48, fontWeight: 600, letterSpacing: "-0.03em" }}
+        className={`text-greet tracking-greet font-semibold ${board ? "mt-85" : "mt-75"} ${
+          fade ? "animate-out fade-out fill-mode-forwards delay-1000 duration-600" : ""
+        }`}
       >
         {text}
       </h2>
@@ -1211,16 +1121,13 @@ function Waiting({ glass, onFinish }: { glass: Glass; onFinish: () => void }) {
     return () => clearTimeout(timer);
   }, []);
   return (
-    <div
-      className="flex flex-1 flex-col items-center justify-end"
-      style={{ padding: "0 16px 34px" }}
-    >
+    <div className="flex flex-1 flex-col items-center justify-end px-4 pb-8.5">
       {late ? (
         <button
           type="button"
           onClick={onFinish}
-          className="w-full max-w-md"
-          style={mainButton(glass, 60)}
+          className={`${MAIN_BUTTON} h-15 w-full max-w-md text-lg`}
+          style={mainButton(glass)}
         >
           Bitti
         </button>
@@ -1256,61 +1163,43 @@ function GoodNight({
   }, [dim]);
   return (
     <div
-      className="relative flex flex-1 flex-col items-center"
-      style={{ padding: "0 32px 36px" }}
+      className="relative flex flex-1 flex-col items-center px-8 pb-9"
       data-dim={dim ? "true" : "false"}
       onPointerDown={() => setDim(false)}
     >
-      <div
-        className="flex w-full max-w-md flex-col items-center"
-        style={{ marginTop: "clamp(40px, 12vh, 198px)" }}
-      >
-        <h2 style={{ fontSize: 44, fontWeight: 600, letterSpacing: "-0.03em" }}>İyi geceler</h2>
-        <p style={{ fontSize: 17, color: "#c6cde8", marginTop: 12 }}>Işık kapalı.</p>
-        <section
-          aria-label="Yarın"
-          className="w-full"
-          style={{ ...panel, borderRadius: 24, marginTop: 32, paddingBottom: 6 }}
-        >
+      <div className="mt-[clamp(--spacing(10),12vh,--spacing(49.5))] flex w-full max-w-md flex-col items-center">
+        <h2 className="tracking-greet text-5xl font-semibold">İyi geceler</h2>
+        <p className="text-lead text-cool-ink-2 mt-3">Işık kapalı.</p>
+        <section aria-label="Yarın" className="rounded-dense mt-8 w-full pb-1.5" style={panel}>
           <p
-            style={{
-              padding: "14px 20px 4px",
-              fontSize: 12,
-              fontWeight: 600,
-              letterSpacing: "0.08em",
-              color: glass.secondary,
-            }}
+            className="tracking-label px-5 pt-3.5 pb-1 text-xs font-semibold"
+            style={{ color: glass.secondary }}
           >
             YARIN
           </p>
           {tomorrow ? (
             <>
-              <div
-                className="flex items-center justify-between"
-                style={{ padding: "8px 20px", borderBottom: "1px solid rgba(255,255,255,0.12)" }}
-              >
-                <span style={{ fontSize: 16, color: "#dfe4f6" }}>Uyanış</span>
-                <span className="tabular-nums" style={{ fontSize: 22, fontWeight: 600 }}>
+              <div className="border-line-soft flex items-center justify-between border-b px-5 py-2">
+                <span className="text-cool-line text-base">Uyanış</span>
+                <span className="text-section font-semibold tabular-nums">
                   {formatTime(tomorrow.wake)}
                 </span>
               </div>
-              <div className="flex items-center justify-between" style={{ padding: "10px 20px" }}>
-                <span style={{ fontSize: 16, color: "#dfe4f6" }}>Uyku</span>
-                <span style={{ fontSize: 16, fontWeight: 600 }}>
+              <div className="flex items-center justify-between px-5 py-2.5">
+                <span className="text-cool-line text-base">Uyku</span>
+                <span className="text-base font-semibold">
                   yaklaşık {sleepHours(tomorrow.sleepMinutes, true)}
                 </span>
               </div>
             </>
           ) : (
-            <p style={{ padding: "8px 20px 10px", fontSize: 16, color: "#dfe4f6" }}>
-              Uyanış saati henüz yok.
-            </p>
+            <p className="text-cool-line px-5 pt-2 pb-2.5 text-base">Uyanış saati henüz yok.</p>
           )}
         </section>
       </div>
       <div className="flex-1" />
-      <div className="flex flex-col items-center" style={{ gap: 4 }}>
-        <p style={{ fontSize: 13, color: "#9aa5c8" }}>
+      <div className="flex flex-col items-center gap-1">
+        <p className="text-meta text-cool-quiet">
           Yatış {formatTime(bedAt)} kaydedildi. Ekran birazdan kararır.
         </p>
         <button
@@ -1323,18 +1212,12 @@ function GoodNight({
               .catch(() => setAnswer("failed"))
               .finally(() => setBusy(false));
           }}
-          className="min-h-11 underline underline-offset-4"
-          style={{
-            fontSize: 15,
-            fontWeight: 600,
-            color: "#dfe4f6",
-            textDecorationColor: "rgba(255,255,255,0.35)",
-          }}
+          className="text-note text-cool-line decoration-scene-underline min-h-11 font-semibold underline underline-offset-4"
         >
           Geri al
         </button>
         {answer && answer !== "undone" ? (
-          <p role="status" style={{ fontSize: 13, color: "#c6cde8" }}>
+          <p role="status" className="text-meta text-cool-ink-2">
             {answer === "expired"
               ? "Geri alma süresi geçti; yatış kayıtlı."
               : answer === "changed"
@@ -1345,8 +1228,8 @@ function GoodNight({
       </div>
       <div
         aria-hidden
-        className="pointer-events-none absolute -inset-[200px] bg-black"
-        style={{ opacity: dim ? 0.85 : 0, transition: reduceMotion ? "none" : "opacity 1.2s ease" }}
+        className={`bg-blackout pointer-events-none absolute -inset-50 ${reduceMotion ? "" : "transition-opacity duration-1200 ease-out"}`}
+        style={{ opacity: dim ? 0.85 : 0 }}
       />
     </div>
   );
@@ -1359,50 +1242,32 @@ function sleepHours(minutes: number, long = false): string {
   return `${text} ${long ? "saat" : "sa"}`;
 }
 
-const mainButton = (glass: Glass, height: number): CSSProperties => ({
-  height,
-  borderRadius: height / 2,
+// The scene's buttons (docs/tasarim/ekranlar/rutin.md): sizes as classes, the tone's colours as
+// styles.
+const MAIN_BUTTON = "rounded-full border font-semibold tracking-tight";
+const EARLY_BUTTON = "border-edge-pressed rounded-full border text-base font-semibold";
+const SKIP_BUTTON = "border-edge-button text-lead rounded-full border font-medium";
+const PLAIN_BUTTON = "text-note min-h-11 px-4 font-medium";
+
+const mainButton = (glass: Glass): CSSProperties => ({
   background: glass.button.fill,
   color: glass.button.text,
-  border: `1px solid ${glass.button.border}`,
+  borderColor: glass.button.border,
   boxShadow: glass.button.shadow,
-  fontSize: height >= 64 ? 19 : 18,
-  fontWeight: 600,
-  letterSpacing: "-0.01em",
 });
 
-const earlyButton = (glass: Glass, height: number): CSSProperties => ({
-  height,
-  borderRadius: height / 2,
+const earlyButton = (glass: Glass): CSSProperties => ({
   background: glass.early.fill,
   color: glass.early.text,
-  border: "1px solid rgba(255,255,255,0.5)",
   boxShadow: glass.early.shadow,
-  fontSize: 16,
-  fontWeight: 600,
 });
 
-const skipButton = (glass: Glass, height: number, solid: boolean): CSSProperties => ({
-  height,
-  borderRadius: height / 2,
-  background: solid ? "#2a2840" : glass.skip.fill,
-  border: "1px solid rgba(255,255,255,0.3)",
-  boxShadow: glass.skip.shadow,
-  color: glass.text,
-  fontSize: 17,
-  fontWeight: 500,
-  ...(solid
-    ? {}
-    : {
-        backdropFilter: "blur(18px) saturate(160%)",
-        WebkitBackdropFilter: "blur(18px) saturate(160%)",
-      }),
-});
-
-const plainButton = (glass: Glass): CSSProperties => ({
-  color: glass.plain,
-  fontSize: 15,
-  fontWeight: 500,
-  padding: "0 16px",
-  minHeight: 44,
-});
+const skipButton = (glass: Glass, solid: boolean): CSSProperties => {
+  const blur = "blur(var(--blur-skip)) saturate(var(--glass-saturate-soft))";
+  return {
+    background: solid ? "var(--color-scene-skip-solid)" : glass.skip.fill,
+    boxShadow: glass.skip.shadow,
+    color: glass.text,
+    ...(solid ? {} : { backdropFilter: blur, WebkitBackdropFilter: blur }),
+  };
+};

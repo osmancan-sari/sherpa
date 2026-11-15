@@ -1,6 +1,4 @@
 import { describe, expect, it } from "vitest";
-import { istanbulInstant } from "@/lib/date";
-import { GLASS, type Tone } from "./look";
 import {
   contrast,
   glassAlpha,
@@ -10,45 +8,13 @@ import {
   type Rgb,
   skyColorAt,
   skyOf,
-  sunElevation,
-} from "./sky";
+} from "@/core/ui/sky/sky";
+import { token } from "@/core/ui/tokens";
+import { GLASS, type Tone } from "@/modules/rutin/look";
 
-// The sky follows the sun (docs/moduller/rutin.md, 8.5; ORTAK.md, section 2), and the scene's text
-// stays readable on it: at least 4.5:1 on the dawn, the day and the night (criterion 10). The
-// contrast is measured on the colours the scene draws with (look.ts, sky.ts), where each text
-// sits on the phone's 390 × 844 frame (degerler.md, section 2).
-
-const at = (day: string, time: string) => istanbulInstant(day, time);
-
-describe("the sun's height", () => {
-  it("is near the horizon at an Istanbul November sunrise (about 07:50), high at noon", () => {
-    // Istanbul keeps UTC+3 all year: on 13 November the sun rises near 07:50, as in the drawings.
-    expect(sunElevation(at("2026-11-13", "07:00"))).toBeCloseTo(-9.5, 0);
-    expect(sunElevation(at("2026-11-13", "07:52"))).toBeGreaterThan(-1);
-    expect(sunElevation(at("2026-11-13", "07:52"))).toBeLessThan(0.5);
-    expect(sunElevation(at("2026-11-13", "12:50"))).toBeGreaterThan(29);
-    expect(sunElevation(at("2026-11-13", "12:50"))).toBeLessThan(33);
-    expect(sunElevation(at("2026-11-14", "00:00"))).toBeLessThan(-50);
-    // Summer: the same 07:00 has the sun well up.
-    expect(sunElevation(at("2026-06-21", "07:00"))).toBeGreaterThan(10);
-    expect(sunElevation(at("2026-06-21", "13:10"))).toBeGreaterThan(70);
-  });
-
-  it("moves the sky: a winter 07:00 is dawn, a summer 07:00 is day, the evening is night", () => {
-    expect(skyOf(sunElevation(at("2026-11-13", "07:00"))).phase).toBe("dawn");
-    expect(skyOf(sunElevation(at("2026-06-21", "07:00"))).phase).toBe("day");
-    expect(skyOf(sunElevation(at("2026-11-13", "05:30"))).phase).toBe("night");
-    expect(skyOf(30, true).phase).toBe("night");
-    // The dawn's frames: stars fade as the sun comes up, the sun shows from the horizon.
-    expect(skyOf(-9.53).dawnStars).toBe(1);
-    expect(skyOf(-3.69).dawnStars).toBeCloseTo(0.37);
-    expect(skyOf(-3.69).sun.visible).toBe(false);
-    expect(skyOf(0.2).sun.visible).toBe(true);
-    // The frame's own colours at its measuring point.
-    expect(skyOf(-9.53).stops[0][1]).toBe("#060a1c");
-    expect(skyOf(30).stops.at(-1)![1]).toBe("#c2b3a6");
-  });
-});
+// Rutin's scene: its text stays readable on the sky, at least 4.5:1 on the dawn, the day and the
+// night (rutin.md, criterion 10). Measured on the colours the scene draws with (look.ts, the core's
+// sky), where each text sits on the phone's 390 × 844 frame (docs/tasarim/ekranlar/rutin-sahne.md).
 
 const rgb = (hex: string): Rgb => hexToRgb(hex);
 
@@ -65,7 +31,7 @@ const SKIES: [string, ReturnType<typeof skyOf>, Tone][] = [
   ["dawn", skyOf(-9.53), "sabah"],
   ["sunrise", skyOf(0.5), "sabah"],
   ["day", skyOf(25), "sabah"],
-  ["night", skyOf(0, true), "aksam"],
+  ["night", skyOf(0, { night: true }), "aksam"],
 ];
 
 describe("the scene's text on the sky (criterion 10)", () => {
@@ -79,7 +45,7 @@ describe("the scene's text on the sky (criterion 10)", () => {
     const panel = (p: number) => over(bare(p), glass.panel.rgb, bigAlpha);
     const small = (p: number) => over(bare(p), glass.small.rgb, smallAlpha);
     // Below the horizon the near hill (its lighter top colour), with the shade behind the buttons.
-    const hill = () => over(rgb(sky.near), [8, 6, 20], sky.shade * 0.5);
+    const hill = () => over(rgb(sky.near), hexToRgb(token("sky-shade")), sky.shade * 0.5);
     const skip = () => over(hill(), [255, 255, 255], 0.14);
 
     it(`is at least 4.5:1 on the ${name}`, () => {
@@ -101,7 +67,12 @@ describe("the scene's text on the sky (criterion 10)", () => {
       // The buttons on the near hill: "Atla", "Hepsini yaptım", the main button.
       measure("Atla", contrast(rgb(glass.text), skip()));
       measure("Hepsini yaptım", contrast(rgb(glass.plain), hill()));
-      measure("main button", contrast(rgb(glass.button.text), rgb("#fff4de")));
+      // The main button: its text on its own near-opaque fill.
+      const fill = (
+        token(tone === "sabah" ? "color-warm-button" : "color-cool-button").match(/[\d.]+/g) ?? []
+      ).map(Number);
+      const button = over(hill(), [fill[0], fill[1], fill[2]], fill[3]);
+      measure("main button", contrast(rgb(glass.button.text), button));
     });
   }
 });

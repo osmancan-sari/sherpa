@@ -175,6 +175,7 @@ type ModuleUi = {
   history?: ComponentType            // 4. bölge; yoksa çekirdek haftalık harcanan süreyi gösterir
   scene?: ModuleScene                // Ç3c: iş çalışırken Bugün ekranını devralan görünüm (aşağıda)
   scenes?: Record<string, ModuleScene>   // Ç3e: adı verilen sahneler; bölümler bunlara başvurur
+  backdrop?: ComponentType<ModuleBackdropProps>   // Ç4b: modülün kendi zemini (aşağıda)
 }
 
 type ModuleViewProps = { params: Record<string, string> }   // alt sayfalarda ':id' gibi parçalar
@@ -189,6 +190,22 @@ type ModuleUiContext = ModuleContext & {
   say: Say                           // Ç3c: sesli anlatım (aşağıda)
 }
 ```
+
+### Modülün zemini (Ç4b)
+
+Ekranlar cam dilinin zeminindedir (`docs/tasarim/ilkeler.md`, karar 2–4): Bugün, sahne ve giriş tam manzarada, öbürleri sakin zeminde. Modül isterse **kendi zeminini** verir (`ui.backdrop`); o zaman hem modül sayfasında hem bütün sahnelerinde, sahnenin tonunun yerine kullanılır. Modüller listesinden modüle girerken zemin çapraz solar.
+
+```ts
+type ModuleBackdropProps = {
+  device: "pano" | "telefon"
+  color: string                  // modülün rengi (kullanıcınınki, yoksa varsayılan); sahnede işin rengi
+  sky: { phase: "night" | "dawn" | "day" | "dusk"; elevation: number }   // saatin gökyüzü, zemin saate bakacaksa
+}
+```
+
+Kurallar: zemin durağandır (sürekli hareket yok; panoda gün boyu açık kalır), renklerini token'lardan ya da kendi renginden alır (`CLAUDE.md` "Tasarım"; sabit renk kodu yazmaz), üstündeki cam ve metin çekirdeğindir: zemin metni okutmayacak kadar parlarsa modül zeminini koyulaştırır (en az 4,5:1). Panellerin, düğmelerin ve satırların görünüşü değişmez; modül yalnızca zemini verir. Çekirdek ekranlarında (Bugün, Takvim) modül yine yalnızca renk noktasıyla görünür. `deneme` örneği: kendi renginin bir köşede parladığı koyu zemin (`src/modules/deneme/components/Backdrop.tsx`).
+
+Zemin vermeyen modülün sayfası sakin zemindedir; sahnesi tonunun zeminindedir: `calm` saatin tam manzarası, `focus` koyu ve düz, `energy` işin renginden koyuya geçiş (`docs/tasarim/ekranlar/sahne.md`).
 
 ### Sahne (Ç3c)
 

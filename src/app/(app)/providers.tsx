@@ -5,6 +5,7 @@ import { CoreProvider } from "@/core/app/CoreProvider";
 import { PlanKeeper } from "@/core/app/PlanKeeper";
 import { NoticeProvider } from "@/core/ui/Notices";
 import { QuickAddProvider } from "@/core/ui/QuickAdd";
+import { ShellBackdrop } from "@/core/ui/sky/ShellBackdrop";
 import { BedAskDialog } from "@/core/ui/today/BedAsk";
 import { registry } from "@/modules/registry";
 
@@ -17,10 +18,12 @@ export function AppProviders({ children }: { children: ReactNode }) {
     <CoreProvider registry={registry}>
       <PlanKeeper />
       <NoticeProvider>
-        <QuickAddProvider>
-          {children}
-          <BedAskDialog />
-        </QuickAddProvider>
+        <ShellBackdrop>
+          <QuickAddProvider>
+            {children}
+            <BedAskDialog />
+          </QuickAddProvider>
+        </ShellBackdrop>
       </NoticeProvider>
     </CoreProvider>
   );
