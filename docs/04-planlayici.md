@@ -284,7 +284,7 @@ Kapanış, yarının planını kullanıcıya onaylatmaktır. Yapay zeka açıksa
 
 ## Gelecek günlerin tahmini (Ç4a)
 
-Takvim'in gelecek günündeki "Planlananlar" için (`docs/13-cam-dili.md` 4.3; ekranı Ç4c'de). `forecastDays(input, todayPlan, { from, to })` (`src/core/planner/forecast.ts`, saf):
+Takvim'in gelecek günündeki "Planlananlar" için (`docs/tasarim/ekranlar/takvim.md`; ekranı Ç4c'de). `forecastDays(input, todayPlan, { from, to })` (`src/core/planner/forecast.ts`, saf):
 
 - Bugünün planındaki işler yapılmış sayılır; sonra yarından başlayarak her gün sırayla, aynı kurallarla (`buildPlan`, uyarısız) planlanır ve o güne konan işler sonraki günler için yapılmış sayılır: iş biter, oturum işi biter ve kalemin eforu artar (sıradaki oturum gelir), kalemin kendisi eforunu artırır, ritim o güne kaydedilir (dönemine göre), takip bir kez hatırlatılır. Haftalık tabanın harcanan süresi hafta hafta sayılır.
 - Günün başı ve sonu `dayStarts` ve `dayEnds`'ten (yoksa ayardaki saatler); çerçeve, açık oturum, soru, ertelenenler ve yapay zekanın önerisi yoktur. Cihazın bağlamı taşınmaz: o gün nerede olunacağı bilinmediği için süzgeç kapalıdır (`context: null`); tahmin panoda da telefonda da aynıdır. Uyanışa ve yatışa bağlı işler tahmin edilmez; çerçeve açıkken süreleri tahminin bütün günlerinde günün başından ve sonundan düşülür (`dayStarts`, `dayEnds` tahminin erimi kadar hesaplanır). Çerçeve kapalıyken düşülmez (bilinen sınır: o günlerin kapasitesi rutin süresi kadar fazla).

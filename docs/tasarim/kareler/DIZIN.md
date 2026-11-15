@@ -1,12 +1,13 @@
 # Karelerin dizini
 
-Tuvaldeki ("Sherpa · Çekirdek ekranları", https://claude.ai/artifact/YDd1zPn8g5xJyxViNF2KeG) bütün karelerin kaynak dosyaları. 205 kare; tuvalin 15 Kas 2026 tarihli `1794722114-1ef8` sürümünden, içerik değiştirilmeden kopyalandı. Kaynak, tuvale yayınlanan dosyaların kendisidir; depodaki kopyaların toplu özeti kaynakla aynıdır, dokuz dosyanın özeti ayrıca tuvalin kendi kaydıyla karşılaştırıldı (aynı). Kuralları `docs/13-cam-dili.md` anlatır; bu klasör onun çizim kaynağıdır.
+Tuvaldeki ("Sherpa · Çekirdek ekranları", https://claude.ai/artifact/YDd1zPn8g5xJyxViNF2KeG) bütün karelerin kaynak dosyaları. 205 kare; tuvalin 15 Kas 2026 tarihli `1794722114-1ef8` sürümünden, içerik değiştirilmeden kopyalandı. Kaynak, tuvale yayınlanan dosyaların kendisidir; depodaki kopyaların toplu özeti kaynakla aynıdır, dokuz dosyanın özeti ayrıca tuvalin kendi kaydıyla karşılaştırıldı (aynı). Kuralları `docs/tasarim/` anlatır (`README.md`); bu klasör onun donmuş çizim kaynağıdır.
 
 ## Açma
 
 - Her `.dc.html` tek başına tarayıcıda açılır: içindeki bütün stil satır içidir, başka kareye ya da ortak stil dosyasına bağlı değildir. Telefon kareleri 390×844, pano kareleri 1440×900 çizilmiştir; pencereyi o boyuta getir ya da tarayıcının cihaz görünümünü kullan.
 - Dosyaların başındaki `./support.js` tuvalin çalışma zamanında verdiği dosyadır; tuvalin kendi dosyaları arasında saklanmaz, bu yüzden kopyalanmadı. Tarayıcı onu bulamaz ve geçer; kare yine aynı çizilir (bir telefon ve bir pano karesinde denendi, öbürlerinde denenmedi).
 - Yazı tipi (Geist) Google Fonts'tan yüklenir; internet yoksa sistem yazı tipine düşer. Yazı tipi dosyası kopyalanmadı.
+- `rutin-degerler.md`: Rutin tuvalinin karelerinden birebir okunan değerler (Rutin'in kareleri depoda değil; bu dosya onların yerine donmuş başvurudur; Ç4b'de `docs/moduller/rutin-cizimler/degerler.md`'den taşındı).
 - `canvas.json` tuvalin dizinidir (sayfalar, karelerin yeri ve başlığı); bu dosya ondan üretildi.
 
 ## Kareler

@@ -183,30 +183,36 @@ function StatusStrip({ mod }: { mod: KnownModule }) {
           <p className="text-ink-2 text-note hidden min-w-0 truncate md:block">{line}</p>
           {health ? <Status health={health} /> : null}
         </div>
-        <Button size="sm" onClick={() => quickAdd.open({ moduleSlug: row.slug })}>
-          İş ekle
-        </Button>
+        {/* The module's own actions at the right (its main "add" first); without them the
+            core's "İş ekle" (docs/tasarim/ekranlar/moduller.md, region 1). */}
+        {definition && (definition.ui.actions?.length || definition.ui.fullscreen?.length) ? (
+          <div
+            role="toolbar"
+            aria-label="Hızlı eylemler"
+            className="flex flex-wrap justify-end gap-2"
+          >
+            {(definition.ui.actions ?? []).map((action) => (
+              <Button key={action.key} size="sm" onClick={() => void run(action)}>
+                {action.label}
+              </Button>
+            ))}
+            {(definition.ui.fullscreen ?? []).map((view) => (
+              <Link
+                key={view.key}
+                href={`/m/${row.slug}/tam/${view.key}`}
+                className={buttonVariants({ variant: "secondary", size: "sm" })}
+              >
+                {view.label}
+              </Link>
+            ))}
+          </div>
+        ) : (
+          <Button size="sm" onClick={() => quickAdd.open({ moduleSlug: row.slug })}>
+            İş ekle
+          </Button>
+        )}
       </div>
       {line ? <p className="text-ink-2 -mt-2 text-sm md:hidden">{line}</p> : null}
-
-      {definition && (definition.ui.actions?.length || definition.ui.fullscreen?.length) ? (
-        <div role="toolbar" aria-label="Hızlı eylemler" className="flex flex-wrap gap-2">
-          {(definition.ui.actions ?? []).map((action) => (
-            <Button key={action.key} size="sm" onClick={() => void run(action)}>
-              {action.label}
-            </Button>
-          ))}
-          {(definition.ui.fullscreen ?? []).map((view) => (
-            <Link
-              key={view.key}
-              href={`/m/${row.slug}/tam/${view.key}`}
-              className={buttonVariants({ variant: "secondary", size: "sm" })}
-            >
-              {view.label}
-            </Link>
-          ))}
-        </div>
-      ) : null}
 
       {report.data && report.data.metrics.length > 0 ? (
         <Panel variant="dense" className="px-4 py-3.5 md:px-6">

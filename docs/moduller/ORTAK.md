@@ -2,7 +2,7 @@
 
 Rutin modülünün tasarım oturumunda (13–14 Kas 2026) alınan ve öbür modüller için de geçerli olan kararlar. Yeni bir modül tasarlanırken önce bu dosya okunur; buradaki konular yeniden tartışılmaz, yalnızca modüle uygulanır. Bir modül buradan ayrılacaksa gerekçesi o modülün dokümanına yazılır.
 
-Çekirdek ekranlarının çizimleri ve cam dilinin ölçüleri: `docs/13-cam-dili.md` (tuval: https://claude.ai/artifact/YDd1zPn8g5xJyxViNF2KeG).
+Görünüşün tek kaynağı `docs/tasarim/` (Ç4b): ilkeler, ortak parçalar, ekranlar ve onaylı kareler; değerler `src/core/ui/tokens.css`'te.
 
 Çizimlerin tamamı: https://claude.ai/artifact/MFJJaUCrnk3P6ZMSa6bH7k (Rutin tuvali; "Sabah · uçtan uca", "Akşam · uçtan uca", "Modül sayfası" sayfaları güncel olanlardır, "Yapı", "Görsel yönler" ve "Cam dili" sayfaları geçmiş turlardır). Ayrıntı ve gerekçe: `docs/moduller/rutin.md`, `docs/09-kararlar.md`.
 
@@ -16,41 +16,15 @@ Rutin modülünün tasarım oturumunda (13–14 Kas 2026) alınan ve öbür mod�
 
 ## 2. Görsel dil
 
-- **Cam ortaktır, zemin modüle göre değişir.** Paneller, şerit, düğmeler, liste satırları ve geçiş kuralları her ekranda aynı camdır (bulanık, yarı saydam koyu dolgu, ince açık kenar, üstte ışık çizgisi). Zemin varsayılan olarak günün saatine göre gökyüzüdür; modül isterse kendi zeminini verir (Spor: siyah-yeşil).
-- **Gökyüzü ilerlemeye değil saate bakar.** Güneşin yüksekliği tarih, saat ve ayardaki sabit koordinattan (varsayılan İstanbul) cihazda hesaplanır; konum izni, dış servis ve hava durumu yoktur. Hiçbir modül "adım ilerledikçe değişen zemin" kurmaz. İlerleme küçük bir çizgi dizisiyle gösterilir.
-- **Metin tonu:** gökyüzü zemininde her saatte açık metin ve koyu cam (gündüz kareleri de böyle çizildi; 14 Kas 2026). Zemin metni okutmayacak kadar parlarsa cam koyulaşır (en az 4,5:1). Kendi zeminini veren modül (aydınlık bir zemin) tonunu kendisi seçer.
-- **Renk tek başına anlam taşımaz;** modülün ve bölümün rengi nokta, vurgu ve ilerleme çizgisinde kullanılır.
-- **Geçişler kesintisizdir.** Zemin aynıysa yalnızca paneller yer değiştirir; zemin değişiyorsa çapraz geçer. Sıçrama, parlama, konfeti yok.
-- **Telefonun alt menüsü:** seçili sayfa öbürlerinden geniş, opak açık hap (koyu ikon ve yazı); hızlı giriş düğmesi (+) menüyle aynı koyu camdan. Ekranda tek opak açık öğe seçili sayfadır.
-- **Tek renk sistemi** (15 Kas 2026): açık / koyu tema seçimi yoktur; her saatte koyu cam ve açık metin. Ayarlar → Görünüm'de "Saydamlığı azalt" (paneller düz ve opak, `#141b38`) ve "Hareketi azalt" durur; modül ikisine de uyar.
-- **Tam manzara yalnızca Bugün, sahne ve giriş ekranındadır.** Modül sayfası dahil öbür bütün ekranlar **sakin zemindedir:** o saatin gökyüzünün genel rengi; güneş, ay ve tepeler yok; uzun sayfada zemin sabit durur. Kendi zeminini veren modül onu hem sayfasında hem sahnesinde kullanır; çekirdek ekranlarında modül yalnızca renk noktasıyla görünür.
-- **Yoğun ekran ölçüleri:** dolgusu daha dolu cam (%50); telefonda başlık 16 px, ikincil yazı en az 14 px, satır en az 56 px, ayırıcı %14, hizalı rakam. Panoda ikincil 15, birincil 17–18.
-- **Panoda** gerçek bulanıklık yalnızca altından içerik geçen yerdedir; sürekli hareket yoktur; gece durumu karartılır.
-- **Ortak parçalar** (panel, liste satırı, düğme türleri, alan, anahtar, hap, durum, bildirim, pencere, alttan sayfa ve yan panel) `docs/13-cam-dili.md` bölüm 3'tedir; modül yeni parça icat etmeden önce oraya bakar. Kartta ya da panelde en çok bir birincil (opak açık) düğme olur. Kesik kenar, yapay zekanın koyduğu değerdir.
-- **Denenmemiş olanlar** (her modülün ilk kurulum adımında gerçek telefonda bakılır): cam bulanıklığının iPhone'daki görünüşü ve hızı, her zaman açık panoda bulanıklığın yükü, iki tonda kontrast.
+Taşındı (Ç4b, 15 Kas 2026): `docs/tasarim/ilkeler.md` (görsel dil ve kararlar) ve `docs/tasarim/parcalar.md` (ortak parçalar). Modül oradaki kit'i ve token'ları kullanır; yalnızca kendi zeminini verebilir.
 
 ## 3. Sahne (iş çalışırken tam ekran)
 
-- **Düzen:** üstte cam şerit (saat, bölümün rengi ve adı, geçen süre, "Çık"); başlık ve varsa büyük sayaç; "Bu adımda" paneli; küçük "Sıradaki" paneli; altta ana düğme, "Atla", "Hepsini yaptım".
-- **"Bu adımda" paneli** adımın alt adımlarını numaralı gösterir, en çok üç satır; alt adım bittikçe liste yukarı kayar.
-- **Küçük panel** sıradaki adımı, "bu sabah 3 / 7" gibi sayıyı ve çizgileri gösterir; son adımda günün sıradaki işini ("Sonra: 10:30 …").
-- **Son adımda ana düğme "Bitti"dir.**
-- **Süreli alt adım** süresi bitince kendiliğinden sıradakine geçer ve adını söyler. "Süre dolmadan geçme" açıksa (varsayılan) ana düğme süre boyunca soluk "Erken geç · basılı tut" olur. Süresiz alt adım dokunuş bekler.
-- **Açılış ve kapanış tek yazıdır:** "Günaydın" → "Kalktım"; bitince "İyi günler"; akşam "İyi geceler". Sayı, süre, övgü yazılmaz; yazı solarken sonraki ekran belirir.
-- **Sahne her cihazda aynıdır;** pano ve telefon düzeni ayrı çizilir.
+Taşındı (Ç4b): `docs/tasarim/ekranlar/sahne.md` ("Modül sahnesinin ortak düzeni"); Rutin'in sahnesi `docs/tasarim/ekranlar/rutin.md`.
 
 ## 4. Modül sayfası
 
-- Çekirdeğin beş bölgeli iskeleti; başlıkta modülün rengi, adı, alanı (bağlantı) ve modülün ana ekleme düğmesi.
-- **İskeletin çizimi** (15 Kas 2026): `docs/13-cam-dili.md` bölüm 4.7, tuvalde "7 · Modüller, modül ve alan sayfası, sahne". Sıra: başlık ve haftanın sayıları, Yaklaşanlar, bölüm sekmeleri ve gövde, giriş ve ayarlar; geçmiş düğmeyle açılır. Bölümü olmayan modülde sekme satırı ve geçmiş düğmesi yoktur, geçmiş sayfada açık durur. Rutin'in sayfası sakin zemine geçer.
-- **Yaklaşanlar satırı** çekirdeğindir: renk noktası, ad, alt satır, sağda Başla, Yapıldı, Düzenle (44 px simge düğmeleri).
-- **Sahne kabuğu:** çekirdek yalnızca şeridi ve zemini verir (ton: sakin, odak, enerji); içi modülündür. Akşam kapanışı Rutin'in akşam sahnesinin içindeki bir adımdır (15 Kas 2026).
-- **Sekmeler yalnızca bölümlerdir** (`facets`): cam hap içinde yan yana. Modülün geçmiş ve trend görünümü (iskeletin 4. bölgesi; Rutin'de "Düzenlilik") bölüm değildir, bölümlerin verisini birleştirir; bu yüzden sekmelerin içinde durmaz, aynı satırda ayrı bir düğmedir (grafik simgesi ve ad; telefonda sekmelerin sağında, panoda satırın sağ ucunda). Her modülde aynı yerde ve aynı simgeyle durur; adını modül seçer (Rutin: Düzenlilik; Spor kendi adını seçer). Açıkken düğme opak açık olur, sekmelerin hiçbiri seçili görünmez.
-- **Liste satırı:** ad, tek satır özet (süre, alt öğe sayısı, sıklık), varsa etiket, açık/kapalı anahtarı. Ekler girintili ve numarasız, kapalı olanlar soluk durur. Liste, sahnedeki sırayla numaralıdır; satırlar kendi grubunda sürüklenerek sıralanır.
-- **Düzenleme** telefonda alttan açılan cam sayfada, panoda sağdan açılan yan panelde yapılır. Ekleme aynı sayfayı boş açar.
-- **Her şey düzenlenebilir:** ad, süre, sıklık, alt öğeler (ekle, çıkar, sırala, süre ver). Ekranda yazan her sayı ya düzenlenir ya da düzenlenebilen sayılardan hesaplanır; hesaplanan sayı öyle etiketlenir ("toplam 4 dk").
-- **Silme onayı** silmek yerine kapatmayı da sunar.
-- **İçerik veridir, kod değil.** Kullanıcı öğrendikçe adım, ürün, kural ekleyip değiştirir; bunun için kod değişmez.
+Taşındı (Ç4b): `docs/tasarim/ekranlar/moduller.md` ("Modül sayfasının kuralları"); Rutin'in sayfası `docs/tasarim/ekranlar/rutin.md`.
 
 ## 5. Öğrenme ve öneriler
 

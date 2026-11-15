@@ -1,0 +1,52 @@
+# Rutin: sahne ve modül sayfası
+
+Kaynak: Rutin tuvali (`docs/moduller/rutin.md`'nin başındaki bağlantı; onaylı 13–14 Kas 2026). Rutin'in kareleri depoda değildir; karelerden birebir okunan değerler donmuş başvuru olarak `../kareler/rutin-degerler.md`'dedir. Kurulan kısımların değerleri `src/core/ui/tokens.css`'tedir; bu dosya kuralları token adlarıyla anlatır. Davranış ve içerik: `docs/moduller/rutin.md`.
+
+Kod: sahne `src/modules/rutin/components/RutinScene.tsx`, gökyüzü `RutinSky.tsx` (çekirdeğin `Landscape`'i), cam tonları `src/modules/rutin/look.ts`, modül sayfası `StepsTab.tsx` (çekirdeğin iskeletinde, `moduller.md`).
+
+## Gökyüzü
+
+- Sahne çekirdeğin tam manzarasında durur (`ilkeler.md`, "Gökyüzü"). Sabah sahnesi saatin gökyüzündedir; **akşam sahnesi her saatte gecededir** (yıldızlar baştan).
+- Rutin manzarayı kendi figürleriyle giydirir: akşam sağda ufka yakın **ay** (yeri ve evresi hesaplanmaz), solda dalında **baykuş** ("İyi geceler"de gözleri kapalı); akşam çekirdeğin güneşi kapalıdır. Renkler `--sky-moon*`, `--sky-owl*`; çizim verisi `RutinSky.tsx`.
+- Telefonda düğmelerin arkasında alt karartma vardır (şafak ve gündüz; `--sky-shade`).
+
+## Sahnenin camı: iki ton
+
+Sabah şafağın sıcak camı (`--color-warm-*`), akşam gecenin serin camı (`--color-cool-*`).
+
+| Parça | Sabah | Akşam |
+| --- | --- | --- |
+| Metin; ikincil; alt satır; açıklama | `warm-ink`, `warm-ink-2`, `warm-line`, `warm-note` | `cool-ink`, `cool-ink-2` (şeritte `cool-strip`), `cool-line` |
+| "Bu adımda" paneli | `warm-panel`, kenar `scene-edge`, `shadow-warm-panel`, köşe `radius-scene` | `cool-panel`, `scene-edge-night`, `shadow-cool-panel` |
+| "Sıradaki" paneli | `warm-small`, `scene-small-edge`, `shadow-warm-small`, `radius-soft` | `cool-small`, `scene-small-edge-night`, `shadow-cool-small` |
+| Vurgu (dolu çember, ilerleme çizgisi) | `warm-accent`, içinde `warm-on-accent` | `cool-accent`, `cool-on-accent` |
+| Etkin alt adım satırı | `warm-active`, `shadow-scene-active` | `cool-active` |
+| Ana düğme | `warm-button`, yazı `warm-on-button`, `shadow-scene-button` | `cool-button`, `cool-on-accent`, `shadow-scene-button-night` |
+| "Erken geç · basılı tut" | `warm-early`, kenar `edge-pressed` | `cool-early` |
+| "Atla" | `scene-skip`, kenar `edge-button`, `blur-skip` | `scene-skip-night` |
+| "Hepsini yaptım" | `warm-plain` | `cool-plain` |
+| "Saydamlığı azalt" | paneller `warm-solid` | `cool-solid` |
+
+Panellerin opaklığı, arkasındaki gökyüzü metni 4,5:1'in altına düşürecek kadar parlarsa büyür (gün doğumunda ve gündüz; `glassAlpha`). Ölçüm: `tests/unit/rutin-glass.test.ts`.
+
+**Yazı:** başlık `text-scene` (panoda `text-board-title`), sayaç `text-counter` (kısa ekranda `text-counter-sm` / `-xs`, panoda `text-counter-board`), "Günaydın" ve "İyi günler" `text-greet`, "İyi geceler" `text-5xl`; panel etiketleri `text-xs` `tracking-label`.
+
+## Düzen
+
+- **Telefon:** şerit (çekirdeğin, `sahne.md`), başlık bölgesi (başlık; sayaç ya da açıklama; sabahın ilk bloğunda ses satırı), "Bu adımda" (en çok üç satır), "Sıradaki" (sayı ve çizgiler, "Sonra: …"), altta ana düğme, "Atla" ve "Hepsini yaptım". Ufuk ekranın yaklaşık %73'ündedir: kısa ekranda başlık ve paneller küçülür, manzara küçülmez.
+- **Pano:** iki sütun (5:4). Solda başlık, sayaç ya da açıklama, "Bu adımda"; sağda "Günün planı" (sabah; "Tekrar anlat") ya da "Yarın" (akşam) ve dizinin paneli ("Bu sabah n / m"); altta sola yaslı düğmeler. Panoda çizilmeyen ekranlar (Günaydın, sayaçsız adım, son adım, "İyi günler", "İyi geceler") aynı parçalarla kurulur: **görüşün gerek**.
+- **Açılış ve kapanış:** "Günaydın" ve tarih, "Kalktım"; son adımda sabah "Bitti", akşam "Işık kapalı." ve "Yatıyorum"; ardından "İyi günler" (solarak Bugün'e geçer) ya da "İyi geceler" ("YARIN" paneli, "Yatış … kaydedildi. Ekran birazdan kararır.", "Geri al"; ekran bir süre sonra `color-blackout` ile kararır).
+
+Ekranların içeriği ve akışı `docs/moduller/rutin.md` (8.2–8.6) ve `../kareler/rutin-degerler.md` bölüm 3–7'dedir.
+
+## Modül sayfası
+
+Çekirdeğin iskeletindedir (`moduller.md`), **sakin zeminde** (karar 2). Başlığın sağında "Adım ekle"; "Bu hafta" sayıları; "Yaklaşanlar"; sekmeler "Sabah" ve "Akşam" ve geçmiş düğmesi (Rutin'in geçmiş görünümü "Düzenlilik" Rutin 2'dedir; o zamana kadar düğme "Geçmiş").
+
+- **Adım listesi:** blok başına yoğun panel; blok başlığında bölümün renginde nokta, büyük harfli etiket (`panel-label`) ve sağda özet ("uyanışta · toplam 4 dk"). Satır: tutamaç, sıra no, ad (yarı kalın), alt satır, varsa "temel" etiketi (sabah `warm-tag`/`warm-tag-edge`/`warm-tag-ink`, akşam `cool-tag`/`cool-tag-edge`/`cool-label`), sağda anahtar (`Switch`). Ek adım girintili ve "+" ile; kapalı adım soluk. Başka modülün işi anahtarsız, sağında "Spor ›".
+- **Akşamın altında** küçük panel: "YATAKTA · KAYDEDİLMEZ" ve `Işık kapalı. "Yatıyorum"dan sonraki ekranda hatırlatılır.`
+- **Adımı düzenle / Adım ekle:** telefonda alttan açılan sayfa, panoda sağdan yan panel (`Sheet`'in camı); süre ve sayılar `size-8` dairelerle (dokunma alanı `spacing-touch`), sıklık parçalı seçimle (`Segmented`), alt adımlar listesi; birincil "Kaydet" ("Ekle").
+- **Alt adımın süresi:** pencere (`Window`'un camı): süre, "Sayaç göster", "Süre dolmadan geçme", not; "Süreyi kaldır" (ikincil) ve "Tamam".
+- **Silme onayı:** pencere; "Kapat" (ikincil) ve "Sil", altında "Vazgeç".
+
+Düzenlilik (Rutin 2) henüz kurulmadı: değerleri `../kareler/rutin-degerler.md` bölüm 9'dadır; kurulurken token'lara alınır.

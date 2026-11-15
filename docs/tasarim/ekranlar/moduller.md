@@ -35,3 +35,18 @@ Telefonda sıra: 1, 2, 3, 5 (4, düğmeyle). Panoda başlık, sayılar ve sekme 
 | `MSP1`–`MSP3` | Pano, sahne kabuğu: sakin, odak, enerji |
 
 Bu grupta çizilmeyenler: modülün hızlı eylemleri ve tam ekran görünüm bağlantıları (modül verirse başlığın sağında ikincil düğme olur); haftalık raporun önerileri (`ORTAK.md` bölüm 5: modülün somut önerisi yoksa yer tutulmaz); "Bu modül arşivde." gibi bulunamayan modül halleri (10. grup); "Adımlara böl" önerileri.
+
+## Modül sayfasının kuralları
+
+Kaynak: `docs/moduller/ORTAK.md` bölüm 4 (Rutin oturumu, 13–14 Kas 2026; iskeletin çizimi 15 Kas 2026). Kurulum Ç4b: `src/core/ui/module/ModulePageShell.tsx`. Kurulumda: modülün eylemleri başlığın sağında durur (ana ekleme düğmesi ilk eylemdir); eylemi olmayan modülde çekirdeğin "İş ekle"si. Sekme satırındaki "Geçmiş" düğmesi geçmiş paneline götürür; panel içerik değişmesin diye sayfada açık durur (**görüşün gerek**: karede düğmeyle açılıyor).
+
+- Çekirdeğin beş bölgeli iskeleti; başlıkta modülün rengi, adı, alanı (bağlantı) ve modülün ana ekleme düğmesi.
+- **İskeletin çizimi** (15 Kas 2026): `docs/13-cam-dili.md` bölüm 4.7, tuvalde "7 · Modüller, modül ve alan sayfası, sahne". Sıra: başlık ve haftanın sayıları, Yaklaşanlar, bölüm sekmeleri ve gövde, giriş ve ayarlar; geçmiş düğmeyle açılır. Bölümü olmayan modülde sekme satırı ve geçmiş düğmesi yoktur, geçmiş sayfada açık durur. Rutin'in sayfası sakin zemine geçer.
+- **Yaklaşanlar satırı** çekirdeğindir: renk noktası, ad, alt satır, sağda Başla, Yapıldı, Düzenle (44 px simge düğmeleri).
+- **Sahne kabuğu:** çekirdek yalnızca şeridi ve zemini verir (ton: sakin, odak, enerji); içi modülündür. Akşam kapanışı Rutin'in akşam sahnesinin içindeki bir adımdır (15 Kas 2026).
+- **Sekmeler yalnızca bölümlerdir** (`facets`): cam hap içinde yan yana. Modülün geçmiş ve trend görünümü (iskeletin 4. bölgesi; Rutin'de "Düzenlilik") bölüm değildir, bölümlerin verisini birleştirir; bu yüzden sekmelerin içinde durmaz, aynı satırda ayrı bir düğmedir (grafik simgesi ve ad; telefonda sekmelerin sağında, panoda satırın sağ ucunda). Her modülde aynı yerde ve aynı simgeyle durur; adını modül seçer (Rutin: Düzenlilik; Spor kendi adını seçer). Açıkken düğme opak açık olur, sekmelerin hiçbiri seçili görünmez.
+- **Liste satırı:** ad, tek satır özet (süre, alt öğe sayısı, sıklık), varsa etiket, açık/kapalı anahtarı. Ekler girintili ve numarasız, kapalı olanlar soluk durur. Liste, sahnedeki sırayla numaralıdır; satırlar kendi grubunda sürüklenerek sıralanır.
+- **Düzenleme** telefonda alttan açılan cam sayfada, panoda sağdan açılan yan panelde yapılır. Ekleme aynı sayfayı boş açar.
+- **Her şey düzenlenebilir:** ad, süre, sıklık, alt öğeler (ekle, çıkar, sırala, süre ver). Ekranda yazan her sayı ya düzenlenir ya da düzenlenebilen sayılardan hesaplanır; hesaplanan sayı öyle etiketlenir ("toplam 4 dk").
+- **Silme onayı** silmek yerine kapatmayı da sunar.
+- **İçerik veridir, kod değil.** Kullanıcı öğrendikçe adım, ürün, kural ekleyip değiştirir; bunun için kod değişmez.

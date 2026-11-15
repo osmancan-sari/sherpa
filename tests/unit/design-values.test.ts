@@ -18,15 +18,6 @@ const ALLOWED: Record<string, string> = {
   "src/core/ui/sky/Landscape.tsx": "SVG drawing data: the landscape's viewBox sizes and paths",
 };
 
-/**
- * Ç4b's work list: files still drawn with raw values, each to be moved onto the tokens in the
- * named step of the phase (docs/ILERLEME.md, "Ç4b planı"). The phase is not done until this list
- * is empty.
- */
-const PENDING: Record<string, string> = {
-  "src/modules/rutin/components/StepsTab.tsx": "step 6: Rutin's module page",
-};
-
 function files(dir: string): string[] {
   return readdirSync(dir).flatMap((name) => {
     const path = join(dir, name);
@@ -70,7 +61,7 @@ const RULES: { rule: string; pattern: RegExp; css?: boolean; code?: boolean }[] 
 
 function scan(path: string): Finding[] {
   const file = relative(ROOT, path).replaceAll("\\", "/");
-  if (file in ALLOWED || file in PENDING) return [];
+  if (file in ALLOWED) return [];
   const css = file.endsWith(".css");
   const lines = readFileSync(path, "utf8").split("\n");
   const findings: Finding[] = [];
@@ -111,7 +102,6 @@ describe("design values come from tokens.css only", () => {
   });
 
   it("every allowed file still exists", () => {
-    for (const file of [...Object.keys(ALLOWED), ...Object.keys(PENDING)])
-      expect(() => statSync(join(ROOT, file))).not.toThrow();
+    for (const file of Object.keys(ALLOWED)) expect(() => statSync(join(ROOT, file))).not.toThrow();
   });
 });

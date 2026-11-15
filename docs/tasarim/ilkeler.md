@@ -9,6 +9,8 @@ Kaynak: `docs/13-cam-dili.md` bölüm 1, 2 ve 5 (14–15 Kas 2026, onaylı) ve `
 - **Geçişler kesintisizdir.** Zemin aynıysa yalnızca paneller yer değiştirir; zemin değişiyorsa çapraz geçer (`--motion-slow`). Sıçrama, parlama, konfeti yok.
 - **Ekranda tek opak açık öğe:** seçili sayfa ya da kartın birincil düğmesi (`color-light`). Kartta ya da panelde en çok bir birincil düğme olur.
 - **Kesik kenar yapay zekanın koyduğu değerdir** (`border-edge-ai`, kesik); kullanıcı değiştirince düz olur.
+- **Gökyüzü ilerlemeye değil saate bakar.** Hiçbir modül "adım ilerledikçe değişen zemin" kurmaz; ilerleme küçük bir çizgi dizisiyle gösterilir (`StepLines`).
+- **Kendi zeminini veren modül** (aydınlık bir zemin) tonunu kendisi seçer; metin yine en az 4,5:1 okunur.
 - **Metinler kısa ve düzdür;** ünlem, emoji, övgü yok. Kırmızı ve "gecikti" yok: "geride" sıcak mercandır (`color-behind`), alarm değil.
 
 ## Kararlar

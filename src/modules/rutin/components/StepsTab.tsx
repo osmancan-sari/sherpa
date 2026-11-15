@@ -4,7 +4,6 @@ import { GripVertical, Minus, Plus, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
-  type CSSProperties,
   type PointerEvent as ReactPointerEvent,
   type ReactNode,
   useEffect,
@@ -17,6 +16,7 @@ import { useRefreshAll } from "@/core/app/actions";
 import { useModuleQuery } from "@/core/app/hooks";
 import type { ModuleContext, SceneChain } from "@/core/contract/types";
 import { SAVE_FAILED, useNotify } from "@/core/ui/Notices";
+import { token } from "@/core/ui/tokens";
 import { useModule, useModuleChains } from "@/core/ui/module/ModuleProvider";
 import { dayKey, shiftDay } from "@/lib/date";
 import { cn } from "@/lib/utils";
@@ -329,10 +329,13 @@ function StepGroup({
         <span
           aria-hidden
           className="size-2 rounded-full"
-          style={{ backgroundColor: facet === "aksam" ? "#aab6ff" : "#ffd58a" }}
+          style={{
+            backgroundColor:
+              facet === "aksam" ? token("color-swatch-moon") : token("color-swatch-sun"),
+          }}
         />
         <span className="text-xs font-semibold tracking-wider">{label}</span>
-        <span className="text-muted-foreground ml-auto text-[13px]">{context}</span>
+        <span className="text-muted-foreground text-meta ml-auto">{context}</span>
       </div>
       <ol ref={listRef} className="flex flex-col">
         {rows.map((step) => {
@@ -395,13 +398,13 @@ function OtherGroup({ item, number }: { item: SceneChain["items"][number]; numbe
       <div className="flex items-center gap-2 px-4 pt-3 pb-1.5">
         <span aria-hidden className="size-2 rounded-full" style={{ backgroundColor: item.color }} />
         <span className="text-xs font-semibold tracking-wider">{label}</span>
-        <span className="text-muted-foreground ml-auto text-[13px]">
+        <span className="text-muted-foreground text-meta ml-auto">
           {item.module.name} modülü · toplam {item.minutes} dk
         </span>
       </div>
       <Link
         href={`/m/${item.module.slug}`}
-        className="border-border flex min-h-[54px] items-center gap-2 border-t pr-4 pl-1"
+        className="border-border flex min-h-13.5 items-center gap-2 border-t pr-4 pl-1"
         data-testid="rutin-other-row"
       >
         <span className="w-2" />
@@ -409,8 +412,8 @@ function OtherGroup({ item, number }: { item: SceneChain["items"][number]; numbe
           {number}
         </span>
         <span className="flex min-w-0 flex-1 flex-col py-2">
-          <span className="truncate text-[15px] font-semibold">{item.title}</span>
-          <span className="text-muted-foreground truncate text-[13px]">
+          <span className="text-note truncate font-semibold">{item.title}</span>
+          <span className="text-muted-foreground text-meta truncate">
             {item.module.name} modülünden gelir, orada düzenlenir
           </span>
         </span>
@@ -445,8 +448,8 @@ function StepRow({
   return (
     <div
       className={cn(
-        "border-border flex min-h-[54px] items-center gap-2 border-t pr-2",
-        indent ? "pl-[30px]" : "pl-1",
+        "border-border flex min-h-13.5 items-center gap-2 border-t pr-2",
+        indent ? "pl-7.5" : "pl-1",
         !active && "opacity-60",
       )}
       data-testid="rutin-step-row"
@@ -460,21 +463,27 @@ function StepRow({
         className="flex min-w-0 flex-1 flex-col py-2 text-left"
       >
         <span className="flex items-center gap-2">
-          <span className="truncate text-[15px] font-semibold">{step.title}</span>
+          <span className="text-note truncate font-semibold">{step.title}</span>
           {step.minimum ? (
             <span
-              className="rounded-[10px] border px-[9px] py-[3px] text-xs"
+              className="rounded-lg border px-2.25 py-0.75 text-xs"
               style={
                 facet === "aksam"
-                  ? { borderColor: "rgba(170,182,255,0.5)", background: "rgba(170,182,255,0.2)" }
-                  : { borderColor: "rgba(255,213,138,0.45)", background: "rgba(255,213,138,0.2)" }
+                  ? {
+                      borderColor: "var(--color-cool-tag-edge)",
+                      background: "var(--color-cool-tag)",
+                    }
+                  : {
+                      borderColor: "var(--color-warm-tag-edge)",
+                      background: "var(--color-warm-tag)",
+                    }
               }
             >
               temel
             </span>
           ) : null}
         </span>
-        <span className="text-muted-foreground truncate text-[13px]">{summary}</span>
+        <span className="text-muted-foreground text-meta truncate">{summary}</span>
       </button>
       <Switch
         label={`${step.title} açık`}
@@ -510,14 +519,14 @@ function Switch({
     >
       <span
         className={cn(
-          "relative h-6 w-[42px] rounded-xl transition-colors motion-reduce:transition-none",
+          "relative h-6 w-10.5 rounded-xl transition-colors motion-reduce:transition-none",
           checked ? "bg-foreground" : "bg-muted",
         )}
       >
         <span
           className={cn(
-            "absolute top-[3px] size-[18px] rounded-full transition-[left] motion-reduce:transition-none",
-            checked ? "bg-background left-[21px]" : "bg-muted-foreground left-[3px]",
+            "absolute top-0.75 size-4.5 rounded-full transition-[left] motion-reduce:transition-none",
+            checked ? "bg-background left-5.25" : "bg-muted-foreground left-0.75",
           )}
         />
       </span>
@@ -638,13 +647,13 @@ function StepSheet({
         {step ? (
           <button
             type="button"
-            className="text-muted-foreground min-h-11 text-[15px]"
+            className="text-muted-foreground text-note min-h-11"
             onClick={() => setConfirm(true)}
           >
             Adımı sil
           </button>
         ) : null}
-        <button type="button" className="min-h-11 text-[15px] font-semibold" onClick={onClose}>
+        <button type="button" className="text-note min-h-11 font-semibold" onClick={onClose}>
           Vazgeç
         </button>
       </div>
@@ -653,7 +662,7 @@ function StepSheet({
         value={draft.title}
         maxLength={80}
         onChange={(event) => set({ title: event.target.value })}
-        className="h-[54px] rounded-[18px] text-xl font-semibold"
+        className="h-13.5 rounded-2xl text-xl font-semibold"
         placeholder="Adım"
       />
       <Group>
@@ -771,7 +780,7 @@ function StepSheet({
         />
       ) : null}
       <Button
-        className="h-14 rounded-[28px] text-[17px]"
+        className="rounded-panel text-lead h-14"
         disabled={busy || draft.title.trim() === ""}
         onClick={() => void save()}
       >
@@ -789,28 +798,28 @@ function StepSheet({
       ) : null}
       {confirm && step ? (
         <Overlay onClose={() => setConfirm(false)} label="Adımı sil">
-          <p className="text-[19px] font-semibold">{step.title} silinsin mi?</p>
-          <p className="text-muted-foreground text-[15px]">
+          <p className="text-heading font-semibold">{step.title} silinsin mi?</p>
+          <p className="text-muted-foreground text-note">
             Geçmiş kayıtlar kalır. Yalnızca bir süre yapmayacaksan kapatman yeterli.
           </p>
           <div className="flex gap-2">
             <Button
               variant="outline"
-              className="h-[50px] flex-1 rounded-[25px]"
+              className="h-12.5 flex-1 rounded-full"
               disabled={busy}
               onClick={() => void remove("close")}
             >
               Kapat
             </Button>
             <Button
-              className="h-[50px] flex-1 rounded-[25px]"
+              className="h-12.5 flex-1 rounded-full"
               disabled={busy}
               onClick={() => void remove("delete")}
             >
               Sil
             </Button>
           </div>
-          <button type="button" className="min-h-11 text-[15px]" onClick={() => setConfirm(false)}>
+          <button type="button" className="text-note min-h-11" onClick={() => setConfirm(false)}>
             Vazgeç
           </button>
         </Overlay>
@@ -846,7 +855,7 @@ function Parts({
         {parts.map((part, index) => (
           <div
             key={index}
-            className="flex min-h-[46px] items-center gap-2"
+            className="flex min-h-11.5 items-center gap-2"
             data-testid="rutin-part-row"
           >
             <button
@@ -894,7 +903,7 @@ function Parts({
             ) : (
               <button
                 type="button"
-                className="min-w-0 flex-1 truncate text-left text-[15px] font-medium"
+                className="text-note min-w-0 flex-1 truncate text-left font-medium"
                 onClick={() => setRenaming(index)}
               >
                 {part.title}
@@ -915,7 +924,7 @@ function Parts({
             <button
               type="button"
               aria-label={`${part.title}: çıkar`}
-              className="bg-muted flex size-[30px] shrink-0 items-center justify-center rounded-full"
+              className="bg-muted flex size-7.5 shrink-0 items-center justify-center rounded-full"
               onClick={() => onChange(parts.filter((_, i) => i !== index))}
             >
               <X size={14} aria-hidden />
@@ -924,7 +933,7 @@ function Parts({
         ))}
         <button
           type="button"
-          className="min-h-11 text-left text-[15px] font-semibold"
+          className="text-note min-h-11 text-left font-semibold"
           onClick={() => {
             onChange([...parts, { title: "Yeni alt adım" }]);
             setRenaming(parts.length);
@@ -989,19 +998,19 @@ function PartTime({
           />
         </Row>
       </Group>
-      <p className="text-muted-foreground text-[13px]">
+      <p className="text-muted-foreground text-meta">
         Süre bitince kendiliğinden sıradakine geçer ve adını söyler. Erken geçmek için düğmeye
         basılı tutarsın.
       </p>
       <div className="flex gap-2">
         <Button
           variant="outline"
-          className="h-[50px] flex-1 rounded-[25px]"
+          className="h-12.5 flex-1 rounded-full"
           onClick={() => done(false)}
         >
           Süreyi kaldır
         </Button>
-        <Button className="h-[50px] flex-1 rounded-[25px]" onClick={() => done(true)}>
+        <Button className="h-12.5 flex-1 rounded-full" onClick={() => done(true)}>
           Tamam
         </Button>
       </div>
@@ -1026,18 +1035,18 @@ function Sheet({
       <button
         type="button"
         aria-label="Kapat"
-        className="absolute inset-0 bg-[rgba(4,6,20,0.45)]"
+        className="bg-scrim absolute inset-0"
         onClick={onClose}
       />
       <div
         role="dialog"
         aria-modal="true"
         aria-label={label}
-        className="bg-card text-card-foreground absolute inset-x-2 bottom-2 flex max-h-[92dvh] flex-col gap-2.5 overflow-y-auto rounded-[34px] border px-3.5 pt-2.5 pb-[18px] shadow-2xl md:inset-x-auto md:top-4 md:right-4 md:bottom-4 md:w-[440px] md:rounded-[30px]"
+        className="bg-card text-card-foreground md:rounded-sheet absolute inset-x-2 bottom-2 flex max-h-[92dvh] flex-col gap-2.5 overflow-y-auto rounded-3xl border px-3.5 pt-2.5 pb-4.5 shadow-2xl md:inset-x-auto md:top-4 md:right-4 md:bottom-4 md:w-110"
       >
         <span
           aria-hidden
-          className="mx-auto h-[5px] w-10 shrink-0 rounded-[3px] bg-current opacity-40 md:hidden"
+          className="bg-fill-handle mx-auto h-1.25 w-10 shrink-0 rounded-sm md:hidden"
         />
         {children}
       </div>
@@ -1060,14 +1069,14 @@ function Overlay({
       <button
         type="button"
         aria-label="Kapat"
-        className="absolute inset-0 bg-[rgba(4,6,20,0.4)]"
+        className="bg-scrim absolute inset-0"
         onClick={onClose}
       />
       <div
         role="dialog"
         aria-modal="true"
         aria-label={label}
-        className="bg-card text-card-foreground absolute inset-x-7 top-[30%] mx-auto flex max-w-md flex-col gap-3 rounded-[28px] border px-3.5 py-4 shadow-2xl"
+        className="bg-card text-card-foreground rounded-panel absolute inset-x-7 top-[30%] mx-auto flex max-w-md flex-col gap-3 border px-3.5 py-4 shadow-2xl"
       >
         {children}
       </div>
@@ -1089,14 +1098,14 @@ function useEscape(onClose: () => void) {
 
 function Group({ children }: { children: ReactNode }) {
   return (
-    <div className="bg-muted/40 flex flex-col rounded-[20px] border px-3.5 py-1">{children}</div>
+    <div className="bg-muted/40 rounded-alert flex flex-col border px-3.5 py-1">{children}</div>
   );
 }
 
 function Row({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <div className="flex min-h-[50px] items-center justify-between gap-3">
-      <span className="text-muted-foreground text-[15px]">{label}</span>
+    <div className="flex min-h-12.5 items-center justify-between gap-3">
+      <span className="text-muted-foreground text-note">{label}</span>
       {children}
     </div>
   );
@@ -1113,16 +1122,12 @@ function Stepper({
   onMinus: () => void;
   onPlus: () => void;
 }) {
-  const round: CSSProperties = { width: 32, height: 32 };
+  // 32 px circles (frame), each with a 44 px touch area.
+  const round =
+    "bg-fill-button relative flex size-8 items-center justify-center rounded-full after:absolute after:-inset-1.5";
   return (
     <div className="flex items-center gap-3">
-      <button
-        type="button"
-        aria-label={`${label}: azalt`}
-        onClick={onMinus}
-        className="bg-muted flex items-center justify-center rounded-full"
-        style={round}
-      >
+      <button type="button" aria-label={`${label}: azalt`} onClick={onMinus} className={round}>
         <Minus size={16} aria-hidden />
       </button>
       <span
@@ -1131,13 +1136,7 @@ function Stepper({
       >
         {text}
       </span>
-      <button
-        type="button"
-        aria-label={`${label}: artır`}
-        onClick={onPlus}
-        className="bg-muted flex items-center justify-center rounded-full"
-        style={round}
-      >
+      <button type="button" aria-label={`${label}: artır`} onClick={onPlus} className={round}>
         <Plus size={16} aria-hidden />
       </button>
     </div>

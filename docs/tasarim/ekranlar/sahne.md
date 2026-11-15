@@ -24,6 +24,18 @@ Ton bölümden, yoksa sahnenin `look.tone`'undan gelir (`docs/06`, "Bölümler" 
 - Sahne açılamazsa çekirdeğin standart kartı döner (Bugün, `bugun.md`).
 - Akşam kapanışı sahnenin içinde açılır (`kapanis.md`).
 
+## Modül sahnesinin ortak düzeni
+
+Kaynak: `docs/moduller/ORTAK.md` bölüm 3 (Rutin oturumu, 13–14 Kas 2026). Modülün sahnesi bu düzene uyar; değerler token'lardır (`rutin.md`).
+
+- **Düzen:** üstte cam şerit (saat, bölümün rengi ve adı, geçen süre, "Çık"); başlık ve varsa büyük sayaç; "Bu adımda" paneli; küçük "Sıradaki" paneli; altta ana düğme, "Atla", "Hepsini yaptım".
+- **"Bu adımda" paneli** adımın alt adımlarını numaralı gösterir, en çok üç satır; alt adım bittikçe liste yukarı kayar.
+- **Küçük panel** sıradaki adımı, "bu sabah 3 / 7" gibi sayıyı ve çizgileri gösterir; son adımda günün sıradaki işini ("Sonra: 10:30 …").
+- **Son adımda ana düğme "Bitti"dir.**
+- **Süreli alt adım** süresi bitince kendiliğinden sıradakine geçer ve adını söyler. "Süre dolmadan geçme" açıksa (varsayılan) ana düğme süre boyunca soluk "Erken geç · basılı tut" olur. Süresiz alt adım dokunuş bekler.
+- **Açılış ve kapanış tek yazıdır:** "Günaydın" → "Kalktım"; bitince "İyi günler"; akşam "İyi geceler". Sayı, süre, övgü yazılmaz; yazı solarken sonraki ekran belirir.
+- **Sahne her cihazda aynıdır;** pano ve telefon düzeni ayrı çizilir.
+
 ## Çizilmeyenler
 
 Sahnenin içi (modülündür). `deneme`'nin sahneleri `deneme`'nin kendi zemininde durur; tonların örneği galeridedir (`/tasarim`, "Sahne tonları").

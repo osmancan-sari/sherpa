@@ -1,6 +1,6 @@
 # Rutin
 
-Sabahın ve akşamın bakım adımları: üç ritim (Sabah, Duş ve hazırlık, Akşam kapanışı), adım adım yürüyen sahne, kendiliğinden tutulan kayıt. Tasarımın kendisi `docs/moduller/rutin.md`; ortak kurallar `docs/moduller/ORTAK.md`; çizimlerden alınan değerler `docs/moduller/rutin-cizimler/degerler.md`.
+Sabahın ve akşamın bakım adımları: üç ritim (Sabah, Duş ve hazırlık, Akşam kapanışı), adım adım yürüyen sahne, kendiliğinden tutulan kayıt. Tasarımın kendisi `docs/moduller/rutin.md`; ortak kurallar `docs/moduller/ORTAK.md`; görünüş `docs/tasarim/ekranlar/rutin.md` (Rutin tuvalinin değerleri `docs/tasarim/kareler/rutin-degerler.md`).
 
 | Dosya | Ne |
 | --- | --- |
