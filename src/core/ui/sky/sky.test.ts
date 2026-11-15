@@ -218,7 +218,7 @@ describe("text on the glass stays at least 4.5:1 in the four states", () => {
         expect(deep, `${layer} never needs to be solid`).toBeLessThan(0.95);
         for (const color of behind) {
           const panel = over(color, rgb, deep);
-          for (const text of TEXTS) {
+          for (const text of [...TEXTS, "color-behind" as const]) {
             expect(contrast(rgbOf(text).rgb, panel), `${text} on ${layer}`).toBeGreaterThanOrEqual(
               4.5,
             );

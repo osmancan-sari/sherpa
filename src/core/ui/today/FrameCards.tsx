@@ -45,7 +45,7 @@ function Frame({ label, children }: { label: string; children: ReactNode }) {
   return (
     <section
       aria-label="Şimdi"
-      className="border-border bg-card flex min-h-56 flex-col justify-between gap-6 rounded-2xl border p-6 md:min-h-72 md:p-8"
+      className="glass-main rounded-panel flex min-h-56 flex-col justify-between gap-6 p-6 md:min-h-72 md:p-8"
     >
       <p className="text-muted-foreground text-xs font-medium tracking-widest uppercase">{label}</p>
       {children}

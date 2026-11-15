@@ -31,6 +31,7 @@ import {
 } from "@/core/ui/kit";
 import { HistoryLink, TabBar, TabLink } from "@/core/ui/kit/Tabs";
 import { useLook } from "@/core/ui/look/useLook";
+import { ModulePieces } from "./ModulePieces";
 import { Backdrop, type BackdropKind } from "@/core/ui/sky/Backdrop";
 import { type Sky, skyOf } from "@/core/ui/sky/sky";
 import { token } from "@/core/ui/tokens";
@@ -350,6 +351,8 @@ export function DesignGallery() {
           </Section>
         </Column>
       </div>
+
+      <ModulePieces />
     </div>
   );
 }

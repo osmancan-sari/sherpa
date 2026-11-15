@@ -34,7 +34,7 @@ Yeni bir parça önce buraya ve galeriye girer, sonra kullanılır.
 | **Sahne şeridi ve tonlar** | Telefonda en üstte kenardan kenara; panoda cam hap. Ton zeminleri: sakin, odak, enerji (`ekranlar/sahne.md`). | `SceneFrame` (`src/core/ui/today/Scene.tsx`), `Backdrop` | `spacing-strip`, `color-scene-strip`, `color-focus-tone`, `color-energy-base` |
 | **Zemin** | Tam manzara, sakin zemin, modülün zemini (`ilkeler.md`). | `Backdrop`, `Landscape`, `useBackdrop` (`src/core/ui/sky/`) | `--sky-*`, `color-night-dim` |
 
-Daha önceki kit parçaları (`ChoiceChips`, `Timer`, `Timeline`, `HeatGrid`, `BarChart`, `LineChart`, `DataTable`, `StepRunner`, `EmptyState`, `ErrorState`) aynı token'larla çizilir; modüller onları da kullanır.
+**Modüllerin parçaları** (Ç1'den beri; galeride "Modüllerin parçaları", `src/core/ui/gallery/ModulePieces.tsx`): `BarChart`, `LineChart`, `DataTable`, `HeatGrid`, `Timeline`, `Timer`, `ChoiceChips`, `StepRunner`, `EmptyState`, `ErrorState`. Aynı token'larla çizilir; modüller kendi ekranlarını bunlarla kurar. `ErrorState` kit'in "Veri okunamadı" panelidir (`ReadError`; varsayılan cümlesi kısa).
 
 ## Kullanım kuralları
 

@@ -36,12 +36,13 @@ const RULES: { rule: string; pattern: RegExp; css?: boolean; code?: boolean }[] 
   // A colour function with numbers in it (one built from computed values is not a written value).
   { rule: "colour function", pattern: /\b(?:rgba?|hsla?|oklch|oklab|lab|lch|hwb)\(\s*[\d.]/i },
   // Tailwind arbitrary values with a length: text-[15px], rounded-[28px], pb-[calc(9rem+…)].
-  { rule: "arbitrary length", pattern: /-\[[^\]]*\d(?:px|rem|em)\b[^\]]*\]/, code: true },
+  // The unit ends where no letter follows: "5rem_minmax(…)" is caught too ("_" is a word character).
+  { rule: "arbitrary length", pattern: /-\[[^\]]*\d(?:px|rem|em)(?![a-z])[^\]]*\]/, code: true },
   // A length written in a string: style={{ padding: "8px 20px" }}, `${x} 12px`.
   // (A hairline, 1px, is not a size.)
   {
     rule: "pixel in a string",
-    pattern: /["'`][^"'`\n]*\b(?!1px\b)\d+(?:\.\d+)?(?:px|rem)\b/,
+    pattern: /["'`][^"'`\n]*\b(?!1px(?![a-z]))\d+(?:\.\d+)?(?:px|rem)(?![a-z])/,
     code: true,
   },
   // A number given to a length in a style object: style={{ fontSize: 17, top: 300 }}.
@@ -101,6 +102,18 @@ describe("design values come from tokens.css only", () => {
       findings.map((f) => `${f.file}:${f.line} [${f.rule}] ${f.text}`),
       "Take the value from src/core/ui/tokens.css (docs/tasarim/README.md).",
     ).toEqual([]);
+  });
+
+  it("the rules catch what they are for, and let a token through", () => {
+    const caught = (text: string) => RULES.filter((r) => r.pattern.test(text)).map((r) => r.rule);
+    expect(caught(`className="grid-cols-[5rem_minmax(0,1fr)]"`)).toContain("arbitrary length");
+    expect(caught(`className="text-[15px]"`)).toContain("arbitrary length");
+    expect(caught(`className="pb-[calc(9rem+env(safe-area-inset-bottom))]"`)).toContain(
+      "arbitrary length",
+    );
+    expect(caught(`style={{ padding: "8px 20px" }}`)).toContain("pixel in a string");
+    expect(caught(`className="grid-cols-[var(--spacing-week-label)_minmax(0,1fr)]"`)).toEqual([]);
+    expect(caught(`border: "1px solid"`)).toEqual([]);
   });
 
   it("every allowed file still exists", () => {

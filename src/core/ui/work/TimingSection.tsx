@@ -5,7 +5,7 @@ import { TimeInput } from "../TimeInput";
 import { ChevronDown, X } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/core/ui/kit/Button";
-import { Input, Select } from "@/core/ui/kit/Field";
+import { FieldError, Input, Select } from "@/core/ui/kit/Field";
 import {
   checkTiming,
   daysLabel,
@@ -189,6 +189,9 @@ export function TimingSection({
   note?: string | null;
 }) {
   const setList = (name: ListName, ranges: DraftRange[]) => onChange({ ...draft, [name]: ranges });
+  const loose = issues.find(
+    (issue) => !LISTS.some((list) => list.name === issue.path[0] && issue.path.length > 1),
+  );
   const empty =
     draft.windows.length + draft.prefer.length + draft.avoid.length === 0 &&
     !draft.before &&
@@ -212,7 +215,7 @@ export function TimingSection({
         />
         <span className="text-base font-semibold">Zaman</span>
         {summary ? (
-          <span className="text-ink-2" data-testid="timing-summary">
+          <span className="text-ink-2 group-open:hidden" data-testid="timing-summary">
             {" "}
             · {summary}
           </span>
@@ -231,55 +234,64 @@ export function TimingSection({
                   draft[list.name].map((row, at) => (at === index ? { ...row, ...patch } : row)),
                 );
               const known = DAY_OPTIONS.some((option) => option.value === range.days);
+              // A range in error (ET3): its two times get the coral edge, the sentence under it.
+              const problem = issues.find(
+                (issue) => issue.path[0] === list.name && issue.path[1] === String(index),
+              );
               return (
-                <div key={index} className="flex flex-wrap items-center gap-1">
-                  <Select
-                    aria-label={`${name}: günler`}
-                    value={range.days}
-                    onChange={(event) => update({ days: event.target.value })}
-                    className="w-auto max-w-36 [&_select]:pr-8 [&_select]:pl-3 [&_svg]:right-2.5"
-                  >
-                    {known ? null : (
-                      <option value={range.days}>
-                        {daysLabel(range.days.split(",").map(Number))}
-                      </option>
-                    )}
-                    {DAY_OPTIONS.map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </Select>
-                  {/* The two times and the remove button wrap together on a narrow screen. */}
-                  <span className="flex items-center gap-1">
-                    <TimeInput
-                      aria-label={`${name}: başlangıç`}
-                      value={range.from}
-                      onChange={(from) => update({ from })}
-                      className="w-15 px-1 text-center tabular-nums"
-                    />
-                    <span aria-hidden>–</span>
-                    <TimeInput
-                      aria-label={`${name}: bitiş`}
-                      value={range.to}
-                      onChange={(to) => update({ to })}
-                      className="w-15 px-1 text-center tabular-nums"
-                    />
-                    <Button
-                      type="button"
-                      variant="quiet"
-                      size="icon"
-                      aria-label={`${name}: kaldır`}
-                      onClick={() =>
-                        setList(
-                          list.name,
-                          draft[list.name].filter((_, at) => at !== index),
-                        )
-                      }
+                <div key={index} className="flex flex-col gap-1.5">
+                  <div className="flex flex-wrap items-center gap-1">
+                    <Select
+                      aria-label={`${name}: günler`}
+                      value={range.days}
+                      onChange={(event) => update({ days: event.target.value })}
+                      className="w-auto max-w-36 [&_select]:pr-8 [&_select]:pl-3 [&_svg]:right-2.5"
                     >
-                      <X aria-hidden />
-                    </Button>
-                  </span>
+                      {known ? null : (
+                        <option value={range.days}>
+                          {daysLabel(range.days.split(",").map(Number))}
+                        </option>
+                      )}
+                      {DAY_OPTIONS.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </Select>
+                    {/* The two times and the remove button wrap together on a narrow screen. */}
+                    <span className="flex items-center gap-1">
+                      <TimeInput
+                        aria-label={`${name}: başlangıç`}
+                        value={range.from}
+                        onChange={(from) => update({ from })}
+                        aria-invalid={problem ? true : undefined}
+                        className="w-15 px-1 text-center tabular-nums"
+                      />
+                      <span aria-hidden>–</span>
+                      <TimeInput
+                        aria-label={`${name}: bitiş`}
+                        value={range.to}
+                        onChange={(to) => update({ to })}
+                        aria-invalid={problem ? true : undefined}
+                        className="w-15 px-1 text-center tabular-nums"
+                      />
+                      <Button
+                        type="button"
+                        variant="quiet"
+                        size="icon"
+                        aria-label={`${name}: kaldır`}
+                        onClick={() =>
+                          setList(
+                            list.name,
+                            draft[list.name].filter((_, at) => at !== index),
+                          )
+                        }
+                      >
+                        <X aria-hidden />
+                      </Button>
+                    </span>
+                  </div>
+                  {problem ? <FieldError>{issueText(problem)}</FieldError> : null}
                 </div>
               );
             })}
@@ -343,11 +355,8 @@ export function TimingSection({
             <span>gün</span>
           </fieldset>
         ) : null}
-        {issues.length > 0 ? (
-          <p role="alert" className="health-behind">
-            {issueText(issues[0])}
-          </p>
-        ) : null}
+        {/* A problem of no single range (the road, the rest days, a field the form does not use). */}
+        {loose ? <FieldError>{issueText(loose)}</FieldError> : null}
       </div>
     </details>
   );

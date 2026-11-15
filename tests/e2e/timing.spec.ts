@@ -44,6 +44,16 @@ test("the Zaman section saves what it should, refuses what it should, and sums i
   await dialog.getByLabel("Yalnızca şu saatlerde 1: bitiş").fill("16:00");
   await expect(dialog.getByRole("alert")).toHaveText("Bitiş saati başlangıçtan sonra olmalı.");
   await expect(dialog.getByRole("button", { name: "Kaydet" })).toBeDisabled();
+  // ET3: the two times of that range get the coral edge; the sentence stands under the range.
+  for (const end of ["başlangıç", "bitiş"]) {
+    await expect(dialog.getByLabel(`Yalnızca şu saatlerde 1: ${end}`)).toHaveAttribute(
+      "aria-invalid",
+      "true",
+    );
+  }
+  await expect(dialog.getByLabel("Kaçınılan saatler 1: başlangıç")).toHaveCount(0);
+  // Open, the section shows no summary line (only closed does it sum the constraint up).
+  await expect(dialog.getByTestId("timing-summary")).toBeHidden();
 
   await dialog.getByLabel("Yalnızca şu saatlerde 1: başlangıç").fill("16:00");
   await dialog.getByLabel("Yalnızca şu saatlerde 1: bitiş").fill("18:00");

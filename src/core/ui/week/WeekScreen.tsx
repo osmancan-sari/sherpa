@@ -349,7 +349,7 @@ function Horizon({ loads }: { loads: WeekLoad[] }) {
         {loads.map((load) => (
           <li
             key={load.weekStart}
-            className="grid grid-cols-[5rem_minmax(0,1fr)] items-center gap-3 text-sm"
+            className="grid grid-cols-[var(--spacing-week-label)_minmax(0,1fr)] items-center gap-3 text-sm"
           >
             <span className="text-muted-foreground tabular-nums">
               {load.weekStart.slice(8)}.{load.weekStart.slice(5, 7)}

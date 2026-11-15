@@ -1,7 +1,7 @@
 "use client";
 
 import { type ReactNode, useEffect, useState } from "react";
-import { Button } from "@/components/ui/button";
+import { ReadError } from "./Feedback";
 import { useNow } from "@/core/app/hooks";
 import { cn } from "@/lib/utils";
 
@@ -193,17 +193,6 @@ export function ErrorState({
   children?: ReactNode;
   onRetry?: () => void;
 }) {
-  return (
-    <div
-      role="alert"
-      className="border-border flex flex-col items-center gap-4 rounded-xl border px-5 py-10 text-center text-sm"
-    >
-      <p>{children}</p>
-      {onRetry ? (
-        <Button variant="outline" className="h-11" onClick={onRetry}>
-          Yeniden dene
-        </Button>
-      ) : null}
-    </div>
-  );
+  // The same panel as the core's read error (Feedback.tsx, ReadError): one look for one state.
+  return <ReadError onRetry={onRetry}>{children}</ReadError>;
 }

@@ -40,11 +40,15 @@ export const LANDSCAPE_GLASSES = [
   "color-glass-soft",
 ] as const;
 
-/** What those glasses carry: text, secondary text, a secondary button's and a chip's text. */
+/**
+ * What those glasses carry: text, secondary text, the coral of an error and of "Geride", a
+ * secondary button's and a chip's text.
+ */
 export function landscapeReadings(): GlassReading[] {
   return [
     { text: token("color-ink") },
     { text: token("color-ink-2") },
+    { text: token("color-behind") },
     { text: token("color-ink"), fill: token("color-fill-button") },
     { text: token("color-ink-soft"), fill: token("color-fill-chip") },
   ];
