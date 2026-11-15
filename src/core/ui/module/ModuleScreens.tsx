@@ -144,14 +144,17 @@ function Message({
   title,
   sentence,
   link,
+  back = { href: "/m", label: "Modüller" },
 }: {
   title?: string;
   sentence?: string;
   link?: { href: Route; label: string };
+  /** The arrow at the title's left on the phone: Modüller, or the module's page. */
+  back?: { href: Route; label: string };
 }) {
   if (!title) return <div className="flex-1" />;
   return (
-    <PageShell title={title} width="read">
+    <PageShell title={title} width="read" back={back}>
       <Panel variant="dense" className="items-start gap-3 p-4 md:p-4.5">
         <p className="text-base">{sentence}</p>
         {link ? (
@@ -262,6 +265,7 @@ function NotFound({ mod }: { mod: KnownModule }) {
       title={mod.row.name}
       sentence="Bu modülde böyle bir sayfa yok."
       link={{ href: `/m/${mod.row.slug}` as Route, label: "Modül sayfasına dön" }}
+      back={{ href: `/m/${mod.row.slug}` as Route, label: mod.row.name }}
     />
   );
 }

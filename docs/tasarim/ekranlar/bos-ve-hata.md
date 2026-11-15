@@ -36,4 +36,4 @@ Metinler koddaki gibidir; tek yeni metin bağlantı işaretidir.
 
 ## Kurulum (Ç4b)
 
-"bağlantı yok": `src/core/ui/look/Connection.tsx` (`useOnline`), sayfa başlığının ve Bugün'ün üst satırının sağında. Veri okunamadı: kit'in `ReadError`'u. Bütçe satırı bilgi simgesiyle, uyarı rengi yok. Bulunamayan modül: `src/core/ui/module/ModuleScreens.tsx` (`Message`). Bugün'ün boş hali ve bildirimlerin "Geri al"ı Ç4c'de (kit'in `Toast`'u eylemi taşır).
+"bağlantı yok": `src/core/ui/look/Connection.tsx` (`useOnline`), sayfa başlığının ve Bugün'ün üst satırının sağında. Veri okunamadı: kit'in `ReadError`'u (simgesiz, karedeki gibi). Bütçe satırı Bugün'ün en sonunda, alt satırın altında, bilgi simgesiyle, uyarı rengi yok. Bulunamayan modül: `src/core/ui/module/ModuleScreens.tsx` (`Message`); telefonda başlığın solunda geri oku (`PageShell` `back`): Modüller'e, sayfası olmayan alt sayfada modülün sayfasına. Faz görüntüleri: `docs/ekran-goruntuleri/c4b/*-bos-*`, `*-hata-*`. Bugün'ün boş hali ve bildirimlerin "Geri al"ı Ç4c'de (kit'in `Toast`'u eylemi taşır).

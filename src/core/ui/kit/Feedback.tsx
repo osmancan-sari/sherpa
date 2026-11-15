@@ -1,6 +1,6 @@
 "use client";
 
-import { CircleAlert, Info, TriangleAlert, WifiOff } from "lucide-react";
+import { Info, TriangleAlert, WifiOff } from "lucide-react";
 import Link from "next/link";
 import type { ComponentProps, ReactNode } from "react";
 import { cn } from "@/lib/utils";
@@ -175,10 +175,7 @@ export function ReadError({
       role="alert"
       className={cn("glass-dense rounded-dense flex flex-col items-start gap-4 p-5", className)}
     >
-      <p className="flex items-start gap-2.5 text-base">
-        <CircleAlert aria-hidden className="text-ink-2 mt-0.5 size-4.5 shrink-0" />
-        {children}
-      </p>
+      <p className="text-base">{children}</p>
       {onRetry ? (
         <button
           type="button"

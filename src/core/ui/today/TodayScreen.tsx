@@ -291,8 +291,6 @@ function TodayBody() {
     <>
       <TopBar input={input} now={now} />
 
-      <AiBudgetNotice />
-
       {quiet ? null : <AlertBar warnings={plan.warnings} modules={moduleMap} />}
 
       {/* minmax(0, …) and min-w-0: a long title is cut with an ellipsis instead of widening
@@ -381,6 +379,9 @@ function TodayBody() {
           <QuickAddButton />
         </div>
       </footer>
+
+      {/* At the end of the screen, under its bottom line (XT6, XP3). */}
+      <AiBudgetNotice />
 
       <MinutesDialog
         open={minutesOpen}

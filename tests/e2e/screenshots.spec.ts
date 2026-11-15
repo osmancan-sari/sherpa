@@ -960,6 +960,9 @@ test("empty and error screens", async ({ page, context }, testInfo) => {
   await page.goto("/");
   await expect(page.getByText("Bu ayın yapay zeka bütçesi doldu")).toBeVisible();
   await shot("bos-gun-butce");
+  // The line stands at the end of the screen: on the phone, scrolled down to it.
+  await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+  await shot("bos-gun-butce-alt");
   await page.unroute("**/api/ai/status");
 
   // The connection lost: a small pill at the right of the title; the screen stays (XT2, XP2).
