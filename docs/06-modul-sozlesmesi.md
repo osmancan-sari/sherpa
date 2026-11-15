@@ -64,8 +64,8 @@ export type ModuleDefinition = {
   emits: string[]                                           // yayınladığı olay türleri; '<slug>.' ile başlar
   on?: Record<string, (event: AppEvent, ctx: ModuleContext) => Promise<void>>
 
-  // 4. Hayat moduna tepki
-  modeBehavior: Record<LifeMode, ModeBehavior>
+  // 4. Hayat moduna tepki. Ç4a: hayat modu kalktı; isteğe bağlı, kabul edilir ama okunmaz
+  modeBehavior?: Partial<Record<LifeMode, ModeBehavior>>
 
   // 5. Haftalık rapor
   weeklyReport: (ctx: ModuleContext, week: DateRange) => Promise<ModuleReport>
@@ -118,6 +118,7 @@ type StructuredBlockHandler = {
   handle: (payload: unknown, ctx: ModuleContext) => Promise<void>
 }
 
+// Ç4a: kullanılmıyor. Bildiren eski modül reddedilmez; çekirdek denetlemez, yazmaz, okumaz.
 type ModeBehavior = {
   weightMultiplier: number           // planlayıcıdaki önem çarpanı
   floorMultiplier: number            // tabanın ne kadarı korunur (0–1)
@@ -142,7 +143,7 @@ Modülün satırı: tanım modülün ne yapabildiğini, `modules` tablosundaki s
 | 2 | Girdi kabul eder | `intake` listesi. Hızlı giriş ve yönlendirici bu listeyi okur; yeni modül eklenince kendiliğinden tanınır |
 | 3 | Ana ekrana kart verir | `chip`, isteğe bağlı `nowCard` ve `alerts` |
 | 4 | Olay yayınlar ve dinler | `emits` ve `on`. Modüller birbirini içe aktarmaz; yalnızca olaylarla haberleşir |
-| 5 | Mod davranışını bildirir | `modeBehavior` |
+| 5 | ~~Mod davranışını bildirir~~ | Ç4a'da kalktı: hayat modu yok. `modeBehavior` gönderen modül kırılmaz, alan yok sayılır |
 | 6 | Haftalık rapor verir | `weeklyReport`: metrikler ve en fazla 2 öneri |
 | 7 | Kural kartı verir | `docs/moduller/<slug>.md` içindeki "Kurallar" bölümü; `rules.ts` bunun kodudur |
 
@@ -308,9 +309,10 @@ type ModuleFacet = {
 type Say = (text: string, options?: { interrupt?: boolean }) => void
 
 type TodayBrief = {
-  top: { title: string; module: string; reason: string | null }[]   // günün 3 işi
+  work: { count: number; first: { title: string; module: string } | null }
+                                     // Ç4a: bugünün planında kalan işler (çalışma penceresi; uyanışa ve yatışa bağlı işler sayılmaz), sayısı ve ilki. Günün 3 işi yok
   blocks: { title: string; startsAt: Date; endsAt: Date }[]         // bugünün sabit blokları
-  finishLine: Date
+  bedtime: Date | null               // Ç4a: bu gecenin beklenen yatışı (kayıtlı, kullanıcının değeri, yoksa uyku planı); çerçeve kapalıysa null. Bitiş çizgisi yok
   wokeAt: Date | null
   closed: boolean                    // Ç3f: bugünün akşam kapanışı yapıldı mı
   date: string                       // Ç3g: çekirdeğin planlama günü; gece yarısından sonra, gece bitene kadar akşamın günü
@@ -393,7 +395,7 @@ type Timing = {
   rest_days?: number                   // yalnızca tekrar biçiminde: iki yapılış arasında en az bu kadar boş gün
   anchor?: 'wake' | 'bed'              // Ç3c: uyanıştan hemen sonra ya da yatıştan hemen önce (yuvalara dağıtılmaz)
   order?: number                       // Ç3c: aynı çapadaki işlerin sırası, 1–99, modüller arasında ortak (Ç3f: araya yer bırakarak 10, 20, 30); yalnızca `anchor` ile
-  after_finish?: true                  // Ç3c: bitiş çizgisinden sonra, akşama da konabilir
+  after_finish?: true                  // Ç3c: bitiş çizgisinden sonra, akşama da konabilir. Ç4a: gün bitiş çizgisi taşımaz; alan kabul edilir ve saklanır, planlayıcı okumaz
 }
 
 type ProposalResult = {
@@ -456,7 +458,7 @@ Oturum olayları yalnızca işin sahibi modüle verilir (oturumun `module_id`'si
 
 | Olay | Ne zaman | Yük | Kime |
 | --- | --- | --- | --- |
-| `core.context_reported` (Ç3d) | Giriş ucu `core/context` bir bağlam bildirdi (konum otomasyonu) | `{ context, at }` | Etkin bütün modüllere. Ekranlar bunu henüz kullanmaz (konumdan bağlam seçimi sonra) |
+| `core.context_reported` (Ç3d) | Giriş ucu `core/context` bir bağlam bildirdi (konum otomasyonu) | `{ context, at }` | Etkin bütün modüllere. Ç4a: çekirdek değeri saklar (`settings.reported_context`) ve telefonun ekranları bağlamı 3 saat boyunca ondan tahmin eder (`docs/04-planlayici.md`, "Bağlam tahmini") |
 
 `ModuleDefinition`'a iki alan eklenir:
 

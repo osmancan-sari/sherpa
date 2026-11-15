@@ -12,8 +12,8 @@ Sherpa'nın arkasında, bütün işleri gören ve zamanı planlayan bir yapay ze
 | Haftanın kalemleri ve modül payları; ay ufkunda sıkışma önerileri | Yapay zeka önerir, motor denetler | Bütüne bakış yargı ister; kapasite hesabı kod ister |
 | Büyük işi adımlara bölmek | Yapay zeka | Yargı gerektirir |
 | Serbest metni yönlendirmek (gelen kutusu, Ninova duyurusu) | Yapay zeka | Yapısız metin |
-| Yarının planı: günün 3 işi, sıra, neyin erteleneceği | Yapay zeka önerir, motor denetler | Modüller arası denge yargı ister; saat hesabı kod ister |
-| Haftalık denge, yetişmeyecek işler, mod önerisi | Yapay zeka | Bütüne bakış |
+| Yarının planı: sıra, neyin öne alınıp neyin erteleneceği (Ç4a: günün 3 işi yok) | Yapay zeka önerir, motor denetler | Modüller arası denge yargı ister; saat hesabı kod ister |
+| Haftalık denge, yetişmeyecek işler (Ç4a: mod önerisi yok) | Yapay zeka | Bütüne bakış |
 | "Gün dağıldı, yeniden planla" | Yapay zeka önerir, motor denetler | İstisna durumu |
 | Yuvaların üretimi, kapasite, kısıt denetimi | Motor | Aritmetik; kesin ve test edilebilir olmalı |
 | "Şimdi ne yapıyorum" seçimi | Motor | Her dakika ve her dokunuşta; anında ve ücretsiz olmalı |
@@ -27,11 +27,11 @@ Sherpa'nın arkasında, bütün işleri gören ve zamanı planlayan bir yapay ze
 | `size` | Bir modül, yargı alanları boş bir iş zarfı teklif ettiğinde; kalemin kapsamı değişince; `enrich` süreyi boş bıraktığında | hızlı | Zarf (`meta` dahil), modülün `sizingHints` metni, aynı modülün benzer bitmiş kalemlerinin gerçek süreleri | Toplam efor, oturum uzunluğu, gerekiyorsa önem ve enerji; güven ve gerekçe |
 | `decompose` | Kullanıcı bir kalemde "adımlara böl" dediğinde (hedefler Ç4'te) | planlama | Hedef, son tarih, modül bağlamı | Alt kalemler, sıra ve bağımlılıklar, her birinin kaba eforu |
 | `extract` | Ninova duyurusu ya da yapıştırılan metin geldiğinde | hızlı | Metin, yayın tarihi, dersin açık değerlendirmeleri | Değerlendirme önerisi: hangi kalem, tarih, saat, yer, kapsam |
-| `plan` | Günde bir kez (günün ilk açılışında, kapanış yapılmadıysa); akşam kapanışı açılırsa o an | planlama | Motorun taban planı, aday işler (özet), sabit bloklar, kapasite, dünün sonucu, kapanış notu; günün çerçevesi açıkken çalışma penceresi ve beklenen yatış (Ç3c; uyku geçmişi gitmez) | Günün 3 işi, sıra tercihleri, ertelenecekler, süre düzeltmeleri, uyarılar; her biri gerekçeli |
+| `plan` | Günde bir kez (günün ilk açılışında, kapanış yapılmadıysa); akşam kapanışı açılırsa o an | planlama | Motorun taban planı, aday işler (özet), sabit bloklar, kapasite, dünün sonucu, kapanış notu; günün çerçevesi açıkken çalışma penceresi (Ç4a: yatışa bağlı dizinin başına kadar) ve beklenen yatış (Ç3c; uyku geçmişi gitmez). Hayat modu gitmez (Ç4a) | Öne alınacaklar, ertelenecekler, süre düzeltmeleri, uyarılar; her biri gerekçeli (Ç4a: günün 3 işi yok) |
 | `week` | Haftanın ilk açılışında; hafta içinde yeniden kurma tetiklenince | planlama | `loadByWeek` çıktısı, aday kalemler, tabanlar, geçen haftanın sonucu | Haftanın kalemleri, modül başına saat payı, bırakılacaklar; gerekçeli |
 | `month` | Ayın ilk açılışında | planlama | Önümüzdeki 6–8 haftanın yük tablosu, kalem özetleri | Sıkışan haftalar için öneriler: öne çekme, bırakma, mod |
 | `replan` | Kullanıcı isteyince | planlama | `plan` ile aynı + günün şu ana kadarki durumu + kullanıcının notu | Günün kalanı için aynı yapı |
-| `review` | Cumartesiden itibaren, haftada bir | planlama | Modül raporları, haftanın oturumları, önümüzdeki 4 haftanın yükü | Özet, en fazla 3 öneri, mod önerisi |
+| `review` | Cumartesiden itibaren, haftada bir | planlama | Modül raporları, haftanın oturumları, önümüzdeki 4 haftanın yükü | Özet, en fazla 3 öneri (Ç4a: mod önerisi yok) |
 
 Modeller ortam değişkeninden okunur, kodda sabit yazılmaz:
 
@@ -44,9 +44,9 @@ AI_MODEL_PLAN=claude-sonnet-5-5      # plan, replan, week, month, review, decomp
 
 1. **Yalnızca sunucuda.** API anahtarı Vercel ortam değişkenindedir; istemciye hiçbir zaman gitmez. Bütün çağrılar `src/core/ai/` içindeki tek geçitten yapılır.
 2. **Yapılı çıktı.** Her çağrı, çıktısını bir JSON şemasıyla verir (API'nin yapılı çıktı biçimi, `output_config.format`; şema Zod ile yazılır) ve geçit çıktıyı aynı şemayla yeniden doğrular. Şemaya uymayan çıktı atılır, o işlem yapay zekasız devam eder.
-3. **Öneri, emir değil.** Yapay zeka son tarih değiştiremez, iş silemez, kayıt tamamlayamaz. Bunları yalnızca önerir; kullanıcı tek dokunuşla onaylar. Doğrudan yazabildikleri: yeni işin alanları, süre tahmini, önem, planlanan gün, günün 3 işi.
+3. **Öneri, emir değil.** Yapay zeka son tarih değiştiremez, iş silemez, kayıt tamamlayamaz. Bunları yalnızca önerir; kullanıcı tek dokunuşla onaylar. Doğrudan yazabildikleri: yeni işin alanları, süre tahmini, önem, planlanan gün, günün planına önerisi (öne alınacaklar, ertelenecekler; Ç4a: günün 3 işi yok).
 4. **Kaynağı belli.** Yapay zekanın koyduğu her değer işaretlidir (`tasks.ai`) ve gerekçesiyle saklanır. Kullanıcının elle değiştirdiği alanı yapay zeka bir daha değiştirmez.
-5. **Motor son sözü söyler.** `plan` çıktısı motora girdi olur. Kapasiteyi aşan, bloklarla çakışan, 90 dakika sınırını ya da bitiş çizgisini çiğneyen öneri motor tarafından düzeltilir ve düzeltme uyarı olarak gösterilir.
+5. **Motor son sözü söyler.** `plan` çıktısı motora girdi olur. Kapasiteyi aşan, bloklarla çakışan, 90 dakika sınırını ya da çalışma penceresini (Ç4a: yatışa bağlı dizinin başına kadar) çiğneyen öneri motor tarafından düzeltilir ve düzeltme uyarı olarak gösterilir.
 6. **Arayüz beklemez.** Serbest giriş anında gelen kutusuna yazılır; `enrich` sonucu gelince iş ya da iş kalemi olur (aşağıda "Akışlar"). Zaman aşımı 8 saniye; aşılırsa giriş gelen kutusunda kalır.
 7. **Az bağlam.** Hiçbir çağrı bütün veritabanını görmez. `plan` için motor önce adayları süzer ve en fazla 80 işin kısa özetini gönderir (kimlik, başlık, modül, süre, son tarih, önem, enerji).
 8. **Düzeltmelerden öğrenme.** Kullanıcı yapay zekanın koyduğu bir değeri değiştirince kayıt düşer (`ai_feedback`). `enrich` isteklerine o modülün son 10 düzeltmesi örnek olarak eklenir. Model eğitilmez; yalnızca örnekler güncel tutulur.
@@ -153,26 +153,26 @@ Planlama çağrıları `src/core/ai/calls/planning.ts` (istem ve şema) ve `src/
 
 | Akış | Tetikleyen | Ne yazar |
 | --- | --- | --- |
-| `plan` | Günün kaydı otomatik plandaysa (`plan_source = auto`), uygulama açılınca günde bir kez; kapanışta yarının taslağı için (`preview`: hiçbir şey yazmaz, öneri ekranda gösterilir, kullanıcı onaylayınca yazılır) | Öneri (`days.plan.advice`: üç iş, öne alınacaklar, ertelenecekler), gerekçeler (`plan_reasons`), `plan_source = ai`; süre düzeltmeleri kullanıcının elle koymadığı işlere (`tasks.ai`, `kind = plan`) |
-| `replan` | "Yeniden planla" (yapay zeka açıkken) | `plan` gibi; günün üç işinin bitmiş olanları kalır |
+| `plan` | Günün kaydı otomatik plandaysa (`plan_source = auto`), uygulama açılınca günde bir kez; kapanışta yarının taslağı için (`preview`: hiçbir şey yazmaz, öneri ekranda gösterilir, kullanıcı onaylayınca yazılır) | Öneri (`days.plan.advice`: öne alınacaklar, ertelenecekler; Ç4a: üç iş yok), gerekçeler (`plan_reasons`), `plan_source = ai`; süre düzeltmeleri kullanıcının elle koymadığı işlere (`tasks.ai`, `kind = plan`) |
+| `replan` | "Yeniden planla" (yapay zeka açıkken) | `plan` gibi; günün kalanı yeniden kurulur (Ç4a: korunacak üç iş yok) |
 | `week` | Haftanın taahhüdü kurulacakken (yeni hafta ya da tetikleyici; yapay zeka açıkken ekran taahhüdü sunucuya bırakır) | `keepWeek`'e öneri: kalemler, bırakılacaklar, modül payları; motor kuralları (zorunlu kalem, bağımlılık, kapasite, taban) uygular. `week_plans.plan_source = ai`, gerekçeler `reasons` |
 | `month` | Ayın ilk açılışı (o ay için `horizon_reviews` yoksa) | Sıkışan haftalar için en çok 5 öneri (`horizon_reviews.proposals`); Hafta ekranında gösterilir, kendiliğinden uygulanmaz |
-| `review` | Cumartesiden itibaren, o hafta için `weekly_reviews` yoksa | Modüllerin haftalık raporlarından özet, en çok 3 öneri, gerekirse mod önerisi (`weekly_reviews.summary`); Hafta ekranında |
+| `review` | Cumartesiden itibaren, o hafta için `weekly_reviews` yoksa | Modüllerin haftalık raporlarından özet, en çok 3 öneri (`weekly_reviews.summary`; Ç4a: mod önerisi yok, eski satırdaki gösterilmez); Hafta ekranında |
 
-- Öneri hiçbir koruma kuralını aşamaz: zorunlu işi ertelemek reddedilir ve uyarı olur (`advice_rejected`); kapasiteyi aşan üç iş kırpılır.
-- Günün 3 işinde önce bugün teslim işler gelir; yapay zekanın üçü kalan yeri doldurur. Ritimler üçlüye yalnızca tabanı tehlikedeyse girer (`docs/04-planlayici.md`, madde 8). İstem bunu ve adayların türünü (`type`) bilir.
+- Öneri hiçbir koruma kuralını aşamaz: zorunlu işi ertelemek reddedilir ve uyarı olur (`advice_rejected`); penceresine sığmayan öne alma reddedilir.
+- Ç4a: günün 3 işi kalktı (`plan-5`, `replan-5`). Plan günün kalanıdır; yapay zeka dengeyi öne alma ve ertelemeyle kurar. Girdide hayat modu yoktur, `base` yalnızca motorun yerleştirdiklerini, `yesterday` dün biten işlerin sayısını ve süresini taşır. Eskiden kaydedilmiş öneride `top3` durursa okunmaz; yanıtta gelirse atılır. `week-4`, `month-3` (yalnızca öne çekme ve bırakma), `review-3` (mod önerisi yok).
 - **Ton (ürün kuralı 2).** Beş planlama isteminin hepsi aynı kuralı taşır (`PLANNING_TONE`): yapılmayan, bitmeyen, kaçan, geciken ya da ertelenen işi saymak ve anmak, plana göre kıyaslamak, suçlamak yasak; "dün" yazılmaz, dünün sayıları yalnızca bugünü boyutlamak içindir. `review` çalışılan dakikaları düz miktar olarak söyler. `ai:eval` bunu ayrı örneklerle denetler ("Kalite denetimi").
 - `plan`'ın `splits` (bölünecek işler) çıktısı kurulmadı: büyük işin bölünmesi `decompose`'un ("Adımlara böl") işi.
 - Kullanıcının notu: `replan`'a not alanı yok ("Yeniden planla" tek dokunuştur); `plan` önceki akşamın kapanış notunu (`days.closing_note`) alır. Kapanışta not alanı yok; not yalnızca veride varsa gider. **Görüşün gerek.**
 - Yapay zeka açıkken "Haftayı yeniden kur" sunucuya gider (`week`, `force`); yanıt yoksa motor kurar. "Yeniden planla" önce motorun planını yazar (sabahın önerisi bırakılır), `replan` üstüne gelir. `review` sunucuda da Cumartesiden önce yapılmaz.
-- Sahte sağlayıcının yanıtları (`fake.ts`): üç iş motorun ilk üç adayı, başlığında `[ai:defer]` olan ertelenir; `week` motorun taahhüdünü gerekçeyle döndürür; `month` sıkışan hafta için Yoğun mod önerir.
+- Sahte sağlayıcının yanıtları (`fake.ts`): motorun ilk üç adayı gerekçeyle öne alınır, başlığında `[ai:defer]` olan ertelenir; `week` motorun taahhüdünü gerekçeyle döndürür; `month` sıkışan hafta için ilk kalemi bir hafta önce başlatmayı önerir.
 
 ## Plan çağrısının akışı
 
 1. Motor `buildPlan` ile taban planı kurar (yapay zekasız geçerli bir plan).
 2. Sunucu taban planı, aday özetlerini ve bağlamı `plan` çağrısına gönderir.
-3. Yapay zeka düzeltmeleri döndürür: `top3`, `prefer` (öne alınacaklar), `defer` (ertelenecekler ve gerekçesi), `estimates` (süre düzeltmeleri), `splits` (bölünecek işler ve adımları), `warnings`.
-4. Sunucu öneriyi günün kaydına yazar (`days.plan.advice`: üç iş, öne alınacaklar, ertelenecekler; `planned_date` değişmez), süre düzeltmelerini yalnızca yapay zekanın kendi tahmin ettiği sürelere uygular ve motoru yeniden çalıştırır. Adım işleri (`splits`) yazılmaz ("Akışlar (Ç3)").
+3. Yapay zeka düzeltmeleri döndürür: `prefer` (öne alınacaklar), `defer` (ertelenecekler ve gerekçesi), `estimates` (süre düzeltmeleri), `splits` (bölünecek işler ve adımları), `warnings`.
+4. Sunucu öneriyi günün kaydına yazar (`days.plan.advice`: öne alınacaklar, ertelenecekler; `planned_date` değişmez), süre düzeltmelerini yalnızca yapay zekanın kendi tahmin ettiği sürelere uygular ve motoru yeniden çalıştırır. Adım işleri (`splits`) yazılmaz ("Akışlar (Ç3)").
 5. Sonuç `days.plan` olur; `plan_source = ai`. Gerekçeler planla birlikte saklanır ve ekranda "neden?" ile açılır.
 6. Herhangi bir adım başarısız olursa 1. adımdaki taban plan geçerlidir (`plan_source = auto`).
 

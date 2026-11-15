@@ -19,15 +19,20 @@ import { getOpenSession, listSessions } from "@/core/data/sessions";
 import { listDays, listStats, listWeekPlans } from "@/core/data/planning";
 import { listDeviceTokens } from "@/core/data/tokens";
 import { listRhythmLogs, listRhythms, listTasks, listWorkItems } from "@/core/data/work";
+import { weekInput } from "@/core/data/keep";
 import {
   buildPlan,
   dayStartClock,
+  forecastDays,
   inferContext,
+  loadByWeek,
   type PlanRows,
   planInput,
   plannerSettings,
   planningDay,
+  readShares,
   reportedOf,
+  weekWork,
 } from "@/core/planner";
 import { type Db, type ModuleRow, unwrap } from "@/core/types";
 import { dayKey, shiftDay, weekStart } from "@/lib/date";
@@ -345,6 +350,34 @@ export function useTodayPlan() {
     return { input, plan: buildPlan(input), rows, context };
   }, [rows, now, device]);
   return { ...result, loading, failed, retry, now, context: result?.context ?? null };
+}
+
+/**
+ * Takvim's data (docs/04-planlayici.md, "Gelecek günlerin tahmini" and "Takvim'in verisi"; Ç4a,
+ * the screen is Ç4c's): the forecast of the week's days after today (never stored), the week's
+ * work by deadline, and the coming eight weeks' work against their time. Null until the rows are
+ * in. Remade with today's plan: the same rows give the same forecast.
+ */
+export function useCalendar(week: string) {
+  const { input, plan, rows, now } = useTodayPlan();
+  return useMemo(() => {
+    if (!input || !plan || !rows) return null;
+    const from = weekStart(week);
+    const days = forecastDays(input, plan, { from, to: shiftDay(from, 6) });
+    const load = weekInput(rows, now);
+    const stored = rows.weekPlans.find((row) => row.week_start === from);
+    const work = weekWork(
+      {
+        ...load,
+        committed: stored?.committed ?? null,
+        shares: readShares(stored?.shares),
+        reasons: (stored?.reasons ?? {}) as Record<string, string>,
+      },
+      from,
+    );
+    const weeks = loadByWeek(load, { from, weeks: 8 });
+    return { days, work, weeks };
+  }, [input, plan, rows, now, week]);
 }
 
 /** This month's AI calls by kind and model. */

@@ -5,8 +5,8 @@ Bu dosyayı Claude Code günceller. Yeni bir oturum yalnızca bu dosyayı ve `pr
 ## Durum
 
 - Faz: **Ç4a. Sadeleşen çekirdek** (15 Kas 2026; istem `prompts/c4a-sade-cekirdek.md`). Ç3g (`c3g-tamam`) yayında
-- Adım: 0 (plan) bitti
-- Son commit: Ç4a planı ve yol haritası
+- Adım: 1–3 (planlayıcı, veri ve sözleşme, yapay zeka) kuruldu ve dokümanlar güncellendi; ekranlardan kalkanlar da aynı commit'te kaldırıldı (4. adımın kalanı: uçtan uca testler). Sıradaki: adım denetimi
+- Son commit: Ç4a dokümanları
 
 ### Çekirdek ekranlarının cam tasarım oturumu (14–15 Kas 2026)
 
@@ -32,10 +32,10 @@ Ayrı bir tasarım sohbetinde (`prompts/cekirdek-cam-tasarim-oturumu.md`) çekir
 | # | Adım | Durum |
 | --- | --- | --- |
 | 0 | Bekleyen dokümanların commit'i, `docs/07` (Ç4a–Ç4d), bu plan | bitti |
-| 1 | Planlayıcı (önce testler): hayat modu; bitiş çizgisi yerine yatışa uzanan pencere, akşam ve `after_finish` kalkar, "bitiş çizgisinden sonra" uyarısı kalkar; günün 3 işi ve "vakit kalırsa" kalkar; "Bugün tamam"ın yeni koşulu; geri dönüşte sıradaki iş; bağlam tahmini (saf) ve kapalı süzgeç; gelecek günlerin tahmini, haftanın işleri ve sekiz haftanın toplamı. `docs/04` | |
-| 2 | Veri ve sözleşme: `core/context` değerinin saklanması (migration), kalkan alanların okunmaması ve yazılmaması (`docs/03`), `TodayBrief` (iş sayısı, ilk iş, yatış), mod davranışı ve `after_finish` geriye uyumla; `deneme`, şablon, Rutin (sesli özet). `docs/06`, `rutin.md` | |
-| 3 | Yapay zeka: `plan`/`replan` çıktısında günün 3 işi yok, girdilerde hayat modu yok, `month` ve `review` mod önermez; sahte sağlayıcı ve değerlendirme örnekleri. `docs/10` | |
-| 4 | Ekranlar: mod ve bağlam seçici, bitiş saati, n/3, "Vakit kalırsa", Günaydın'daki günün işleri, geri dönüşte üç iş, Hafta'daki mod, Ayarlar'daki bitiş ve "Hayat modlarında", formdaki akşam seçeneği ve uyarısı, kapanışın işaret kutuları; Takvim'in veriye ulaşan yolu. `docs/01`, `docs/05`, `docs/12` | |
+| 1 | Planlayıcı (önce testler): hayat modu; bitiş çizgisi yerine yatışa uzanan pencere, akşam ve `after_finish` kalkar, "bitiş çizgisinden sonra" uyarısı kalkar; günün 3 işi ve "vakit kalırsa" kalkar; "Bugün tamam"ın yeni koşulu; geri dönüşte sıradaki iş; bağlam tahmini (saf) ve kapalı süzgeç; gelecek günlerin tahmini, haftanın işleri ve sekiz haftanın toplamı. `docs/04` | bitti (`b2e8b8b`): `context.ts`, `forecast.ts`, `weekWork`, `dayEnds`; testler `context.test.ts` 7, `forecast.test.ts` 8, `week.test.ts` +3, `plan.test.ts` (yeni: bilinmeyen bağlam, tamamın dört hali, geri dönüşte boş), `frame.test.ts` (yeni: eski bitişten sonraki saatler, tamam ve çapa), `brief.test.ts` +2 |
+| 2 | Veri ve sözleşme: `core/context` değerinin saklanması (migration), kalkan alanların okunmaması ve yazılmaması (`docs/03`), `TodayBrief` (iş sayısı, ilk iş, yatış), mod davranışı ve `after_finish` geriye uyumla; `deneme`, şablon, Rutin (sesli özet). `docs/06`, `rutin.md` | bitti (`b2e8b8b`; `20261115100000_reported_context.sql`): `saveReportedContext`, `ingest.test.ts` +1, `registry.test.ts` +1, Rutin `brief.test.ts` yeni kalıp |
+| 3 | Yapay zeka: `plan`/`replan` çıktısında günün 3 işi yok, girdilerde hayat modu yok, `month` ve `review` mod önermez; sahte sağlayıcı ve değerlendirme örnekleri. `docs/10` | bitti (`b2e8b8b`): `plan-5`, `replan-5`, `week-4`, `month-3`, `review-3`; `ai-planning.test.ts` yeni beklentiler |
+| 4 | Ekranlar: mod ve bağlam seçici, bitiş saati, n/3, "Vakit kalırsa", Günaydın'daki günün işleri, geri dönüşte üç iş, Hafta'daki mod, Ayarlar'daki bitiş ve "Hayat modlarında", formdaki akşam seçeneği ve uyarısı, kapanışın işaret kutuları; Takvim'in veriye ulaşan yolu. `docs/01`, `docs/05`, `docs/12` | kod bitti (`b2e8b8b`; `useCalendar`); uçtan uca testlerin güncellenmesi sürüyor |
 | 5 | Kapanış: uçtan uca testler, ekran görüntüleri (`docs/ekran-goruntuleri/c4a/`), `check:full`, faz denetimi, rapor, `c4a-tamam`; yayın senin izninle | |
 
 ### Ç3g planı
@@ -1089,6 +1089,24 @@ Süre sapmasındaki artış çoğunlukla `enrich`'in kendi tahminlerinin çalı�
 - Ekran görüntüleri: `docs/ekran-goruntuleri/c1/`.
 
 ## Verdiğim kararlar
+
+**Ç4a (15 Kas 2026)** — ayrıntı ve gerekçe `docs/09-kararlar.md` (15 Kas, Ç4a satırları)
+
+- Kalkan alanlar silinmedi: okunmuyor ve yazılmıyor (`days.top3`, `days.life_mode`, `days.finish_line`, `settings.finish_line_default`, `week_plans.life_mode`, `life_mode_periods`, `modules.mode_behavior`, `rhythms.mode_targets`); `docs/03`'te "kullanılmıyor (Ç4a)". Temizlik Ç4d'de. Migration yalnızca ekleme: `settings.reported_context`, `reported_context_at`.
+- `PlanInput.finishLine` yerine `bedtime` (çerçeve açıkken `frame.bed`, kapalıyken 22:00); pencere `bedtime − yatışa bağlı işler`. Günlerin sonu `PlannerSettings.dayEnds` (bugün gerçek, sonraki 7 gün en geç uyanıştan kaba). Çerçeve kapalı kullanıcıda gün artık 22:00'ye uzanır (önce 19:00): kapasite büyür, öğrenilen kapasite çarpanı zamanla düşer. **Görüşün gerek.**
+- Akşam durumu pencere bitince (yatışa bağlı dizinin başı) ya da kapanışla gelir; "Bugün tamam" yatışa bağlı işi beklemez. "Bugün iş vardı": biten, düşen, ertelenen iş, ertelenen kalem ya da ritim, çapasız ritim kaydı. **Görüşün gerek.**
+- Bağlam: pano `desk`; telefon (768 px'den dar ya da dokunmatik) `inferContext`. Yerin bağlamı yazıdaki sözcükten, yoksa bloğun gün tipinden, yoksa `out`; günün tipi yalnızca bloklardan (varsayılan sayılmaz, yoksa süzgeç hiç kapanmazdı). Eski bağlam seçicinin cihazda sakladığı değer (`sherpa:context`) artık okunmuyor. **Görüşün gerek** (sözcük listesi).
+- Tahmin: 8 hafta erim, gün gün açgözlü, çapalı iş yok, sonraki haftalar taahhütsüz. `useCalendar(week)` veriye ulaşan yol; ekran her dakika yeniden hesaplar (Ç4c'de gerekirse önbellek).
+- Yapay zeka: `plan-5`/`replan-5` (`top3` yok; `yesterday` dün biten işin sayısı ve süresi; `day.end`), `week-4`, `month-3` (mod önerisi yok), `review-3`. Sahte sağlayıcı ilk üç adayı öne alır (`prefer`), `month` ilk kalemi öne çeker. Saklı eski önerideki `top3` ve eski satırlardaki mod önerisi okunmaz/gösterilmez.
+- Sözleşme: `modeBehavior` isteğe bağlı, denetlenmez, yazılmaz; `deneme`, şablon ve Rutin vermiyor. `TodayBrief`: `top` ve `finishLine` yerine `work` (`count`, `first`) ve `bedtime`.
+- Rutin'in sesli özeti: "Günaydın. 10:30'da Derin Öğrenme dersi var. Bugün dört iş var; ilki proje önerisi. Yatış 23:00." Sayılar sözcükle ("on iki"); tek işte "Bugün bir iş var: …"; panoda "4 iş · İlki …", "Yatış". Rutin artık kendi `plannedBed`'ini değil çekirdeğin `today.bedtime`'ını okur. **Görüşün gerek.**
+- Ekranlar (yerleşim değişmedi): üst satırdan n/3, bitiş, mod bağlantısı, bağlam seçici; şeritten akşam bölümü ve bitiş çizgisi; Sıradakiler bütün kalan plan (üçle sınırlı değil; açılır liste Ç4c); "Vakit kalırsa" bölümü ve tamam kartındaki düğmesi; Günaydın'daki "Günün işleri" ve "Bitiş"; geri dönüşte tek iş; kapanışta işaret kutuları ("İstemediğini çıkar.", onayda yarının işleri sırayla); Hafta'daki "Hayat modu" ve mod önerisi; modül ayarlarındaki "Hayat modlarında"; formdaki "bitiş çizgisinden sonra" uyarısı ve özetteki "akşam da olur". "Yatıyorum" onayında çerçeve kapalıyken "Yatış saati: 22:00." **Görüşün gerek.**
+- **Silinen ya da yeniden yazılan testler (kalkan kurallar; başka test gevşetilmedi):**
+  - `plan.test.ts`: "puts its three after the mandatory work", "knows a member of the day's three by its sitting", "the day's three, fixed", "the day's three" (iki test) silindi: günün 3 işi yok. "keeps a rhythm's floor in busy mode" ve "offers nothing of a module the life mode switches off" modsuz kurala göre yeniden yazıldı (taban gün sayısıyla; ağırlığı 0 modül). "does not raise the floor once the week's minutes are worked" haftanın dakikaları tabanın tamamına (90) çıkarıldı (eski test Yoğun modda yarıya inen tabanla geçiyordu). Tamam testleri yeni koşula göre yeniden yazıldı ve dört yeni hal eklendi. `overflow` beklentileri `unplaced` (yerleşmeyen adaylar) ile aynı anlamda korundu.
+  - `timing.test.ts`: "work whose windows lie wholly after the finish line is said to be unplannable" silindi (uyarı kalktı); `loose` beklentisi `outside_day` yerine uyarısız. Yapay zekanın reddedilen önerisi `top3` yerine `prefer` ile sınanıyor.
+  - `frame.test.ts`: "the evening" grubu (akşama `after_finish` koyma, akşam tabanı, gün dolunca akşama) silindi; yerine "the hours after the old finish line" grubu (dört test). Akşam ve gece durumları yeni pencereyle; çerçeve kapalı yatış dizisi 22:00'ye göre. Uykunun yük testinde görev sayısı 6'dan 8'e (gün yatışa uzayınca 6 iş artık sığıyordu; çekme kuralı aynı).
+  - `week.test.ts`, `input.test.ts`, `facets.test.ts`, `ai/flows/planning.test.ts`, `eval.test.ts`, `registry.test.ts`, `modules.test.ts`: mod ve üç işle ilgili beklentiler kaldırıldı ya da "yok" beklentisine çevrildi; `mode_changed` yeniden taahhüt beklentisi silindi. Test girdilerinde günün 19:00'de bitmesi `settings.bedtime: "19:00"` ile korundu (eski sayılar aynı kalsın).
+  - `tests/db`: `planning.test.ts` "life modes" grubu ve "is committed again when the life mode changes" silindi; gün kaydında `top3` ve `life_mode` artık varsayılanında. `seed.test.ts` Ç3 kabul testi modsuz (taban yine zorunlu ve yerleşik; "Yoğun modda ağırlığı düşük" beklentisi kalktı). `ai-planning.test.ts` üç iş yerine öne alma; `replan` testi; `month` önerisi `advance`. `envelope.test.ts` `mode_behavior` boş.
 
 **Ç3g (14 Kas 2026)** — ayrıntı ve gerekçe `docs/09-kararlar.md` (Ç3g satırları)
 

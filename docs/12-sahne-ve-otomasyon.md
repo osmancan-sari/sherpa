@@ -132,9 +132,11 @@ Kurallar:
 Gün iki gerçek olaya bağlanır: uyanış ve yatış.
 
 ```
-uyku │ uyanışa bağlı işler │ çalışma penceresi │ akşam │ yatışa bağlı işler │ uyku
-     ▲ uyanış (kayıt)                          ▲ bitiş çizgisi (saat)       ▲ yatış (kayıt)
+uyku │ uyanışa bağlı işler │ çalışma penceresi │ yatışa bağlı işler │ uyku
+     ▲ uyanış (kayıt)                                                ▲ yatış (kayıt)
 ```
+
+Ç4a (15 Kas 2026): saatle belirlenen bitiş çizgisi ve "akşam" bölümü kalktı; çalışma penceresi yatışa bağlı dizinin başına kadar sürer (`docs/04-planlayici.md`, "Günün çerçevesi").
 
 **Veri.**
 
@@ -154,7 +156,7 @@ settings
                                     --   by_day_type: { office: { wake: […], bed: […] } } }
 ```
 
-Uyanış ve yatış birer saat değil birer aralıktır; uyku hedefi bir süredir. Başlangıç değerleri kullanıcının söyledikleridir (12 Kas 2026): uyanış 06:00–09:00, yatış 22:00–01:00, uyku 8 saat. Ayarlar'dan değişir; gün tipine özel aralık isteğe bağlıdır. Aralıklar planlayıcıyı bağlar, kullanıcıyı değil: gerçek uyanış ve yatış aralığın dışında olabilir. Bitiş çizgisi mevcut ayarıyla kalır.
+Uyanış ve yatış birer saat değil birer aralıktır; uyku hedefi bir süredir. Başlangıç değerleri kullanıcının söyledikleridir (12 Kas 2026): uyanış 06:00–09:00, yatış 22:00–01:00, uyku 8 saat. Ayarlar'dan değişir; gün tipine özel aralık isteğe bağlıdır. Aralıklar planlayıcıyı bağlar, kullanıcıyı değil: gerçek uyanış ve yatış aralığın dışında olabilir. Ç4a: bitiş çizgisi kalktı; ayarda da yoktur.
 
 **Kayıt.**
 
@@ -182,8 +184,8 @@ Uyanış ve yatış birer saat değil birer aralıktır; uyku hedefi bir süredi
 
 1. **Günün başı.** Çalışma penceresi `uyanış + uyanışa bağlı işlerin ayak izi`nde başlar. Uyanış henüz yoksa (yarının planı, sabah uyanmadan önce) sırayla: kullanıcının o güne verdiği değer (`days.expected_wake`); yoksa uyku planının beklenen uyanışı.
 2. **Çapa.** `timing` bir alan daha taşır: `anchor: 'wake' | 'bed'`. Uyanışa bağlı işler uyanıştan başlayarak art arda dizilir; yatışa bağlı işler beklenen yatışta bitecek biçimde geriye doğru dizilir. Çapa kesindir: bu işler yuvalara dağıtılmaz. Birden çok iş aynı çapaya bağlıysa sıra modülün verdiği `order` ile, eşitse skorla belirlenir. Çapa `windows` ile birlikte kullanılmaz.
-3. **Akşam.** Bitiş çizgisi ile yatışa bağlı işler arası akşamdır. Planlayıcı akşama yalnızca `timing.after_finish = true` taşıyan işleri koyar ("bitiş çizgisinden sonra da olur"); `windows` ve öbür kısıtlar yine geçerlidir. Başka hiçbir iş bitiş çizgisinden sonraya konmaz. Akşam süresi kapasite çarpanına girmez. Bu, `docs/09-kararlar.md` içindeki "penceresi bitiş çizgisinden sonraya düşen iş" açık sorusunu kapatır.
-4. **Gün kısalınca.** Geç uyanılan günde çalışma penceresi kısalır; plan yeniden kurulur, sığmayanlar olağan kurallarla "vakit kalırsa"ya ya da sonraki günlere gider. Uyarı metinleri bunu kusur gibi anlatmaz.
+3. ~~**Akşam.**~~ Ç4a'da kalktı: çalışma penceresi yatışa bağlı işlere kadar sürer, `after_finish` kabul edilir ama okunmaz.
+4. **Gün kısalınca.** Geç uyanılan günde çalışma penceresi kısalır; plan yeniden kurulur, sığmayanlar olağan kurallarla sonraki günlere gider (Ç4a: "vakit kalırsa" yok). Uyarı metinleri bunu kusur gibi anlatmaz.
 5. **Kaydırma.** "Bu gece geç yatacağım" ve "yarın erken kalkacağım" tek dokunuşla o günün beklenen saatini değiştirir (`expected_bed`, `expected_wake`); uyku planı bu değerleri veri sayar, kalıcı ayar değişmez.
 
 **Ekran durumları.** `plan.now`'a iki durum eklenir, biri değişir:
@@ -191,7 +193,7 @@ Uyanış ve yatış birer saat değil birer aralıktır; uyku hedefi bir süredi
 | Durum | Koşul | Ekran |
 | --- | --- | --- |
 | `morning` | Gün başladı, uyanış kaydı yok | "Günaydın", "Uyandım" düğmesi, bugünün kısa özeti |
-| `evening` | Bitiş çizgisi geçti, yatış kaydı yok | Akşam: varsa akşama konan işler, "Günü kapat", "Yatıyorum". Sakin ekran |
+| `evening` | Çalışma penceresi bitti (Ç4a: yatışa bağlı dizinin başı) ya da gün kapatıldı, yatış kaydı yok | Akşam: zamanı gelen yatışa bağlı iş, "Günü kapat", "Yatıyorum". Sakin ekran |
 | `night` | Yatış kaydedildi, ya da beklenen yatış aralığının sonu geçti | Gece ekranı (mevcut) |
 
 Uyanışa bağlı ilk iş "Uyandım"dan sonra kendiliğinden önerilir; ayar açıksa kendiliğinden başlar (tek dokunuşla uyanış + rutin).
@@ -285,7 +287,7 @@ Kurallar:
 1. **İş bölümünü taşır.** İş zarfına isteğe bağlı `facet` alanı eklenir (bölümün anahtarı). Saklama: `work_items.facet`, `tasks.facet`, `rhythms.facet`, `blocks.facet` (`text`, boş geçilebilir). Oturum işinin kendi bölümü yoksa kaleminin bölümü geçerlidir. `facet` olgu alanıdır: modül her teklifte yazar; kullanıcı formdan değiştirdiyse ezilmez.
 2. **Doğrulama.** Teklif anında `facet` modülün o anki bölüm listesinde olmalıdır; yoksa teklif alanın adıyla reddedilir. Bölüm sonradan listeden çıkarsa (dönem bitti, ders kalktı) iş anahtarı korur ve modülün rengiyle görünür; hata vermez.
 3. **Bölüm listesi.** `facets` modülün bağlamıyla hesaplanır ve modülün verisi değişince tazelenir (çip gibi). Bölümü olmayan modülde bu alan yoktur ve her şey Ç3c'deki gibidir.
-4. **Renk.** Çekirdeğin bir iş için kullandığı renk tek yardımcıdan gelir: `kullanıcının bölüm rengi → bölümün varsayılan rengi → kullanıcının modül rengi → modülün varsayılan rengi`. Bu yardımcı her yerde kullanılır: zaman çizelgesi (şerit ve yol), Şimdi kartı, Sıradakiler, "Vakit kalırsa", sahnenin çerçevesi, Hafta ekranındaki kalemler, akşam kapanışı, modül sayfasındaki listeler. Modül düzeyindeki yerler (çip, modül payları, modül listesi) modülün rengini kullanır.
+4. **Renk.** Çekirdeğin bir iş için kullandığı renk tek yardımcıdan gelir: `kullanıcının bölüm rengi → bölümün varsayılan rengi → kullanıcının modül rengi → modülün varsayılan rengi`. Bu yardımcı her yerde kullanılır: zaman çizelgesi (şerit ve yol), Şimdi kartı, Sıradakiler, sahnenin çerçevesi, Hafta ekranındaki kalemler, akşam kapanışı, modül sayfasındaki listeler. Modül düzeyindeki yerler (çip, modül payları, modül listesi) modülün rengini kullanır.
 5. **Sahne.** Çalışan işin bölümü `scene` taşıyorsa o sahne kullanılır (`ui.scenes[anahtar]`); yoksa modülün varsayılan sahnesi. Sahnenin `when` işlevi yine geçerlidir. Sahne bileşeni `SceneProps.facet` ile bölümü (anahtar, ad, renk) alır; aynı bileşen birden çok bölümde kullanılabilir (her ders aynı "ders" sahnesini kendi rengiyle).
 6. **Ton.** Sahne çerçevesinin tonu: bölümün `tone`'u → sahnenin `look.tone`'u.
 7. **Kullanıcının renkleri.** Ayarlar → Modüller → <modül>: modülün rengi ve her bölümün rengi seçilir; "varsayılana dön". Saklama: `modules.color` (modülün; kurulumda tanımdan kopyalanır, artık kullanıcı değiştirir) ve `modules.facet_colors jsonb default '{}'` (`{ "sabah": "#E8A33D" }`). Seçici açık ve koyu temada okunur kalan hazır bir paletten seçtirir; özel renk de girilebilir (`#rrggbb`). Değişiklik öbür cihaza canlı gider.
@@ -364,7 +366,7 @@ Kurulurken netleşen (Ç3f): yatışı sahnenin son adımının kaydedebilmesi i
 - [ ] Gerçek yatış kaydedilince yarının beklenen uyanışı ve planı değişiyor (geç yatış → kısalan gün, erken yatış → uzayan gün); kapasite 30 dakikadan çok düşünce haftanın taahhüdü yeniden kuruluyor
 - [ ] Akşam ekranı bu gecenin yatışını, yarının uyanışını ve uyku süresini birlikte gösteriyor
 - [ ] `anchor: 'wake'` taşıyan iş uyanıştan hemen sonra, `anchor: 'bed'` taşıyan iş yatıştan önce duruyor; yuvalara dağıtılmıyor
-- [ ] `after_finish` taşımayan hiçbir iş bitiş çizgisinden sonraya konmuyor; taşıyan iş akşama konabiliyor
+- [ ] `after_finish` taşımayan hiçbir iş bitiş çizgisinden sonraya konmuyor; taşıyan iş akşama konabiliyor (Ç4a: kural kalktı, bkz. `docs/04-planlayici.md`)
 - [ ] `morning` ve `evening` durumları doğru koşullarda geliyor; "bu gece geç yatacağım" ve "yarın erken kalkacağım" yalnızca o günü etkiliyor
 - [ ] Ayarlar'da uyanış ve yatış aralıkları ile uyku hedefi değişiyor; gün tipine özel aralık verilebiliyor
 - [ ] Günün çerçevesi kullanılmayan veride (uyanış kaydı yok, çapa yok, `after_finish` yok) çalışma penceresinin içindeki plan Ç3b'dekiyle aynı; Ç3 ve Ç3b testleri değiştirilmeden geçiyor ya da değişen her test gerekçesiyle kayıtlı

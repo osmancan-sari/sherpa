@@ -193,7 +193,7 @@ Düzen sabahta ve akşamda aynıdır (ortak kurallar: `ORTAK.md` bölüm 3).
 6. **Duş, SPF, Giyin, Yürüyüş.** Yürüyüşte düğme "Bitti"dir; telefon cepte, arabaya binerken basılır.
 7. **"İyi günler".** "Bitti"den sonra ekranda yalnızca bu yazı durur; sayı, süre, övgü yok. Yazı solarken Bugün ekranı belirir (yaklaşık 0,6 sn; cihazda ayarlanır).
 
-Özet metni çekirdeğin `today` verisinden kalıpla kurulur: ilk sabit blok ve saati, günün 3 işi, bitiş çizgisi, bu gecenin yatışı. Örnek: "Günaydın. 10:30'da dersin var. Bugünün üç işi: … Gün 19:00'da bitiyor."
+Özet metni çekirdeğin `today` verisinden kalıpla kurulur (Ç4a, 15 Kas 2026: günün 3 işi ve bitiş çizgisi kalktı): ilk sabit blok ve saati, bugün planlı iş sayısı ve ilk iş (`today.work`), bu gecenin yatışı (`today.bedtime`). Örnek: "Günaydın. 10:30'da dersin var. Bugün dört iş var; ilki proje önerisi. Yatış 23:00." Tek iş: "Bugün bir iş var: …"; iş yoksa o cümle söylenmez. Panoda yanındaki satırlar: ilk blok, "4 iş · İlki …", "Yatış". **Görüşün gerek.**
 
 ### 8.4 Akşamın akışı
 

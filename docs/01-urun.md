@@ -31,7 +31,7 @@ Uygulamanın adı **Sherpa**: dağda yolu bilen ve yükü taşıyan rehber. Zirv
 4. **Sürtünmesiz giriş.** Her giriş en fazla 2 dokunuş ya da tek cümle. Eksik veri cezalandırılmaz; sistem tahminle devam eder ve tahmin olduğunu gösterir.
 5. **Affedici.** Kaçan iş yeniden yerine konur. Borç bir dönemden fazla birikmez, seri sayacı yoktur.
 6. **Ritüele bağımlı değil.** Akşam kapanışı planı iyileştirir ama şart değildir.
-7. **Günün bitiş çizgisi var.** Planlanan işler bitince ekran "Bugün tamam" der.
+7. **Günün bitiş çizgisi var.** Planlanan işler bitince ekran "Bugün tamam" der. Bitiş bir saat değildir (Ç4a, 14 Kas 2026): gün akşam rutinine ve yatışa kadar sürer, plan günün kalanıdır.
 8. **Modüler.** Her modül çekirdeğe aynı sözleşmeyle bağlanır, içi serbesttir.
 9. **Önce kullan, sonra büyüt.** Her modül tasarlanır, kurulur, 2 hafta kullanılır, sonra geliştirilir.
 
@@ -48,9 +48,10 @@ Uygulamanın adı **Sherpa**: dağda yolu bilen ve yükü taşıyan rehber. Zirv
 | Sabit blok | Zamanı belli olan şey: ders, iş saatleri, randevu, korunan zaman |
 | Yuva | Sabit bloklar arasındaki boşluk. Türü vardır: derin, hafif, mola |
 | Oturum | Bir işe harcanan gerçek zaman (Başla ve Bitti arası) |
-| Hayat modu | Normal, Yoğun, Minimum, Tatil. Bütün modüllerin davranışını birlikte değiştirir |
+| Hayat modu | Kalktı (Ç4a, 14 Kas 2026): seçilmez ve gösterilmez; yükü planlayıcı son tarihlerden, kapasiteden ve takvimden kendisi çıkarır |
+| Bağlam | Nerede olunduğu (masa, ev, ofis, kampüs, dışarı, yol). Elle seçilmez (Ç4a): pano masadadır, telefonda planlayıcı tahmin eder |
 | Plan ufku | Dönem, ay, hafta, gün, şimdi. Uzak ufuk kaba, yakın ufuk ayrıntılı planlanır |
-| Bitiş çizgisi | Günün planlanan işlerinin bittiği nokta |
+| Bitiş çizgisi | Günün planlanan işlerinin bittiği nokta; saate bağlı değildir (Ç4a) |
 | Gelen kutusu | Henüz bir modüle yönlendirilmemiş ham girişler |
 
 ## Kapsam

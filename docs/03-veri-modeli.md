@@ -94,7 +94,7 @@ Kurallar:
 | --- | --- | --- |
 | `anchor` | `wake`: uyanıştan hemen sonra; `bed`: yatıştan hemen önce. Yuvalara dağıtılmaz | Kesin |
 | `order` | Aynı çapaya bağlı işlerin sırası; küçük önce | Kesin |
-| `after_finish` | `true`: bitiş çizgisinden sonra, akşama da konabilir | Kesin |
+| `after_finish` | `true`: bitiş çizgisinden sonra, akşama da konabilir. **Kullanılmıyor (Ç4a):** gün bitiş çizgisi taşımaz; alan kabul edilir ve saklanır, planlayıcı okumaz | Kesin |
 
 - `anchor` `windows`, `prefer`, `avoid` ve `travel` ile birlikte kullanılmaz (çapalı iş saate değil uyanışa ya da yatışa bağlıdır); `rest_days` ile kullanılabilir.
 - `order` 1–99 arası tam sayıdır ve yalnızca `anchor` ile verilir. Sayı ekseni modüller arasında ortaktır (Ç3f): modüller araya yer bırakarak numara verir (10, 20, 30), uyanış dizisinde başka modülün işi araya girebilir.
@@ -122,7 +122,7 @@ weekly_floor_minutes int default 0   -- haftalık taban; Yoğun modda küçülü
 color text                    -- #rrggbb. Kurulumda tanımdan kopyalanır; sonra kullanıcınındır (Ayarlar → Modüller, Ç3e)
 facet_colors jsonb default '{}'   -- Ç3e: kullanıcının bölüm renkleri { "sabah": "#d97706" }; anahtarı olmayan bölüm kendi varsayılanıyla
 starts_on date null, ends_on date null, end_condition text null
-mode_behavior jsonb           -- { normal:{...}, busy:{...}, minimum:{...}, holiday:{...} }
+mode_behavior jsonb           -- kullanılmıyor (Ç4a): hayat modu yok; yazılmaz, okunmaz (eski satırlarda durur)
 settings jsonb
 sort int
 ```
@@ -202,7 +202,7 @@ est_minutes int
 energy enum(deep, light, physical)
 context enum(any, desk, home, campus, office, out, commute)
 active boolean default true
-mode_targets jsonb null       -- { busy: 1, minimum: 0, holiday: 0 } gibi mod başına hedef
+mode_targets jsonb null       -- kullanılmıyor (Ç4a): hayat modu yok; okunmaz
 timing jsonb null             -- zaman kısıtları; `rest_days` yalnızca burada anlamlıdır
 facet text null               -- Ç3e: modülün bölümü
 provenance jsonb default '{}'
@@ -273,10 +273,10 @@ Günün planı ve sonucu. `(user_id, date)` tekil.
 ```
 date date
 day_type enum(home, office, campus)   -- gün planlanırken türetilen tip (bloklardan; yoksa ayarlardaki)
-life_mode enum(normal, busy, minimum, holiday)   -- gün planlanırken geçerli mod
+life_mode enum(normal, busy, minimum, holiday)   -- kullanılmıyor (Ç4a): yazılmaz (varsayılan normal), okunmaz
 started_at timestamptz null   -- günün ilk dokunuşu
-finish_line time              -- bu saatten sonra derin iş önerilmez
-top3 uuid[]                   -- günün 3 işi
+finish_line time              -- kullanılmıyor (Ç4a): gün bitiş çizgisi taşımaz; okunmaz
+top3 uuid[]                   -- kullanılmıyor (Ç4a): günün 3 işi yok; yazılmaz (varsayılan {}), okunmaz
 plan jsonb                    -- planın özeti: yapay zekanın önerisi (`advice`), bugün ertelenenler (`skipped`), bütün günün yuva süresi (`slotMinutes`), yapay zekaya günün planının soruldu mu (`aiAsked`). Yuvalar ve atamalar kaydedilmez: ekran planı her değişiklikte aynı fonksiyonla yeniden kurar
 plan_source enum(closing, ai, auto)   -- kapanışta onaylandı / yapay zeka önerdi / yalnızca motor
 plan_reasons jsonb null       -- yapay zekanın gerekçeleri ("neden?")
@@ -304,7 +304,7 @@ module_budgets jsonb          -- { "okul": 720, "ev": 90 } dakika
 capacity_minutes int          -- haftanın kullanılabilir süresi
 plan_source enum(closing, ai, auto)
 reasons jsonb null
-life_mode enum(normal, busy, minimum, holiday) null   -- taahhüdün yapıldığı mod; mod değişince hafta yeniden kurulur
+life_mode enum(normal, busy, minimum, holiday) null   -- kullanılmıyor (Ç4a): yazılmaz, okunmaz; mod değişimi tetikleyici değildir
 shares jsonb default '{}'     -- { "<kalem id>": { "minutes": 180, "from": 60 } } kalemin bu haftaki payı ve taahhüt anındaki biten eforu
 day_capacity jsonb default '{}'  -- { "2026-11-18": 420 } taahhüt anında kalan her günün kapasitesi; kayıp bununla ölçülür
 ```
@@ -315,16 +315,17 @@ Ay ve dönem ufku için yük görünümü ve öneriler.
 scope enum(month, term)
 period_start date
 load jsonb                    -- hafta hafta talep ve kapasite
-proposals jsonb               -- öne çekme, mod, bırakma önerileri ve durumları
+proposals jsonb               -- öne çekme ve bırakma önerileri ve durumları (Ç4a: mod önerisi yok; eski satırdaki `mode` önerisi gösterilmez)
 ```
 
 ### life_mode_periods
+
+**Kullanılmıyor (Ç4a):** hayat modu kalktı (`docs/09-kararlar.md`, 14 Kas 2026). Tablo durur; uygulama okumaz ve yazmaz. Temizliği Ç4d'de.
 ```
 mode enum(normal, busy, minimum, holiday)
 starts_on date, ends_on date
 note text null
 ```
-Kayıt yoksa mod `normal`.
 
 ### inbox_entries
 Ham girişler. Hiç silinmez; durumu değişir.
@@ -376,7 +377,7 @@ sample_size int
 ### settings
 Kullanıcı başına tek satır.
 ```
-finish_line_default time
+finish_line_default time      -- kullanılmıyor (Ç4a): gün bitiş çizgisi taşımaz; okunmaz
 day_start_default time
 capacity_factors jsonb        -- { home: 0.7, office: 0.4, campus: 0.5 } (başlangıç varsayımı)
 slot jsonb                    -- { deep_min: 45, deep_max: 90, light_min: 15, break_min: 15 }
@@ -385,7 +386,11 @@ return_after_days int default 3
 ai_enabled boolean default true
 ai_monthly_budget_usd numeric default 5   -- 0: yapay zeka o ay kapalı; eksi olamaz
 day_frame jsonb null          -- Ç3c: günün çerçevesi; boşsa çerçeve kapalı (Ç3b'deki gibi)
+reported_context enum(any, desk, home, campus, office, out, commute) null   -- Ç4a: `core/context` ucunun son bildirdiği yer
+reported_context_at timestamptz null   -- Ç4a: o bildirimin anı; ikisi birlikte dolu ya da boş
 ```
+`reported_context` (Ç4a): telefonun ekranları bağlamını 3 saat boyunca buradan tahmin eder (`docs/04-planlayici.md`, "Bağlam tahmini"). Yalnızca giriş ucu yazar; daha eski bir bildirim yenisinin yerine yazılmaz. Bağlamı elle seçmek yoktur.
+
 `day_frame` (Ç3c):
 ```json
 {
@@ -448,6 +453,8 @@ error text null
 ## Türetilen değerler (tablo değil)
 
 - **Gün tipi:** O günün bloklarındaki `day_type` değerinden; yoksa `settings.default_day_type`.
-- **Hayat modu:** Günü kapsayan `life_mode_periods` kaydından.
+- ~~**Hayat modu.**~~ Ç4a'da kalktı.
+- **Cihazın bağlamı (Ç4a):** Pano `desk`; telefonda `settings.reported_context` (son 3 saat), yeri olan sabit blok (şimdi ya da 30 dakika içinde), günün bloklarının gün tipi; hiçbiri yoksa bilinmez ve bağlam süzgeci kapalıdır.
+- **Günün sonu (Ç4a):** Beklenen yatış eksi yatışa bağlı işler; çerçeve kapalıyken varsayılan yatış aralığının başı (22:00).
 - **Ritim borcu:** Dönem içindeki `rhythm_logs` sayısından.
 - **Modül sağlığı (yolunda, dikkat, geride):** Modülün kendi fonksiyonundan (sözleşme).

@@ -84,7 +84,7 @@ Yapay zeka anahtarsız geliştirilir: `.env.local` içinde `SHERPA_AI_FAKE=1` ve
 1. Her giriş en fazla 2 dokunuş ya da tek cümledir.
 2. Seri sayacı, kırmızı "gecikti" yığını, suçluluk üreten hiçbir öğe yoktur. Kaçan iş sessizce yeniden planlanır.
 3. Sistem hiçbir ritüele bağımlı değildir: kullanıcı hiçbir şey girmese de Bugün ekranı doğru işi gösterir.
-4. Günün bir bitiş çizgisi vardır: planlanan işler bitince ekran "Bugün tamam" der.
+4. Günün bir bitiş çizgisi vardır: planlanan işler bitince ekran "Bugün tamam" der (bitiş bir saat değildir; gün yatışa bağlı rutine kadar sürer, Ç4a).
 5. Sabit haftalık program üretilmez. Takvimde yalnızca sabit bloklar durur; geri kalan her şey esnek havuzdadır.
 6. Ölçülemeyen durum takip edilmez (çamaşır, bulaşık); ona ayrılan zaman takip edilir.
 
