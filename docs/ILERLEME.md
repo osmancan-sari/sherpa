@@ -4,9 +4,9 @@ Bu dosyayı Claude Code günceller. Yeni bir oturum yalnızca bu dosyayı ve `pr
 
 ## Durum
 
-- Faz: **Ç4a. Sadeleşen çekirdek** (15 Kas 2026; istem `prompts/c4a-sade-cekirdek.md`). Ç3g (`c3g-tamam`) yayında
-- Adım: 5 (kapanış) bitti: adım denetimi ve faz denetimi (2 tur, ikisi de GEÇTİ), `check:full` yeşil, `c4a-tamam` etiketi; yayında (15 Kas, senin izninle)
-- Son commit: Ç4a faz raporu
+- Faz: **Ç4b. Cam temeli ve içeriği değişmeyen ekranlar** (15 Kas 2026; istem `prompts/c4b-cam-temeli.md`). Ç4a (`c4a-tamam`) yayında
+- Adım: 0 (plan)
+- Son commit: Ç4a: uçtan uca testlerin sabit saati
 
 ### Çekirdek ekranlarının cam tasarım oturumu (14–15 Kas 2026)
 
@@ -24,6 +24,22 @@ Ayrı bir tasarım sohbetinde (`prompts/cekirdek-cam-tasarim-oturumu.md`) çekir
 6. "Bugün tamam": planda yapılacak çapasız iş kalmayınca ve kalan pencereye sığan planlı iş yokken; çapalı işler koşula girmez.
 7. Gelecek günlerin planı: saf tahmin, kaydedilmez, aynı kurallarla ve önceki günlere konanı düşerek; bugünün planını değiştirmez. Takvim için haftanın işleri ve sekiz haftanın iş ve vakit toplamı (veri; ekranı Ç4c'de).
 8. Kapanış bu fazda yerinde kalır; yalnızca 5. maddedeki içerik farkı.
+
+### Ç4b planı
+
+İstem `prompts/c4b-cam-temeli.md`; bağlayıcı tasarım `docs/13-cam-dili.md` (bu fazda `docs/tasarim/`'e taşınır) ve `docs/tasarim/kareler/`. İçerik ve davranış değişmez; Bugün, Takvim, kapanış ve alan sayfası yalnızca yeni temele oturur (Ç4c). Her adımda `npm run check` ve commit; 1–4 bitince denetçi (adım kipi), sonunda faz kipi.
+
+| # | Adım | Durum |
+| --- | --- | --- |
+| 0 | Plan; `CLAUDE.md` "Tasarım", `prompts/BASLA.md` ve `prompts/denetci.md` kuralları | |
+| 1 | Değerler: `src/core/ui/tokens.css` (tek yer), değer denetimi testi; tek renk sistemi (tema seçimi kalkar); Görünüm: "Saydamlığı azalt", "Hareketi azalt" (cihazın tercihi de) | |
+| 2 | Gökyüzü çekirdekte: güneşin yüksekliği saf, tam manzara (Bugün, sahne, giriş), sakin zemin (öbürleri), pano kuralları (gerçek bulanıklık yalnızca altından içerik geçen yerde, sürekli hareket yok, gece karartması), modülün zemini (karar 4; sözleşme, `deneme`); Rutin çekirdeğin gökyüzünü giyer; karşıtlık dört durumda ölçülür | |
+| 3 | Kit (`src/core/ui/kit/`) ve galeri (`/tasarim`): paneller, liste satırı, düğmeler, alan, anahtar, parçalı seçim, hap, durum, sekme ve geçmiş düğmesi, ilerleme, uyarı satırı, bildirim, pencere, alttan sayfa / yan panel; `docs/tasarim/parcalar.md` | |
+| 4 | Kabuklar: formlar telefonda alttan sayfa, panoda 440 px yan panel; menü (telefonda cam alt menü ve ayrı "+", panoda cam yan menü; "Takvim"); adım denetimi | |
+| 5 | Ekranlar: Gelen kutusu (4.4); hızlı giriş ve düzenleme, Zaman, yapay zekanın kesik kenarı (4.5); Modüller, modül sayfası iskeleti, sahne kabuğu ve tonları (4.7); Ayarlar bölümleri (4.8); giriş (4.9); boş ve hata durumları, "bağlantı yok" hapı (4.10); Bugün, Takvim, kapanış yeni temelde; `docs/tasarim/ekranlar/`, `docs/05` | |
+| 6 | Rutin'in modül sayfası cam dilinde ve sakin zeminde (`degerler.md` bölüm 8) | |
+| 7 | Görsel denetim (`tests/e2e/gorsel.spec.ts`, onaylı görüntüler), başarım ölçümü, karşıtlık ölçümü | |
+| 8 | Kapanış: ekran görüntüleri (`docs/ekran-goruntuleri/c4b/`) ve karelerle karşılaştırma, `check:full`, faz denetimi, rapor, `c4b-tamam`; yayın senin izninle | |
 
 ### Ç4a planı
 

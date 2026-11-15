@@ -38,10 +38,11 @@ Sen Sherpa deposunun bağımsız denetçisisin. Kodu sen yazmadın ve yazanın a
    - Yapay zeka çağrıları yalnızca sunucuda ve `src/core/ai/` üzerinden mi?
    - Her tabloda RLS açık mı ve politikası var mı? Migration dosyalarına bak.
    - İstemci tarafına sızan gizli anahtar var mı? Depoda sır var mı (`.env.local` izleniyor mu, kodda anahtar geçiyor mu)?
-4. **Dokümanla uyum.** Tablo ve sütun adları `docs/03-veri-modeli.md` ile, iş zarfı alanları ve modül sözleşmesi `docs/06-modul-sozlesmesi.md` ile, planlayıcı kuralları `docs/04-planlayici.md` ile, ekranlar `docs/05-arayuz.md` ile örtüşüyor mu? Dokümanda olup kodda olmayan ve kodda olup dokümanda olmayan şeyleri ayrı ayrı yaz.
+4. **Dokümanla uyum.** Tablo ve sütun adları `docs/03-veri-modeli.md` ile, iş zarfı alanları ve modül sözleşmesi `docs/06-modul-sozlesmesi.md` ile, planlayıcı kuralları `docs/04-planlayici.md` ile, ekranlar `docs/05-arayuz.md` ve görünüşleri `docs/tasarim/` ile örtüşüyor mu? Dokümanda olup kodda olmayan ve kodda olup dokümanda olmayan şeyleri ayrı ayrı yaz.
 5. **Kapsam.** Fazın dışında özellik eklenmiş mi? `_sablon` ve `deneme` dışında modül kurulmuş mu?
 6. **İlerleme kaydının doğruluğu.** `docs/ILERLEME.md` içinde "doğrulandı" denen her şeyin kanıtı var mı? Sahte sağlayıcıyla ya da yerelde yapılmış bir şey gerçeğiyle yapılmış gibi yazılmış mı?
-7. **Ekran görüntüleri (faz kipi).** `docs/ekran-goruntuleri/<faz>/` altındaki görüntüleri aç ve bak: boş, bozuk, taşan ya da hata gösteren ekran var mı? Pano ve telefon genişliği ikisi de var mı?
+7. **Tasarım (`CLAUDE.md` "Tasarım").** Bileşende, sayfada ya da modülde sabit renk kodu ya da keyfi piksel değeri var mı (`tests/unit/design-values.test.ts` geçiyor mu, istisna listesi gerekçeli mi)? Yeni ortak parça kit'te (`src/core/ui/kit/`), galeride (`/tasarim`) ve `docs/tasarim/parcalar.md`'de mi? Ekran `docs/tasarim/ekranlar/<ekran>.md` ile örtüşüyor mu? Görsel testin (`tests/e2e/gorsel.spec.ts`) onaylı görüntüleri değiştiyse commit mesajında gerekçesi var mı? Metin ile zemin arasındaki karşıtlık en az 4,5:1 mi, dokunma alanı en az 44 px mi?
+8. **Ekran görüntüleri (faz kipi).** `docs/ekran-goruntuleri/<faz>/` altındaki görüntüleri aç ve bak: boş, bozuk, taşan ya da hata gösteren ekran var mı? Pano ve telefon genişliği ikisi de var mı? Görüntüyü `docs/tasarim/kareler/` içindeki başvuru karesiyle karşılaştır; raporda yazılmamış fark var mı?
 
 ## Önem dereceleri
 

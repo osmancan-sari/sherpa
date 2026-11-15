@@ -31,6 +31,8 @@ Her oturumda: `CLAUDE.md`, `docs/ILERLEME.md`, `docs/07-yol-haritasi.md` (ilgili
 | Ç4. Pano ve telefon cilası | `docs/05-arayuz.md`, `docs/11-yayin-ve-cihazlar.md` |
 | Ç5. Claude köprüsü | `docs/02-mimari.md`, `docs/06-modul-sozlesmesi.md` |
 
+Görünüşe dokunan her işte ayrıca: `docs/tasarim/README.md`, ilgili `docs/tasarim/ekranlar/<ekran>.md` ve `docs/tasarim/parcalar.md` (`CLAUDE.md` "Tasarım"). Değerler yalnızca `src/core/ui/tokens.css`'ten gelir; yeni parça önce kit'e ve galeriye (`/tasarim`) girer.
+
 Dokümanlar tek kaynaktır; onlarla çelişen bir şey yapma. Önceki fazlarda yazılmış kodu da oku; üzerine kuracaksın.
 
 ## Nasıl çalışacaksın
@@ -66,13 +68,14 @@ Dokümanlar tek kaynaktır; onlarla çelişen bir şey yapma. Önceki fazlarda y
 **Kapı komutları.** `package.json` içinde iki komut bulunur; yoksa oturumun ilk işi olarak kur ve `CLAUDE.md`'deki komut listesine ekle:
 
 - `npm run check`: tip denetimi, lint, biçim denetimi, birim testleri. Hızlıdır.
-- `npm run check:full`: `check` + üretim derlemesi + uçtan uca testler.
+- `npm run check:full`: `check` + üretim derlemesi + uçtan uca testler (görsel denetim `tests/e2e/gorsel.spec.ts` dahil).
 
 **1. Her adımda.**
 
 - Yeni davranışın testi aynı adımda yazılır. Planlayıcıda önce test, sonra kod; `docs/04-planlayici.md` içindeki test listesinin tamamı zorunludur.
 - Commit'ten önce `npm run check` çalışır. Kırmızıyken commit atılmaz, sonraki adıma geçilmez.
 - Önceki fazların testleri de geçmeye devam eder.
+- Görünüşü değiştiren adımda: galeri (`/tasarim`) ve `docs/tasarim/` güncellenir; görsel testin onaylı görüntüsü yalnızca bilerek yenilenir (`npx playwright test gorsel --update-snapshots`) ve gerekçesi commit mesajına yazılır. Sabit renk kodu ve keyfi piksel değeri yazılmaz (`tests/unit/design-values.test.ts`).
 - Testi yeşile getirmek için test silinmez, atlanmaz (`skip`, `only`), eşik gevşetilmez. Bir testi gerçekten değiştirmen gerekiyorsa gerekçesini "Verdiğim kararlar"a yaz.
 
 **Denetçi.** Kodu yazan oturumdan ayrı çalışan bir alt ajandır. Çağırmak için genel amaçlı bir alt ajan başlat ve ona yalnızca şunu söyle: "`prompts/denetci.md` dosyasını oku ve uygula. Kip: adım ya da faz. Kapsam: faz adı ya da commit aralığı." Ne yaptığını, neyi neden öyle yaptığını anlatma; denetçi depoya bakarak kendi sonucuna varmalı. Ön planda çalıştır ve raporunu bekle; rapor gelmeden ilerleme.
@@ -82,7 +85,7 @@ Dokümanlar tek kaynaktır; onlarla çelişen bir şey yapma. Önceki fazlarda y
 **3. Fazın sonunda.**
 
 1. Kabul ölçütlerini mümkün olan her yerde uçtan uca testle doğrula (iki tarayıcı bağlamıyla eşitleme, giriş koruması, oturumlar vb.).
-2. Ana ekranların ekran görüntülerini pano genişliğinde ve telefon genişliğinde alıp `docs/ekran-goruntuleri/<faz>/` altına koy; görüntülere kendin de bak, bozuk ya da boş ekranı düzelt.
+2. Ana ekranların ekran görüntülerini pano genişliğinde ve telefon genişliğinde alıp `docs/ekran-goruntuleri/<faz>/` altına koy; görüntülere kendin de bak, bozuk ya da boş ekranı düzelt. Her ekranı `docs/tasarim/kareler/` içindeki başvuru karesiyle yan yana karşılaştır, farkı düzelt; kalan farkı rapora ekran ekran yaz ("aynı", "fark: …").
 3. `npm run check:full` yeşil olmalı.
 4. Denetçiyi "faz" kipinde çağır.
 5. "Engelleyici" ve "önemli" bulguları düzelt, 3. ve 4. adımı yinele. En çok üç tur. Üçüncü turdan sonra hâlâ engelleyici bulgu varsa etiketi atma: bulguları ve denediklerini `docs/ILERLEME.md`'ye yaz, commit at ve oturumu bitir. Sonraki oturum taze bağlamla aynı fazı sürdürür.

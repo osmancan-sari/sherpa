@@ -13,6 +13,7 @@ Kod yazmadan önce ilgili dokümanı oku. Dokümanla çelişen bir şey yapman g
 | Çekirdek tablolar | `docs/03-veri-modeli.md` |
 | Planlayıcı motoru (yuvalar, skor, kurallar) | `docs/04-planlayici.md` |
 | Ekranlar, bileşenler, etkileşim | `docs/05-arayuz.md` |
+| Görünüş: ilkeler, ortak parçalar, ekranların düzeni, onaylı kareler | `docs/tasarim/README.md` |
 | Bir modül çekirdeğe nasıl bağlanır | `docs/06-modul-sozlesmesi.md` |
 | Fazlar ve kabul ölçütleri | `docs/07-yol-haritasi.md` |
 | Notion'dan veri aktarımı | `docs/08-notion-aktarim.md` |
@@ -96,6 +97,17 @@ Yapay zeka anahtarsız geliştirilir: `.env.local` içinde `SHERPA_AI_FAKE=1` ve
 - Tasarımı henüz onaylanmamış modülleri kurma (`docs/moduller/` içinde "taslak" ya da "bekliyor" yazanlar).
 - Her fazın sonunda: testler geçer, `CLAUDE.md` komutları günceldir, `docs/ILERLEME.md` güncellenir.
 - Her çekirdek fazı ayrı bir oturumda yapılır; bir oturumda tek faz. Kurallar `prompts/BASLA.md` içindedir: ne zaman durulur, duraklarda ne yapılır, ilerleme nasıl kaydedilir.
+
+## Tasarım
+
+- Görünüşle ilgili her işten önce oku: `docs/tasarim/README.md`, ilgili `docs/tasarim/ekranlar/<ekran>.md`, `docs/tasarim/parcalar.md`.
+- Değer yazma: renk, boşluk, köşe, yazı boyu yalnızca `src/core/ui/tokens.css` içinden gelir; sabit renk kodu ve keyfi piksel yasaktır (denetimi var: `tests/unit/design-values.test.ts`).
+- Yeni bileşenden önce kit'e bak (`src/core/ui/kit/`). Kit'te yoksa önce kit'e ekle, galeriye (`/tasarim`) örneğini koy, `docs/tasarim/parcalar.md`'ye yaz; sonra kullan.
+- Modüller aynı kit'i ve token'ları kullanır; kendi görsel dilini kurmaz (kendi zemini hariç).
+- Çelişkide sıra: `ekranlar/<ekran>.md` > `parcalar.md` > `ilkeler.md` > `kareler/`. Kare başvurudur; dokümanla çelişirse doküman geçerlidir ve fark rapora yazılır.
+- Çizilmemiş ekran ya da durum: en yakın kareden türet, "görüşün gerek" diye işaretle.
+- Görünüşü değiştiren her commit: galeri güncel, ilgili doküman güncel, görsel testin onaylı görüntüsü bilerek yenilenmiş (gerekçesi commit mesajında).
+- Her ekranın telefon ve pano görüntüsünü al, başvuru karesiyle karşılaştır, farkı düzelt.
 
 ## Dil
 
