@@ -396,7 +396,9 @@ for (const theme of ["dark", "light"] as const) {
       (list) => list.some((task) => task.work_item_id === burs.id),
     );
     await page.goto("/");
-    await expect(now.getByRole("heading")).toHaveText("Salon antrenmanı");
+    // The work with travel is in the plan (Ç4a: the card shows what comes first in time; the
+    // sample's own work may come before it now that the day runs to the bedtime).
+    await expect(page.getByRole("main")).toContainText("Salon antrenmanı");
     await expect(page.getByRole("region", { name: "Uyarılar" })).toContainText(
       "Bugün uygun saat kalmadı",
     );
@@ -436,9 +438,13 @@ for (const theme of ["dark", "light"] as const) {
     await expect(now.getByRole("heading", { name: "Günaydın" })).toBeVisible();
     await shot("bugun-gunaydin");
 
-    // The evening: up at 07:00, past the finish line.
-    await update("days", today.id as string, { woke_at: at("07:00").toISOString() });
-    await page.clock.setFixedTime(at("20:30"));
+    // The evening: up at 07:00, the day closed at 23:25 (Ç4a: no finish line brings it; late
+    // enough that no sample block of the day is on).
+    await update("days", today.id as string, {
+      woke_at: at("07:00").toISOString(),
+      closed_at: at("23:25").toISOString(),
+    });
+    await page.clock.setFixedTime(at("23:30"));
     await page.goto("/");
     await expect(page.getByTestId("sleep-line")).toBeVisible();
     await shot("bugun-aksam");
@@ -453,7 +459,7 @@ for (const theme of ["dark", "light"] as const) {
     await shot("bugun-gece-cerceve");
 
     // The scenes: back in the day, the test module's goal, then a workout.
-    await update("days", today.id as string, { bed_at: null });
+    await update("days", today.id as string, { bed_at: null, closed_at: null });
     await page.clock.setFixedTime(at("15:00"));
     const record = async (title: string, kind: string) => {
       await page.goto("/");
@@ -698,7 +704,10 @@ test("rutin screens", async ({ page }, testInfo) => {
   const scene = page.getByTestId("rutin-scene");
   const run = async (key: string) => {
     for (const open of (await rows("sessions")).filter((row) => row.ended_at === null)) {
-      await update("sessions", open.id as string, { ended_at: new Date().toISOString() });
+      // Never before its start: the database's clock (which stamped it, to the microsecond) may
+      // run a little ahead of this one.
+      const end = Math.max(Date.now(), Date.parse(open.started_at as string) + 1_000);
+      await update("sessions", open.id as string, { ended_at: new Date(end).toISOString() });
     }
     await insert("sessions", { rhythm_id: rhythm(key), module_id: mod.id });
   };
@@ -793,6 +802,7 @@ test("c3g screens", async ({ page }, testInfo) => {
   });
   await insert("days", { date: shotDay, woke_at: at("07:00").toISOString() });
   const [deneme] = await insert("modules", { slug: "deneme", name: "Deneme", color: "#7c3aed" });
+  const day = (await rows("days")).find((row) => row.date === shotDay)!;
   await insert("tasks", {
     module_id: deneme.id,
     title: "Boyun hareketleri",
@@ -806,6 +816,8 @@ test("c3g screens", async ({ page }, testInfo) => {
   await expect(page.getByTestId("rutin-other-group")).toBeVisible();
   await shot("rutin-modul-sabah-diger");
 
+  // Ç4a: the evening before the bedtime range comes with the closing (no finish line).
+  await update("days", day.id as string, { closed_at: at("19:25").toISOString() });
   await page.clock.setFixedTime(at("19:30"));
   await page.goto("/");
   await expect(now.getByTestId("evening-later")).toBeVisible();
