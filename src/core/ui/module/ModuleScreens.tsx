@@ -230,7 +230,7 @@ function ModuleRoute() {
       <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 px-5 py-6 md:px-10 md:py-8">
         <Link
           href={`/m/${mod.row.slug}`}
-          className="text-muted-foreground hover:text-foreground focus-visible:ring-ring/50 flex min-h-11 w-fit items-center gap-2 rounded-lg text-sm outline-none focus-visible:ring-3 md:min-h-9"
+          className="text-muted-foreground hover:text-foreground focus-visible:ring-ring/50 flex min-h-11 w-fit items-center gap-2 rounded-lg text-sm outline-none focus-visible:ring-3"
         >
           <ArrowLeft aria-hidden className="size-4" />
           {mod.row.name}

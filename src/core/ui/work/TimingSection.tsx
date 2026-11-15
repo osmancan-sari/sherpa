@@ -231,7 +231,7 @@ export function TimingSection({
                     aria-label={`${name}: günler`}
                     value={range.days}
                     onChange={(event) => update({ days: event.target.value })}
-                    className="border-input bg-background h-11 rounded-lg border px-2 md:h-9"
+                    className="border-input bg-background h-11 rounded-lg border px-2"
                   >
                     {known ? null : (
                       <option value={range.days}>
@@ -250,19 +250,19 @@ export function TimingSection({
                       aria-label={`${name}: başlangıç`}
                       value={range.from}
                       onChange={(from) => update({ from })}
-                      className="h-11 w-24 md:h-9"
+                      className="h-11 w-24"
                     />
                     <span aria-hidden>–</span>
                     <TimeInput
                       aria-label={`${name}: bitiş`}
                       value={range.to}
                       onChange={(to) => update({ to })}
-                      className="h-11 w-24 md:h-9"
+                      className="h-11 w-24"
                     />
                     <Button
                       type="button"
                       variant="ghost"
-                      className="size-11 md:size-9"
+                      className="size-11"
                       aria-label={`${name}: kaldır`}
                       onClick={() =>
                         setList(
@@ -281,7 +281,7 @@ export function TimingSection({
               <Button
                 type="button"
                 variant="outline"
-                className="h-11 md:h-9"
+                className="h-11"
                 aria-label={`${list.label}: aralık ekle`}
                 onClick={() =>
                   setList(list.name, [
@@ -305,7 +305,7 @@ export function TimingSection({
             onChange={(event) =>
               onChange({ ...draft, before: event.target.value.replace(/\D/g, "") })
             }
-            className="h-11 w-20 md:h-9"
+            className="h-11 w-20"
           />
           <span>dk</span>
           <span className="ml-2">dönüş</span>
@@ -316,7 +316,7 @@ export function TimingSection({
             onChange={(event) =>
               onChange({ ...draft, after: event.target.value.replace(/\D/g, "") })
             }
-            className="h-11 w-20 md:h-9"
+            className="h-11 w-20"
           />
           <span>dk</span>
         </fieldset>
@@ -331,7 +331,7 @@ export function TimingSection({
               onChange={(event) =>
                 onChange({ ...draft, rest: event.target.value.replace(/\D/g, "") })
               }
-              className="h-11 w-16 md:h-9"
+              className="h-11 w-16"
             />
             <span>gün</span>
           </fieldset>

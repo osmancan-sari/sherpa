@@ -97,18 +97,18 @@ function Record({
         aria-label={`${label} saati`}
         value={text}
         onChange={setValue}
-        className="h-11 w-24 text-base md:h-9"
+        className="h-11 w-24 text-base"
       />
       <Button
         variant="outline"
-        className="h-11 md:h-9"
+        className="h-11"
         disabled={!valid || clock === shown}
         onClick={() => save(toInstant(clock))}
       >
         Kaydet
       </Button>
       {at ? (
-        <Button variant="ghost" className="h-11 md:h-9" onClick={() => save(null)}>
+        <Button variant="ghost" className="h-11" onClick={() => save(null)}>
           {label === "Uyanış" ? "Uyanışı sil" : "Yatışı sil"}
         </Button>
       ) : (

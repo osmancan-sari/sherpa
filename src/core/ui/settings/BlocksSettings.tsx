@@ -168,7 +168,7 @@ function SeriesRow({ series }: { series: BlockSeries }) {
       <div className="flex gap-1">
         <Button
           variant="ghost"
-          className="h-11 md:h-9"
+          className="h-11"
           aria-label={`Seriyi düzenle: ${series.title}`}
           onClick={() => setEditing(true)}
         >
@@ -176,7 +176,7 @@ function SeriesRow({ series }: { series: BlockSeries }) {
         </Button>
         <Button
           variant="ghost"
-          className="h-11 md:h-9"
+          className="h-11"
           aria-label={`Seriyi bitir: ${series.title}`}
           onClick={() => end.mutate(undefined)}
         >
@@ -258,7 +258,7 @@ function SeriesForm() {
         <Input
           value={title}
           onChange={(event) => setTitle(event.target.value)}
-          className="h-11 w-48 md:h-9"
+          className="h-11 w-48"
         />
       </Labelled>
       <Labelled label="Tür">
@@ -294,7 +294,7 @@ function SeriesForm() {
           type="time"
           value={start}
           onChange={(event) => setStart(event.target.value)}
-          className="h-11 w-32 md:h-9"
+          className="h-11 w-32"
         />
       </Labelled>
       <Labelled label="Bitiş">
@@ -302,14 +302,14 @@ function SeriesForm() {
           type="time"
           value={end}
           onChange={(event) => setEnd(event.target.value)}
-          className="h-11 w-32 md:h-9"
+          className="h-11 w-32"
         />
       </Labelled>
       <Labelled label="Yer (isteğe bağlı)">
         <Input
           value={location}
           onChange={(event) => setLocation(event.target.value)}
-          className="h-11 w-36 md:h-9"
+          className="h-11 w-36"
         />
       </Labelled>
       <Labelled label="Gün tipi">
@@ -326,7 +326,7 @@ function SeriesForm() {
           ))}
         </select>
       </Labelled>
-      <Button type="submit" className="h-11 md:h-9" disabled={!ready || create.isPending}>
+      <Button type="submit" className="h-11" disabled={!ready || create.isPending}>
         Seri ekle
       </Button>
     </form>
@@ -371,7 +371,7 @@ function BlockForm() {
         <Input
           value={title}
           onChange={(event) => setTitle(event.target.value)}
-          className="h-11 w-48 md:h-9"
+          className="h-11 w-48"
         />
       </Labelled>
       <Labelled label="Tür">
@@ -393,7 +393,7 @@ function BlockForm() {
           type="date"
           value={day}
           onChange={(event) => setDay(event.target.value)}
-          className="h-11 w-44 md:h-9"
+          className="h-11 w-44"
         />
       </Labelled>
       <Labelled label="Başlangıç">
@@ -401,7 +401,7 @@ function BlockForm() {
           type="time"
           value={start}
           onChange={(event) => setStart(event.target.value)}
-          className="h-11 w-32 md:h-9"
+          className="h-11 w-32"
         />
       </Labelled>
       <Labelled label="Bitiş">
@@ -409,10 +409,10 @@ function BlockForm() {
           type="time"
           value={end}
           onChange={(event) => setEnd(event.target.value)}
-          className="h-11 w-32 md:h-9"
+          className="h-11 w-32"
         />
       </Labelled>
-      <Button type="submit" className="h-11 md:h-9" disabled={!ready || create.isPending}>
+      <Button type="submit" className="h-11" disabled={!ready || create.isPending}>
         Blok ekle
       </Button>
     </form>

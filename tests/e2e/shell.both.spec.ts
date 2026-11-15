@@ -1,5 +1,5 @@
 import { expect, test } from "./fixtures";
-import { roomInTheDay } from "./helpers";
+import { openQuickAdd, roomInTheDay } from "./helpers";
 
 // The signed-in shell, run once at second-screen width ("pano") and once at phone width ("telefon").
 
@@ -102,4 +102,42 @@ test("the page links the manifest and the home-screen icon", async ({ page }) =>
   }
   await expect(page.locator("html")).toHaveAttribute("lang", "tr");
   await expect(page).toHaveTitle("Sherpa");
+});
+
+test("forms open in the sheet: from the bottom on the phone, a 440 px panel on the board's right", async ({
+  page,
+  viewport,
+}) => {
+  await page.goto("/gelen");
+  if (viewport!.width < 768) await page.getByRole("button", { name: "Yeni giriş" }).click();
+  else await openQuickAdd(page);
+  const sheet = page.getByRole("dialog", { name: "Yeni giriş" });
+  await expect(sheet).toBeVisible();
+  // Let the slide finish before measuring.
+  await page.waitForTimeout(400);
+  const box = (await sheet.boundingBox())!;
+  if (viewport!.width < 768) {
+    expect(box.x).toBeCloseTo(0, 0);
+    expect(box.width).toBeCloseTo(viewport!.width, 0);
+    expect(box.y + box.height).toBeCloseTo(viewport!.height, 0);
+  } else {
+    expect(box.width).toBeCloseTo(440, 0);
+    expect(box.x + box.width).toBeCloseTo(viewport!.width, 0);
+    expect(box.y).toBeCloseTo(0, 0);
+    expect(box.height).toBeCloseTo(viewport!.height, 0);
+  }
+});
+
+test("offline: a small pill says so at the right of the title; the screen stays", async ({
+  page,
+  context,
+}) => {
+  await page.goto("/gelen");
+  await expect(page.getByRole("heading", { level: 1, name: "Gelen kutusu" })).toBeVisible();
+  await expect(page.getByText("bağlantı yok")).toHaveCount(0);
+  await context.setOffline(true);
+  await expect(page.getByRole("status").filter({ hasText: "bağlantı yok" })).toBeVisible();
+  await expect(page.getByText("Gelen kutusu boş.")).toBeVisible();
+  await context.setOffline(false);
+  await expect(page.getByText("bağlantı yok")).toHaveCount(0);
 });

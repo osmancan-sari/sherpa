@@ -308,7 +308,7 @@ function TaskEditor({ task, onClose }: { task: Task; onClose: () => void }) {
         <Button
           type="button"
           variant="outline"
-          className="h-11 md:h-9"
+          className="h-11"
           onClick={() => {
             drop.mutate(task.id);
             onClose();
@@ -419,7 +419,7 @@ function RhythmEditor({ rhythm, onClose }: { rhythm: Rhythm; onClose: () => void
         <Button
           type="button"
           variant="outline"
-          className="h-11 md:h-9"
+          className="h-11"
           onClick={() => {
             edit.mutate({ id: rhythm.id, patch: { active: false } });
             onClose();

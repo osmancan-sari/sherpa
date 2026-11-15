@@ -53,7 +53,7 @@ export function SettingsShell({ aside, children }: { aside: ReactNode; children:
 
   const selected = section ?? "gorunum";
   return (
-    <div className="mx-auto flex w-full max-w-(--breakpoint-xl) flex-1 flex-col gap-4 px-4 py-5.5 md:px-10 md:py-6">
+    <div className="flex w-full flex-1 flex-col gap-4 px-4 py-5.5 md:px-10 md:py-6">
       {section === null ? (
         <h1 className="text-title tracking-title font-bold md:text-3xl">Ayarlar</h1>
       ) : (

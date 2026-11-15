@@ -713,7 +713,7 @@ function Empty() {
         />
       ) : (
         <div className="flex flex-wrap gap-2">
-          <Button variant="outline" className="h-11 md:h-9" onClick={() => setUnplanned(true)}>
+          <Button variant="outline" className="h-11" onClick={() => setUnplanned(true)}>
             Başka bir şey yapıyorum
           </Button>
         </div>

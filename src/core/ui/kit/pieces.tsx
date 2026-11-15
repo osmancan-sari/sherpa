@@ -83,7 +83,7 @@ export function ChoiceChips<T extends string>({
             aria-checked={checked}
             onClick={() => onChange(option.value)}
             className={cn(
-              "border-border focus-visible:ring-ring/50 h-11 rounded-full border px-4 text-sm outline-none focus-visible:ring-3 md:h-9 md:px-3",
+              "border-border focus-visible:ring-ring/50 h-11 rounded-full border px-4 text-sm outline-none focus-visible:ring-3 md:px-3",
               checked ? "bg-foreground text-background border-transparent" : "hover:bg-muted",
             )}
           >
@@ -250,7 +250,7 @@ export function ErrorState({
     >
       <p>{children}</p>
       {onRetry ? (
-        <Button variant="outline" className="h-11 md:h-9" onClick={onRetry}>
+        <Button variant="outline" className="h-11" onClick={onRetry}>
           Yeniden dene
         </Button>
       ) : null}

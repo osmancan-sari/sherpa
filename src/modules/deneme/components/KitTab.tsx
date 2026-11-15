@@ -39,6 +39,7 @@ export function KitTab() {
   const [count, setCount] = useState(3);
   const [choice, setChoice] = useState<DenemeKind>("hedef");
   const [on, setOn] = useState(true);
+  const [view, setView] = useState<"hepsi" | "acik" | "biten">("hepsi");
   const [sheet, setSheet] = useState(false);
   const list = useMemo(() => items.data ?? [], [items.data]);
   const today = dayKey(now);
@@ -150,13 +151,14 @@ export function KitTab() {
       </Piece>
       <Piece title="Parçalı seçim, hap, anahtar">
         <Segmented
-          label="Tür seçimi"
-          value={choice}
-          onChange={setChoice}
-          options={(Object.keys(KIND_LABEL) as DenemeKind[]).map((kind) => ({
-            value: kind,
-            label: KIND_LABEL[kind],
-          }))}
+          label="Gösterim"
+          value={view}
+          onChange={setView}
+          options={[
+            { value: "hepsi", label: "Hepsi" },
+            { value: "acik", label: "Açık" },
+            { value: "biten", label: "Biten" },
+          ]}
         />
         <div className="flex flex-wrap items-center gap-2">
           <Chip dot={row.color} selected>

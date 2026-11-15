@@ -102,7 +102,7 @@ function NewToken({
           maxLength={60}
           placeholder="iPhone Kestirmeler"
           onChange={(event) => setName(event.target.value)}
-          className="h-11 md:h-9"
+          className="h-11"
         />
       </label>
       <fieldset className="flex flex-col gap-2 text-sm">
@@ -129,7 +129,7 @@ function NewToken({
       <Button
         type="submit"
         variant="outline"
-        className="h-11 w-fit md:h-9"
+        className="h-11 w-fit"
         disabled={!ready || create.isPending}
       >
         Anahtar üret
@@ -162,12 +162,12 @@ function MadeToken({
           aria-label="Yeni anahtar"
           data-testid="new-token"
           onFocus={(event) => event.target.select()}
-          className="h-11 min-w-0 flex-1 font-mono text-xs md:h-9"
+          className="h-11 min-w-0 flex-1 font-mono text-xs"
         />
         <Button
           type="button"
           variant="outline"
-          className="h-11 md:h-9"
+          className="h-11"
           onClick={() => {
             void navigator.clipboard
               ?.writeText(token)
@@ -186,7 +186,7 @@ function MadeToken({
           </code>
         ))}
       </div>
-      <Button type="button" className="h-11 w-fit md:h-9" onClick={onDone}>
+      <Button type="button" className="h-11 w-fit" onClick={onDone}>
         Tamam
       </Button>
     </div>
@@ -220,7 +220,7 @@ function TokenRow({ token, labelOf }: { token: DeviceToken; labelOf: (scope: str
           <Button
             type="button"
             variant="destructive"
-            className="h-11 md:h-9"
+            className="h-11"
             onClick={() => revoke.mutate(token.id)}
           >
             Evet, iptal et
@@ -228,19 +228,14 @@ function TokenRow({ token, labelOf }: { token: DeviceToken; labelOf: (scope: str
           <Button
             type="button"
             variant="outline"
-            className="h-11 md:h-9"
+            className="h-11"
             onClick={() => setConfirm(false)}
           >
             Vazgeç
           </Button>
         </div>
       ) : (
-        <Button
-          type="button"
-          variant="outline"
-          className="h-11 md:h-9"
-          onClick={() => setConfirm(true)}
-        >
+        <Button type="button" variant="outline" className="h-11" onClick={() => setConfirm(true)}>
           İptal et
         </Button>
       )}

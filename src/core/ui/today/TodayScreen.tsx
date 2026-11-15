@@ -363,17 +363,17 @@ function TodayBody() {
       <footer className="flex flex-wrap items-center gap-2">
         <ModuleChips modules={modules.filter(({ row }) => row.status === "active")} />
         <div className="ml-auto flex flex-wrap gap-2">
-          <Button variant="outline" className="h-11 md:h-9" onClick={() => setMinutesOpen(true)}>
+          <Button variant="outline" className="h-11" onClick={() => setMinutesOpen(true)}>
             X dk&apos;m var
           </Button>
-          <Button variant="outline" className="h-11 md:h-9" onClick={doReplan}>
+          <Button variant="outline" className="h-11" onClick={doReplan}>
             Yeniden planla
           </Button>
           {/* The evening's card has its own "Günü kapat" (Ç3c). */}
           {state.kind === "evening" ? null : (
             <Link
               href="/kapanis"
-              className="border-border hover:bg-muted flex h-11 items-center rounded-lg border px-3 text-sm md:h-9"
+              className="border-border hover:bg-muted flex h-11 items-center rounded-lg border px-3 text-sm"
             >
               Günü kapat
             </Link>
@@ -451,7 +451,7 @@ function CandidateRow({
         {candidate.type === "follow_up" ? (
           <Button
             variant="outline"
-            className="h-11 md:h-9"
+            className="h-11"
             onClick={() => followUp.mutate({ task: candidate.task!, came: true, date })}
           >
             Cevap geldi
@@ -484,7 +484,7 @@ function CandidateRow({
         {candidate.type === "item" && effortUsedUp ? (
           <Button
             variant="outline"
-            className="h-11 md:h-9"
+            className="h-11"
             onClick={() => closeItem.mutate({ itemId: candidate.id, result: "done" })}
           >
             Bitti mi?
@@ -505,13 +505,7 @@ function IconButton({
   children: React.ReactNode;
 }) {
   return (
-    <Button
-      variant="ghost"
-      aria-label={label}
-      title={label}
-      className="size-11 md:size-9"
-      onClick={onClick}
-    >
+    <Button variant="ghost" aria-label={label} title={label} className="size-11" onClick={onClick}>
       {children}
     </Button>
   );
@@ -521,7 +515,7 @@ function DoneToday({ tasks }: { tasks: Task[] }) {
   const reopen = useReopenTask();
   return (
     <details className="text-sm">
-      <summary className="text-muted-foreground hover:text-foreground flex min-h-11 cursor-pointer items-center md:min-h-9">
+      <summary className="text-muted-foreground hover:text-foreground flex min-h-11 cursor-pointer items-center">
         Bugün bitenler ({tasks.length})
       </summary>
       <ul className="flex flex-col">
@@ -604,7 +598,7 @@ export function ModuleChip({ mod }: { mod: KnownModule }) {
   return (
     <Link
       href={`/m/${mod.row.slug}`}
-      className="border-border hover:bg-muted focus-visible:ring-ring/50 flex min-h-11 items-center gap-2 rounded-full border px-4 text-sm outline-none focus-visible:ring-3 md:min-h-9"
+      className="border-border hover:bg-muted focus-visible:ring-ring/50 flex min-h-11 items-center gap-2 rounded-full border px-4 text-sm outline-none focus-visible:ring-3"
     >
       <span
         aria-hidden

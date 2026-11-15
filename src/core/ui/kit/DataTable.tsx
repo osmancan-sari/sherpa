@@ -58,7 +58,7 @@ export function DataTable<T>({
           onChange={(event) => setQuery(event.target.value)}
           aria-label={filterLabel}
           placeholder={filterLabel}
-          className="h-11 max-w-xs md:h-9"
+          className="h-11 max-w-xs"
         />
       ) : null}
       <div className="border-border overflow-x-auto rounded-xl border">

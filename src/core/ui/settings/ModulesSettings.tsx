@@ -111,14 +111,14 @@ function ModuleSettingsRow({ entry }: { entry: Entry }) {
             <>
               <Link
                 href={`/ayarlar/moduller/${entry.slug}`}
-                className="border-border hover:bg-muted flex h-11 items-center rounded-lg border px-2.5 text-sm font-medium md:h-9"
+                className="border-border hover:bg-muted flex h-11 items-center rounded-lg border px-2.5 text-sm font-medium"
                 aria-label={`${entry.name} ayarları`}
               >
                 Ayarlar
               </Link>
               <Button
                 variant="outline"
-                className="h-11 md:h-9"
+                className="h-11"
                 aria-label={`${entry.name}: duraklat`}
                 onClick={() => pause.mutate(undefined)}
               >
@@ -127,7 +127,7 @@ function ModuleSettingsRow({ entry }: { entry: Entry }) {
             </>
           ) : (
             <Button
-              className="h-11 md:h-9"
+              className="h-11"
               aria-label={`${entry.name}: etkinleştir`}
               disabled={activate.isPending}
               onClick={() => activate.mutate(undefined)}
@@ -138,7 +138,7 @@ function ModuleSettingsRow({ entry }: { entry: Entry }) {
           {status === "active" || status === "paused" ? (
             <Button
               variant="ghost"
-              className="h-11 md:h-9"
+              className="h-11"
               aria-label={`${entry.name}: arşivle`}
               onClick={() => setConfirmArchive(true)}
             >
@@ -158,7 +158,7 @@ function ModuleSettingsRow({ entry }: { entry: Entry }) {
           </p>
           <div className="flex gap-2">
             <Button
-              className="h-11 md:h-9"
+              className="h-11"
               onClick={() => {
                 archive.mutate(undefined);
                 setConfirmArchive(false);
@@ -166,11 +166,7 @@ function ModuleSettingsRow({ entry }: { entry: Entry }) {
             >
               Arşivle
             </Button>
-            <Button
-              variant="ghost"
-              className="h-11 md:h-9"
-              onClick={() => setConfirmArchive(false)}
-            >
+            <Button variant="ghost" className="h-11" onClick={() => setConfirmArchive(false)}>
               Vazgeç
             </Button>
           </div>

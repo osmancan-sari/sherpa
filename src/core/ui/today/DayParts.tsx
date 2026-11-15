@@ -147,7 +147,7 @@ export function DayStrip({
             <span
               key={block.id}
               title={`${formatTime(new Date(block.starts_at))}–${formatTime(new Date(block.ends_at))} ${block.title}`}
-              className="bg-foreground/25 text-foreground absolute inset-y-0 flex items-center overflow-hidden px-1 text-xs whitespace-nowrap"
+              className="bg-glass-dense border-edge text-ink absolute inset-y-0 flex items-center overflow-hidden border px-1 text-xs whitespace-nowrap"
               style={{
                 left: left(Date.parse(block.starts_at)),
                 width: width(Date.parse(block.starts_at), Date.parse(block.ends_at)),
@@ -268,9 +268,9 @@ export function MinutesDialog({
             setMinutes(event.target.value.replace(/\D/g, ""));
             setPicked(undefined);
           }}
-          className="h-11 w-28 text-base md:h-9"
+          className="h-11 w-28 text-base"
         />
-        <Button type="submit" className="h-11 md:h-9" disabled={!minutes}>
+        <Button type="submit" className="h-11" disabled={!minutes}>
           Bul
         </Button>
       </form>
@@ -288,7 +288,7 @@ export function MinutesDialog({
             </p>
           </div>
           <Button
-            className="h-11 md:h-9"
+            className="h-11"
             onClick={() => {
               start.mutate(sessionTargetOf(picked));
               onOpenChange(false);

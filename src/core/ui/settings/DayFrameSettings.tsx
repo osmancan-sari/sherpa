@@ -132,14 +132,14 @@ function DayFrameForm({ stored }: { stored: FrameSettings | null }) {
       <TimeInput
         aria-label={`${label} başlangıç`}
         value={value[0]}
-        className="h-11 w-20 text-center tabular-nums md:h-9"
+        className="h-11 w-20 text-center tabular-nums"
         onChange={(next) => onChange([next, value[1]])}
       />
       –
       <TimeInput
         aria-label={`${label} bitiş`}
         value={value[1]}
-        className="h-11 w-20 text-center tabular-nums md:h-9"
+        className="h-11 w-20 text-center tabular-nums"
         onChange={(next) => onChange([value[0], next])}
       />
     </span>
@@ -177,14 +177,14 @@ function DayFrameForm({ stored }: { stored: FrameSettings | null }) {
                 aria-label="Uyku hedefi (saat)"
                 value={draft.hours}
                 inputMode="decimal"
-                className="h-11 w-20 text-center tabular-nums md:h-9"
+                className="h-11 w-20 text-center tabular-nums"
                 onChange={(event) => setDraft({ ...draft, hours: event.target.value })}
               />
               saat
             </span>
           </div>
           <details className="text-sm">
-            <summary className="text-muted-foreground hover:text-foreground flex min-h-11 cursor-pointer items-center md:min-h-9">
+            <summary className="text-muted-foreground hover:text-foreground flex min-h-11 cursor-pointer items-center">
               Gün tipine göre (isteğe bağlı)
             </summary>
             <div className="grid grid-cols-[auto_1fr] items-center gap-x-4 gap-y-3 pt-2">
@@ -230,7 +230,7 @@ function DayFrameForm({ stored }: { stored: FrameSettings | null }) {
         <Button
           type="submit"
           variant="outline"
-          className="h-11 md:h-9"
+          className="h-11"
           disabled={!changed || (draft.on && !frame) || save.isPending}
         >
           Kaydet

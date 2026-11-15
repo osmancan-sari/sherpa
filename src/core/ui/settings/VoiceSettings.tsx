@@ -100,7 +100,7 @@ function VoiceSettingsBody() {
       <div>
         <Button
           variant="outline"
-          className="h-11 md:h-9"
+          className="h-11"
           onClick={() => say("Sesli anlatım açık. Böyle konuşacağım.", { interrupt: true })}
         >
           Dene

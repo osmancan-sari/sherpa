@@ -101,13 +101,13 @@ function AiSettingsBody() {
             value={budgetText}
             onChange={(event) => setDraft(event.target.value)}
             aria-invalid={!budgetValid || undefined}
-            className="h-11 w-32 md:h-9"
+            className="h-11 w-32"
           />
         </label>
         <Button
           type="submit"
           variant="outline"
-          className="h-11 md:h-9"
+          className="h-11"
           disabled={!budgetValid || draft === null || budgetValue === budget}
         >
           Kaydet

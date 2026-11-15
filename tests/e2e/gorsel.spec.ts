@@ -28,11 +28,13 @@ async function settled(page: Page) {
 async function shot(
   page: Page,
   name: string,
-  options: { mask?: ReturnType<Page["locator"]>[] } = {},
+  options: { mask?: ReturnType<Page["locator"]>[]; fullPage?: boolean } = {},
 ) {
   await settled(page);
   await expect(page).toHaveScreenshot(`${name}.png`, {
-    maxDiffPixelRatio: 0.01,
+    // Tight: a change of a token (a colour, a size) moves more pixels than this.
+    maxDiffPixelRatio: 0.002,
+    fullPage: options.fullPage,
     animations: "disabled",
     caret: "hide",
     mask: options.mask,
@@ -50,7 +52,8 @@ for (const device of DEVICES) {
     test(`gallery (${device.name})`, async ({ page }) => {
       await page.goto("/tasarim");
       await expect(page.getByRole("heading", { name: "Tasarım" })).toBeVisible();
-      await shot(page, `galeri-${device.name}`);
+      // The whole gallery, every piece and state.
+      await shot(page, `galeri-${device.name}`, { fullPage: true });
     });
 
     test(`inbox (${device.name})`, async ({ page }) => {
@@ -87,9 +90,12 @@ for (const device of DEVICES) {
       await expect(page.getByText("@")).toBeVisible();
       await shot(page, `ayarlar-${device.name}`);
 
-      await page.goto("/ayarlar/gorunum");
-      await expect(page.getByRole("switch", { name: "Saydamlığı azalt" })).toBeVisible();
-      await shot(page, `ayarlar-gorunum-${device.name}`);
+      // On the board /ayarlar already shows Görünüm; on the phone it is a page of its own.
+      if (device.name === "telefon") {
+        await page.goto("/ayarlar/gorunum");
+        await expect(page.getByRole("switch", { name: "Saydamlığı azalt" })).toBeVisible();
+        await shot(page, `ayarlar-gorunum-${device.name}`);
+      }
     });
 
     test(`quick add (${device.name})`, async ({ page }) => {

@@ -102,7 +102,7 @@ function WeekBody() {
         ) : null}
         <Button
           variant="outline"
-          className="h-11 md:h-9"
+          className="h-11"
           disabled={recommit.isPending}
           onClick={() =>
             recommit.mutate(

@@ -36,7 +36,7 @@ function WorkModule({ mod, candidate }: { mod: KnownModule; candidate: Assignmen
 const TITLE = "text-3xl leading-tight font-semibold tracking-tight md:text-5xl";
 const BIG = "h-12 px-6 text-base";
 const SECOND = "h-12 px-5 text-base";
-const SMALL = "h-11 px-3 text-sm md:h-9";
+const SMALL = "h-11 px-3 text-sm";
 
 const MINUTE = 60_000;
 const clock = (instant: Date) => formatTime(instant);

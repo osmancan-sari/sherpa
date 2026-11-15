@@ -137,7 +137,7 @@ function ColorRow({
         </span>
         <Button
           variant="outline"
-          className="h-11 md:h-9"
+          className="h-11"
           aria-expanded={open}
           aria-label={`${entry.name}: rengi değiştir`}
           onClick={onToggle}
@@ -165,7 +165,7 @@ function ColorRow({
                   onSave(color.value);
                 }}
                 className={cn(
-                  "focus-visible:ring-ring/50 size-11 rounded-full outline-none focus-visible:ring-3 md:size-8",
+                  "focus-visible:ring-ring/50 size-11 rounded-full outline-none focus-visible:ring-3",
                   current === color.value &&
                     "ring-foreground ring-offset-background ring-2 ring-offset-2",
                 )}
@@ -186,19 +186,19 @@ function ColorRow({
               aria-label={`${entry.name}: renk seç`}
               value={custom ?? current}
               onChange={(event) => setDraft(event.target.value)}
-              className="border-border h-11 w-14 cursor-pointer rounded-lg border bg-transparent md:h-9"
+              className="border-border h-11 w-14 cursor-pointer rounded-lg border bg-transparent"
             />
             <Input
               aria-label={`${entry.name}: renk kodu`}
               value={draft}
               onChange={(event) => setDraft(event.target.value)}
               aria-invalid={custom === null || undefined}
-              className="h-11 w-32 font-mono md:h-9"
+              className="h-11 w-32 font-mono"
             />
             <Button
               type="submit"
               variant="outline"
-              className="h-11 md:h-9"
+              className="h-11"
               disabled={!custom || custom === current}
             >
               Kaydet
@@ -207,7 +207,7 @@ function ColorRow({
               <Button
                 type="button"
                 variant="ghost"
-                className="h-11 md:h-9"
+                className="h-11"
                 onClick={() => {
                   setDraft(entry.initial!);
                   onSave(null);

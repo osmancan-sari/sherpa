@@ -70,7 +70,8 @@ export function DesignGallery() {
       className="relative flex flex-col gap-8 px-4 py-5.5 md:px-10 md:py-6"
       data-testid="gallery"
     >
-      <div className="fixed inset-0 -z-[5]">
+      {/* Behind the whole gallery (not the screen), so a full-page picture shows it all. */}
+      <div className="absolute inset-0 -z-[5]">
         <Backdrop kind={kind} sky={SKY[state]} contained />
       </div>
       <header className="flex flex-col gap-4">

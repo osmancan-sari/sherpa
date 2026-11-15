@@ -32,7 +32,7 @@ export function SplitButton({ item, onDone }: { item: WorkItem; onDone: () => vo
     <Button
       type="button"
       variant="outline"
-      className="h-11 md:h-9"
+      className="h-11"
       disabled={busy}
       onClick={async () => {
         setBusy(true);
@@ -100,14 +100,14 @@ export function SplitSuggestions({ moduleId }: { moduleId: string }) {
             </ol>
             <div className="flex flex-wrap gap-2">
               <Button
-                className="h-11 md:h-9"
+                className="h-11"
                 onClick={() => answer.mutate({ parentId: parent.id, accept: true })}
               >
                 Böl
               </Button>
               <Button
                 variant="ghost"
-                className="h-11 md:h-9"
+                className="h-11"
                 onClick={() => answer.mutate({ parentId: parent.id, accept: false })}
               >
                 Bölme

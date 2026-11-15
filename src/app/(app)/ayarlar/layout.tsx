@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { Suspense } from "react";
 import { Button } from "@/core/ui/kit/Button";
 import { Panel } from "@/core/ui/kit/Panel";
@@ -51,6 +52,9 @@ function Aside() {
           </form>
         </div>
       </Panel>
+      <Link href="/tasarim" className="link-quiet text-note text-ink-2 w-fit px-1">
+        Tasarım galerisi
+      </Link>
     </>
   );
 }

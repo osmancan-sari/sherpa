@@ -207,7 +207,7 @@ function ClosingBody({ inScene }: { inScene?: { onDone: () => void } } = {}) {
                         <Button
                           key={option.value}
                           variant="outline"
-                          className="h-11 md:h-9"
+                          className="h-11"
                           onClick={() => answer.mutate({ prompt, value: option.value })}
                         >
                           {option.label}
@@ -307,23 +307,23 @@ function ClosingBody({ inScene }: { inScene?: { onDone: () => void } } = {}) {
 
       <div className="flex flex-wrap gap-2">
         {step > 0 ? (
-          <Button variant="outline" className="h-11 md:h-9" onClick={back}>
+          <Button variant="outline" className="h-11" onClick={back}>
             Geri
           </Button>
         ) : null}
         {step < STEPS.length - 1 ? (
-          <Button className="h-11 md:h-9" onClick={next}>
+          <Button className="h-11" onClick={next}>
             İleri
           </Button>
         ) : (
           <>
-            <Button className="h-11 md:h-9" disabled={close.isPending} onClick={() => confirm()}>
+            <Button className="h-11" disabled={close.isPending} onClick={() => confirm()}>
               Onayla
             </Button>
             {input.frame && !inScene ? (
               <Button
                 variant="outline"
-                className="h-11 md:h-9"
+                className="h-11"
                 disabled={close.isPending}
                 onClick={() =>
                   void askBed(new Date()).then((yes) => {
@@ -337,7 +337,7 @@ function ClosingBody({ inScene }: { inScene?: { onDone: () => void } } = {}) {
           </>
         )}
         {inScene ? (
-          <Button variant="ghost" className="h-11 md:h-9" onClick={inScene.onDone}>
+          <Button variant="ghost" className="h-11" onClick={inScene.onDone}>
             Vazgeç
           </Button>
         ) : null}
@@ -365,7 +365,7 @@ function DoneRow({
       </span>
       <Button
         variant="outline"
-        className="h-11 shrink-0 md:h-9"
+        className="h-11 shrink-0"
         disabled={done}
         aria-label={`Yaptım: ${title}`}
         onClick={() => {
@@ -409,7 +409,7 @@ function DraftRow({
       </div>
       <Button
         variant="ghost"
-        className="h-11 shrink-0 md:h-9"
+        className="h-11 shrink-0"
         aria-label={`Çıkar: ${candidate.title}`}
         onClick={onRemove}
       >
