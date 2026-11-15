@@ -46,6 +46,11 @@ export type StoredDayPlan = {
   version: 1;
   advice?: PlanAdvice | null;
   skipped?: string[];
+  /**
+   * Ç4a: what "Ertele" put off on the day itself (also in `skipped`); the closing's take-outs
+   * are not in it. Records written before do not have it.
+   */
+  putOff?: string[];
   /** The AI was asked for the day's plan (`plan`), whatever came of it: once a day. */
   aiAsked?: boolean;
   /** Slot minutes of the whole day when it was first planned; the capacity learning reads it. */
@@ -157,6 +162,7 @@ export function planInput(
     committed: week ? week.committed : null,
     shares: week ? readShares(week.shares) : {},
     skipped: stored.skipped ?? [],
+    ...(stored.putOff ? { skippedToday: stored.putOff } : {}),
     openSession: rows.openSession,
     prompt:
       // A question that was put off ("Sonra") or answered waits, even in a list read earlier.

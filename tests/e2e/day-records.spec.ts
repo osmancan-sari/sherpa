@@ -15,20 +15,27 @@ const dayAt = (time: string) => new Date(`${DAY}T${time}:00+03:00`);
 const card = (page: Page) => page.getByRole("region", { name: "Şimdi" });
 const today = async () => (await rows("days")).find((row) => row.date === DAY);
 
-async function setUp() {
+/**
+ * The frame on, woken at 07:00. `closedAt`: the evening closing was done then, so the evening's
+ * card (with "Yatıyorum") is there before the bedtime range (Ç4a: no finish line brings it).
+ */
+async function setUp(closedAt?: string) {
   const [settings] = await rows("settings");
   await update("settings", settings.id as string, {
     day_frame: { wake: ["06:00", "09:00"], bed: ["22:00", "01:00"], sleep_minutes: 480 },
     day_start_default: "08:00",
-    finish_line_default: "19:00",
   });
-  await insert("days", { date: DAY, woke_at: dayAt("07:00").toISOString() });
+  await insert("days", {
+    date: DAY,
+    woke_at: dayAt("07:00").toISOString(),
+    ...(closedAt ? { closed_at: dayAt(closedAt).toISOString() } : {}),
+  });
 }
 
 test("Yatıyorum more than two hours before the bedtime range asks; Vazgeç keeps the day open", async ({
   page,
 }) => {
-  await setUp();
+  await setUp("19:25");
   await page.clock.setFixedTime(dayAt("19:30"));
   await page.goto("/");
   await card(page).getByRole("button", { name: "Yatıyorum" }).click();
@@ -45,7 +52,7 @@ test("Yatıyorum more than two hours before the bedtime range asks; Vazgeç keep
 });
 
 test("in the range and near it Yatıyorum is one tap", async ({ page }) => {
-  await setUp();
+  await setUp("20:55");
   await page.clock.setFixedTime(dayAt("21:00"));
   await page.goto("/");
   await card(page).getByRole("button", { name: "Yatıyorum" }).click();
@@ -59,7 +66,8 @@ test("a wrong bedtime and waking are set right or deleted in Ayarlar; the night 
   await setUp();
   const row = await today();
   await update("days", row!.id as string, { bed_at: dayAt("16:49").toISOString() });
-  await page.clock.setFixedTime(dayAt("20:00"));
+  // Ç4a: in the bedtime range with nothing left to do, the open day is in its evening.
+  await page.clock.setFixedTime(dayAt("22:30"));
   await page.goto("/");
   await card(page).getByRole("link", { name: "Yatışı düzelt" }).click();
   await expect(page).toHaveURL(/\/ayarlar#kayitlar$/);

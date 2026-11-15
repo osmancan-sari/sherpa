@@ -52,15 +52,16 @@ export async function userId(): Promise<string> {
 }
 
 /**
- * The test account's day: from midnight to a minute before the next. The tests run at any hour
- * (overnight too), and the planner leaves the time after the finish line to the night; with
- * the whole day as working time, what a test adds is planned whenever it runs. Tests of the
- * finish line and the night set their own times. The day's frame (Ç3c) is off: with it the
- * screen would greet the morning and quiet the evening at real hours; its specs switch it on.
+ * The test account's day: from midnight to the default bedtime (22:00; Ç4a: the day has no
+ * finish line, without the frame it runs to the bedtime range's default start). The tests run at
+ * any hour before 20:30 (playwright.config.ts), and after the bedtime it is night; with the day
+ * from midnight as working time, what a test adds is planned whenever it runs. Tests of the
+ * night set their own times. The day's frame (Ç3c) is off: with it the screen would greet the
+ * morning and quiet the evening at real hours; its specs switch it on. (`finish_line_default` is
+ * not read any more.)
  */
 export const TEST_DAY = {
   day_start_default: "00:00",
-  finish_line_default: "23:59",
   day_frame: null,
 };
 

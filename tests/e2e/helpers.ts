@@ -72,8 +72,8 @@ export async function signIn(page: Page, email = ALLOWED_EMAIL): Promise<void> {
 }
 
 /**
- * Room in the day for tests that need it. The test account's day ends at 23:59
- * (tests/e2e/data.ts); late in the evening a 30- or 60-minute task no longer fits and the screen
+ * Room in the day for tests that need it. The test account's day ends at 22:00
+ * (tests/e2e/data.ts; Ç4a); late in the evening a 30- or 60-minute task no longer fits and the screen
  * rightly offers nothing. Once the real time is past 10:00 the page's clock is held at 10:00
  * TODAY: the calendar day stays the one the data is written for (today(), due in an hour), and
  * the clock is never ahead of the server, so a session the server stamps never looks overdue.

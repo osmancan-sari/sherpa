@@ -1,3 +1,4 @@
+import { z } from "zod";
 import { readTiming, timingSummary } from "@/core/contract/timing";
 import type { ModuleRegistry } from "@/core/contract/types";
 import { createModuleContext } from "@/core/data/context";
@@ -39,6 +40,21 @@ import { mergeMark, readMark } from "../marks";
 // The planning flows (docs/10-yapay-zeka.md, "Plan çağrısının akışı"). Each one: the engine's own
 // result first, the AI's suggestion on top of it, the engine again to apply the suggestion within
 // its rules. Whatever fails, the engine's result stands.
+
+/**
+ * The body of `/api/ai/plan`. Ç4a: the phone's context is inferred and may be unknown (`null`:
+ * the context filter is off); a screen sends what it has.
+ */
+export const PLAN_REQUEST = z.object({
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  kind: z.enum(["plan", "replan"]).default("plan"),
+  note: z.string().max(500).nullable().optional(),
+  preview: z.boolean().optional(),
+  context: z
+    .enum(["any", "desk", "home", "campus", "office", "out", "commute"])
+    .nullable()
+    .optional(),
+});
 
 /** At most this many candidates go to the AI (docs/10, rule 7). */
 export const MAX_CANDIDATES = 80;

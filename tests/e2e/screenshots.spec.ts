@@ -344,16 +344,16 @@ for (const theme of ["dark", "light"] as const) {
     await expect(page.getByRole("region", { name: "Yarın" })).toBeVisible();
     await shot("kapanis-yarin");
 
-    // The night: the day's finish line has passed.
+    // The night: the day was closed (Ç4a: no finish line).
     const [today] = (await rows("days")).filter((row) => row.plan_source !== null);
-    await update("days", today.id as string, { finish_line: "00:00" });
+    await update("days", today.id as string, { closed_at: new Date().toISOString() });
     await page.goto("/");
     await expect(now).toContainText("Yarın ilk iş:");
     await shot("bugun-gece");
 
     // Ç3b: time constraints on the screens. The day is open again; a workout with travel is
     // due, the bank's hours are gone, and an item's only window this week has passed.
-    await update("days", today.id as string, { finish_line: "23:59" });
+    await update("days", today.id as string, { closed_at: null });
     const [okul] = (await rows("modules")).filter((row) => row.slug === "okul-ornek");
     const [saglik] = (await rows("modules")).filter((row) => row.slug === "saglik-ornek");
     const weekday =
@@ -410,9 +410,8 @@ for (const theme of ["dark", "light"] as const) {
     await update("settings", settings.id as string, {
       day_frame: { wake: ["06:00", "09:00"], bed: ["22:00", "01:00"], sleep_minutes: 480 },
       day_start_default: "08:00",
-      finish_line_default: "19:00",
     });
-    await update("days", today.id as string, { finish_line: null, woke_at: null });
+    await update("days", today.id as string, { woke_at: null });
     const at = (time: string, day = shotDay) => new Date(`${day}T${time}:00+03:00`);
     const before = (days: number) =>
       new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Istanbul" }).format(
@@ -604,7 +603,6 @@ for (const theme of ["dark", "light"] as const) {
     await update("settings", settings.id as string, {
       day_frame: { wake: ["06:00", "09:00"], bed: ["22:00", "01:00"], sleep_minutes: 480 },
       day_start_default: "08:00",
-      finish_line_default: "19:00",
     });
     // Ç3g: tonight's bed at 21:30, so the bed-bound work is offered at 21:00 (15 minutes ahead).
     await insert("days", {
@@ -689,7 +687,6 @@ test("rutin screens", async ({ page }, testInfo) => {
   await update("settings", settings.id as string, {
     day_frame: { wake: ["06:00", "09:00"], bed: ["22:00", "01:00"], sleep_minutes: 480 },
     day_start_default: "08:00",
-    finish_line_default: "19:00",
   });
   // Told from outside (the phone's alarm automation, as core/wake writes it).
   await insert("days", {
@@ -793,7 +790,6 @@ test("c3g screens", async ({ page }, testInfo) => {
   await update("settings", settings.id as string, {
     day_frame: { wake: ["06:00", "09:00"], bed: ["22:00", "01:00"], sleep_minutes: 480 },
     day_start_default: "08:00",
-    finish_line_default: "19:00",
   });
   await insert("days", { date: shotDay, woke_at: at("07:00").toISOString() });
   const [deneme] = await insert("modules", { slug: "deneme", name: "Deneme", color: "#7c3aed" });

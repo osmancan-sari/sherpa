@@ -352,6 +352,12 @@ describe("the end of the day", () => {
     expect(
       buildPlan(input({ now: at("10:00"), workItems: [item], skipped: [item.id] })).now.kind,
     ).toBe("done");
+    // What the evening closing took out of the day is not today's work (`skippedToday`).
+    expect(
+      buildPlan(
+        input({ now: at("10:00"), workItems: [item], skipped: [item.id], skippedToday: [] }),
+      ).now.kind,
+    ).toBe("empty");
     // Put off on another day: nothing of today's.
     const before = { ...deferred, updated_at: iso("09:30", shiftDay(DATE, -1)) };
     expect(buildPlan(input({ now: at("10:00"), tasks: [before] })).now.kind).toBe("empty");

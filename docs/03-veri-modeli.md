@@ -277,7 +277,7 @@ life_mode enum(normal, busy, minimum, holiday)   -- kullanılmıyor (Ç4a): yaz�
 started_at timestamptz null   -- günün ilk dokunuşu
 finish_line time              -- kullanılmıyor (Ç4a): gün bitiş çizgisi taşımaz; okunmaz
 top3 uuid[]                   -- kullanılmıyor (Ç4a): günün 3 işi yok; yazılmaz (varsayılan {}), okunmaz
-plan jsonb                    -- planın özeti: yapay zekanın önerisi (`advice`), bugün ertelenenler (`skipped`), bütün günün yuva süresi (`slotMinutes`), yapay zekaya günün planının soruldu mu (`aiAsked`). Yuvalar ve atamalar kaydedilmez: ekran planı her değişiklikte aynı fonksiyonla yeniden kurar
+plan jsonb                    -- planın özeti: yapay zekanın önerisi (`advice`), bugün ertelenenler (`skipped`; kapanışın yarından çıkardıkları da), o gün "Ertele" denenler (`putOff`, Ç4a), bütün günün yuva süresi (`slotMinutes`), yapay zekaya günün planının soruldu mu (`aiAsked`). Yuvalar ve atamalar kaydedilmez: ekran planı her değişiklikte aynı fonksiyonla yeniden kurar
 plan_source enum(closing, ai, auto)   -- kapanışta onaylandı / yapay zeka önerdi / yalnızca motor
 plan_reasons jsonb null       -- yapay zekanın gerekçeleri ("neden?")
 closed_at timestamptz null    -- akşam kapanışı yapıldıysa
@@ -389,7 +389,7 @@ day_frame jsonb null          -- Ç3c: günün çerçevesi; boşsa çerçeve kap
 reported_context enum(any, desk, home, campus, office, out, commute) null   -- Ç4a: `core/context` ucunun son bildirdiği yer
 reported_context_at timestamptz null   -- Ç4a: o bildirimin anı; ikisi birlikte dolu ya da boş
 ```
-`reported_context` (Ç4a): telefonun ekranları bağlamını 3 saat boyunca buradan tahmin eder (`docs/04-planlayici.md`, "Bağlam tahmini"). Yalnızca giriş ucu yazar; daha eski bir bildirim yenisinin yerine yazılmaz. Bağlamı elle seçmek yoktur.
+`reported_context` (Ç4a): telefonun ekranları bağlamını 3 saat boyunca buradan tahmin eder (`docs/04-planlayici.md`, "Bağlam tahmini"). Yalnızca giriş ucu yazar; daha eski bir bildirim yenisinin yerine yazılmaz (tek koşullu yazma). Uç 5 dakikaya kadar ileri saatli değeri kabul eder; ekran onu anı gelene kadar saymaz. Bağlamı elle seçmek yoktur.
 
 `day_frame` (Ç3c):
 ```json

@@ -40,7 +40,8 @@ async function addRecord(
 test("switching the module on gives it a row, a chip and a page", async ({ page }) => {
   const row = await activate(page);
   expect(row).toMatchObject({ slug: "deneme", name: "Deneme", status: "active", color: "#6250d6" });
-  expect(row.mode_behavior).toMatchObject({ holiday: { weightMultiplier: 0 } });
+  // Ç4a: no life modes; nothing of them is written.
+  expect(row.mode_behavior).toEqual({});
   expect((await rows("areas")).map((area) => area.slug)).toEqual(["sinama"]);
 
   await page.goto("/");
@@ -337,9 +338,7 @@ test("the quick action opens the module's entry form; its settings form saves", 
     () => rows("modules"),
     (list) => (list[0].settings as { default_minutes?: number }).default_minutes === 20,
   );
-  await expect(page.getByRole("region", { name: "Hayat modları" })).toContainText(
-    "Alışkanlıklar durur.",
-  );
+  await expect(page.getByRole("region", { name: "Hayat modları" })).toHaveCount(0);
 
   // A fixed-time proposal became a block.
   await page.goto("/m/deneme");
@@ -423,6 +422,8 @@ test("'Sonra' puts the question away for now", async ({ page }) => {
     kind: "zorluk",
     question: "Sonraya bırakılacak soru",
     options: [{ value: "kolay", label: "Kolay" }],
+    // Due a minute ago by this machine's clock: the database's own clock may run a little ahead.
+    ask_after: new Date(Date.now() - 60_000).toISOString(),
   });
   await page.goto("/");
   const question = page.getByRole("region", { name: "Soru" });

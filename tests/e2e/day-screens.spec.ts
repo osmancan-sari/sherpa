@@ -16,13 +16,12 @@ const DAY = istanbulDay(-1);
 const dayAt = (time: string, day = DAY) => new Date(`${day}T${time}:00+03:00`);
 const FRAME = { wake: ["06:00", "09:00"], bed: ["22:00", "01:00"], sleep_minutes: 480 };
 
-/** The frame on, with an ordinary day (08:00–19:00) instead of the test account's whole day. */
+/** The frame on, with an ordinary day from 08:00 instead of the test account's whole day. */
 async function frameOn(frame: Record<string, unknown> = FRAME) {
   const [settings] = await rows("settings");
   await update("settings", settings.id as string, {
     day_frame: frame,
     day_start_default: "08:00",
-    finish_line_default: "19:00",
   });
 }
 
@@ -99,7 +98,8 @@ test("the evening: tonight's bed, tomorrow's waking and the sleep; one-day chang
 }) => {
   await frameOn();
   await insert("days", { date: DAY, woke_at: dayAt("07:00").toISOString() });
-  await page.clock.setFixedTime(dayAt("20:00"));
+  // Ç4a: the bedtime range has begun (22:00) and nothing is left in the day: the evening.
+  await page.clock.setFixedTime(dayAt("22:30"));
   await page.goto("/");
   const evening = card(page);
   await expect(evening.getByRole("heading", { name: "Akşam" })).toBeVisible();
@@ -132,7 +132,7 @@ test("the evening: tonight's bed, tomorrow's waking and the sleep; one-day chang
     () => dayRow(),
     (row) => row?.bed_at != null,
   );
-  expect(Date.parse(day!.bed_at as string)).toBe(dayAt("20:00").getTime());
+  expect(Date.parse(day!.bed_at as string)).toBe(dayAt("22:30").getTime());
   await waitFor(
     () => rows("events"),
     (list) => list.some((row) => row.type === "core.day_closed"),

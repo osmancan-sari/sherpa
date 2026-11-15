@@ -172,4 +172,45 @@ describe("forecastDays", () => {
     const beyond = forecast(base, shiftDay(far, 7), far);
     expect(beyond.map((day) => day.date)).toEqual([far]);
   });
+
+  it("does not carry the device's context to the days ahead: they are planned with the filter off", () => {
+    const office = task({ title: "Ofis işi", context: "office" });
+    const desk = input({ tasks: [office] });
+    // On the second screen today the office work is not a candidate…
+    expect(buildPlan(desk).slots.some((slot) => slot.assignment)).toBe(false);
+    // …but where one will be tomorrow is not known: it is forecast.
+    expect(forecast(desk, NEXT).map(ids)).toEqual([[office.id]]);
+    const campus = input({ tasks: [office], context: "campus" });
+    expect(JSON.stringify(forecast(campus, NEXT))).toBe(JSON.stringify(forecast(desk, NEXT)));
+  });
+
+  it("counts the weekly floor's minutes week by week", () => {
+    const sport = moduleRow({ kind: "lifelong", weekly_floor_minutes: 45 });
+    const runs = [1, 2, 3].map((n) =>
+      task({ module_id: sport.id, title: `Koşu ${n}`, est_minutes: 45, importance: 1 }),
+    );
+    const base = input({
+      modules: [sport],
+      tasks: runs,
+      settings: shortDays,
+      bedtime: at("09:30"),
+    });
+    // Sunday is the week's last day: the floor would be in danger with nothing worked. What the
+    // forecast put on the days before counts, so Sunday's work is no floor work.
+    const sunday = "2026-11-15";
+    const plan = (spent: Record<string, number>) => {
+      const days = forecastDays({ ...base, spentThisWeek: spent }, buildPlan(base), {
+        from: sunday,
+        to: sunday,
+      });
+      return days[0].work.map((row) => row.assignment.candidate.mandatory);
+    };
+    expect(plan({ [sport.id]: 0 }).every((reason) => reason !== "floor")).toBe(true);
+  });
+
+  it("gives a follow-up once", () => {
+    const waiting = task({ status: "waiting", follow_up_on: NEXT, title: "Hocadan cevap" });
+    const days = forecast(input({ tasks: [waiting] }), shiftDay(DATE, 3));
+    expect(days.map(ids)).toEqual([[waiting.id], [], []]);
+  });
 });

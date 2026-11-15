@@ -24,7 +24,6 @@ async function setUp(frame: Record<string, unknown> = {}) {
   await update("settings", settings.id as string, {
     day_frame: { ...FRAME, ...frame },
     day_start_default: "08:00",
-    finish_line_default: "19:00",
   });
   const [deneme] = await insert<Row>("modules", {
     slug: "deneme",

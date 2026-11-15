@@ -1,6 +1,6 @@
 import { readTiming } from "@/core/contract/timing";
 import type { Context } from "@/core/types";
-import { blocksOfDay, currentBlock, effortUsedUp } from "@/core/today/select";
+import { blocksOfDay, currentBlock } from "@/core/today/select";
 import { dayKey, formatDue, formatTime, istanbulInstant, shiftDay } from "@/lib/date";
 import {
   availableUntil,
@@ -536,13 +536,15 @@ function framedLines(input: PlanInput, anchored: Candidate[]): Lines {
 
 /**
  * Ç4a: the day had work to finish: a task done, dropped or put off today, or a work item or
- * rhythm put off ("Ertele"); a rhythm done today that is not bound to the waking or the bedtime.
- * With nothing of it left in the plan the day is done ("Bugün tamam"), else it is empty.
+ * rhythm put off today ("Ertele", `skippedToday`); a rhythm done today that is not bound to the
+ * waking or the bedtime. With nothing of it left in the plan the day is done ("Bugün tamam"),
+ * else it is empty. What the evening closing took out of the day (also kept as skipped) is not
+ * work the day had.
  */
 function dayHadWork(input: PlanInput): boolean {
   const today = (stamp: string | null | undefined) =>
     stamp !== null && stamp !== undefined && dayKey(new Date(stamp)) === input.date;
-  if ((input.skipped ?? []).length > 0) return true;
+  if ((input.skippedToday ?? input.skipped ?? []).length > 0) return true;
   for (const task of input.tasks) {
     if (task.status === "done" && today(task.done_at)) return true;
     if (task.status === "dropped" && today(task.updated_at)) return true;
@@ -586,9 +588,12 @@ function nowOf(input: PlanInput, slots: Slot[], workEnd: Date): NowState {
     parted("bed")(slot) && input.now.getTime() >= slot.start.getTime() - BED_LEAD * MINUTE;
   if (frame) {
     // Ç3c: night comes with bed, or once the bedtime range is over; the evening before it, once
-    // the working window is over (Ç4a: where the bed-bound work begins) or the day was closed.
+    // the working window is over (Ç4a: where the bed-bound work begins), the day was closed, or
+    // the bedtime range has begun and nothing of the working window is left in the plan.
     if (frame.bedAt || input.now >= frame.bedEnd) return { kind: "night" };
-    if (input.closed || input.now >= workEnd) {
+    const workLeft = slots.some((slot) => slot.part === undefined && slot.assignment);
+    const lateAndDone = !workLeft && frame.bedStart !== undefined && input.now >= frame.bedStart;
+    if (input.closed || input.now >= workEnd || lateAndDone) {
       const next = slots.find(bedDue)?.assignment;
       const waiting = next ? undefined : slots.find((slot) => parted("bed")(slot));
       return {
@@ -608,16 +613,8 @@ function nowOf(input: PlanInput, slots: Slot[], workEnd: Date): NowState {
   if (isReturning(input)) return { kind: "return", next: loose ?? null };
   if (input.prompt) return { kind: "prompt", prompt: input.prompt };
 
-  // A work item whose effort is used up asks "Bitti mi?" in its own slot, and before the day
-  // can be done.
-  const usedUp = slots.find(
-    (slot) =>
-      slot.part === undefined &&
-      slot.assignment?.candidate.type === "item" &&
-      slot.assignment.candidate.item &&
-      effortUsedUp(slot.assignment.candidate.item),
-  )?.assignment;
-
+  // A work item whose effort is used up asks "Bitti mi?" in its own slot, in time order (Ç4a:
+  // while it is in the plan the day is not done).
   const finishedToday = input.tasks.filter(
     (task) =>
       task.status === "done" &&
@@ -629,7 +626,6 @@ function nowOf(input: PlanInput, slots: Slot[], workEnd: Date): NowState {
   // every minute, so nothing placed means nothing fits. Work bound to the waking or the bedtime
   // is not waited for; the evening comes at its own time.
   if (!loose && dayHadWork(input)) {
-    if (usedUp) return { kind: "suggest", assignment: usedUp };
     return {
       kind: "done",
       finished: finishedToday.length,

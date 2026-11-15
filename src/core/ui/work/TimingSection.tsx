@@ -100,7 +100,9 @@ export function valueOf(draft: TimingDraft): unknown {
     rest_days: number(draft.rest),
     anchor: draft.anchor === "" ? undefined : draft.anchor,
     order: draft.anchor === "" ? undefined : number(draft.order),
-    after_finish: draft.afterFinish ? true : undefined,
+    // Ç4a: kept as it was stored, but not with an anchor (the two never go together, and the
+    // form no longer shows it to clear it).
+    after_finish: draft.afterFinish && draft.anchor === "" ? true : undefined,
   };
 }
 

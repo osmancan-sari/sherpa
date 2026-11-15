@@ -22,7 +22,6 @@ test("the module page lists today's chains: its own work and another module's, w
   await update("settings", settings.id as string, {
     day_frame: { wake: ["06:00", "09:00"], bed: ["22:00", "01:00"], sleep_minutes: 480 },
     day_start_default: "08:00",
-    finish_line_default: "19:00",
   });
   await insert("days", { date: DAY, woke_at: dayAt("07:00").toISOString() });
   const [deneme] = (await rows("modules")) as Row[];

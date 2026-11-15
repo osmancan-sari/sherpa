@@ -9,7 +9,7 @@ import {
 } from "@/core/planner";
 import { dayRow, moduleRow, rhythm, settingsRow, task, workItem } from "@/core/testing/factories";
 import { istanbulInstant } from "@/lib/date";
-import { adviceOf, MAX_CANDIDATES, planCallInput, weekCallInput } from "./planning";
+import { adviceOf, MAX_CANDIDATES, PLAN_REQUEST, planCallInput, weekCallInput } from "./planning";
 
 // The planning flows' pure parts (src/core/ai/flows/planning.ts).
 
@@ -190,5 +190,14 @@ describe("the day's frame in the plan call (Ç3c)", () => {
     // Without the frame there is no "day" at all.
     const plain = planCallInput(rows(), input(), buildPlan(input()), null, false);
     expect(plain).not.toHaveProperty("day");
+  });
+});
+
+describe("the plan request (Ç4a)", () => {
+  it("takes an unknown context (null) from the phone, a known one, or none", () => {
+    for (const context of [null, "campus", undefined]) {
+      expect(PLAN_REQUEST.safeParse({ date: DATE, kind: "replan", context }).success).toBe(true);
+    }
+    expect(PLAN_REQUEST.safeParse({ date: DATE, context: "nowhere" }).success).toBe(false);
   });
 });

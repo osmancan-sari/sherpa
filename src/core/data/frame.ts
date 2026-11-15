@@ -162,16 +162,15 @@ export async function saveDayFrame(db: Db, frame: FrameSettings | null): Promise
  * moment. A report older than the one kept does not replace it.
  */
 export async function saveReportedContext(db: Db, context: Context, at: Date): Promise<void> {
-  const { data, error } = await db.from("settings").select("reported_context_at").maybeSingle();
-  if (error) throw new Error(error.message);
-  if (data?.reported_context_at && Date.parse(data.reported_context_at) > at.getTime()) return;
+  // The row first (it may not exist yet), then one conditional write: two reports at the same
+  // moment never let the older one win.
+  check(await db.from("settings").upsert({}, { onConflict: "user_id", ignoreDuplicates: true }));
+  const when = at.toISOString();
   check(
     await db
       .from("settings")
-      .upsert(
-        { reported_context: context, reported_context_at: at.toISOString() },
-        { onConflict: "user_id" },
-      ),
+      .update({ reported_context: context, reported_context_at: when })
+      .or(`reported_context_at.is.null,reported_context_at.lte."${when}"`),
   );
 }
 

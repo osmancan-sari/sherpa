@@ -197,7 +197,15 @@ test("a work item is started as its next sitting, and the time counts towards it
   await expect(now).toContainText("1 sa");
   await now.getByRole("button", { name: "Başla" }).click();
   await expect(now.getByRole("heading", { name: "Midterm hazırlığı" })).toBeVisible();
-  await expect(now).toContainText("tahmin 1 sa", { timeout: 5000 });
+  // The sitting's own length: an hour, or less when this week's share is smaller (late in the
+  // week, or a short Sunday since the day runs to the bedtime, Ç4a).
+  const [sitting] = await waitFor(
+    () => rows("tasks"),
+    (list) => list.some((task) => task.status === "doing"),
+  ).then((list) => list.filter((task) => task.status === "doing"));
+  const minutes = sitting.est_minutes as number;
+  const length = minutes === 60 ? "1 sa" : `${minutes} dk`;
+  await expect(now).toContainText(`tahmin ${length}`, { timeout: 5000 });
 
   const [session] = await waitFor(
     () => rows("sessions"),
@@ -386,11 +394,10 @@ test("a write that fails is taken back on the screen and said so", async ({ page
   // "Bitti" in the list: the row goes at once, and comes back when the write fails.
   await upcoming.getByRole("button", { name: "Bitti: İkinci iş" }).click();
   await expect(upcoming.getByRole("listitem")).toHaveCount(0);
-  const progress = page.getByLabel("Günün ilerlemesi");
-  await expect(progress).toHaveText("Bugün 1/2");
+  // Ç4a: no "Bugün n/3" any more; the row is what changes at once and comes back.
+  await expect(page.getByLabel("Günün ilerlemesi")).toHaveCount(0);
   await expect(failed).toBeVisible();
   await expect(upcoming.getByRole("listitem")).toHaveText([/İkinci iş/]);
-  await expect(progress).toHaveText("Bugün 0/2");
   expect((await rows("tasks")).map((task) => task.status)).toEqual(["todo", "todo"]);
 
   // "Başla" on the card: the clock shows at once, and the card goes back to the offer.

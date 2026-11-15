@@ -82,12 +82,6 @@ export async function seedDemo(db: Db, now: Date): Promise<DemoSummary> {
             sort: 2,
             area_id: area.id,
             weekly_floor_minutes: 60,
-            mode_behavior: {
-              normal: { weightMultiplier: 1, floorMultiplier: 1 },
-              busy: { weightMultiplier: 0.5, floorMultiplier: 0.5 },
-              minimum: { weightMultiplier: 0.3, floorMultiplier: 0.5 },
-              holiday: { weightMultiplier: 0, floorMultiplier: 0 },
-            },
           },
           {
             slug: "saglik-ornek",
@@ -97,12 +91,6 @@ export async function seedDemo(db: Db, now: Date): Promise<DemoSummary> {
             sort: 3,
             area_id: area.id,
             weekly_floor_minutes: 90,
-            mode_behavior: {
-              normal: { weightMultiplier: 1, floorMultiplier: 1 },
-              busy: { weightMultiplier: 0.3, floorMultiplier: 0.5 },
-              minimum: { weightMultiplier: 0.3, floorMultiplier: 0.5 },
-              holiday: { weightMultiplier: 0.5, floorMultiplier: 0 },
-            },
           },
           { slug: "is-ornek", name: "İş", kind: "lifelong", color: "#7c3aed", sort: 4 },
         ],

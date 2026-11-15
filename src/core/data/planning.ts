@@ -137,10 +137,15 @@ export async function saveDayPlan(
 export async function skipToday(db: Db, date: string, id: string): Promise<void> {
   const stored = storedPlan(await getDay(db, date));
   const skipped = [...new Set([...(stored.skipped ?? []), id])];
+  // Ç4a: what was put off on the day itself, apart from the closing's take-outs ("Bugün tamam").
+  const putOff = [...new Set([...(stored.putOff ?? []), id])];
   check(
     await db
       .from("days")
-      .upsert({ date, plan: toJson({ ...stored, skipped }) }, { onConflict: "user_id,date" }),
+      .upsert(
+        { date, plan: toJson({ ...stored, skipped, putOff }) },
+        { onConflict: "user_id,date" },
+      ),
   );
 }
 

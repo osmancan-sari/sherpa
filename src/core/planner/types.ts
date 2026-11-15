@@ -101,6 +101,11 @@ export type PlanInput = {
    * the share is worked, the item waits for next week (no warning, not offered).
    */
   shares?: Record<string, WeekShare>;
+  /**
+   * Ç4a: of `skipped`, what was put off on the day itself ("Ertele"), not what the evening
+   * closing took out of it beforehand. Absent: all of `skipped` counts.
+   */
+  skippedToday?: string[];
   /** Put off for today with "Ertele" (work items and rhythms; tasks move to tomorrow instead). */
   skipped?: string[];
   openSession?: Session | null;

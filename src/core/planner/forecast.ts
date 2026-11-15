@@ -96,6 +96,9 @@ function dayInput(base: PlanInput, state: State, day: string): PlanInput {
     dayType: dayTypeOf(day, base.blocks, settings),
     dayStart: start,
     bedtime: dayEndOf(day, settings),
+    // Where the device will be that day is not known: the context filter is off (today's
+    // phone or desk context does not shape the days ahead).
+    context: null,
     frame: undefined,
     closed: false,
     tasks,

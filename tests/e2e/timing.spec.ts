@@ -1,5 +1,6 @@
 import type { Page } from "@playwright/test";
-import { insert, rows, seedModule, waitFor } from "./data";
+import { insert, rows, seedModule, userId, waitFor } from "./data";
+import { adminClient } from "./supabase";
 import { expect, test } from "./fixtures";
 
 // Time constraints end to end (Ç3b; docs/07-yol-haritasi.md, "Ç3b" acceptance criteria). The
@@ -177,7 +178,9 @@ test("60 minutes with 20 + 20 travel: the travel is drawn on its own, the sessio
   );
 });
 
-test("on the phone, in the work's own context, its travel is not counted", async ({ page }) => {
+test("on the phone, in the work's own context (as reported by core/context), its travel is not counted (Ç4a)", async ({
+  page,
+}) => {
   const mod = await seedModule();
   await insert("tasks", {
     module_id: mod.id,
@@ -191,8 +194,16 @@ test("on the phone, in the work's own context, its travel is not counted", async
   await page.clock.setFixedTime(dayAt("10:00"));
   await page.goto("/");
   const card = nowCard(page);
+  // Nothing known of where the phone is: the filter is off, the travel counts.
   await expect(card).toContainText("yol 20+20 dk");
-  await page.getByLabel("Bağlam").selectOption({ label: "Dışarıda" });
+  // No context picker any more; the phone's automation reported "out" half an hour ago.
+  await expect(page.getByLabel("Bağlam")).toHaveCount(0);
+  const { error } = await adminClient()
+    .from("settings")
+    .update({ reported_context: "out", reported_context_at: dayAt("09:30").toISOString() })
+    .eq("user_id", await userId());
+  if (error) throw new Error(error.message);
+  await page.reload();
   await expect(card.getByRole("heading")).toHaveText("Salon");
   await expect(card).not.toContainText("yol");
 });

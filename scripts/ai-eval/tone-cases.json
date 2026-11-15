@@ -1,14 +1,15 @@
 {
   "cases": [
     {
-      "name": "plan: dün planlanan üç işin hiçbiri bitmedi, kullanıcının notu kendini suçluyor",
+      "name": "plan: dün hiç iş bitmedi, kullanıcının notu kendini suçluyor",
       "kind": "plan",
       "input": {
         "date": "2026-11-12",
         "weekday": "perşembe",
-        "life_mode": "normal",
         "capacity_minutes": 150,
-        "base": { "top3": ["t1", "t2", "t3"], "placed": ["t1", "t2", "t3", "r1"] },
+        "base": {
+          "placed": ["t1", "t2", "t3", "r1"]
+        },
         "candidates": [
           {
             "id": "t1",
@@ -66,8 +67,17 @@
             "mandatory": null
           }
         ],
-        "blocks": [{ "title": "Ders", "start": "09:00", "end": "12:00" }],
-        "yesterday": { "planned": 3, "done": 0 },
+        "blocks": [
+          {
+            "title": "Ders",
+            "start": "09:00",
+            "end": "12:00"
+          }
+        ],
+        "yesterday": {
+          "done": 0,
+          "minutes": 0
+        },
         "note": "Dün hiçbir şey yapamadım, yine erteledim. Bugün toparlanmam lazım."
       }
     },
@@ -77,9 +87,10 @@
       "input": {
         "date": "2026-11-12",
         "weekday": "perşembe",
-        "life_mode": "normal",
         "capacity_minutes": 60,
-        "base": { "top3": ["t2", "t3", "t4"], "placed": ["t2", "t3"] },
+        "base": {
+          "placed": ["t2", "t3"]
+        },
         "candidates": [
           {
             "id": "t2",
@@ -116,7 +127,10 @@
           }
         ],
         "blocks": [],
-        "yesterday": { "planned": 3, "done": 1 },
+        "yesterday": {
+          "done": 1,
+          "minutes": 30
+        },
         "note": "Sabah hiç verimli geçmedi, planı kaçırdım",
         "done_today": []
       }
@@ -126,9 +140,13 @@
       "kind": "week",
       "input": {
         "week_start": "2026-11-16",
-        "life_mode": "busy",
         "capacity_minutes": 900,
-        "fixed_minutes": [{ "module": "Sağlık", "minutes": 90 }],
+        "fixed_minutes": [
+          {
+            "module": "Sağlık",
+            "minutes": 90
+          }
+        ],
         "items": [
           {
             "id": "w1",
@@ -162,7 +180,9 @@
           }
         ],
         "base": ["w1", "w2"],
-        "last_week": { "committed": 7 }
+        "last_week": {
+          "committed": 7
+        }
       }
     },
     {
@@ -173,24 +193,47 @@
         "modules": [
           {
             "module": "Sağlık",
-            "metrics": [{ "label": "Koşu", "value": "1/3" }],
+            "metrics": [
+              {
+                "label": "Koşu",
+                "value": "1/3"
+              }
+            ],
             "suggestions": ["Koşu hedefinin gerisinde kaldın"]
           },
           {
             "module": "Okul",
-            "metrics": [{ "label": "Çalışılan", "value": "35 dk" }],
+            "metrics": [
+              {
+                "label": "Çalışılan",
+                "value": "35 dk"
+              }
+            ],
             "suggestions": []
           }
         ],
         "worked": [
-          { "module": "Okul", "minutes": 35 },
-          { "module": "Sağlık", "minutes": 30 }
+          {
+            "module": "Okul",
+            "minutes": 35
+          },
+          {
+            "module": "Sağlık",
+            "minutes": 30
+          }
         ],
         "coming": [
-          { "week_start": "2026-11-16", "capacity": 1400, "demand": 1900 },
-          { "week_start": "2026-11-23", "capacity": 1900, "demand": 800 }
-        ],
-        "life_mode": "normal"
+          {
+            "week_start": "2026-11-16",
+            "capacity": 1400,
+            "demand": 1900
+          },
+          {
+            "week_start": "2026-11-23",
+            "capacity": 1900,
+            "demand": 800
+          }
+        ]
       }
     }
   ]

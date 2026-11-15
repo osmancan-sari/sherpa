@@ -223,16 +223,18 @@ test("E puts off what is offered; R plans the day again", async ({ page }) => {
   await expect(page.getByRole("status")).toHaveText("Gün yeniden planlandı.");
   const [day] = await waitFor(
     () => rows("days"),
-    (list) => list.length === 1 && (list[0].top3 as string[]).length === 1,
+    (list) => list.length === 1 && list[0].plan_source !== null,
   );
   expect(day.plan_source).toBe("auto");
+  // Ç4a: the day's three are not written.
+  expect(day.top3).toEqual([]);
 });
 
-test("the day is done once its three are; what is left waits behind 'Vakit kalırsa'", async ({
+test("the day is done once nothing of its plan is left; nothing waits behind it (Ç4a)", async ({
   page,
 }) => {
   const mod = await seedModule();
-  const [done] = await insert("tasks", {
+  await insert("tasks", {
     module_id: mod.id,
     title: "Bitmiş iş",
     status: "done",
@@ -240,25 +242,35 @@ test("the day is done once its three are; what is left waits behind 'Vakit kalı
     done_at: istanbulInstant(today(), "00:01").toISOString(),
     est_minutes: 30,
   });
-  await insert("tasks", { module_id: mod.id, title: "Fazladan iş" });
-  await insert("days", { date: today(), top3: [done.id], plan_source: "auto" });
+  await insert("days", { date: today(), plan_source: "auto" });
 
   await page.goto("/");
   const now = page.getByRole("region", { name: "Şimdi" });
   await expect(now.getByRole("heading")).toHaveText("Bugün tamam");
   await expect(now).toContainText("1 iş · 30 dk");
-  await expect(page.getByLabel("Günün ilerlemesi")).toHaveText("Bugün 1/1");
-  await now.getByRole("button", { name: "Vakit kalırsa" }).click();
-  await expect(page.getByRole("region", { name: "Sıradakiler" })).toContainText("Fazladan iş");
+  // No progress of three, no "Vakit kalırsa" button or list.
+  await expect(page.getByLabel("Günün ilerlemesi")).toHaveCount(0);
+  await expect(page.getByRole("main")).not.toContainText("Vakit kalırsa");
+  await expect(page.getByRole("region", { name: "Sıradakiler" })).toContainText(
+    "Sırada başka iş yok.",
+  );
+  // More work that fits: the plan is the day's rest, and it is offered.
+  await insert("tasks", { module_id: mod.id, title: "Bir iş daha" });
+  await page.reload();
+  await expect(now.getByRole("heading")).toHaveText("Bir iş daha");
 });
 
-test("after the finish line the screen is at night and shows the first work of tomorrow", async ({
+test("after the evening closing the screen is at night and shows the first work of tomorrow", async ({
   page,
 }) => {
   const mod = await seedModule();
   await insert("tasks", { module_id: mod.id, title: "Yarının işi" });
-  // The day ended at midnight: everything after it is night.
-  await insert("days", { date: today(), finish_line: "00:00", plan_source: "auto" });
+  // Ç4a: no finish line; a closed day (without the frame) is night.
+  await insert("days", {
+    date: today(),
+    closed_at: new Date().toISOString(),
+    plan_source: "auto",
+  });
   await page.goto("/");
   const now = page.getByRole("region", { name: "Şimdi" });
   await expect(now).toContainText("Yarın ilk iş: Yarının işi");
@@ -354,7 +366,7 @@ test("a session past twice its estimate asks whether it goes on; unanswered, it 
   await expect(now.getByRole("button", { name: "Başla" })).toBeVisible();
 });
 
-test("the evening closing: what was done, tomorrow's three, what is on the mind, then night", async ({
+test("the evening closing: what was done, tomorrow's draft, what is on the mind, then night", async ({
   page,
 }) => {
   const mod = await seedModule();
@@ -388,20 +400,22 @@ test("the evening closing: what was done, tomorrow's three, what is on the mind,
   await page.keyboard.press("Escape");
   await expect(page.getByRole("region", { name: "Bugün" })).toBeVisible();
   await page.getByRole("button", { name: "İleri" }).click();
-  // 3. Tomorrow's draft: "Yarın C" is taken out, "Yarın B" is not one of the three.
+  // 3. Tomorrow's draft: its plan in order, nothing to tick (Ç4a); "Yarın C" is taken out.
   const draft = page.getByRole("region", { name: "Yarın" });
+  await expect(draft).toContainText("İstemediğini çıkar.");
+  await expect(draft.getByRole("button", { name: /Günün üç işi/ })).toHaveCount(0);
+  await expect(draft).not.toContainText("vakit kalırsa");
   await draft.getByRole("button", { name: "Çıkar: Yarın C" }).click();
   await expect(draft).not.toContainText("Yarın C");
-  const pickB = draft.getByRole("button", { name: "Günün üç işi: Yarın B" });
-  await expect(pickB).toHaveAttribute("aria-pressed", "true");
-  await pickB.click();
-  await expect(pickB).toHaveAttribute("aria-pressed", "false");
   await page.getByRole("button", { name: "İleri" }).click();
   // 4. What is on the mind goes to the inbox, a line each; Ctrl+Enter goes on from the box.
   await page.getByLabel("Aklında kalanlar").fill("perde ölçüsü\nannemi ara");
   await page.keyboard.press("Control+Enter");
-  // 5. Confirm: tomorrow is kept, today goes to night.
-  await expect(page.getByRole("region", { name: "Onay" })).toContainText("Yarın A");
+  // 5. Confirm: tomorrow's work in order; tomorrow is kept, today goes to night.
+  const confirmStep = page.getByRole("region", { name: "Onay" });
+  await expect(confirmStep.getByRole("listitem").first()).toHaveText("Yarın A");
+  await expect(confirmStep).toContainText("Yarın B");
+  await expect(confirmStep).not.toContainText("Yarın C");
   await page.getByRole("button", { name: "Onayla" }).click();
   await expect(page).toHaveURL(/\/$/);
   const days = await waitFor(
@@ -409,7 +423,9 @@ test("the evening closing: what was done, tomorrow's three, what is on the mind,
     (list) => list.some((day) => day.date === tomorrow() && day.plan_source === "closing"),
   );
   const next = days.find((day) => day.date === tomorrow())!;
-  expect((next.top3 as string[]).length).toBe(1);
+  expect(next.top3).toEqual([]);
+  const yarinC = (await rows("tasks")).find((task) => task.title === "Yarın C")!;
+  expect((next.plan as { skipped?: string[] }).skipped).toContain(yarinC.id);
   expect(days.find((day) => day.date === today())!.closed_at).not.toBeNull();
   expect((await rows("inbox_entries")).map((entry) => entry.raw_text).sort()).toEqual([
     "annemi ara",
@@ -418,7 +434,7 @@ test("the evening closing: what was done, tomorrow's three, what is on the mind,
   await expect(page.getByRole("region", { name: "Şimdi" })).toContainText("Yarın ilk iş: Yarın A");
 });
 
-test("the week: the days, the capacity, the week's items, the life mode and the coming weeks", async ({
+test("the week: the days, the capacity, the week's items and the coming weeks (Ç4a: no life mode)", async ({
   page,
 }) => {
   const mod = await seedModule();
@@ -448,20 +464,12 @@ test("the week: the days, the capacity, the week's items, the life mode and the 
     page.getByRole("region", { name: "Önümüzdeki haftalar" }).getByRole("listitem"),
   ).toHaveCount(8);
 
-  // Busy mode from today: the week is committed again in it, and Today shows the mode.
-  const mode = page.getByRole("region", { name: "Hayat modu" });
-  await mode.getByLabel("Mod").selectOption("busy");
-  await mode.getByRole("button", { name: "Kaydet" }).click();
-  await expect(page.getByRole("status")).toHaveText("Hayat modu kaydedildi.");
-  await waitFor(
-    () => rows("week_plans"),
-    (list) => list[0]?.life_mode === "busy",
-    10_000,
-  );
+  // No life mode to pick (Ç4a); the week is committed again when asked.
+  await expect(page.getByRole("region", { name: "Hayat modu" })).toHaveCount(0);
   await page.getByRole("button", { name: "Haftayı yeniden kur" }).click();
   await expect(page.getByRole("status")).toHaveText("Hafta yeniden kuruldu.");
   await page.goto("/");
-  await expect(page.getByRole("link", { name: "Hayat modu: Yoğun" })).toBeVisible();
+  await expect(page.getByRole("link", { name: /Hayat modu/ })).toHaveCount(0);
 });
 
 test("the week shows the AI's reasons and notes when it has them", async ({ page }) => {

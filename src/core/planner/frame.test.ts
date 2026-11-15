@@ -401,10 +401,12 @@ describe("anchored work without the frame, and bed-bound work's lead (Ç3g)", ()
     // Tomorrow is light: bed at 01:00, the work from 00:40.
     const late = planAt("21:00", rows({ tasks: [winddown], days: [woke] }));
     expect(late.now).not.toMatchObject({ assignment: { candidate: { id: winddown.id } } });
+    // Past the bedtime range's start with nothing left in the window: the evening, which offers
+    // the bed-bound work once it is within its lead.
     const near = planAt("00:25", rows({ tasks: [winddown], days: [woke] }), NEXT);
     expect(near.now).toMatchObject({
-      kind: "suggest",
-      assignment: { candidate: { id: winddown.id } },
+      kind: "evening",
+      next: { candidate: { id: winddown.id } },
     });
     const due = planAt("00:41", rows({ tasks: [winddown], days: [woke] }), NEXT);
     expect(due.now).toMatchObject({
@@ -530,19 +532,21 @@ describe("the states of the day", () => {
   it("evening: once the working window is over (Ç4a: where the bed-bound work begins), or closed, until bed", () => {
     const woke = today({ woke_at: iso("07:00"), expected_bed: "23:30:00" });
     const winddown = anchored("bed", { est_minutes: 20 });
-    // Bed at 23:30, the work from 23:10: the window is over at 23:10.
-    expect(planAt("23:00", rows({ days: [woke], tasks: [winddown, task()] })).now.kind).not.toBe(
-      "evening",
-    );
+    // Bed at 23:30, the work from 23:10: the window is over at 23:10; work that still fits
+    // before it is offered.
+    expect(
+      planAt("22:30", rows({ days: [woke], tasks: [winddown, task({ est_minutes: 15 })] })).now
+        .kind,
+    ).toBe("suggest");
     const evening = planAt("23:12", rows({ days: [woke], tasks: [winddown] }));
     expect(evening.now).toMatchObject({
       kind: "evening",
       next: { candidate: { id: winddown.id } },
       closed: false,
     });
-    // No bed-bound work: the evening comes at the expected bedtime.
-    expect(planAt("23:29", rows({ days: [woke] })).now.kind).not.toBe("evening");
-    expect(planAt("23:31", rows({ days: [woke] })).now.kind).toBe("evening");
+    // Nothing in the window: the evening comes with the bedtime range (22:00).
+    expect(planAt("21:59", rows({ days: [woke] })).now.kind).not.toBe("evening");
+    expect(planAt("22:01", rows({ days: [woke] })).now.kind).toBe("evening");
     const closed = planAt("17:00", rows({ days: [{ ...woke, closed_at: iso("16:55") }] }));
     expect(closed.now).toMatchObject({ kind: "evening", closed: true });
   });
@@ -558,14 +562,15 @@ describe("the states of the day", () => {
   });
 
   it("done does not wait for bed-bound work; the evening comes at its own time (Ç4a)", () => {
-    const woke = today({ woke_at: iso("07:00"), expected_bed: "23:30:00" });
-    const finished = task({ status: "done", done_at: iso("15:00") });
+    // Bed at 21:30 (the user's own, before the range), the bed-bound work from 21:10.
+    const woke = today({ woke_at: iso("07:00"), expected_bed: "21:30:00" });
+    const finished = task({ status: "done", done_at: iso("06:50") });
     const winddown = anchored("bed", { est_minutes: 20 });
-    // 23:00: the bed-bound work is due within its lead, but the day's work is done.
-    expect(planAt("23:00", rows({ days: [woke], tasks: [finished, winddown] })).now.kind).toBe(
+    // 21:00: the bed-bound work is due within its lead, but the day's work is done.
+    expect(planAt("21:00", rows({ days: [woke], tasks: [finished, winddown] })).now.kind).toBe(
       "done",
     );
-    expect(planAt("23:12", rows({ days: [woke], tasks: [finished, winddown] })).now).toMatchObject({
+    expect(planAt("21:12", rows({ days: [woke], tasks: [finished, winddown] })).now).toMatchObject({
       kind: "evening",
       next: { candidate: { id: winddown.id } },
     });
@@ -573,6 +578,29 @@ describe("the states of the day", () => {
     const routine = anchored("wake", { est_minutes: 30 });
     const morning = planAt("07:05", rows({ days: [woke], tasks: [finished, routine] }));
     expect(morning.now).toMatchObject({ kind: "done" });
+  });
+
+  it("evening: from the bedtime range's start once nothing of the window is left; it says when bed-bound work comes", () => {
+    const woke = today({ woke_at: iso("07:00") });
+    const finished = task({ status: "done", done_at: iso("15:00") });
+    const winddown = anchored("bed", { est_minutes: 20 });
+    // A light tomorrow: bed 01:00, the bed-bound work from 00:40; the range starts at 22:00.
+    expect(planAt("21:55", rows({ days: [woke], tasks: [finished, winddown] })).now.kind).toBe(
+      "done",
+    );
+    expect(planAt("22:05", rows({ days: [woke], tasks: [finished, winddown] })).now).toMatchObject({
+      kind: "evening",
+      next: null,
+      later: { assignment: { candidate: { id: winddown.id } }, at: at("00:40", NEXT) },
+    });
+    // Work still planned in the window: it is offered, the evening waits.
+    const more = task({ title: "Okuma", est_minutes: 30 });
+    expect(
+      planAt("22:05", rows({ days: [woke], tasks: [finished, more, winddown] })).now,
+    ).toMatchObject({
+      kind: "suggest",
+      assignment: { candidate: { id: more.id } },
+    });
   });
 
   it("the night ends at 05:00 or at the start of the waking range, whichever is earlier", () => {

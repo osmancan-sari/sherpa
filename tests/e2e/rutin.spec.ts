@@ -43,7 +43,6 @@ async function setUp(
   await update("settings", settings.id as string, {
     day_frame: { ...FRAME, ...frame },
     day_start_default: "08:00",
-    finish_line_default: "19:00",
   });
   if (woke) {
     await insert("days", { date: DAY, woke_at: dayAt(woke).toISOString(), woke_source: source });
@@ -156,22 +155,23 @@ test("switched on in the afternoon: the morning is not offered then, the evening
   await expect(card(page)).toBeVisible();
   await expect(card(page).getByRole("heading", { name: "Sabah" })).toHaveCount(0);
   await expect(card(page).getByRole("heading", { name: "Akşam kapanışı" })).toHaveCount(0);
-  // The test account's day ends at 23:59: the evening comes 15 minutes before its place.
-  await page.clock.setFixedTime(dayAt("23:40"));
+  // Without the frame the day ends at the default bedtime (22:00; Ç4a): the evening's routine
+  // (10 minutes, 21:50–22:00) comes 15 minutes before its place.
+  await page.clock.setFixedTime(dayAt("21:40"));
   await page.goto("/");
   await expect(card(page).getByRole("heading", { name: "Akşam kapanışı" })).toBeVisible();
 
-  // With the frame on, at 21:00 the evening card says when it comes, and starts it if asked.
+  // With the frame on, in the bedtime range with nothing left to do, the evening card says when
+  // it comes, and starts it if asked (Ç4a).
   const [settings] = await rows("settings");
   await update("settings", settings.id as string, {
     day_frame: FRAME,
     day_start_default: "08:00",
-    finish_line_default: "19:00",
   });
   const known = (await rows("days")).find((row) => row.date === DAY);
   if (known) await update("days", known.id as string, { woke_at: dayAt("07:00").toISOString() });
   else await insert("days", { date: DAY, woke_at: dayAt("07:00").toISOString() });
-  await page.clock.setFixedTime(dayAt("21:00"));
+  await page.clock.setFixedTime(dayAt("22:10"));
   await page.goto("/");
   await expect(card(page).getByRole("heading", { name: "Akşam", exact: true })).toBeVisible();
   const later = card(page).getByTestId("evening-later");
