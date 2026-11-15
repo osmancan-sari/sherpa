@@ -11,6 +11,7 @@ import {
 } from "react";
 
 import { Toast } from "./kit/Feedback";
+import { TOKENS } from "./tokens";
 
 // One quiet line at the bottom of the screen: "Gelen kutusuna eklendi", "Kaydedilemedi".
 // No badges, no stacking, nothing that asks for attention; the newest line replaces the last.
@@ -35,7 +36,7 @@ export function NoticeProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!notice) return;
-    const timer = setTimeout(() => setNotice(null), 4000);
+    const timer = setTimeout(() => setNotice(null), parseFloat(TOKENS["toast-time"]) * 1000);
     return () => clearTimeout(timer);
   }, [notice]);
 

@@ -37,7 +37,7 @@ export function ItemsTab() {
           action={
             <Button
               variant="outline"
-              className="h-11 md:h-9"
+
               onClick={() => ctx.openIntake("kayit")}
             >
               Kayıt ekle

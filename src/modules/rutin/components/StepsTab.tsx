@@ -360,7 +360,7 @@ function StepGroup({
                     onPointerUp={onHandleUp}
                     onPointerCancel={onHandleUp}
                   >
-                    <GripVertical size={18} aria-hidden />
+                    <GripVertical className="size-4.5" aria-hidden />
                   </button>
                 }
               />
@@ -882,7 +882,7 @@ function Parts({
               onPointerUp={() => (dragging.current = null)}
               onPointerCancel={() => (dragging.current = null)}
             >
-              <GripVertical size={16} aria-hidden />
+              <GripVertical className="size-4" aria-hidden />
             </button>
             {renaming === index ? (
               <Input
@@ -927,7 +927,7 @@ function Parts({
               className="bg-muted flex size-7.5 shrink-0 items-center justify-center rounded-full"
               onClick={() => onChange(parts.filter((_, i) => i !== index))}
             >
-              <X size={14} aria-hidden />
+              <X className="size-3.5" aria-hidden />
             </button>
           </div>
         ))}
@@ -1128,7 +1128,7 @@ function Stepper({
   return (
     <div className="flex items-center gap-3">
       <button type="button" aria-label={`${label}: azalt`} onClick={onMinus} className={round}>
-        <Minus size={16} aria-hidden />
+        <Minus className="size-4" aria-hidden />
       </button>
       <span
         className="min-w-14 text-center text-base font-semibold tabular-nums"
@@ -1137,7 +1137,7 @@ function Stepper({
         {text}
       </span>
       <button type="button" aria-label={`${label}: artır`} onClick={onPlus} className={round}>
-        <Plus size={16} aria-hidden />
+        <Plus className="size-4" aria-hidden />
       </button>
     </div>
   );

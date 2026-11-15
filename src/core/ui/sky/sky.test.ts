@@ -139,9 +139,48 @@ describe("text on the glass stays at least 4.5:1 in the four states", () => {
             `${text} bare at ${p}%`,
           ).toBeGreaterThanOrEqual(4.5);
         }
-        // The menu over it.
-        const nav = through(calmAt(p), "color-glass-nav");
-        expect(contrast(rgbOf("color-ink-nav").rgb, nav)).toBeGreaterThanOrEqual(4.5);
+        // The menus over it: the phone's bar and the board's rail.
+        for (const menu of ["color-glass-nav", "color-glass-rail"] as const) {
+          const behind = through(calmAt(p), menu);
+          expect(
+            contrast(rgbOf("color-ink-nav").rgb, behind),
+            `nav on ${menu}`,
+          ).toBeGreaterThanOrEqual(4.5);
+          expect(contrast(rgbOf("color-ink").rgb, behind)).toBeGreaterThanOrEqual(4.5);
+        }
+        for (const layer of [
+          "color-glass-dense",
+          "color-glass-soft",
+          "color-glass-main",
+        ] as const) {
+          const panel = through(calmAt(p), layer);
+          // A state pill: its colour on dark glass inside the panel.
+          const pill = through(panel, "color-glass-dense");
+          for (const state of ["color-ok", "color-attention", "color-behind"] as const) {
+            expect(
+              contrast(rgbOf(state).rgb, pill),
+              `${state} pill in ${layer} at ${p}%`,
+            ).toBeGreaterThanOrEqual(4.5);
+          }
+          // An unselected segment and a chip's text, on their faint fill.
+          const chip = through(panel, "color-fill-chip");
+          expect(
+            contrast(rgbOf("color-ink-soft").rgb, chip),
+            `segment in ${layer}`,
+          ).toBeGreaterThanOrEqual(4.5);
+          // A placeholder in a field.
+          const field = through(panel, "color-fill-field");
+          expect(
+            contrast(rgbOf("color-ink-3").rgb, field),
+            `placeholder in ${layer} at ${p}%`,
+          ).toBeGreaterThanOrEqual(4.5);
+          // The danger button's text on its coral fill.
+          const danger = through(panel, "color-behind-fill");
+          expect(contrast(rgbOf("color-ink-danger").rgb, danger)).toBeGreaterThanOrEqual(4.5);
+          // The disabled button may be faint, yet readable (3:1, WCAG's floor for inactive parts).
+          const quiet = through(panel, "color-fill-quiet");
+          expect(contrast(rgbOf("color-ink-off").rgb, quiet)).toBeGreaterThanOrEqual(3);
+        }
       }
     });
 

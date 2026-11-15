@@ -9,6 +9,10 @@ describe("tokens.gen.ts mirrors tokens.css", () => {
     expect(readFileSync(GEN_PATH, "utf8")).toBe(want);
   });
 
+  it("writes every variable to the page, also those only code reads (@theme static)", () => {
+    expect(readFileSync(CSS_PATH, "utf8")).toMatch(/^@theme static \{/m);
+  });
+
   it("resolves references to other tokens", () => {
     expect(token("color-foreground")).toBe(token("color-ink"));
     expect(token("color-ink")).toMatch(/^#[0-9a-f]{6}$/);

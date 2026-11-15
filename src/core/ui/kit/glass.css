@@ -79,7 +79,8 @@
   & .glass-rail,
   & .glass-sheet,
   & .glass-dialog,
-  & .glass-toast {
+  & .glass-toast,
+  & [data-glass] {
     background-color: var(--color-solid);
     backdrop-filter: none;
   }

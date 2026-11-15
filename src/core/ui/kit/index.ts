@@ -39,7 +39,7 @@ export { token } from "@/core/ui/tokens";
 export { Button, buttonVariants, IconButton } from "./Button";
 export { AiTag, Chip, type Health, Segmented, Status, Tag } from "./Choice";
 export { AlertRow, OfflinePill, ProgressBar, ReadError, StepLines, Toast } from "./Feedback";
-export { AiReason, Field, FieldError, Input, Select, Textarea } from "./Field";
+export { AiReason, Field, FieldError, fieldClass, Input, Select, Textarea } from "./Field";
 export { ListRow } from "./ListRow";
 export { OverlayClose, Sheet, SheetBody, SheetFooter, Window } from "./Overlay";
 export { Panel, PanelLabel, type PanelVariant } from "./Panel";

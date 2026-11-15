@@ -170,9 +170,7 @@ export function SettingsForm() {
         unit="dk"
       />
       <div>
-        <Button className="h-11 md:h-9" onClick={() => void save()}>
-          Kaydet
-        </Button>
+        <Button onClick={() => void save()}>Kaydet</Button>
       </div>
     </div>
   );

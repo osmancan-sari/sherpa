@@ -322,6 +322,7 @@ export function SceneFrame({
       {bedtime || strip?.hidden ? null : (
         <header
           aria-label="Sahne şeridi"
+          data-glass=""
           className={cn(
             "h-strip backdrop-blur-strip relative z-10 flex shrink-0 items-center gap-2.5 backdrop-saturate-170",
             device === "telefon"

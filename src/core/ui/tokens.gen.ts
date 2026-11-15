@@ -2,7 +2,7 @@
 export const TOKENS = {
   "color-ink": "#f6f7ff",
   "color-ink-2": "#d5dcf0",
-  "color-ink-3": "#aab3cc",
+  "color-ink-3": "#c0c8dd",
   "color-ink-soft": "#e6eaf7",
   "color-ink-nav": "#c5ceff",
   "color-ink-link": "#dfe6ff",

@@ -109,7 +109,7 @@ Geniş ekranda tek sayfa, kaydırma yok:
 | `N` | Hızlı giriş |
 | `X` | "X dk'm var" (ardından dakika) |
 | `R` | Yeniden planla |
-| `G` sonra `B` / `H` / `G` | Bugün / Hafta / Gelen kutusu |
+| `G` sonra `B` / `H` / `G` | Bugün / Takvim / Gelen kutusu |
 | `1`–`9` | n. modülün sayfası |
 
 Sahne açıkken `Space`, `Enter`, `E`, `X` ve `R`, sahne tuşları devraldığını bildirdiyse (`ModuleScene.keys`, Ç3g) sahnenindir: adımlı bir sahnede `Space` adımı geçirir ("Sonraki"), işin tamamını bitirmez. Bildirmeyen sahnede tuşlar standart karttaki gibidir. Yazarken, pencere açıkken ve sahneden açılan kapanışta sahneye tuş gitmez.
@@ -237,7 +237,7 @@ Kısıtların çoğunu modüller kendi ayarlarından yazar; kullanıcı bunları
 
 Yönlendirilmemiş girişlerin listesi. Her satırda: metin, önerilen modül (varsa), tek dokunuşla "işe çevir", "bloğa çevir", "sil". Yapay zeka açıksa öneriler dolu gelir; kapalıysa kullanıcı seçer.
 
-## Hafta
+## Takvim (eski adı Hafta)
 
 **15 Kas 2026 kararı (kurulmadı):** bu ekranın adı "Takvim" olur ve baştan tasarlanır; yeni içerik `docs/tasarim/ekranlar/takvim.md`'dedir. Aşağıdaki metin kurulu olan hali anlatır.
 

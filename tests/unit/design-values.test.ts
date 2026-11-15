@@ -51,6 +51,8 @@ const RULES: { rule: string; pattern: RegExp; css?: boolean; code?: boolean }[] 
       /\b(?:fontSize|width|height|minWidth|minHeight|maxWidth|maxHeight|padding\w*|margin\w*|gap|rowGap|columnGap|top|left|right|bottom|inset|borderRadius|letterSpacing)\s*:\s*-?\d/,
     code: true,
   },
+  // An icon's size in pixels: <Check size={16} /> (a class takes it: size-4).
+  { rule: "icon size", pattern: /size=\{\d/, code: true },
   // In stylesheets: a length other than a hairline, outside media queries.
   {
     rule: "pixel in a stylesheet",

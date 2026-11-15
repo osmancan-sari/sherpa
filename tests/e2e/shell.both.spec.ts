@@ -48,7 +48,11 @@ test("navigation fits the screen and nothing scrolls sideways", async ({ page, v
     const widths = await Promise.all(links.map(async (link) => (await link.boundingBox())!.width));
     expect(widths[0]).toBeGreaterThan(Math.max(...widths.slice(1)));
   } else {
-    // Second screen: a glass rail down the left, standing off the edges.
+    // Second screen: a glass rail down the left, standing off the edges; its items are 44 px
+    // (the board may be a touch screen).
+    for (const link of await nav.getByRole("link").all()) {
+      expect((await link.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+    }
     expect(box.x).toBeGreaterThanOrEqual(12);
     expect(box.x).toBeLessThanOrEqual(20);
     expect(box.height).toBeCloseTo(viewport!.height - 32, 0);

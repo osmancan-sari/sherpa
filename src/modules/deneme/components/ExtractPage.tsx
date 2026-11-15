@@ -1,5 +1,6 @@
 "use client";
 
+import { fieldClass } from "@/core/ui/kit";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useRefreshAll } from "@/core/app/actions";
@@ -62,11 +63,11 @@ export function ExtractPage() {
           value={text}
           onChange={(event) => setText(event.target.value)}
           rows={6}
-          className="border-input focus-visible:border-ring focus-visible:ring-ring/50 dark:bg-input/30 w-full rounded-lg border bg-transparent px-3 py-2 text-base outline-none focus-visible:ring-3"
+          className={`${fieldClass} h-auto py-3 leading-snug`}
         />
       </label>
       <div>
-        <Button className="h-11 md:h-9" disabled={busy || text.trim() === ""} onClick={read}>
+        <Button variant="primary" disabled={busy || text.trim() === ""} onClick={read}>
           {busy ? "Okunuyor…" : "Oku"}
         </Button>
       </div>
@@ -88,7 +89,7 @@ export function ExtractPage() {
                 </div>
                 <Button
                   variant="outline"
-                  className="h-11 md:h-9"
+
                   aria-label={`Ekle: ${item.title}`}
                   onClick={() => void keep([item])}
                 >
@@ -98,7 +99,7 @@ export function ExtractPage() {
             ))}
           </ul>
           <div>
-            <Button className="h-11 md:h-9" onClick={() => void keep(suggestions)}>
+            <Button variant="primary" onClick={() => void keep(suggestions)}>
               Hepsini ekle
             </Button>
           </div>

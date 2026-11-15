@@ -130,7 +130,7 @@ export function Status({ health, children }: { health: Health; children?: ReactN
     <span
       data-health={health}
       className={cn(
-        "h-chip bg-fill-field text-meta inline-flex items-center gap-1.5 rounded-full border px-3 font-semibold whitespace-nowrap",
+        "h-chip bg-glass-dense text-meta inline-flex items-center gap-1.5 rounded-full border px-3 font-semibold whitespace-nowrap",
         className,
       )}
     >

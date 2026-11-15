@@ -56,7 +56,7 @@ function AppNavView({ pathname }: { pathname: string | null }) {
                   href={href}
                   aria-current={active(href) ? "page" : undefined}
                   className={cn(
-                    "rounded-step focus-visible:shadow-focus flex min-h-10 items-center px-3 py-2.5 outline-none",
+                    "rounded-step focus-visible:shadow-focus min-h-touch flex items-center px-3 outline-none",
                     active(href)
                       ? "bg-light text-ink-dark shadow-selected-rail font-semibold"
                       : "text-ink hover:bg-fill-field",

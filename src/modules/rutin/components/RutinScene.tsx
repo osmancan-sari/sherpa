@@ -494,8 +494,9 @@ function Scene(props: SceneProps) {
       background: css({ ...fill, alpha: alphas[kind] }),
       border: `1px solid ${kind === "big" ? glass.panelBorder : glass.smallBorder}`,
       boxShadow: kind === "big" ? glass.panelShadow : glass.smallShadow,
-      backdropFilter: blur,
-      WebkitBackdropFilter: blur,
+      // Real blur only on the phone, where the landscape moves behind as the page scrolls; on
+      // the board's still backdrop the panel looks the same without it (decision 3).
+      ...(board ? {} : { backdropFilter: blur, WebkitBackdropFilter: blur }),
     };
   };
 
@@ -613,7 +614,7 @@ function Scene(props: SceneProps) {
         className="text-note mt-2.5 flex flex-wrap items-center gap-x-2"
         style={{ color: glass.voice }}
       >
-        <Volume2 aria-hidden size={18} />
+        <Volume2 aria-hidden className="size-4.5" />
         {speaking ? (
           <span>Günün planı okunuyor</span>
         ) : (
@@ -948,7 +949,7 @@ function PartRow({
         }}
       >
         {state === "done" ? (
-          <Check size={16} strokeWidth={2.4} />
+          <Check className="size-4" strokeWidth={2.4} />
         ) : line.kind === "addon" ? (
           "+"
         ) : (
@@ -1025,7 +1026,7 @@ function ChainPanel({
                 aria-hidden
                 className="bg-fill-active flex size-3.5 items-center justify-center rounded-full"
               >
-                <Check size={10} strokeWidth={2.4} />
+                <Check className="size-2.5" strokeWidth={2.4} />
               </span>
             ) : (
               <span
