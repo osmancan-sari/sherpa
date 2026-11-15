@@ -1,8 +1,6 @@
-import type { Metadata } from "next";
-import { WeekScreen } from "@/core/ui/week/WeekScreen";
+import { redirect } from "next/navigation";
 
-export const metadata: Metadata = { title: "Takvim" };
-
+// Ç4c: the week is Takvim now (docs/tasarim/ekranlar/takvim.md); an old link goes there.
 export default function WeekPage() {
-  return <WeekScreen />;
+  redirect("/takvim");
 }

@@ -95,6 +95,9 @@
   --color-flow-travel: rgba(255, 255, 255, 0.5); /* the hatching of travel */
   --color-flow-now: #ffffff; /* the present moment's line and pill */
   --color-balloon: #141b38; /* the strip's balloon over a piece */
+  /* Takvim (docs/tasarim/ekranlar/takvim.md; frames TT*, TP*). */
+  --color-fill-bar: rgba(246, 247, 255, 0.72); /* a coming week's work */
+  --color-ink-dark-2: #3a4468; /* secondary text on the opaque light (a selected day) */
   --color-edge-balloon: rgba(255, 255, 255, 0.32);
   --color-focus: #ffffff; /* focused field edge */
   --color-ring: rgba(255, 255, 255, 0.22); /* focus ring */

@@ -56,6 +56,8 @@ export const TOKENS = {
   "color-flow-travel": "rgba(255, 255, 255, 0.5)",
   "color-flow-now": "#ffffff",
   "color-balloon": "#141b38",
+  "color-fill-bar": "rgba(246, 247, 255, 0.72)",
+  "color-ink-dark-2": "#3a4468",
   "color-edge-balloon": "rgba(255, 255, 255, 0.32)",
   "color-focus": "#ffffff",
   "color-ring": "rgba(255, 255, 255, 0.22)",

@@ -40,6 +40,15 @@ export async function listTasks(db: Db, now: Date): Promise<Task[]> {
   );
 }
 
+/**
+ * Ç4c: tasks by id, whatever their status or age: Takvim's past days name the work of their
+ * sessions, which may be older than `listTasks` reads.
+ */
+export async function listTasksById(db: Db, ids: string[]): Promise<Task[]> {
+  if (ids.length === 0) return [];
+  return unwrap(await db.from("tasks").select("*").in("id", ids));
+}
+
 export type NewTask = Pick<TablesInsert<"tasks">, "module_id" | "title"> &
   Partial<
     Pick<

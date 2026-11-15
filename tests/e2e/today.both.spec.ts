@@ -54,8 +54,9 @@ test("long titles do not push the Today screen wider than the screen", async ({
   await page.goto("/");
   const now = page.getByRole("region", { name: "Şimdi" });
   await expect(now.getByRole("heading")).toHaveText(LONG);
+  // Ç4c: closed, "Sıradakiler" shows its first two rows on the phone and three on the board.
   await expect(page.getByRole("region", { name: "Sıradakiler" }).getByRole("listitem")).toHaveCount(
-    3,
+    viewport!.width < 768 ? 2 : 3,
   );
   expect(await sidewaysOverflow(page)).toBe(0);
   await expectInsideScreen(page, "Şimdi", viewport!.width);

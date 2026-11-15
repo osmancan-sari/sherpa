@@ -170,7 +170,7 @@ test("60 minutes with 20 + 20 travel: the travel is drawn on its own, the sessio
   // Work elsewhere is offered on the second screen too, with its travel.
   await expect(card.getByRole("heading")).toHaveText("Salon");
   await expect(card).toContainText("yol 20+20 dk");
-  const strip = page.getByRole("region", { name: "Günün şeridi" });
+  const strip = page.getByRole("region", { name: "Günün akışı" });
   await expect(strip.getByTestId("strip-travel")).toHaveCount(2);
   await expect(strip.getByLabel("yol 20 dk")).toHaveCount(2);
 
@@ -263,9 +263,9 @@ test("work due today whose window is gone stays out and says so; the week says w
   await expect(page.getByRole("region", { name: "Uyarılar" })).toContainText(
     "Bugün uygun saat kalmadı: Banka.",
   );
-  await expect(page.getByRole("region", { name: "Günün şeridi" })).not.toContainText("Banka");
+  await expect(page.getByRole("region", { name: "Günün akışı" })).not.toContainText("Banka");
 
-  await page.goto("/hafta");
+  await page.goto("/takvim");
   await expect(page.getByRole("region", { name: "Uygun saat" })).toContainText(
     "Bu hafta uygun saat yok: Belediye başvurusu.",
   );

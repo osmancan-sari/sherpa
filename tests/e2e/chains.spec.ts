@@ -517,7 +517,7 @@ test("going to Bugün inside the app is no coming to the front: the chain does n
 }) => {
   const { woke } = await morningUnwoken();
   await page.clock.install({ time: dayAt("06:50") });
-  await page.goto("/hafta");
+  await page.goto("/takvim");
   await page.clock.fastForward("00:30");
   await woke("06:50");
   await page.getByRole("link", { name: "Bugün" }).first().click();

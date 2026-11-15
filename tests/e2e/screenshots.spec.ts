@@ -574,7 +574,9 @@ for (const look of LOOKS) {
     };
 
     await page.goto("/");
-    await expect(page.locator('[data-testid="strip-work"][title*="Günlük yaz"]')).toBeVisible();
+    await expect(
+      page.locator('[data-testid="strip-work"][aria-label*="Günlük yaz"]'),
+    ).toBeVisible();
     await shot("bugun-bolumler");
 
     await page.goto("/m/deneme");

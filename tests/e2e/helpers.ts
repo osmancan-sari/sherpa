@@ -1,5 +1,6 @@
 import { expect, type Page } from "@playwright/test";
-import { holdRunClock, roomMoment, runNow } from "./clock";
+import { holdRunClock, roomMoment, runDay, runNow } from "./clock";
+import { insert, rows, update } from "./data";
 
 /** The local Supabase stack catches every outgoing e-mail in Mailpit instead of sending it. */
 const MAILPIT_URL = process.env.MAILPIT_URL ?? "http://127.0.0.1:54324";
@@ -105,4 +106,36 @@ export async function openQuickAdd(page: Page) {
   }).toPass({ timeout: 10_000 });
   // Tab walks through the modules only once their list has loaded.
   await expect(sheet.locator("form[data-modules=ready]")).toHaveCount(1);
+}
+
+/** The day's frame of the closing's tests (docs/05-arayuz.md, "Günün çerçevesi"). */
+const CLOSING_FRAME = { wake: ["06:00", "09:00"], bed: ["22:00", "01:00"], sleep_minutes: 480 };
+
+/**
+ * Ç4c: the evening closing has no page; it opens inside a scene, or from the evening card when no
+ * active module holds it ("Kapanış", in the standard scene shell). With the frame on, the day
+ * before the run's woken at 07:00 and the page held at that day's 22:10 (never ahead of the
+ * database's clock), the evening card offers it. Returns the closing's day ("YYYY-MM-DD"); its
+ * "tomorrow" is the run's day.
+ */
+export async function openClosing(page: Page): Promise<string> {
+  const day = runDay(-1);
+  const [settings] = await rows("settings");
+  await update("settings", settings.id as string, {
+    day_frame: CLOSING_FRAME,
+    day_start_default: "08:00",
+  });
+  if (!(await rows("days")).some((row) => row.date === day)) {
+    await insert("days", { date: day, woke_at: new Date(`${day}T07:00:00+03:00`).toISOString() });
+  }
+  await page.clock.setFixedTime(new Date(`${day}T22:10:00+03:00`));
+  await page.goto("/");
+  await page
+    .getByRole("region", { name: "Şimdi" })
+    .getByRole("button", { name: "Kapanış" })
+    .click();
+  await expect(
+    page.getByTestId("closing-shell").getByRole("heading", { name: "Kapanış" }),
+  ).toBeVisible();
+  return day;
 }

@@ -150,8 +150,10 @@ test("one tap finishes a task from the list, and the finish can be taken back", 
   );
   expect(await rows("sessions")).toHaveLength(0);
 
-  await list.getByText("Bugün bitenler (1)").click();
-  await list.getByRole("button", { name: "Geri al: Fatura öde" }).click();
+  // Ç4c: "Bugün bitenler" is a panel of its own (BT32, BP27).
+  const done = page.getByRole("region", { name: "Bugün bitenler" });
+  await expect(done).toContainText("Bugün bitenler (1)");
+  await done.getByRole("button", { name: "Geri al: Fatura öde" }).click();
   await expect(list.getByRole("button", { name: "Bitti: Fatura öde" })).toBeVisible();
   await waitFor(
     () => rows("tasks"),

@@ -145,7 +145,7 @@ for (const device of DEVICES) {
       await expect(page.getByText("Bugün için planlanan bir şey yok.")).toBeVisible();
       // Its layout is Ç4c's; the date line and the strip's hours follow the clock: masked.
       await shot(page, `bugun-bos-${device.name}`, {
-        mask: [page.locator("main header"), page.getByRole("region", { name: "Günün şeridi" })],
+        mask: [page.locator("main header"), page.getByRole("region", { name: "Günün akışı" })],
       });
     });
   });

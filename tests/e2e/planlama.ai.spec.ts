@@ -1,14 +1,13 @@
 import { insert, rows, seedModule, update, waitFor } from "./data";
 import { expect, test } from "./fixtures";
 import { runDay } from "./clock";
-import { roomInTheDay } from "./helpers";
+import { openClosing, roomInTheDay } from "./helpers";
 
 // The planning calls (Ç3) end to end, against the server with the recorded fake provider
 // (SHERPA_AI_FAKE=1, port 3101). The engine plans first; the AI's advice and its reasons come
 // on top; with the AI off the engine's plan stands (docs/10-yapay-zeka.md).
 
 const today = () => runDay(0);
-const tomorrow = () => runDay(1);
 
 async function seedWork() {
   const mod = await seedModule();
@@ -56,7 +55,8 @@ test("'Yeniden planla' asks the AI to plan the rest of the day", async ({ page }
 
 test("the evening closing's draft comes from the AI, with its reasons", async ({ page }) => {
   await seedWork();
-  await page.goto("/kapanis");
+  // Ç4c: from the evening card, in the scene shell; the closing's tomorrow is the run's day.
+  await openClosing(page);
   await page.getByRole("button", { name: "İleri" }).click();
   await page.getByRole("button", { name: "İleri" }).click();
   const draft = page.getByRole("region", { name: "Yarın" });
@@ -66,9 +66,9 @@ test("the evening closing's draft comes from the AI, with its reasons", async ({
   await page.getByRole("button", { name: "Onayla" }).click();
   const days = await waitFor(
     () => rows("days"),
-    (list) => list.some((row) => row.date === tomorrow() && row.plan_source === "closing"),
+    (list) => list.some((row) => row.date === today() && row.plan_source === "closing"),
   );
-  const next = days.find((row) => row.date === tomorrow())!;
+  const next = days.find((row) => row.date === today())!;
   expect(Object.values(next.plan_reasons as Record<string, string>)).toContain(
     "Yapay zeka: günün en önemli işi bu.",
   );

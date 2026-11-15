@@ -14,7 +14,7 @@ import { QuickAddButton } from "./QuickAdd";
 
 const items = [
   { href: "/", label: "Bugün", short: "Bugün", icon: CircleDot },
-  { href: "/hafta", label: "Takvim", short: "Takvim", icon: CalendarDays },
+  { href: "/takvim", label: "Takvim", short: "Takvim", icon: CalendarDays },
   { href: "/m", label: "Modüller", short: "Modüller", icon: LayoutGrid },
   { href: "/gelen", label: "Gelen kutusu", short: "Gelen", icon: Inbox },
   { href: "/ayarlar", label: "Ayarlar", short: "Ayarlar", icon: Settings },

@@ -51,7 +51,7 @@ test("a genuine session of another account is turned away", async ({ context, pa
       expect(await api.json()).toEqual({ error: "unauthorized" });
     }
 
-    for (const path of ["/", "/hafta", "/m", "/gelen", "/ayarlar"]) {
+    for (const path of ["/", "/takvim", "/m", "/gelen", "/ayarlar"]) {
       const response = await context.request.get(path, { maxRedirects: 0 });
       expect(response.status(), path).toBe(307);
       expect(new URL(response.headers()["location"], "http://x").pathname).toBe("/giris");

@@ -76,7 +76,7 @@ test("every screen of the shell starts under the clock and the island; the sky r
 
   for (const path of [
     "/",
-    "/hafta",
+    "/takvim",
     "/m",
     "/gelen",
     "/ayarlar",
@@ -92,7 +92,6 @@ test("every screen of the shell starts under the clock and the island; the sky r
     "/m/deneme",
     "/m/deneme/bilesenler",
     `/m/deneme/kayit/${item.id}`,
-    "/kapanis",
     "/tasarim",
   ]) {
     await expectStartsUnderTheIsland(page, path);

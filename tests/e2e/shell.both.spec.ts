@@ -5,7 +5,7 @@ import { openQuickAdd, roomInTheDay } from "./helpers";
 
 const screens = [
   { label: "Bugün", path: "/", empty: "Bugün için planlanan bir şey yok." },
-  { label: "Takvim", path: "/hafta", empty: "Bu hafta için taahhüt edilen kalem yok." },
+  { label: "Takvim", path: "/takvim", empty: "Bu hafta için taahhüt edilen iş yok." },
   { label: "Modüller", path: "/m", empty: "Henüz modül yok." },
   { label: "Gelen kutusu", path: "/gelen", empty: "Gelen kutusu boş." },
   { label: "Ayarlar", path: "/ayarlar", empty: null },
@@ -109,7 +109,7 @@ test("phone: at the end of a page its last item stands above the menu, not behin
   await roomInTheDay(page);
   const pages = [
     { path: "/", ready: page.getByRole("region", { name: "Şimdi" }) },
-    { path: "/hafta", ready: page.getByRole("heading", { level: 1, name: "Takvim" }) },
+    { path: "/takvim", ready: page.getByRole("heading", { level: 1, name: "Takvim" }) },
     { path: "/m", ready: page.getByRole("link", { name: "Modülleri aç, duraklat ya da arşivle" }) },
     { path: "/gelen", ready: page.getByRole("heading", { level: 1, name: "Gelen kutusu" }) },
     { path: "/ayarlar", ready: page.getByRole("link", { name: "Tasarım galerisi" }) },

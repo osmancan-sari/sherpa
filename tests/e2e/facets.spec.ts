@@ -63,11 +63,11 @@ test("work in a facet has the facet's colour on the module page, the strip, the 
     15_000,
   );
   await page.goto("/");
-  await expect(page.locator('[data-testid="strip-work"][title*="Sabah yürüyüşü"]')).toHaveCSS(
+  await expect(page.locator('[data-testid="strip-work"][aria-label*="Sabah yürüyüşü"]')).toHaveCSS(
     "background-color",
     AMBER,
   );
-  await expect(page.locator('[data-testid="strip-work"][title*="Akşam okuması"]')).toHaveCSS(
+  await expect(page.locator('[data-testid="strip-work"][aria-label*="Akşam okuması"]')).toHaveCSS(
     "background-color",
     NAVY,
   );
@@ -79,8 +79,8 @@ test("work in a facet has the facet's colour on the module page, the strip, the 
   expect(colours).toEqual(expect.arrayContaining([AMBER, NAVY, MODULE]));
 
   // The week's items.
-  await page.goto("/hafta");
-  const week = page.getByRole("region", { name: "Haftanın kalemleri" });
+  await page.goto("/takvim");
+  const week = page.getByRole("region", { name: "Bu hafta" });
   await expect(dotOf(week.getByRole("listitem").filter({ hasText: "Sabah yürüyüşü" }))).toHaveCSS(
     "background-color",
     AMBER,

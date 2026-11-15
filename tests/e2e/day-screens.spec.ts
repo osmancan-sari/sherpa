@@ -4,8 +4,9 @@ import { expect, test } from "./fixtures";
 
 // The day's frame on the screens (Ç3c; docs/05-arayuz.md, "Günün çerçevesi"): "Günaydın" and
 // "Uyandım", the evening's card with tonight's bed and tomorrow's waking, the one-day changes,
-// "Yatıyorum", the top bar, the strip's parts, "Onayla ve yat", Hafta's line. The frame is off
-// in the test account; these tests switch it on. Hours are YESTERDAY's (see timing.spec.ts).
+// "Yatıyorum", the day's flow (Ç4c: the waking and the bedtime are written only there), the
+// strip's parts, the closing from the evening card. The frame is off in the test account; these
+// tests switch it on. Hours are YESTERDAY's (see timing.spec.ts).
 
 const ISTANBUL = "Europe/Istanbul";
 const istanbulDay = (days = 0) =>
@@ -43,8 +44,9 @@ test("Günaydın: 'Uyandım' records the waking (not estimated), then the mornin
   await page.goto("/");
   await expect(card(page).getByRole("heading", { name: "Günaydın" })).toBeVisible();
   await expect(card(page)).toContainText("Önce: Sabah esnemesi");
-  await expect(page.getByTestId("wake-line")).toHaveText("beklenen uyanış 09:00");
-  await expect(page.getByTestId("bed-range")).toHaveText("yatış 22:00–01:00");
+  // Ç4c: the top line is "Bugün" and the date only; the day's flow writes the waking and bed.
+  await expect(page.locator("main header").first()).not.toContainText("uyanış");
+  await expect(page.getByTestId("flow-ends")).toHaveText("09:00 uyanış · 22:00 yatış");
 
   await card(page).getByRole("button", { name: "Uyandım" }).click();
   await expect(card(page).getByRole("heading", { name: "Sabah esnemesi" })).toBeVisible();
@@ -53,7 +55,7 @@ test("Günaydın: 'Uyandım' records the waking (not estimated), then the mornin
     (row) => row?.woke_at != null,
   );
   expect(day?.woke_estimated).toBe(false);
-  await expect(page.getByTestId("wake-line")).toHaveText("uyanış 07:30");
+  await expect(page.getByTestId("flow-ends")).toHaveText("07:30 uyanış · 22:00 yatış");
   // The strip shows the morning's part before the working window.
   await expect(page.getByTestId("strip-part-wake")).toHaveCount(1);
   const started = await waitFor(
@@ -139,57 +141,41 @@ test("the evening: tonight's bed, tomorrow's waking and the sleep; one-day chang
   );
 });
 
-test("work that may go after the finish line is the evening's; Onayla ve yat closes the day and records bed", async ({
+test("the evening card has no Günü kapat; with no module holding it, Kapanış opens the closing in the scene shell", async ({
   page,
 }) => {
   await frameOn();
   await insert("days", { date: DAY, woke_at: dayAt("07:00").toISOString() });
-  const mod = await seedModule();
-  await insert("tasks", {
-    module_id: mod.id,
-    title: "Akşam yürüyüşü",
-    est_minutes: 45,
-    energy: "physical",
-    timing: { windows: [{ from: "20:00", to: "22:00" }], after_finish: true },
-  });
-  await page.clock.setFixedTime(dayAt("19:30"));
+  await page.clock.setFixedTime(dayAt("22:10"));
   await page.goto("/");
-  await expect(card(page).getByRole("heading", { name: "Akşam yürüyüşü" })).toBeVisible();
-  await expect(card(page).getByRole("button", { name: "Başla" })).toBeVisible();
-
+  await expect(card(page).getByRole("heading", { name: "Akşam" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Günü kapat" })).toHaveCount(0);
+  await expect(page.getByRole("link", { name: "Günü kapat" })).toHaveCount(0);
+  // The old page is gone: its address lands on Today.
   await page.goto("/kapanis");
-  for (let step = 0; step < 4; step++) {
-    await page.getByRole("button", { name: "İleri" }).click();
-  }
-  await page.getByRole("button", { name: "Onayla ve yat" }).click();
-  // Ç3g: 19:30 is more than two hours before the bedtime range (22:00): asked once.
-  await page
-    .getByRole("alertdialog", { name: "Saat 19:30. Şimdi yatıyor musun?" })
-    .getByRole("button", { name: "Evet, yatıyorum" })
-    .click();
   await page.waitForURL("/");
+
+  // "Vazgeç" skips it: back to Today, the day is not closed.
+  await card(page).getByRole("button", { name: "Kapanış" }).click();
+  const shell = page.getByTestId("closing-shell");
+  await expect(shell.getByRole("banner", { name: "Sahne şeridi" })).toContainText("Akşam kapanışı");
+  await expect(shell.getByRole("heading", { name: "Kapanış" })).toBeVisible();
+  await shell.getByRole("button", { name: "Vazgeç" }).click();
+  await expect(shell).toHaveCount(0);
+  expect((await dayRow())?.closed_at ?? null).toBeNull();
+
+  // Confirmed: no "Onayla ve yat", the day is closed, the card goes on (it no longer offers it).
+  await card(page).getByRole("button", { name: "Kapanış" }).click();
+  for (let step = 0; step < 4; step++) {
+    await shell.getByRole("button", { name: "İleri" }).click();
+  }
+  await expect(shell.getByRole("button", { name: "Onayla ve yat" })).toHaveCount(0);
+  await shell.getByRole("button", { name: "Onayla" }).click();
+  await expect(shell).toHaveCount(0);
   const day = await waitFor(
     () => dayRow(),
-    (row) => row?.bed_at != null && row?.closed_at != null,
+    (row) => row?.closed_at != null,
   );
-  expect(day?.closed_at).not.toBeNull();
-  await expect(card(page)).toContainText("Yarın uyanış");
-});
-
-test("Hafta: one line of the last week's waking, bedtime and sleep", async ({ page }) => {
-  await frameOn();
-  const before = istanbulDay(-2);
-  await insert("days", [
-    {
-      date: before,
-      woke_at: dayAt("07:00", before).toISOString(),
-      bed_at: dayAt("23:00", before).toISOString(),
-    },
-    { date: DAY, woke_at: dayAt("07:00").toISOString() },
-  ]);
-  await page.clock.setFixedTime(dayAt("12:00"));
-  await page.goto("/hafta");
-  await expect(page.getByTestId("sleep-summary")).toHaveText(
-    "Son 7 gün ortalaması: uyanış 07:00 · yatış 23:00 · uyku 8 sa",
-  );
+  expect(day?.bed_at ?? null).toBeNull();
+  await expect(card(page).getByRole("button", { name: "Kapanış" })).toHaveCount(0);
 });

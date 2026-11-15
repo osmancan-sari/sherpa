@@ -6,6 +6,7 @@ import { SESSION_COOKIE } from "./supabase";
 const pages = [
   "/",
   "/hafta",
+  "/takvim",
   "/m",
   "/gelen",
   "/kapanis",
@@ -35,7 +36,7 @@ for (const path of pages) {
 }
 
 test("the server-component payload of a page is guarded too", async ({ request }) => {
-  const response = await request.get("/hafta", {
+  const response = await request.get("/takvim", {
     maxRedirects: 0,
     headers: { RSC: "1", "Next-Router-Prefetch": "1" },
   });
