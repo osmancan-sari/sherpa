@@ -14,25 +14,8 @@ if (!["127.0.0.1", "localhost"].includes(supabaseHost)) {
   );
 }
 
-// The test account's day runs from 00:00 to 23:59 (tests/e2e/data.ts) and most specs write their
-// data against the real clock, which the database shares. In the day's last 90 minutes the work
-// they add no longer fits and the screen rightly offers nothing, so dozens of specs fail for a
-// reason that is not a fault. Until every spec holds its own clock (Ç4, docs/ILERLEME.md "Bilinen
-// sorunlar"), a run does not start then: it says so, instead of failing at random.
-const istanbul = new Intl.DateTimeFormat("en-GB", {
-  timeZone: "Europe/Istanbul",
-  hour: "2-digit",
-  minute: "2-digit",
-  hourCycle: "h23",
-}).format(new Date());
-// Ç4a: the day has no finish line; without the frame it runs to the default bedtime (22:00).
-if (istanbul >= "20:30" && !process.env.SHERPA_E2E_LATE) {
-  throw new Error(
-    `End-to-end tests do not start between 20:30 and 24:00 Istanbul time (now ${istanbul}): ` +
-      "the test account's day ends at 22:00 (the default bedtime) and most specs use the real " +
-      "clock. Run them after midnight. (SHERPA_E2E_LATE=1 starts them anyway, to look at what fails.)",
-  );
-}
+// The run's clock (tests/e2e/clock.ts) holds every page at one moment: the suite starts at any
+// hour (the 20:30–24:00 limit is gone). SHERPA_E2E_AT=HH:MM runs it at a given hour.
 
 const PORT = 3100;
 /** The scheduler's secret on the test servers (tests/e2e/jobs.spec.ts). */

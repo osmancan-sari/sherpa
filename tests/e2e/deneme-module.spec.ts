@@ -1,6 +1,8 @@
 import type { Page } from "@playwright/test";
 import { insert, rows, seedModule, update, waitFor } from "./data";
 import { expect, test } from "./fixtures";
+import { runAt, runNow } from "./clock";
+import { roomInTheDay } from "./helpers";
 
 // The "deneme" module: everything it shows and does reaches the core through the module
 // contract. These tests walk every connection point through the real interface.
@@ -69,6 +71,8 @@ test("switching the module on gives it a row, a chip and a page", async ({ page 
 test("its entry type in quick add creates a record, proposes the work and publishes an event", async ({
   page,
 }) => {
+  // Needs room in the day and the database's day (tests/e2e/clock.ts).
+  await roomInTheDay(page);
   const mod = await activate(page);
   await page.goto("/");
   await expect(page.getByRole("region", { name: "Şimdi" })).toBeVisible();
@@ -362,6 +366,8 @@ test("the quick action opens the module's entry form; its settings form saves", 
 test("the module's own content on the card, the outcome report and its question", async ({
   page,
 }) => {
+  // Needs room in the day and the database's day (tests/e2e/clock.ts).
+  await roomInTheDay(page);
   await activate(page);
   await page.goto("/");
   await expect(page.getByRole("region", { name: "Şimdi" })).toBeVisible();
@@ -386,7 +392,7 @@ test("the module's own content on the card, the outcome report and its question"
     (list) => list.length === 1,
   );
   await update("sessions", session.id as string, {
-    started_at: new Date(Date.now() - 30 * 60_000).toISOString(),
+    started_at: runAt(-30),
   });
   await now.getByRole("button", { name: "Bitti" }).click();
 
@@ -399,7 +405,14 @@ test("the module's own content on the card, the outcome report and its question"
     () => rows("deneme_items"),
     (list) => list[0].done === true,
   );
-  expect(done.spent_minutes).toBe(30);
+  // What the work cost: the session from its stored start to the database's own end stamp (the
+  // database runs on the real clock, the page on the run's: at least the 30 minutes set).
+  const [ended] = await rows("sessions");
+  const cost = Math.round(
+    (Date.parse(ended.ended_at as string) - Date.parse(ended.started_at as string)) / 60_000,
+  );
+  expect(cost).toBeGreaterThanOrEqual(30);
+  expect(done.spent_minutes).toBe(cost);
   expect((await rows("work_items"))[0].status).toBe("done");
 
   // The module asked one question; the answer comes back to it as an event.
@@ -415,6 +428,8 @@ test("the module's own content on the card, the outcome report and its question"
 });
 
 test("'Sonra' puts the question away for now", async ({ page }) => {
+  // Needs room in the day and the database's day (tests/e2e/clock.ts).
+  await roomInTheDay(page);
   await activate(page);
   const [mod] = await rows("modules");
   await insert("prompts", {
@@ -422,8 +437,8 @@ test("'Sonra' puts the question away for now", async ({ page }) => {
     kind: "zorluk",
     question: "Sonraya bırakılacak soru",
     options: [{ value: "kolay", label: "Kolay" }],
-    // Due a minute ago by this machine's clock: the database's own clock may run a little ahead.
-    ask_after: new Date(Date.now() - 60_000).toISOString(),
+    // Due a minute before the page's moment (the run's clock, tests/e2e/clock.ts).
+    ask_after: runAt(-1),
   });
   await page.goto("/");
   const question = page.getByRole("region", { name: "Soru" });
@@ -431,7 +446,7 @@ test("'Sonra' puts the question away for now", async ({ page }) => {
   await expect(question).toBeHidden();
   const [prompt] = await waitFor(
     () => rows("prompts"),
-    (list) => Date.parse(list[0].ask_after as string) > Date.now() + 2 * 3_600_000,
+    (list) => Date.parse(list[0].ask_after as string) > runNow().getTime() + 2 * 3_600_000,
   );
   expect(prompt.status).toBe("pending");
 });
@@ -528,6 +543,8 @@ test("a block nobody knows stays in the inbox as text", async ({ page }) => {
 });
 
 test("pausing hides the module's work; archiving drops it and keeps the data", async ({ page }) => {
+  // Needs room in the day and the database's day (tests/e2e/clock.ts).
+  await roomInTheDay(page);
   await activate(page);
   await page.goto("/m/deneme");
   await page.getByRole("button", { name: "Örnek kayıt" }).click();
@@ -590,8 +607,8 @@ test("a module row without code has a page with the core's defaults", async ({ p
   await insert("sessions", {
     module_id: mod.id,
     task_id: task.id,
-    started_at: new Date(Date.now() - 50 * 60_000).toISOString(),
-    ended_at: new Date(Date.now() - 5 * 60_000).toISOString(),
+    started_at: runAt(-50),
+    ended_at: runAt(-5),
   });
 
   await page.goto("/m/ev-ornek");

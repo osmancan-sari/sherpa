@@ -2,6 +2,7 @@ import type { Page } from "@playwright/test";
 import { insert, rows, seedModule, userId, waitFor } from "./data";
 import { adminClient } from "./supabase";
 import { expect, test } from "./fixtures";
+import { roomInTheDay } from "./helpers";
 
 // Time constraints end to end (Ç3b; docs/07-yol-haritasi.md, "Ç3b" acceptance criteria). The
 // account's day runs from midnight to 23:59 (tests/e2e/data.ts). Tests that need a given hour
@@ -209,6 +210,8 @@ test("on the phone, in the work's own context (as reported by core/context), its
 });
 
 test("a rhythm with a rest day is not offered the day after it was done", async ({ page }) => {
+  // Needs room in the day and the database's day (tests/e2e/clock.ts).
+  await roomInTheDay(page);
   const mod = await seedModule();
   const [gym] = await insert("rhythms", {
     module_id: mod.id,

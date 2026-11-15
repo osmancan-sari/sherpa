@@ -1,6 +1,8 @@
 import type { Page } from "@playwright/test";
 import { rows, seedModule, waitFor } from "./data";
 import { expect, test } from "./fixtures";
+import { runNow } from "./clock";
+import { roomInTheDay } from "./helpers";
 
 // Quick add: one box, two uses. Every entry is at most two touches or one sentence.
 
@@ -39,6 +41,8 @@ test("free use: Enter without picking anything puts the text in the inbox", asyn
 test("structured use: one sentence, Tab, Enter makes a task with its date and length", async ({
   page,
 }) => {
+  // Needs room in the day and the database's day (tests/e2e/clock.ts).
+  await roomInTheDay(page);
   const mod = await seedModule();
   const dialog = await openQuickAdd(page);
   await dialog.getByLabel("Giriş").fill("Sunum slaytları yarın 45dk");
@@ -69,7 +73,7 @@ test("structured use: one sentence, Tab, Enter makes a task with its date and le
     status: "todo",
   });
   const due = new Date(tasks[0].due_at as string);
-  const tomorrow = new Date(Date.now() + 24 * 3_600_000);
+  const tomorrow = new Date(runNow().getTime() + 24 * 3_600_000);
   const dayIn = (date: Date) =>
     new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Istanbul" }).format(date);
   expect(dayIn(due)).toBe(dayIn(tomorrow));
@@ -79,6 +83,8 @@ test("structured use: one sentence, Tab, Enter makes a task with its date and le
 test("a task longer than 90 minutes cannot be saved; the interface offers a work item", async ({
   page,
 }) => {
+  // Needs room in the day and the database's day (tests/e2e/clock.ts).
+  await roomInTheDay(page);
   const mod = await seedModule();
   const dialog = await openQuickAdd(page);
   await dialog.getByLabel("Giriş").fill("Dönem raporu 3s");

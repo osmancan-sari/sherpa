@@ -1,6 +1,7 @@
 import type { Page } from "@playwright/test";
 import { insert, rows, seedModule, update, waitFor } from "./data";
 import { expect, test } from "./fixtures";
+import { roomInTheDay } from "./helpers";
 
 // The day's frame and the core's events end to end (Ç3c; docs/07-yol-haritasi.md, "Ç3c"):
 // the settings, the first touch as an estimated waking, the session events each way out of a
@@ -123,6 +124,8 @@ test("a first touch after the morning is no waking: the day runs on its expected
 test("each way out of a session is told to the work's module: Ertele, Takıldım, Durdur, Bitti", async ({
   page,
 }) => {
+  // Needs room in the day and the database's day (tests/e2e/clock.ts).
+  await roomInTheDay(page);
   const mod = await seedModule();
   const [task] = await insert("tasks", { module_id: mod.id, title: "Rapor", est_minutes: 30 });
   await page.goto("/");

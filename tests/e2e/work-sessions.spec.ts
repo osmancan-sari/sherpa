@@ -1,12 +1,15 @@
 import { insert, rows, seedModule, update, waitFor } from "./data";
 import { expect, test } from "./fixtures";
 import { roomInTheDay } from "./helpers";
+import { runAt } from "./clock";
 
 // The first Today screen: the pool in order, the "now" card, Başla and Bitti, unplanned work.
 
-const at = (offsetMinutes: number) => new Date(Date.now() + offsetMinutes * 60_000).toISOString();
+const at = (offsetMinutes: number) => runAt(offsetMinutes);
 
 test("Başla then Bitti leaves one session record and finishes the task", async ({ page }) => {
+  // Needs room in the day and the database's day (tests/e2e/clock.ts).
+  await roomInTheDay(page);
   const mod = await seedModule();
   await insert("tasks", {
     module_id: mod.id,
@@ -47,10 +50,10 @@ test("Başla then Bitti leaves one session record and finishes the task", async 
     (list) => list[0].ended_at !== null,
   );
   expect(sessions).toHaveLength(1);
-  const minutes =
-    (Date.parse(sessions[0].ended_at as string) - Date.parse(sessions[0].started_at as string)) /
-    60_000;
-  expect(Math.round(minutes)).toBe(25);
+  // The stored start is kept; the end is the database's own stamp (its clock is the real one,
+  // the page runs on the run's clock: tests/e2e/clock.ts).
+  expect(Date.parse(sessions[0].started_at as string)).toBe(Date.parse(at(-25)));
+  expect(Math.abs(Date.parse(sessions[0].ended_at as string) - Date.now())).toBeLessThan(60_000);
   const [task] = await rows("tasks");
   expect(task).toMatchObject({ status: "done" });
   expect(task.done_at).not.toBeNull();
@@ -157,6 +160,8 @@ test("one tap finishes a task from the list, and the finish can be taken back", 
 });
 
 test("unplanned work: one line starts a session without a task", async ({ page }) => {
+  // Needs room in the day and the database's day (tests/e2e/clock.ts).
+  await roomInTheDay(page);
   await page.goto("/");
   const now = page.getByRole("region", { name: "Şimdi" });
   await now.getByRole("button", { name: "Başka bir şey yapıyorum" }).click();
@@ -218,7 +223,14 @@ test("a work item is started as its next sitting, and the time counts towards it
     () => rows("work_items"),
     (list) => (list[0].effort_done_minutes as number) > 0,
   );
-  expect(items[0]).toMatchObject({ id: item.id, effort_done_minutes: 40, status: "active" });
+  // The item counts the session: from its stored start to the database's own end stamp (the
+  // database runs on the real clock, the page on the run's: at least the 40 minutes set).
+  const [stopped] = await rows("sessions");
+  const worked = Math.round(
+    (Date.parse(stopped.ended_at as string) - Date.parse(stopped.started_at as string)) / 60_000,
+  );
+  expect(worked).toBeGreaterThanOrEqual(40);
+  expect(items[0]).toMatchObject({ id: item.id, effort_done_minutes: worked, status: "active" });
   // The week took the item in with its share of this week (all of it when it is due this
   // week, a part of it late in the week), cut into sittings of an hour (Ç3). The one that was
   // started is open again.
@@ -235,6 +247,8 @@ test("a work item is started as its next sitting, and the time counts towards it
 test("a fixed block that is running takes the card; the day's blocks are listed", async ({
   page,
 }) => {
+  // Needs room in the day and the database's day (tests/e2e/clock.ts).
+  await roomInTheDay(page);
   const mod = await seedModule();
   await insert("tasks", { module_id: mod.id, title: "Sırada bekleyen iş" });
   // Clock times inside today in Istanbul, whatever the hour the test runs at.
@@ -268,6 +282,8 @@ test("a fixed block that is running takes the card; the day's blocks are listed"
 });
 
 test("a rhythm is offered while it has debt and can be ticked off", async ({ page }) => {
+  // Needs room in the day and the database's day (tests/e2e/clock.ts).
+  await roomInTheDay(page);
   const mod = await seedModule("ev-ornek", "Ev", "#16a34a");
   await insert("rhythms", {
     module_id: mod.id,
@@ -292,6 +308,8 @@ test("a rhythm is offered while it has debt and can be ticked off", async ({ pag
 });
 
 test("a module's question is shown once and answered with one touch", async ({ page }) => {
+  // Needs room in the day and the database's day (tests/e2e/clock.ts).
+  await roomInTheDay(page);
   const mod = await seedModule();
   await insert("prompts", [
     {
@@ -329,6 +347,8 @@ test("a module's question is shown once and answered with one touch", async ({ p
 });
 
 test("work of a paused module is not offered", async ({ page }) => {
+  // Needs room in the day and the database's day (tests/e2e/clock.ts).
+  await roomInTheDay(page);
   const mod = await seedModule();
   const paused = await seedModule("ev-ornek", "Ev", "#16a34a");
   await update("modules", paused.id, { status: "paused" });
@@ -346,6 +366,8 @@ test("work of a paused module is not offered", async ({ page }) => {
 });
 
 test("a read that fails is not shown as an empty day", async ({ page }) => {
+  // Needs room in the day and the database's day (tests/e2e/clock.ts).
+  await roomInTheDay(page);
   const mod = await seedModule();
   await insert("tasks", { module_id: mod.id, title: "Görünmesi gereken iş" });
   await page.route("**/rest/v1/tasks*", (route) => route.abort());
@@ -422,6 +444,8 @@ test("a write that fails is taken back on the screen and said so", async ({ page
 test("a work item whose planned effort is used up asks; 'Devam et' goes on with it", async ({
   page,
 }) => {
+  // Needs room in the day and the database's day (tests/e2e/clock.ts).
+  await roomInTheDay(page);
   const mod = await seedModule();
   await insert("work_items", {
     module_id: mod.id,

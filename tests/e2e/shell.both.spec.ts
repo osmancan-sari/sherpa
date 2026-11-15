@@ -1,5 +1,5 @@
 import { expect, test } from "./fixtures";
-import { ALLOWED_EMAIL } from "./helpers";
+import { ALLOWED_EMAIL, roomInTheDay } from "./helpers";
 
 // The signed-in shell, run once at second-screen width ("pano") and once at phone width ("telefon").
 
@@ -12,6 +12,8 @@ const screens = [
 ];
 
 test("navigation reaches every screen", async ({ page }) => {
+  // Needs room in the day and the database's day (tests/e2e/clock.ts).
+  await roomInTheDay(page);
   await page.goto("/");
   const nav = page.getByRole("navigation", { name: "Ana gezinme" });
 

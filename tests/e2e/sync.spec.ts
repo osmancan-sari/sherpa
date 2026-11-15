@@ -3,6 +3,7 @@ import { deviceToken, insert, postIngest, rows, seedModule, update, waitFor } fr
 import { expect, test } from "./fixtures";
 import { roomInTheDay, STORAGE_STATE } from "./helpers";
 import { activateDeneme, addRecord } from "./scene-helpers";
+import { runAt, runNow } from "./clock";
 
 // Two devices, one account: what happens on the phone shows on the second screen without a
 // reload (docs/11-yayin-ve-cihazlar.md, "Eşitleme"). Both pages stay open the whole time;
@@ -40,6 +41,7 @@ test("a task added on the phone appears on the desktop Today screen without a re
   baseURL,
 }) => {
   await seedModule();
+  await roomInTheDay(desktop);
   await desktop.goto("/");
   await expect(desktop.getByRole("region", { name: "Şimdi" })).toContainText(
     "Bugün için planlanan bir şey yok.",
@@ -124,6 +126,7 @@ test("a session started on the phone runs on the desktop, and Bitti there ends i
 test("a change made outside the app reaches an open screen too", async ({ page }) => {
   // The way a module's collector or the Claude bridge will write: straight to the database.
   const mod = await seedModule();
+  await roomInTheDay(page);
   await page.goto("/");
   await expect(page.getByRole("region", { name: "Şimdi" })).toContainText(
     "Bugün için planlanan bir şey yok.",
@@ -137,8 +140,8 @@ test("a change made outside the app reaches an open screen too", async ({ page }
   await insert("inbox_entries", { raw_text: "dışarıdan gelen not" });
   await insert("blocks", {
     title: "Dışarıdan gelen blok",
-    starts_at: new Date(Date.now() + 3_600_000).toISOString(),
-    ends_at: new Date(Date.now() + 7_200_000).toISOString(),
+    starts_at: runAt(60),
+    ends_at: runAt(120),
   });
   expect(navigations()).toBe(0);
 });
@@ -178,6 +181,8 @@ test("what the ingest endpoint writes reaches open screens: the waking, a record
   await insert("modules", { slug: "deneme", name: "Deneme", color: "#6250d6" });
   const { token } = await deviceToken(["core/wake", "deneme/kayit"]);
 
+  // The server stamps the waking with the real time: the page holds that day.
+  await roomInTheDay(page);
   await page.goto("/");
   const wake = page.getByTestId("wake-line");
   await expect(wake).toHaveText(/^beklenen uyanış/);
@@ -275,9 +280,9 @@ test("Rutin: Sonraki on one screen brings the other to the same sub-step within 
   });
   // As core/wake writes it, on the planning day (the night ends at 05:00).
   const day = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Istanbul" }).format(
-    new Date(Date.now() - 5 * 3_600_000),
+    new Date(runNow().getTime() - 5 * 3_600_000),
   );
-  const woke = { woke_at: new Date(Date.now() - 2 * 60_000).toISOString(), woke_source: "outside" };
+  const woke = { woke_at: runAt(-2), woke_source: "outside" };
   const known = (await rows("days")).find((row) => row.date === day);
   if (known) await update("days", known.id as string, woke);
   else await insert("days", { date: day, ...woke });

@@ -2,6 +2,7 @@ import { readFile } from "node:fs/promises";
 import { CORE_EXPORT_TABLES } from "@/core/data/export";
 import { insert, rows, seedModule, waitFor } from "./data";
 import { expect, test } from "./fixtures";
+import { roomInTheDay } from "./helpers";
 
 const RUTIN_TABLES = ["rutin_routines", "rutin_steps", "rutin_runs", "rutin_run_steps"];
 
@@ -27,6 +28,8 @@ function istanbulClock(instant: string): string {
 test("a weekly series produces the coming weeks' blocks; a single one can be cancelled", async ({
   page,
 }) => {
+  // Needs room in the day and the database's day (tests/e2e/clock.ts).
+  await roomInTheDay(page);
   await page.goto("/ayarlar");
   await page.getByRole("link", { name: "Haftalık seriler ve tek seferlik bloklar" }).click();
   await expect(page).toHaveURL(/\/ayarlar\/bloklar$/);

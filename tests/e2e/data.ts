@@ -53,9 +53,9 @@ export async function userId(): Promise<string> {
 
 /**
  * The test account's day: from midnight to the default bedtime (22:00; Ç4a: the day has no
- * finish line, without the frame it runs to the bedtime range's default start). The tests run at
- * any hour before 20:30 (playwright.config.ts), and after the bedtime it is night; with the day
- * from midnight as working time, what a test adds is planned whenever it runs. Tests of the
+ * finish line, without the frame it runs to the bedtime range's default start). The pages are
+ * held at the run's moment (tests/e2e/clock.ts, 10:00 by default) and a test that needs room in
+ * the day holds 10:00 (`roomInTheDay`): what a test adds is planned whatever the real hour. Tests of the
  * night set their own times. The day's frame (Ç3c) is off: with it the screen would greet the
  * morning and quiet the evening at real hours; its specs switch it on. (`finish_line_default` is
  * not read any more.)

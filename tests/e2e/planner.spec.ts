@@ -2,6 +2,7 @@ import { formatMinutes, istanbulInstant } from "@/lib/date";
 import { insert, rows, seedModule, update, waitFor } from "./data";
 import { expect, test } from "./fixtures";
 import { roomInTheDay } from "./helpers";
+import { runAt, runDay } from "./clock";
 
 // The planner on the Today screen (Ç3). The account's day runs from midnight to 23:59
 // (tests/e2e/data.ts), so these tests do not depend on the hour they run at.
@@ -46,18 +47,16 @@ test("opening the app plans the week and the day; the first touch is the user's"
   );
 });
 
-const at = (offsetMinutes: number) => new Date(Date.now() + offsetMinutes * 60_000).toISOString();
+const at = (offsetMinutes: number) => runAt(offsetMinutes);
 /** Today in Istanbul, as the planner keys it. */
-const today = () =>
-  new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Istanbul" }).format(new Date());
-const tomorrow = () =>
-  new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Istanbul" }).format(
-    new Date(Date.now() + 86_400_000),
-  );
+const today = () => runDay(0);
+const tomorrow = () => runDay(1);
 
 test("Ertele moves the work to tomorrow; put off three times, the screen asks to split, drop or date it", async ({
   page,
 }) => {
+  // Needs room in the day and the database's day (tests/e2e/clock.ts).
+  await roomInTheDay(page);
   const mod = await seedModule();
   const [often] = await insert("tasks", {
     module_id: mod.id,
@@ -147,6 +146,8 @@ test("Takıldım closes the session and offers three ways on: a smaller step, wa
 test("a waiting task's follow-up day brings a short reminder; the answer puts it back", async ({
   page,
 }) => {
+  // Needs room in the day and the database's day (tests/e2e/clock.ts).
+  await roomInTheDay(page);
   const mod = await seedModule();
   const [waiting] = await insert("tasks", {
     module_id: mod.id,
@@ -209,6 +210,8 @@ test("X dk'm var finds the work that fits; the keys start and finish it", async 
 });
 
 test("E puts off what is offered; R plans the day again", async ({ page }) => {
+  // Needs room in the day and the database's day (tests/e2e/clock.ts).
+  await roomInTheDay(page);
   const mod = await seedModule();
   await insert("tasks", [
     { module_id: mod.id, title: "Birinci", importance: 4 },
@@ -233,6 +236,8 @@ test("E puts off what is offered; R plans the day again", async ({ page }) => {
 test("the day is done once nothing of its plan is left; nothing waits behind it (Ç4a)", async ({
   page,
 }) => {
+  // Needs room in the day and the database's day (tests/e2e/clock.ts).
+  await roomInTheDay(page);
   const mod = await seedModule();
   await insert("tasks", {
     module_id: mod.id,
@@ -268,7 +273,7 @@ test("after the evening closing the screen is at night and shows the first work 
   // Ç4a: no finish line; a closed day (without the frame) is night.
   await insert("days", {
     date: today(),
-    closed_at: new Date().toISOString(),
+    closed_at: runAt(0),
     plan_source: "auto",
   });
   await page.goto("/");
@@ -286,6 +291,8 @@ test("after the evening closing the screen is at night and shows the first work 
 test("back after three days the screen opens on 'Kaldığın yerden devam' and piles nothing up", async ({
   page,
 }) => {
+  // Needs room in the day and the database's day (tests/e2e/clock.ts).
+  await roomInTheDay(page);
   const mod = await seedModule();
   const [old] = await insert("tasks", {
     module_id: mod.id,
@@ -316,6 +323,8 @@ test("back after three days the screen opens on 'Kaldığın yerden devam' and p
 });
 
 test("'Neden?' tells why this work, why now", async ({ page }) => {
+  // Needs room in the day and the database's day (tests/e2e/clock.ts).
+  await roomInTheDay(page);
   const mod = await seedModule();
   // Due at the end of today, whatever the hour the test runs at.
   await insert("tasks", {
@@ -332,6 +341,8 @@ test("'Neden?' tells why this work, why now", async ({ page }) => {
 test("a session past twice its estimate asks whether it goes on; unanswered, it is closed at the estimate", async ({
   page,
 }) => {
+  // Needs room in the day and the database's day (tests/e2e/clock.ts).
+  await roomInTheDay(page);
   const mod = await seedModule();
   const [asked] = await insert("tasks", {
     module_id: mod.id,

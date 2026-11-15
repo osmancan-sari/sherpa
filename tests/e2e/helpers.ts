@@ -1,4 +1,5 @@
 import { expect, type Page } from "@playwright/test";
+import { holdRunClock, roomMoment, runNow } from "./clock";
 
 /** The local Supabase stack catches every outgoing e-mail in Mailpit instead of sending it. */
 const MAILPIT_URL = process.env.MAILPIT_URL ?? "http://127.0.0.1:54324";
@@ -73,20 +74,19 @@ export async function signIn(page: Page, email = ALLOWED_EMAIL): Promise<void> {
 
 /**
  * Room in the day for tests that need it. The test account's day ends at 22:00
- * (tests/e2e/data.ts; Ç4a); late in the evening a 30- or 60-minute task no longer fits and the screen
- * rightly offers nothing. Once the real time is past 10:00 the page's clock is held at 10:00
- * TODAY: the calendar day stays the one the data is written for (today(), due in an hour), and
- * the clock is never ahead of the server, so a session the server stamps never looks overdue.
- * Before 10:00 the real time already leaves the whole day. Returns the pages' "now". (Ç3d step
- * 3 audit: seven tests failed after 22:30.)
+ * (tests/e2e/data.ts; Ç4a); late in the evening a 30- or 60-minute task no longer fits and the
+ * screen rightly offers nothing. Unless the run's moment (tests/e2e/clock.ts) is already the
+ * default one, the test holds today's 10:00 (or the real time when it is earlier): its pages and
+ * the data it writes from then on (`runNow`, `runAt`, `runDay`). Never ahead of the database's
+ * clock, and on its day (the database stamps sessions and finished work itself).
+ * Returns the pages' "now".
  */
 export async function roomInTheDay(...pages: Page[]): Promise<Date> {
-  const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Istanbul" }).format(
-    new Date(),
-  );
-  const morning = new Date(`${today}T10:00:00+03:00`);
-  if (Date.now() <= morning.getTime()) return new Date();
-  for (const page of pages) await page.clock.setFixedTime(morning);
-  // The pages' "now": data meant to be "five minutes ago" on the screen is written from it.
-  return morning;
+  const now = runNow();
+  const room = roomMoment();
+  // The run's moment already has room, on the database's day: nothing to hold.
+  if (now.getTime() === room.getTime()) return now;
+  holdRunClock(room);
+  for (const page of pages) await page.clock.setFixedTime(room);
+  return room;
 }

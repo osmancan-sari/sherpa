@@ -1,16 +1,14 @@
 import { insert, rows, seedModule, update, waitFor } from "./data";
 import { expect, test } from "./fixtures";
+import { runDay } from "./clock";
+import { roomInTheDay } from "./helpers";
 
 // The planning calls (Ç3) end to end, against the server with the recorded fake provider
 // (SHERPA_AI_FAKE=1, port 3101). The engine plans first; the AI's advice and its reasons come
 // on top; with the AI off the engine's plan stands (docs/10-yapay-zeka.md).
 
-const today = () =>
-  new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Istanbul" }).format(new Date());
-const tomorrow = () =>
-  new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Istanbul" }).format(
-    new Date(Date.now() + 86_400_000),
-  );
+const today = () => runDay(0);
+const tomorrow = () => runDay(1);
 
 async function seedWork() {
   const mod = await seedModule();
@@ -24,6 +22,8 @@ async function seedWork() {
 test("the morning plan carries the AI's advice and its reasons behind 'neden?'", async ({
   page,
 }) => {
+  // Needs room in the day and the database's day (tests/e2e/clock.ts).
+  await roomInTheDay(page);
   await seedWork();
   await page.goto("/");
   const [day] = await waitFor(
@@ -75,6 +75,8 @@ test("the evening closing's draft comes from the AI, with its reasons", async ({
 });
 
 test("with the AI switched off the plan still comes, the engine's own", async ({ page }) => {
+  // Needs room in the day and the database's day (tests/e2e/clock.ts).
+  await roomInTheDay(page);
   await seedWork();
   const [settings] = await rows("settings");
   await update("settings", settings.id as string, { ai_enabled: false });

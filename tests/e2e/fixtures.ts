@@ -1,4 +1,5 @@
 import { type BrowserContext, test as base } from "@playwright/test";
+import { resetRunClock, runNow } from "./clock";
 import { resetData } from "./data";
 
 /**
@@ -30,10 +31,16 @@ export function fakeSpeech() {
 }
 
 const quieted = new WeakSet<BrowserContext>();
+/**
+ * The fake speech, and the run's clock (tests/e2e/clock.ts): every page of the context starts at
+ * the run's moment, whatever the real time of day, and its time runs on from there (timers and
+ * counters work). A spec that needs another hour sets its own (`page.clock.setFixedTime`).
+ */
 async function quiet(context: BrowserContext) {
   if (quieted.has(context)) return;
   quieted.add(context);
   await context.addInitScript(fakeSpeech);
+  await context.clock.install({ time: runNow() });
 }
 
 /**
@@ -54,6 +61,8 @@ export const quietTest = base.extend<object, { quietBrowser: void }>({
     { scope: "worker", auto: true },
   ],
   context: async ({ context }, provide) => {
+    // A new test: the run's moment again (a test before may have held its own).
+    resetRunClock();
     await quiet(context);
     await provide(context);
   },
@@ -68,6 +77,8 @@ export const test = quietTest.extend<{ cleanAccount: void }>({
     async ({}, use) => {
       await resetData();
       await use();
+      // The next test starts at the run's moment: its context may open before its own fixtures.
+      resetRunClock();
     },
     { auto: true },
   ],

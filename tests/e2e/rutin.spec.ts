@@ -2,6 +2,8 @@ import type { Page } from "@playwright/test";
 import { insert, rows, update, waitFor } from "./data";
 import { expect, test } from "./fixtures";
 import { spoken } from "./scene-helpers";
+import { runAt } from "./clock";
+import { roomInTheDay } from "./helpers";
 
 // Rutin, step 1 (docs/moduller/rutin.md, "Adım 1 · Temel", criteria 1–5 and 8, 10): the three
 // rhythms on switch-on, the morning as one chain, the step scene (sub-steps, the timed one, its
@@ -73,6 +75,8 @@ const stepId = async (title: string, routineKey?: string) => {
 test("switching on proposes the three rhythms; after the waking the morning is one chain that goes on by itself", async ({
   page,
 }) => {
+  // Needs room in the day and the database's day (tests/e2e/clock.ts).
+  await roomInTheDay(page);
   await setUp(page);
   const rhythms = await rows("rhythms");
   expect(
@@ -183,6 +187,8 @@ test("switched on in the afternoon: the morning is not offered then, the evening
 test("another module's wake-bound work counts in the morning and its own scene comes between (m = 7)", async ({
   page,
 }) => {
+  // Needs room in the day and the database's day (tests/e2e/clock.ts).
+  await roomInTheDay(page);
   await setUp(page);
   const [deneme] = await insert<Row>("modules", {
     slug: "deneme",
@@ -217,6 +223,8 @@ test("another module's wake-bound work counts in the morning and its own scene c
 test("the timed sub-step: held before its time, it runs out into the next one and says its name; a reload finds it", async ({
   page,
 }) => {
+  // Needs room in the day and the database's day (tests/e2e/clock.ts).
+  await roomInTheDay(page);
   await setUp(page);
   await page.clock.install({ time: dayAt("07:02") });
   await page.goto("/");
@@ -249,6 +257,8 @@ test("the timed sub-step: held before its time, it runs out into the next one an
 });
 
 test("holding the main button passes a timed sub-step early", async ({ page }) => {
+  // Needs room in the day and the database's day (tests/e2e/clock.ts).
+  await roomInTheDay(page);
   await setUp(page);
   await page.clock.setFixedTime(dayAt("07:02"));
   await page.goto("/");
@@ -267,6 +277,8 @@ test("holding the main button passes a timed sub-step early", async ({ page }) =
 test("the scene takes the keys: Space is Sonraki, it never ends the whole routine, and a held sub-step waits (Ç3g)", async ({
   page,
 }) => {
+  // Needs room in the day and the database's day (tests/e2e/clock.ts).
+  await roomInTheDay(page);
   await setUp(page);
   await page.clock.setFixedTime(dayAt("07:20"));
   await page.goto("/");
@@ -292,6 +304,8 @@ test("the scene takes the keys: Space is Sonraki, it never ends the whole routin
 test("the morning's last step says Bitti; then İyi günler, then the Today screen", async ({
   page,
 }) => {
+  // Needs room in the day and the database's day (tests/e2e/clock.ts).
+  await roomInTheDay(page);
   await setUp(page);
   await page.clock.setFixedTime(dayAt("07:40"));
   await page.goto("/");
@@ -336,6 +350,8 @@ test("Uyandım on this screen skips Günaydın: the teeth and the day's summary 
 test("a waking told from outside shows Günaydın; Kalktım brings the teeth and tells the day", async ({
   page,
 }) => {
+  // Needs room in the day and the database's day (tests/e2e/clock.ts).
+  await roomInTheDay(page);
   // The phone's automation wrote the waking before the app came to the front (as core/wake does).
   await setUp(page, { start_on_wake: true }, "06:58", "outside");
   await page.clock.setFixedTime(dayAt("07:00"));
@@ -371,7 +387,7 @@ test("Yatıyorum writes the bedtime, İyi geceler stays after a reload, Geri al 
   await insert("sessions", {
     rhythm_id: evening.id,
     module_id: mod.id,
-    started_at: new Date(Date.now() - 5 * 60_000).toISOString(),
+    started_at: runAt(-5),
   });
   await page.goto("/");
   await expect(scene(page)).toHaveAttribute("data-routine", "aksam");
@@ -410,6 +426,9 @@ test("Yatıyorum writes the bedtime, İyi geceler stays after a reload, Geri al 
   );
   expect(day.bed_session_id).not.toBeNull();
   await waitFor(open, (list) => list.length === 0);
+  // The page wrote the bedtime on the run's clock (tests/e2e/clock.ts); the database judges the
+  // ten minutes of "Geri al" on its own (the real one): the bedtime is put on its clock.
+  await update("days", day.id as string, { bed_at: new Date().toISOString() });
   // The screen goes dark; opened again, "İyi geceler" and "Geri al" are there.
   await page.reload();
   await expect(scene(page)).toHaveAttribute("data-screen", "iyi-geceler");
@@ -429,6 +448,8 @@ test("Yatıyorum writes the bedtime, İyi geceler stays after a reload, Geri al 
 test("the module page's morning holds another module's work as its own group, in the chain's order, with no switch and a link to its page (Ç3g)", async ({
   page,
 }) => {
+  // Needs room in the day and the database's day (tests/e2e/clock.ts).
+  await roomInTheDay(page);
   await setUp(page);
   const [deneme] = await insert<Row>("modules", {
     slug: "deneme",
@@ -624,6 +645,8 @@ test("on a short phone the scene covers the screen and its panels end above the 
 });
 
 test("the scene keeps still with reduced motion", async ({ page }) => {
+  // Needs room in the day and the database's day (tests/e2e/clock.ts).
+  await roomInTheDay(page);
   await page.emulateMedia({ reducedMotion: "reduce" });
   await setUp(page);
   await page.clock.setFixedTime(dayAt("07:02"));

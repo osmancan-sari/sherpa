@@ -1,6 +1,7 @@
 import { insert, rows, seedModule, waitFor } from "./data";
 import { expect, test } from "./fixtures";
 import { activateDeneme, addRecord, spoken, startFromModule } from "./scene-helpers";
+import { roomInTheDay } from "./helpers";
 
 // The scene's rules end to end (Ç3c; docs/06-modul-sozlesmesi.md, "Sahne"): "Çık" and
 // "Sahneye dön", a failing scene, work without a scene, the step scene, and `say`.
@@ -46,6 +47,8 @@ test("a scene that fails gives the standard card back with one line; the session
 test("work whose module has no scene, or whose scene says no, keeps the Ç3 card", async ({
   page,
 }) => {
+  // Needs room in the day and the database's day (tests/e2e/clock.ts).
+  await roomInTheDay(page);
   await activateDeneme(page);
   // A habit: the module's scene answers no.
   await addRecord(page, "Esneme", { kind: "aliskanlik" });

@@ -1,6 +1,7 @@
 import { insert, rows, update } from "./data";
 import { expect, test } from "./fixtures";
 import { activateDeneme } from "./scene-helpers";
+import { roomInTheDay } from "./helpers";
 
 // Ç3g (docs/06-modul-sozlesmesi.md, "Modül sayfasında dizi"): a module's page reads today's wake
 // and bed chains, read only, other modules' work included with only the chain's fields. The
@@ -17,6 +18,8 @@ type Row = Record<string, unknown> & { id: string };
 test("the module page lists today's chains: its own work and another module's, which leads to that page", async ({
   page,
 }) => {
+  // Needs room in the day and the database's day (tests/e2e/clock.ts).
+  await roomInTheDay(page);
   await activateDeneme(page);
   const [settings] = await rows("settings");
   await update("settings", settings.id as string, {

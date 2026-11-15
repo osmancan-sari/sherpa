@@ -215,7 +215,7 @@ Testler: 563 birim, 301 veritabanı, 231 uçtan uca (`check:full` yeşil). Gör�
 - Tahminin sınırları: gün gün açgözlü; yeni haftaların taahhüdü ve oturum bölünmesi tahmin edilmez (kalemler taahhütsüz haftadaki gibi); uyanışa ve yatışa bağlı işler sayılmaz; cihaz bağlamı taşınmaz; bloklar 56 gün okunur, ötesi tahminsiz. "Plan tahminidir; o sabah yeniden kurulur." metni Ç4c'de.
 - Akşam kartının "iş henüz sırada" hali (BT23) artık iki yoldan gelir: kapanıştan sonra ya da yatış aralığı başlayıp günün işi bitince. Akşam kartı "Günü kapat"sız çizilecek (Ç4c).
 - `TodayBrief.work` ve `bedtime` sahnelere hazır; Rutin'in kartı ve sahnesi bunları okuyor.
-- Uçtan uca testler 20:30'dan sonra başlamıyor (test hesabının günü 22:00'de bitiyor). Ç4d'de testlerin kendi saatini tutması bu sınırı kaldırır.
+- ~~Uçtan uca testler 20:30'dan sonra başlamıyor.~~ Kapandı (15 Kas, Ç4a'dan sonra ayrı iş): testler sabit koşu saatiyle koşar (`tests/e2e/clock.ts`), sınır kalktı.
 - Docker'daki veritabanının saati makineden birkaç saniye ileri gidebiliyor; testlerde "şimdi" ile veritabanının damgası karşılaştırılırken pay bırakıldı (`deneme-module.spec.ts`, `screenshots.spec.ts`).
 - Ç4d'ye: kullanılmayan sütun ve tabloların silinmesi (`docs/03` "kullanılmıyor (Ç4a)").
 - Ç4c'de tutarlılaştırılacak: Sıradakiler uyanışa bağlı işi de listeliyor, `TodayBrief.work` yalnızca çalışma penceresini sayıyor; Hafta'da Okul'un payı "4 sa 3 dk", kapasite açıklamasında "4 sa 2 dk" (yuvarlama).
@@ -850,7 +850,7 @@ Testler: 413 birim, 207 veritabanı, 166 uçtan uca (`npm run check:full` yeşil
 
 ## Sıradaki adım
 
-Ç4b (`prompts/c4b-cam-temeli.md`); Rutin 2 araya alınabilir. Ç4a yayında. Ayrı iş (15 Kas, senin isteğin): uçtan uca testlerin sabit saatle koşması ve 20:30–24:00 sınırının kalkması.
+Ç4b (`prompts/c4b-cam-temeli.md`); Rutin 2 araya alınabilir. Ç4a yayında. Uçtan uca testlerin sabit saatle koşması bitti (aşağıda "Verdiğim kararlar" → "Uçtan uca testlerin saati").
 
 ## Senden bekleyenler
 
@@ -1147,6 +1147,11 @@ Süre sapmasındaki artış çoğunlukla `enrich`'in kendi tahminlerinin çalı�
 
 ## Verdiğim kararlar
 
+**Uçtan uca testlerin saati (15 Kas 2026, Ç4a'dan sonra ayrı iş; senin isteğin)**
+
+- Sayfalar her testte tek bir sabit anda durur (`tests/e2e/clock.ts`, `fixtures.ts`: her bağlam `clock.setFixedTime`); testlerin "şimdi"si, bugünü ve yarını da oradan (`runNow`, `runAt`, `runDay`). Varsayılan: bugünün 10:00'u, gerçek saat daha erkense gerçek saat. `SHERPA_E2E_AT=HH:MM`: o saat bugün, gelmediyse dünün o saati. Günde oda gereken ya da veritabanının damgalarının (oturum, biten iş, dışarıdan uyanış) kendi gününe düşmesini bekleyen test bunu açıkça söyler: `roomInTheDay` bugünün 10:00'unu (gerçek saat daha erkense onu) tutar; tuttuğu saat testin "şimdi"sine geçer, yazdığı veri de onu izler. 39 test böyle işaretlendi (23:30 koşusunun ortaya çıkardıkları; önceden gerçek saatin gündüz olmasına yaslanıyorlardı). Her testin sonunda koşu saati sıfırlanır (bir testin tuttuğu saat sonrakinin bağlamına sızıyordu). Veritabanının damgaladığı süreyi sınayan üç test başlangıcı koşu saatinden, bitişi veritabanının saatinden okur (`work-sessions`, `deneme-module`); Rutin'in "Geri al"ı yatışı veritabanının saatine taşır. 20:30–24:00 sınırı kalktı (`playwright.config.ts`).
+- Koşu saati gerçek saatin hiçbir zaman önüne geçmez: uygulama oturumu ve biten işi veritabanının kendi saatiyle (`now()`) damgalar, veritabanının saati tutulamaz; sayfa öndeyse oturum saatlerce sürmüş görünür ve giriş belirteci süresi dolmuş sayılır. Bu yüzden ileri bir saat istenince dünün o saati kullanılır. Gerçek zaman gereken yerler gerçek saatte kaldı: bekleme süreleri, oturum çerezi ve belirteç süresi, sunucunun ürettiği bloklar ve dışa aktarım anı, veritabanının damgaladığı oturum başlangıcı.
+
 **Ç4a (15 Kas 2026)** — ayrıntı ve gerekçe `docs/09-kararlar.md` (15 Kas, Ç4a satırları)
 
 - Kalkan alanlar silinmedi: okunmuyor ve yazılmıyor (`days.top3`, `days.life_mode`, `days.finish_line`, `settings.finish_line_default`, `week_plans.life_mode`, `life_mode_periods`, `modules.mode_behavior`, `rhythms.mode_targets`); `docs/03`'te "kullanılmıyor (Ç4a)". Temizlik Ç4d'de. Migration yalnızca ekleme: `settings.reported_context`, `reported_context_at`.
@@ -1440,11 +1445,11 @@ Süre sapmasındaki artış çoğunlukla `enrich`'in kendi tahminlerinin çalı�
 
 - Ç3e: `setFacetColor` (bölüm rengi) satırı okuyup birleştirip yazar; iki cihazda aynı anda iki ayrı bölümün rengi değiştirilirse biri kaybolabilir. Tek kullanıcıda olasılık düşük; gerekirse jsonb birleştiren tek bir veritabanı fonksiyonu.
 
-- Ç3d: uçtan uca testler İstanbul saatiyle 22:30–24:00 arasında başlamaz (`playwright.config.ts`). Test hesabının günü 23:59'da biter; testlerin çoğu veriyi gerçek saate göre yazar ve oturumların zamanını sunucu damgalar, bu yüzden günün son saatinde eklenen işler sığmaz. Kalıcı çözüm Ç4: her test kendi saatini tutsun ve veriyi o saate göre yazsın (`roomInTheDay` bir başlangıç). Faz betiği `check:full`'ü bu saatte koşarsa kırmızı görür ve etiketi siler; ileti nedenini söyler.
+- ~~Ç3d: uçtan uca testler İstanbul saatiyle 22:30–24:00 arasında başlamaz (`playwright.config.ts`).~~ Kapandı (15 Kas 2026): sabit koşu saati (`tests/e2e/clock.ts`). Test hesabının günü 23:59'da biter; testlerin çoğu veriyi gerçek saate göre yazar ve oturumların zamanını sunucu damgalar, bu yüzden günün son saatinde eklenen işler sığmaz. Kalıcı çözüm Ç4: her test kendi saatini tutsun ve veriyi o saate göre yazsın (`roomInTheDay` bir başlangıç). Faz betiği `check:full`'ü bu saatte koşarsa kırmızı görür ve etiketi siler; ileti nedenini söyler.
 
 - Ç3d: anahtar üretimi Web Crypto (`crypto.subtle`) ister; tarayıcı bunu yalnızca güvenli bağlamda (HTTPS ya da `localhost`) verir. Geliştirmede telefondan yerel ağ adresine `http` ile girilirse "Anahtar üret" genel "kaydedilemedi" bildirimiyle düşer. Üretimde (HTTPS) sorun yok.
 
-- Ç3c faz denetimi notu: `Date.now()` kullanan 15 kadar uçtan uca test dosyası gece yarısına yakın saatlerde sınanmadı; biri (`today.both.spec.ts`) 21:00'den sonra kırılıyordu ve sabitlendi. Öbürleri gözden geçirilmeli (Ç4).
+- ~~Ç3c faz denetimi notu: `Date.now()` kullanan 15 kadar uçtan uca test dosyası gece yarısına yakın saatlerde sınanmadı;~~ Kapandı (15 Kas 2026): "şimdi"yi koşu saatinden alıyorlar; biri (`today.both.spec.ts`) 21:00'den sonra kırılıyordu ve sabitlendi. Öbürleri gözden geçirilmeli (Ç4).
 
 - Ç3c: iş formlarındaki "Zaman" bölümünde `anchor`, `order` ve `after_finish` için denetim yok: modülün yazdığı değer formdan geçerken korunur ama kullanıcı elle çapa koyamaz. **Görüşün gerek:** formda "Uyanınca / Yatmadan önce" ve "Akşam da olur" istenir mi?
 

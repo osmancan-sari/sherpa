@@ -1,6 +1,7 @@
 import type { Page } from "@playwright/test";
 import { insert, rows, seedModule, update, waitFor } from "./data";
 import { expect, test } from "./fixtures";
+import { roomInTheDay } from "./helpers";
 
 // Changing work by hand: tasks, work items, rhythms, fixed blocks and their series.
 
@@ -27,6 +28,8 @@ async function openEditor(page: Page, button: string, title: string) {
 }
 
 test("a task is edited, put on hold and given up from its module's page", async ({ page }) => {
+  // Needs room in the day and the database's day (tests/e2e/clock.ts).
+  await roomInTheDay(page);
   const mod = await seedModule();
   await insert("tasks", { module_id: mod.id, title: "Rapor yaz" });
   await page.goto(`/m/${mod.slug}`);
