@@ -19,7 +19,8 @@ type ChartProps = {
   height?: number;
 };
 
-const PAD = { top: 16, right: 12, bottom: 24, left: 40 };
+// The plot's margins in the SVG's own units (drawing data).
+const PAD = { above: 16, after: 12, below: 24, before: 40 };
 
 function useWidth(): [React.RefObject<HTMLDivElement | null>, number] {
   const ref = useRef<HTMLDivElement>(null);
@@ -98,27 +99,27 @@ function Axis({
   max: number;
   unit?: string;
 }) {
-  const plotHeight = height - PAD.top - PAD.bottom;
+  const plotHeight = height - PAD.above - PAD.below;
   return (
     <g aria-hidden>
       {[0, 0.5, 1].map((share) => {
-        const y = PAD.top + plotHeight * (1 - share);
+        const y = PAD.above + plotHeight * (1 - share);
         return (
           <g key={share}>
             <line
-              x1={PAD.left}
-              x2={width - PAD.right}
+              x1={PAD.before}
+              x2={width - PAD.after}
               y1={y}
               y2={y}
               stroke="var(--border)"
               strokeWidth={1}
             />
             <text
-              x={PAD.left - 8}
+              x={PAD.before - 8}
               y={y}
               textAnchor="end"
               dominantBaseline="middle"
-              className="fill-muted-foreground text-[11px] tabular-nums"
+              className="fill-muted-foreground text-nav tabular-nums"
             >
               {formatValue(max * share)}
             </text>
@@ -126,7 +127,7 @@ function Axis({
         );
       })}
       {unit ? (
-        <text x={PAD.left - 8} y={8} textAnchor="end" className="fill-muted-foreground text-[10px]">
+        <text x={PAD.before - 8} y={8} textAnchor="end" className="fill-muted-foreground text-nav">
           {unit}
         </text>
       ) : null}
@@ -176,17 +177,17 @@ export function BarChart({
   return (
     <Frame title={title} data={data} unit={unit} height={height}>
       {(width) => {
-        const plotWidth = width - PAD.left - PAD.right;
-        const plotHeight = height - PAD.top - PAD.bottom;
+        const plotWidth = width - PAD.before - PAD.after;
+        const plotHeight = height - PAD.above - PAD.below;
         const slot = plotWidth / Math.max(data.length, 1);
         // Thin marks: the bar never fills its slot; a 2px gap always separates neighbours.
         const bar = Math.max(2, Math.min(24, slot - 2));
         const step = labelStep(data.length, slot);
-        const baseline = PAD.top + plotHeight;
+        const baseline = PAD.above + plotHeight;
         const geometry = data.map((point, index) => {
           const barHeight = (Math.max(0, point.value) / max) * plotHeight;
           return {
-            x: PAD.left + slot * index + (slot - bar) / 2,
+            x: PAD.before + slot * index + (slot - bar) / 2,
             y: baseline - barHeight,
             barHeight,
           };
@@ -216,7 +217,7 @@ export function BarChart({
                         x={x + bar / 2}
                         y={height - 6}
                         textAnchor="middle"
-                        className="fill-muted-foreground text-[11px]"
+                        className="fill-muted-foreground text-nav"
                         aria-hidden
                       >
                         {point.label}
@@ -224,8 +225,8 @@ export function BarChart({
                     ) : null}
                     {/* The whole slot is the hit target, not just the painted bar. */}
                     <rect
-                      x={PAD.left + slot * index}
-                      y={PAD.top}
+                      x={PAD.before + slot * index}
+                      y={PAD.above}
                       width={slot}
                       height={plotHeight}
                       fill="transparent"
@@ -266,12 +267,12 @@ export function LineChart({
   return (
     <Frame title={title} data={data} unit={unit} height={height}>
       {(width) => {
-        const plotWidth = width - PAD.left - PAD.right - 8;
-        const plotHeight = height - PAD.top - PAD.bottom;
+        const plotWidth = width - PAD.before - PAD.after - 8;
+        const plotHeight = height - PAD.above - PAD.below;
         const gap = data.length > 1 ? plotWidth / (data.length - 1) : 0;
         const points = data.map((point, index) => ({
-          x: PAD.left + 4 + (data.length > 1 ? gap * index : plotWidth / 2),
-          y: PAD.top + plotHeight * (1 - Math.max(0, point.value) / max),
+          x: PAD.before + 4 + (data.length > 1 ? gap * index : plotWidth / 2),
+          y: PAD.above + plotHeight * (1 - Math.max(0, point.value) / max),
         }));
         const step = labelStep(data.length, gap || plotWidth);
         const last = points.at(-1);
@@ -306,8 +307,8 @@ export function LineChart({
                 <line
                   x1={shown.x}
                   x2={shown.x}
-                  y1={PAD.top}
-                  y2={PAD.top + plotHeight}
+                  y1={PAD.above}
+                  y2={PAD.above + plotHeight}
                   stroke="var(--muted-foreground)"
                   strokeWidth={1}
                   aria-hidden
@@ -345,7 +346,7 @@ export function LineChart({
                       x={points[index].x}
                       y={height - 6}
                       textAnchor="middle"
-                      className="fill-muted-foreground text-[11px]"
+                      className="fill-muted-foreground text-nav"
                       aria-hidden
                     >
                       {point.label}

@@ -54,6 +54,7 @@
     255,
     0.92
   ); /* primary button, selected item: the one opaque light */
+  --color-fill-quiet: rgba(255, 255, 255, 0.06); /* disabled button */
   --color-fill-field: rgba(255, 255, 255, 0.08); /* fields, icon buttons */
   --color-fill-chip: rgba(255, 255, 255, 0.1); /* chips, segmented track */
   --color-fill-selected: rgba(255, 255, 255, 0.12); /* selected list row */
@@ -206,6 +207,8 @@
   --text-lg--line-height: 1.35;
   --text-heading: 19px; /* dialog title */
   --text-heading--line-height: 1.3;
+  --text-side-title: 21px; /* side panel title on the board */
+  --text-side-title--line-height: 1.3;
   --text-xl: 20px;
   --text-xl--line-height: 1.3;
   --text-section: 22px;
@@ -254,9 +257,11 @@
   --radius-lg: 10px;
   --radius-xl: 12px; /* timeline strip */
   --radius-step: 14px; /* menu item, scene row */
+  --radius-segment: 15px; /* a part of the segmented choice */
   --radius-field: 16px;
   --radius-2xl: 18px;
   --radius-alert: 20px;
+  --radius-tabs: 23px; /* the tabs' glass pill */
   --radius-soft: 22px; /* soft panel */
   --radius-dense: 24px; /* dense panel */
   --radius-rail: 26px; /* board menu */

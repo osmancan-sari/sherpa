@@ -81,6 +81,7 @@ export default function SettingsPage() {
           </form>
         </div>
       </Section>
+      <SettingsLink href="/tasarim">Tasarım galerisi</SettingsLink>
     </PageShell>
   );
 }

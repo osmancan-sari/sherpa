@@ -123,8 +123,18 @@ export function BackdropProvider({
  * The fixed layer itself. `contained`: drawn inside its parent instead of behind the page (a
  * scene that covers the phone's screen carries its own).
  */
-export function Backdrop({ kind, contained = false }: { kind: BackdropKind; contained?: boolean }) {
-  const sky = useSky();
+export function Backdrop({
+  kind,
+  contained = false,
+  sky: fixed,
+}: {
+  kind: BackdropKind;
+  contained?: boolean;
+  /** A given hour's sky instead of this minute's (the gallery). */
+  sky?: Sky;
+}) {
+  const now = useSky();
+  const sky = fixed ?? now;
   const device = useLayoutDevice();
   const key = keyOf(kind);
   const full = kind.kind === "full";

@@ -156,8 +156,8 @@ export function Timeline({ label, items }: { label: string; items: TimelineItem[
         <li key={item.key} className={cn("relative", item.muted && "text-muted-foreground")}>
           <span
             aria-hidden
-            className="ring-background absolute top-1.5 -left-[1.5625rem] size-2.5 rounded-full ring-2"
-            style={{ backgroundColor: item.color ?? "var(--muted-foreground)" }}
+            className="ring-solid absolute top-1.5 -left-6.25 size-2.5 rounded-full ring-2"
+            style={{ backgroundColor: item.color ?? "var(--color-ink-2)" }}
           />
           <p className="text-muted-foreground text-xs tabular-nums">{item.when}</p>
           <p className="font-medium">{item.title}</p>
@@ -194,8 +194,8 @@ export function HeatGrid({
       {columnLabels ? (
         <div
           aria-hidden
-          className="text-muted-foreground grid gap-0.5 text-center text-[11px]"
-          style={{ gridTemplateColumns: `repeat(${columns}, minmax(0, 2rem))` }}
+          className="text-muted-foreground text-nav grid gap-0.5 text-center"
+          style={{ gridTemplateColumns: `repeat(${columns}, minmax(0, calc(var(--spacing) * 8)))` }}
         >
           {columnLabels.map((name) => (
             <span key={name}>{name}</span>
@@ -205,7 +205,7 @@ export function HeatGrid({
       <ul
         aria-label={label}
         className="grid gap-0.5"
-        style={{ gridTemplateColumns: `repeat(${columns}, minmax(0, 2rem))` }}
+        style={{ gridTemplateColumns: `repeat(${columns}, minmax(0, calc(var(--spacing) * 8)))` }}
       >
         {cells.map((cell) => (
           <li
@@ -213,7 +213,7 @@ export function HeatGrid({
             title={cell.label}
             aria-label={cell.label}
             tabIndex={0}
-            className="focus-visible:ring-ring/50 aspect-square rounded-[4px] outline-none focus-visible:ring-3"
+            className="focus-visible:shadow-focus aspect-square rounded-sm outline-none"
             style={{
               backgroundColor:
                 cell.level === 0 ? "var(--color-fill-chip)" : `var(--color-seq-${cell.level})`,
