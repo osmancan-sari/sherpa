@@ -46,7 +46,6 @@ type Props = {
   modules: Map<string, KnownModule>;
   /** The first work of tomorrow, for the night state. */
   tomorrowFirst?: Candidate | null;
-  /** Opens the "vakit kalırsa" list (done state). */
   /** The running work has a scene this device left ("Çık"): "Sahneye dön" (Ç3c). */
   onReturnToScene?: () => void;
   /** "Takıldım" held by the screen (a scene opens it too); the card keeps its own without. */

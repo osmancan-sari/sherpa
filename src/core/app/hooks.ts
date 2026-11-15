@@ -22,17 +22,14 @@ import { listRhythmLogs, listRhythms, listTasks, listWorkItems } from "@/core/da
 import { weekInput } from "@/core/data/keep";
 import {
   buildPlan,
+  calendarOf,
   dayStartClock,
-  forecastDays,
   inferContext,
-  loadByWeek,
   type PlanRows,
   planInput,
   plannerSettings,
   planningDay,
-  readShares,
   reportedOf,
-  weekWork,
 } from "@/core/planner";
 import { type Db, type ModuleRow, unwrap } from "@/core/types";
 import { dayKey, shiftDay, weekStart } from "@/lib/date";
@@ -362,21 +359,8 @@ export function useCalendar(week: string) {
   const { input, plan, rows, now } = useTodayPlan();
   return useMemo(() => {
     if (!input || !plan || !rows) return null;
-    const from = weekStart(week);
-    const days = forecastDays(input, plan, { from, to: shiftDay(from, 6) });
     const load = weekInput(rows, now);
-    const stored = rows.weekPlans.find((row) => row.week_start === from);
-    const work = weekWork(
-      {
-        ...load,
-        committed: stored?.committed ?? null,
-        shares: readShares(stored?.shares),
-        reasons: (stored?.reasons ?? {}) as Record<string, string>,
-      },
-      from,
-    );
-    const weeks = loadByWeek(load, { from, weeks: 8 });
-    return { days, work, weeks };
+    return calendarOf({ input, plan, load, weekPlans: rows.weekPlans, week });
   }, [input, plan, rows, now, week]);
 }
 

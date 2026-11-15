@@ -296,7 +296,7 @@ Takvim'in gelecek günündeki "Planlananlar" için (`docs/13-cam-dili.md` 4.3; e
 
 - **Haftanın işleri** (`weekWork`, `src/core/planner/week.ts`): bu hafta için taahhüt edilen kalemler ve haftada teslim olan her iş (kalem ya da tek iş), teslim tarihine göre sıralı, tarihsizler sonda. Satır: tür, ad, modül, teslim, pay (taahhütte haftanın payı; haftada teslim olan taahhütsüz kalemde kalanın tamamı; tek işte tahmini süre), işlenen süre (taahhütten beri; biten tek işte süresi), bitti mi, yapay zekanın haftalık notu (`week_plans.reasons`). Sonraki bir hafta için: yayılmanın (`spreadItem`) o haftaya verdiği pay ve o hafta teslim olanlar.
 - **Sekiz haftanın iş ve vakti:** `loadByWeek` (talep ve kapasite, teslimler) seçili haftadan sekiz hafta.
-- **Veriye ulaşan yol:** `useCalendar(week)` (`src/core/app/hooks.ts`): tahmin, haftanın işleri ve sekiz hafta; bugünün planıyla birlikte yeniden hesaplanır.
+- **Veriye ulaşan yol:** saf `calendarOf` (`src/core/planner/calendar.ts`, testli) ve onu bugünün planıyla birlikte yeniden hesaplayan `useCalendar(week)` (`src/core/app/hooks.ts`): tahmin, haftanın işleri ve sekiz hafta. Kapanış yarının kaydına `putOff: []` yazar: çıkardıkları ertesi günün "Ertele"si sayılmaz.
 
 ## Uygulama notları (Ç3)
 

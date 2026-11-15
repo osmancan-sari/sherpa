@@ -142,7 +142,9 @@ function ClosingBody({ inScene }: { inScene?: { onDone: () => void } } = {}) {
         tomorrow: {
           plan,
           day: tomorrow.base,
-          stored: advice ? { skipped, advice } : { skipped },
+          // Ç4a: what the closing takes out is not tomorrow's own "Ertele" (`putOff` empty):
+          // tomorrow is not "done" for it.
+          stored: advice ? { skipped, putOff: [], advice } : { skipped, putOff: [] },
         },
         note: null,
         reasons: advice?.reasons ?? null,

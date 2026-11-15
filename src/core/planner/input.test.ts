@@ -72,6 +72,26 @@ describe("planInput", () => {
     expect(input).not.toHaveProperty("top3");
   });
 
+  it("tells the day's own put-offs from the closing's take-outs (Ç4a: Bugün tamam)", () => {
+    const item = workItem();
+    const closing = dayRow({ plan: { version: 1, skipped: [item.id], putOff: [] } });
+    const fromClosing = planInput(rows({ workItems: [item], days: [closing] }), {
+      date: DATE,
+      now: at("10:00"),
+      context: "desk",
+    });
+    expect(fromClosing.skippedToday).toEqual([]);
+    // Taken out at the closing and nothing else in the day: an empty day, not "Bugün tamam".
+    expect(buildPlan(fromClosing).now.kind).toBe("empty");
+    const putOff = dayRow({ plan: { version: 1, skipped: [item.id], putOff: [item.id] } });
+    const ownErtele = planInput(rows({ workItems: [item], days: [putOff] }), {
+      date: DATE,
+      now: at("10:00"),
+      context: "desk",
+    });
+    expect(buildPlan(ownErtele).now.kind).toBe("done");
+  });
+
   it("reads the day type from the blocks; no life mode (Ç4a)", () => {
     const office = block({ day_type: "office" });
     const input = planInput(rows({ blocks: [office] }), {

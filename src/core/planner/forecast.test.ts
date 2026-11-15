@@ -186,7 +186,8 @@ describe("forecastDays", () => {
 
   it("counts the weekly floor's minutes week by week", () => {
     const sport = moduleRow({ kind: "lifelong", weekly_floor_minutes: 45 });
-    const runs = [1, 2, 3].map((n) =>
+    // Each day holds one 45-minute run (shortDays): Thursday, Friday, Saturday, Sunday.
+    const runs = [1, 2, 3, 4].map((n) =>
       task({ module_id: sport.id, title: `Koşu ${n}`, est_minutes: 45, importance: 1 }),
     );
     const base = input({
@@ -194,18 +195,25 @@ describe("forecastDays", () => {
       tasks: runs,
       settings: shortDays,
       bedtime: at("09:30"),
+      spentThisWeek: {},
     });
-    // Sunday is the week's last day: the floor would be in danger with nothing worked. What the
-    // forecast put on the days before counts, so Sunday's work is no floor work.
     const sunday = "2026-11-15";
-    const plan = (spent: Record<string, number>) => {
-      const days = forecastDays({ ...base, spentThisWeek: spent }, buildPlan(base), {
-        from: sunday,
-        to: sunday,
-      });
-      return days[0].work.map((row) => row.assignment.candidate.mandatory);
-    };
-    expect(plan({ [sport.id]: 0 }).every((reason) => reason !== "floor")).toBe(true);
+    const [day] = forecastDays(base, buildPlan(base), { from: sunday, to: sunday });
+    // Sunday has its run; the minutes the forecast put on the days before count for the floor,
+    // so it is no floor work there.
+    expect(day.work).toHaveLength(1);
+    expect(day.work[0].assignment.candidate.mandatory).toBeNull();
+    // Planned on its own with nothing worked this week, Sunday's run would keep the floor.
+    const alone = buildPlan(
+      input({
+        ...base,
+        date: sunday,
+        now: at("08:00", sunday),
+        dayStart: at("08:00", sunday),
+        bedtime: at("09:30", sunday),
+      }),
+    );
+    expect(alone.candidates.some((row) => row.mandatory === "floor")).toBe(true);
   });
 
   it("gives a follow-up once", () => {

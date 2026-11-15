@@ -41,6 +41,8 @@ export type {
   RecommitReason,
 } from "./week";
 export { FORECAST_WEEKS, forecastDays } from "./forecast";
+export { calendarOf } from "./calendar";
+export type { CalendarData } from "./calendar";
 export type { ForecastDay } from "./forecast";
 export {
   BLOCK_AHEAD_MINUTES,
