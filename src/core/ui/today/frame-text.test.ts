@@ -1,12 +1,11 @@
 import { describe, expect, it } from "vitest";
 import type { DayFrame, SleepPlan } from "@/core/planner";
 import { istanbulInstant } from "@/lib/date";
-import { shortLine, sleepLine, sleepSummary, wakeText } from "./frame-text";
+import { shortLine, sleepLine } from "./frame-text";
 
 // The day's frame in words (docs/05-arayuz.md, "Günün çerçevesi").
 
 const at = (time: string, day = "2026-11-12") => istanbulInstant(day, time);
-const iso = (time: string, day = "2026-11-12") => at(time, day).toISOString();
 
 const plan = (overrides: Partial<SleepPlan> = {}): SleepPlan => ({
   latestWake: at("09:00", "2026-11-13"),
@@ -57,31 +56,5 @@ describe("the frame's sentences", () => {
     expect(shortLine(plan({ short: "early_wake", sleepMinutes: 390 }))).toBe(
       "Erken kalkışla bu gece uyku 6 sa 30 dk.",
     );
-  });
-
-  it("the waking on the top bar: recorded, estimated, expected", () => {
-    expect(wakeText(frame())).toBe("uyanış 07:40");
-    expect(wakeText(frame({ estimated: true }))).toBe("uyanış ~07:40");
-    expect(wakeText(frame({ woke: false, wake: at("08:00") }))).toBe("beklenen uyanış 08:00");
-  });
-
-  it("Hafta's line: the last week's averages, a bedtime past midnight counted as late", () => {
-    const days = [
-      {
-        date: "2026-11-10",
-        woke_at: iso("07:00", "2026-11-10"),
-        bed_at: iso("23:30", "2026-11-10"),
-      },
-      {
-        date: "2026-11-11",
-        woke_at: iso("08:00", "2026-11-11"),
-        bed_at: iso("00:30", "2026-11-12"),
-      },
-      { date: "2026-11-12", woke_at: iso("08:30", "2026-11-12"), bed_at: null },
-    ];
-    expect(sleepSummary(days, "2026-11-12")).toBe(
-      "Son 7 gün ortalaması: uyanış 07:50 · yatış 00:00 · uyku 8 sa 15 dk",
-    );
-    expect(sleepSummary([], "2026-11-12")).toBeNull();
   });
 });

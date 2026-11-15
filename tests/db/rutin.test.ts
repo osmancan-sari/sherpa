@@ -93,7 +93,7 @@ describe("the starting list", () => {
     expect(steps.find((step) => step.title === "Yarının listesi")).toMatchObject({
       kind: "closing",
       active: true,
-      minimum: true,
+      minimum: false,
       seconds: 240,
     });
     const teeth = steps.find((step) => step.ref === "S1")!;

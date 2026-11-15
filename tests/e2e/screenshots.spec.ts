@@ -372,18 +372,19 @@ for (const look of LOOKS) {
     await days.locator('[aria-current="date"]').click();
     await expect(page.getByRole("region", { name: "Günün ayrıntısı" })).toBeVisible();
     await shot("takvim-bugun");
+    // A coming day and a day gone by, whatever today is: a day of next week and of last week.
     const boxes = days.getByRole("button");
-    const todayIndex = await boxes.evaluateAll((list) =>
-      list.findIndex((box) => box.getAttribute("aria-current") === "date"),
+    await page.getByRole("button", { name: "Sonraki hafta" }).click();
+    await boxes.nth(2).click();
+    await expect(page.getByRole("region", { name: "Günün ayrıntısı" })).toContainText(
+      "Plan tahminidir",
     );
-    const other = todayIndex < 6 ? todayIndex + 1 : todayIndex - 1;
-    await boxes.nth(other).click();
+    await shot("takvim-gelecek");
+    await page.getByRole("button", { name: "Önceki hafta" }).click();
+    await page.getByRole("button", { name: "Önceki hafta" }).click();
+    await boxes.nth(2).click();
     await expect(page.getByRole("region", { name: "Günün ayrıntısı" })).toBeVisible();
-    await shot(todayIndex < 6 ? "takvim-gelecek" : "takvim-gecmis");
-    if (todayIndex > 0 && todayIndex < 6) {
-      await boxes.nth(todayIndex - 1).click();
-      await shot("takvim-gecmis");
-    }
+    await shot("takvim-gecmis");
     await page.goto("/");
 
     // The night: the day was closed (Ç4a: no finish line).
@@ -479,6 +480,24 @@ for (const look of LOOKS) {
     await page.goto("/");
     await expect(now.getByRole("heading", { name: "Günaydın" })).toBeVisible();
     await shot("bugun-gunaydin");
+
+    // Ç4c: the evening before the closing, with no module holding it: "Kapanış" on the card,
+    // and the closing in the standard scene shell.
+    await update("days", today.id as string, {
+      woke_at: at("07:00").toISOString(),
+      closed_at: null,
+      expected_bed: "23:00:00",
+    });
+    await page.clock.setFixedTime(at("23:30"));
+    await page.goto("/");
+    await expect(now.getByRole("button", { name: "Kapanış" })).toBeVisible();
+    await shot("bugun-aksam-kapanis");
+    await now.getByRole("button", { name: "Kapanış" }).click();
+    const shell = page.getByTestId("closing-shell");
+    await expect(shell.getByRole("heading", { name: "Kapanış" })).toBeVisible();
+    await shot("kapanis-kabuk");
+    await shell.getByRole("button", { name: "Vazgeç" }).click();
+    await update("days", today.id as string, { expected_bed: null });
 
     // The evening: up at 07:00, the day closed at 23:25 (Ç4a: no finish line brings it; late
     // enough that no sample block of the day is on).
@@ -798,10 +817,18 @@ test("rutin screens", async ({ page }, testInfo) => {
     () => rows("rutin_runs"),
     (list) => list.some((row) => row.routine_id === evening.id),
   );
+  const eveningRunId = eveningRun.find((row) => row.routine_id === evening.id)!.id as string;
+  // Ç4c: "Yarının listesi" (3): the scene opens the core's closing in its place.
+  await update("rutin_runs", eveningRunId, { step_position: 3, part_position: 0 });
+  await page.reload();
+  await expect(
+    page.getByRole("region", { name: "Sahne" }).getByRole("heading", { name: "Kapanış" }),
+  ).toBeVisible();
+  await shot("rutin-kapanis");
   await update(
     "rutin_runs",
-    eveningRun.find((row) => row.routine_id === evening.id)!.id as string,
-    // Ç4c: "Yarının listesi" (3) comes before "Telefonu salona bırak" (4).
+    eveningRunId,
+    // "Telefonu salona bırak" (4).
     { step_position: 4, part_position: 1 },
   );
   await page.reload();

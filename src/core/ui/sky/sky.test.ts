@@ -246,3 +246,31 @@ describe("text on the glass stays at least 4.5:1 in the four states", () => {
     }
   });
 });
+
+// Ç4c (the promise of Ç4b's known issues): the text Today writes without a panel on the full
+// landscape. The top line ("Bugün", the date, the hour) stands in the upper sky at every hour;
+// the night's hour and its two lines stand in the upper half, and the night is drawn only after
+// the evening (the sunset's sky at the earliest). Measured on the sky's own colours, the
+// phone's (the board's horizon is lower, so its upper half is the same or darker).
+describe("Today's text without a panel on the full landscape", () => {
+  for (const [name, sky] of STATES) {
+    it(`the top line at ${name}`, () => {
+      for (let p = 0; p <= 8; p += 1) {
+        const behind = hexToRgb(skyColorAt(sky, p));
+        for (const text of ["color-ink", "color-ink-2"] as const) {
+          expect(contrast(rgbOf(text).rgb, behind), `${text} at ${p}%`).toBeGreaterThanOrEqual(4.5);
+        }
+      }
+    });
+  }
+  for (const [name, sky] of STATES.filter(([state]) => state === "sunset" || state === "night")) {
+    it(`the night's hour and lines at ${name}`, () => {
+      for (let p = 20; p <= 55; p += 1) {
+        const behind = hexToRgb(skyColorAt(sky, p));
+        for (const text of ["color-ink-2", "color-ink-link"] as const) {
+          expect(contrast(rgbOf(text).rgb, behind), `${text} at ${p}%`).toBeGreaterThanOrEqual(4.5);
+        }
+      }
+    });
+  }
+});

@@ -153,7 +153,7 @@
           "title": "Yarının listesi",
           "kind": "closing",
           "seconds": 240,
-          "minimum": true,
+          "minimum": false,
           "active": true,
           "phase": 1,
           "ref": "A8",

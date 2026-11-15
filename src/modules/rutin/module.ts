@@ -62,7 +62,8 @@ export const rutin: ModuleDefinition = {
     const [routines, steps, records] = await Promise.all([
       listRoutines(ctx),
       listSteps(ctx),
-      listRecords(ctx, shiftDay(today, -370)),
+      // Enough for the step's `every_days` (a closing step is daily or near it).
+      listRecords(ctx, shiftDay(today, -62)),
     ]);
     const evening = routines.find((row) => row.key === "aksam" && row.active);
     if (!evening) return false;

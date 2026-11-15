@@ -159,6 +159,18 @@ test("the day's flow: a touch on the phone or the pointer on the board shows a p
     // A touch elsewhere puts it away.
     await page.getByRole("heading", { level: 1, name: "Bugün" }).tap();
     await expect(balloon).toHaveCount(0);
+    // A piece's touch area reaches past its drawn edge (at least the touch target): a point just
+    // above the piece is still the piece's.
+    const box = (await piece.boundingBox())!;
+    const hit = await page.evaluate(
+      ([x, y]) =>
+        document
+          .elementFromPoint(x, y)
+          ?.closest("[data-strip-piece]")
+          ?.getAttribute("aria-label") ?? null,
+      [box.x + box.width / 2, box.y - 6],
+    );
+    expect(hit).toMatch(/İstatistik ödevi$/);
   } else {
     // On the board the name is inside the piece, and the balloon comes with the pointer.
     await piece.hover();

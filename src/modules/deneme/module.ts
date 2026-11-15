@@ -1,6 +1,7 @@
 import { token } from "@/core/ui/tokens";
 import type { ModuleDefinition, ModuleFacet } from "@/core/contract/types";
 import { dayKey, shiftDay } from "@/lib/date";
+import { RecordsView } from "./components/AreaView";
 import { DenemeBackdrop } from "./components/Backdrop";
 import { ExtractPage } from "./components/ExtractPage";
 import { ItemsTab } from "./components/ItemsTab";
@@ -256,6 +257,9 @@ export const deneme: ModuleDefinition = {
   ui: {
     // Ç4b: the module's own backdrop, on its page and its scenes (docs/06, "Modülün zemini").
     backdrop: DenemeBackdrop,
+    // Ç4c: a view on its area's page ("Sınama"); it fails on purpose while a record named
+    // "Görünümü boz" is open (the page's error boundary).
+    areaViews: [{ key: "kayitlar", title: "Kayıtlar", component: RecordsView }],
     tabs: [
       { key: "kayitlar", label: "Kayıtlar", component: ItemsTab },
       { key: "bilesenler", label: "Bileşenler", component: KitTab },

@@ -151,6 +151,21 @@ describe("the day's steps", () => {
       ),
     ).toBe(false);
   });
+
+  it("never count the closing step as basic: a skipped closing leaves the evening done (Ç4c)", () => {
+    const face = step({ minimum: true, title: "Yüz" });
+    const closing = step({ minimum: true, kind: "closing", position: 2, title: "Yarının listesi" });
+    const list = dayStepsOf([face, closing], "r", "2026-11-14", new Map());
+    expect(
+      minimumDone(
+        list,
+        new Map([
+          [face.id, "done"],
+          [closing.id, "skipped"],
+        ]),
+      ),
+    ).toBe(true);
+  });
 });
 
 describe("lengths", () => {

@@ -184,7 +184,9 @@ export function formatSeconds(seconds: number): string {
 
 /** Whether every open basic step of the day's list is done in the run. */
 export function minimumDone(daySteps: DayStep[], results: Map<string, string>): boolean {
-  const basic = daySteps.filter((step) => step.minimum);
+  // Ç4c: the closing step is never basic, whatever the row says: the closing may be skipped
+  // ("Vazgeç", product rule 3) and the evening is still done.
+  const basic = daySteps.filter((step) => step.minimum && step.kind !== "closing");
   return basic.every((step) => results.get(step.id) === "done");
 }
 

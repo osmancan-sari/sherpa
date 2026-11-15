@@ -260,7 +260,7 @@ function CardFor({
       <section
         aria-label="Şimdi"
         data-testid="now-card"
-        className="text-ink-3 flex flex-col items-center gap-1.5 pb-[14vh] text-center"
+        className="text-ink-2 flex flex-col items-center gap-1.5 pb-[14vh] text-center"
       >
         <h2 className="text-clock md:text-clock-board tracking-counter text-ink-2 font-medium tabular-nums">
           {formatTime(now)}

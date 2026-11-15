@@ -53,7 +53,7 @@ Kullanıcının seçimi (15 Kas 2026): bütün günü gösteren saatli yatay şe
 
 **Günün akışı (şerit).** Yoğun panelde; başlıkta solda "GÜNÜN AKIŞI", sağda "07:02 uyanış · 23:00 yatış" (uyanış ve yatış ekranda yalnızca burada yazar). Şerit uyanıştan beklenen yatışa uzanır.
 
-- Saat etiketleri şeridin üstünde: telefonda üç saatte bir, panoda her saat; her etiketin altında ince dikey çizgi.
+- Saat etiketleri şeridin üstünde: telefonda üç saatte bir (şeridin iki ucu yazılmaz, karedeki gibi), panoda her saat ve iki uç (Ç4c: gün 16 saatten uzunsa iki saatte bir; uca bir saat kalan etiket yazılmaz); her etiketin altında ince dikey çizgi.
 - İşler işin rengiyle, koyu yazıyla; sabit bloklar gri ve şeridin tam boyunda; yol taralı; mola boşluk. Uyanışa ve yatışa bağlı bölümlerin zemini bir ton açık.
 - Geçmiş parçalar soluk. Şimdiki an beyaz çizgi ve altında "şimdi 14:10" hapı.
 - Panoda iş adları parçanın içinde yazar (`spacing-touch`'tan dar parçada yazmaz). Telefonda ad sığmaz: parçaya dokununca üstünde "15:55–16:55 · İstatistik ödevi" balonu çıkar, parça beyaz çerçeve alır; yolda "yol 35 dk". Panoda aynı balon imleç üstüne gelince.

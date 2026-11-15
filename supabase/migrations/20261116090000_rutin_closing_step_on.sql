@@ -13,6 +13,8 @@ with switched as (
   set
     active = true,
     phase = 1,
+    -- Not basic: the closing may be skipped and the evening is still done (product rule 3).
+    minimum = false,
     seconds = case when seconds_auto and seconds = 0 then 240 else seconds end,
     hint = case
       when hint = 'Çekirdeğin kapanışına geçer.' then 'Yarının planına bak; aklında kalanları yaz.'

@@ -49,7 +49,13 @@ async function before() {
   ok(
     await db
       .from("rutin_steps")
-      .update({ active: false, phase: 2, seconds: 0, hint: "Çekirdeğin kapanışına geçer." })
+      .update({
+        active: false,
+        phase: 2,
+        minimum: true,
+        seconds: 0,
+        hint: "Çekirdeğin kapanışına geçer.",
+      })
       .eq("id", closing.id)
       .select(),
   );
@@ -69,6 +75,7 @@ describe("switching the closing step on for an existing list", () => {
     expect(step).toMatchObject({
       active: true,
       phase: 1,
+      minimum: false,
       seconds: 240,
       hint: "Yarının planına bak; aklında kalanları yaz.",
     });

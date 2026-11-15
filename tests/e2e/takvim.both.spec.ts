@@ -52,23 +52,22 @@ test("Takvim: a day's detail opens and closes; the chooser and the bars change t
   await expect(detail).toHaveCount(0);
   await expect(week).toBeVisible();
 
-  // Another day: a coming one tells it is a forecast; one gone by lists what was done.
-  const index = await boxes.evaluateAll((list) =>
-    list.findIndex((box) => box.getAttribute("aria-current") === "date"),
-  );
-  if (index < 6) {
-    await boxes.nth(index + 1).click();
-    await expect(detail).toContainText("Plan tahminidir; o sabah yeniden kurulur.");
-    await expect(detail.getByTestId("day-summary")).toContainText("vakit");
-    await detail.getByRole("button", { name: "Kapat" }).click();
-    await expect(detail).toHaveCount(0);
-  }
-  if (index > 0) {
-    await boxes.nth(index - 1).click();
-    await expect(detail.getByTestId("day-summary")).toHaveText(/^\d+ iş · /);
-    await expect(detail).not.toContainText("Plan tahminidir");
-    await detail.getByRole("button", { name: "Kapat" }).click();
-  }
+  // A coming day tells it is a forecast: any day of next week, whatever today is.
+  await page.getByRole("button", { name: "Sonraki hafta" }).click();
+  await boxes.nth(2).click();
+  await expect(detail).toContainText("Plan tahminidir; o sabah yeniden kurulur.");
+  await expect(detail.getByTestId("day-summary")).toHaveText(/ vakit$/);
+  await detail.getByRole("button", { name: "Kapat" }).click();
+  await expect(detail).toHaveCount(0);
+  // A day gone by lists what was done: any day of last week.
+  await page.getByRole("button", { name: "Önceki hafta" }).click();
+  await page.getByRole("button", { name: "Önceki hafta" }).click();
+  await boxes.nth(2).click();
+  await expect(detail.getByTestId("day-summary")).toHaveText(/^\d+ iş · /);
+  await expect(detail).not.toContainText("Plan tahminidir");
+  await detail.getByRole("button", { name: "Kapat" }).click();
+  await page.getByRole("button", { name: "Sonraki hafta" }).click();
+  await expect(label).toHaveText(thisWeek!);
 
   // The coming weeks: the one that asks too much is marked and said under the bars.
   const coming = page.getByRole("region", { name: "Önümüzdeki haftalar" });

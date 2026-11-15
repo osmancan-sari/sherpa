@@ -163,7 +163,7 @@ Duş sabaha alındığı için günün güneş kremi ve teri yüzden akşam lava
 | 2 | Diş bakımı | Ara fırça ya da ağız duşu (süresiz) · Fırçala, 2 dk sayaç, süre dolmadan geçilmez · Dil · Tükür, çalkalama; sonra yalnızca su | 3 dk | evet | evet | A6 |
 | 3 | Yüz | Nazik temizleyiciyle yıka · Nemlendirici | 3 dk | hayır | evet | A3, A7 |
 | ek | Azelaik asit (Yüz'ün eki) | `every_days` 2 | — | hayır | hayır (faz 2) | A7 |
-| 4 | Yarının listesi | çekirdeğin akşam kapanışı (`kind: closing`): adım gelince sahne kapanışı açar (`controls.closing()`); "Onayla" adımı yapılmış, "Vazgeç" geçilmiş sayar ve sahne "Telefonu salona bırak"a geçer; kapanış o gün yapıldıysa adım kendiliğinden yapılmış sayılır. İpucu "Yarının planına bak; aklında kalanları yaz." | 4 dk | evet | evet (Ç4c; kullanıcının kararı, 15 Kas 2026: kapanış akşam rutininin parçası; mevcut listede de migration ile açılır, modül sayfasından kapatılabilir) | A8 |
+| 4 | Yarının listesi | çekirdeğin akşam kapanışı (`kind: closing`): adım gelince sahne kapanışı açar (`controls.closing()`); "Onayla" adımı yapılmış, "Vazgeç" geçilmiş sayar ve sahne "Telefonu salona bırak"a geçer; kapanış o gün yapıldıysa adım kendiliğinden yapılmış sayılır. İpucu "Yarının planına bak; aklında kalanları yaz." | 4 dk | hayır (Ç4c: kapanış atlanabilir, "Vazgeç" ya da sahne hiç açılmazsa akşam yine tamam sayılır; `minimumDone` kapanış adımını hiç temel saymaz) | evet (Ç4c; kullanıcının kararı, 15 Kas 2026: kapanış akşam rutininin parçası; mevcut listede de migration ile açılır, modül sayfasından kapatılabilir) | A8 |
 | 5 | Telefonu salona bırak | Şarja tak · Çalar saati kontrol et; düğme "Yatıyorum" | 2 dk | evet | evet | A9 |
 
 ### 8.2 Sahne: adım ekranı

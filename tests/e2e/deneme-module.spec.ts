@@ -654,3 +654,32 @@ test("the modules screen lists what is switched on", async ({ page }) => {
   await main.getByRole("link", { name: "Modülleri aç, duraklat ya da arşivle" }).click();
   await expect(page).toHaveURL(/\/ayarlar\/moduller$/);
 });
+
+test("the area's page: a member's view in its panel, a failing view alone, a paused member faded (Ç4c)", async ({
+  page,
+}) => {
+  await page.goto("/ayarlar/moduller");
+  await page.getByRole("button", { name: "Deneme: etkinleştir" }).click();
+  await expect(page.getByRole("link", { name: "Deneme ayarları" })).toBeVisible();
+  await insert("deneme_items", { title: "Kısa kayıt", minutes: 30 });
+
+  await page.goto("/a/sinama");
+  await expect(page.getByRole("heading", { level: 1, name: "Sınama" })).toBeVisible();
+  const members = page.getByRole("list", { name: "Üyeler" });
+  await expect(members.getByRole("link", { name: /^Deneme/ })).toBeVisible();
+  const view = page.getByRole("region", { name: "Kayıtlar" });
+  await expect(view).toContainText("Deneme");
+  await expect(view).toContainText("Açık kayıt");
+
+  // A view that throws: its own panel says so; the page and its members stay.
+  await insert("deneme_items", { title: "Görünümü boz", minutes: 15 });
+  await expect(view.getByRole("alert")).toHaveText("Bu görünüm açılamadı.");
+  await expect(members.getByRole("link", { name: /^Deneme/ })).toBeVisible();
+
+  // Paused: faded with "duraklatıldı", its views are not drawn.
+  await page.goto("/ayarlar/moduller");
+  await page.getByRole("button", { name: "Deneme: duraklat" }).click();
+  await page.goto("/a/sinama");
+  await expect(members.getByRole("link", { name: /^Deneme/ })).toContainText("duraklatıldı");
+  await expect(page.getByRole("region", { name: "Kayıtlar" })).toHaveCount(0);
+});

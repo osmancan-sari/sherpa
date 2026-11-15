@@ -203,7 +203,7 @@ export function TimeStrip({
                   if (event.pointerType === "mouse") setHovered(null);
                 }}
                 className={cn(
-                  "text-meta absolute flex items-center overflow-hidden font-semibold whitespace-nowrap outline-none",
+                  "text-meta absolute flex items-center font-semibold whitespace-nowrap outline-none",
                   "focus-visible:shadow-focus",
                   // The touch area: at least the touch target, centred on a narrow piece.
                   "after:absolute after:left-1/2 after:w-[max(100%,var(--spacing-touch))] after:-translate-x-1/2",
@@ -226,7 +226,8 @@ export function TimeStrip({
                       : undefined,
                 }}
               >
-                {named ? <span className="truncate">{piece.label}</span> : null}
+                {/* The name is cut here, not the button: the button's touch area reaches past it. */}
+                {named ? <span className="min-w-0 flex-1 truncate">{piece.label}</span> : null}
               </button>
             );
           })}
