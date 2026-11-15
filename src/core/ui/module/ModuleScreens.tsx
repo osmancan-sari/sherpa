@@ -1,15 +1,19 @@
 "use client";
 
-import { ArrowLeft, X } from "lucide-react";
+import { ArrowLeft, ChevronRight, X } from "lucide-react";
+import type { Route } from "next";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import type { ReactNode } from "react";
 import { useRegistry } from "@/core/app/CoreProvider";
-import { type KnownModule, useModuleRows, useModules } from "@/core/app/hooks";
+import { type KnownModule, useModuleQuery, useModuleRows, useModules } from "@/core/app/hooks";
+import { moduleColor } from "@/core/contract/colors";
+import type { ChipData } from "@/core/contract/types";
+import { ListRow } from "@/core/ui/kit/ListRow";
+import { Panel } from "@/core/ui/kit/Panel";
 import { resolveModulePath } from "@/core/contract/registry";
 import { ClientOnly } from "../ClientOnly";
 import { EmptyState, PageShell } from "../PageShell";
-import { ModuleChip } from "../today/TodayScreen";
 import { useBackdrop } from "@/core/ui/sky/Backdrop";
 import { modulePageBackdrop } from "@/core/ui/sky/moduleBackdrop";
 import { ModulePageShell } from "./ModulePageShell";
@@ -19,7 +23,7 @@ import { ModuleProvider } from "./ModuleProvider";
 // its full-screen views. Every path under /m/<slug>/ belongs to the module; the core only
 // resolves it and puts the frame around it.
 
-/** /m */
+/** /m (docs/tasarim/ekranlar/moduller.md; frames MT1, MP1). */
 export function ModulesScreen() {
   return (
     <PageShell title="Modüller">
@@ -32,30 +36,59 @@ export function ModulesScreen() {
 
 function ModulesList() {
   const { modules, isLoading } = useModules();
-  const active = modules.filter(({ row }) => row.status === "active");
-  const paused = modules.filter(({ row }) => row.status === "paused");
+  const shown = [
+    ...modules.filter(({ row }) => row.status === "active"),
+    ...modules.filter(({ row }) => row.status === "paused"),
+  ];
   if (isLoading) return null;
+  // Modules of an area together in the area's panel; the others in one panel of their own.
+  const areas = new Map<string, { name: string; modules: KnownModule[] }>();
+  const loose: KnownModule[] = [];
+  for (const mod of shown) {
+    const area = mod.definition?.area;
+    if (!area) {
+      loose.push(mod);
+      continue;
+    }
+    const group = areas.get(area.slug) ?? { name: area.name, modules: [] };
+    group.modules.push(mod);
+    areas.set(area.slug, group);
+  }
   return (
     <>
-      {active.length + paused.length === 0 ? (
+      {shown.length === 0 ? (
         <EmptyState>Henüz modül yok.</EmptyState>
       ) : (
-        <div className="flex flex-col gap-2">
-          {[...active, ...paused].map((mod) => (
-            <div key={mod.row.id} className="flex items-center gap-3">
-              <ModuleChip mod={mod} />
-              {mod.row.status === "paused" ? (
-                <span className="text-muted-foreground text-sm">duraklatıldı</span>
-              ) : null}
-            </div>
+        <div className="grid items-start gap-3.5 md:grid-cols-2 md:gap-5">
+          {[...areas.values()].map((area) => (
+            <Panel
+              key={area.name}
+              variant="dense"
+              aria-label={area.name}
+              className="overflow-hidden"
+            >
+              <div className="border-line flex flex-col gap-0.5 border-b px-4 pt-3 pb-2.5">
+                <span className="panel-label text-ink">{area.name}</span>
+                <span className="text-ink-2 text-sm">
+                  {area.modules.map(({ row }) => row.name).join(" · ")}
+                </span>
+              </div>
+              {area.modules.map((mod) => (
+                <ModuleRow key={mod.row.id} mod={mod} />
+              ))}
+            </Panel>
           ))}
+          {loose.length > 0 ? (
+            <Panel variant="dense" aria-label="Modüller" className="overflow-hidden">
+              {loose.map((mod) => (
+                <ModuleRow key={mod.row.id} mod={mod} />
+              ))}
+            </Panel>
+          ) : null}
         </div>
       )}
-      <p className="text-sm">
-        <Link
-          href="/ayarlar/moduller"
-          className="text-muted-foreground underline underline-offset-4"
-        >
+      <p className="px-1 pt-1.5">
+        <Link href="/ayarlar/moduller" className="link-quiet text-note font-semibold">
           Modülleri aç, duraklat ya da arşivle
         </Link>
       </p>
@@ -63,11 +96,62 @@ function ModulesList() {
   );
 }
 
-function Message({ children }: { children: ReactNode }) {
+/** A module in the list: its colour, name and state line; a paused one is faded. */
+function ModuleRow({ mod }: { mod: KnownModule }) {
+  const chip = useModuleQuery<ChipData | null>(mod.row, ["chip"], async (ctx) =>
+    mod.definition ? mod.definition.chip(ctx) : null,
+  );
+  const paused = mod.row.status === "paused";
+  const health = chip.data && chip.data.health !== "ok" ? chip.data.health : null;
   return (
-    <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-4 px-5 py-6 md:px-10 md:py-8">
-      {children}
-    </div>
+    <ListRow
+      href={`/m/${mod.row.slug}`}
+      dot={moduleColor(mod)}
+      pending={paused}
+      title={mod.row.name}
+      subtitle={
+        <>
+          {chip.data?.text ?? null}
+          {health ? (
+            <span className={`health-${health}`}>
+              {" "}
+              · {health === "attention" ? "dikkat" : "geride"}
+            </span>
+          ) : null}
+        </>
+      }
+      trailing={
+        <>
+          {paused ? <span className="text-ink-2 text-sm">duraklatıldı</span> : null}
+          <ChevronRight aria-hidden className="text-ink-2 mx-1.5 size-4.5" />
+        </>
+      }
+    />
+  );
+}
+
+/** A module that cannot be shown: its name, one sentence in a dense panel and a link (XT10–XT13). */
+function Message({
+  title,
+  sentence,
+  link,
+}: {
+  title?: string;
+  sentence?: string;
+  link?: { href: Route; label: string };
+}) {
+  if (!title) return <div className="flex-1" />;
+  return (
+    <PageShell title={title} width="read">
+      <Panel variant="dense" className="items-start gap-3 p-4 md:p-4.5">
+        <p className="text-base">{sentence}</p>
+        {link ? (
+          <Link href={link.href} className="link-quiet text-note font-semibold">
+            {link.label}
+          </Link>
+        ) : null}
+      </Panel>
+    </PageShell>
   );
 }
 
@@ -79,27 +163,21 @@ function useNamedModule(slug: string): { mod?: KnownModule; fallback?: ReactNode
   const mod = modules.find(({ row }) => row.slug === slug);
   const definition = registry.get(slug);
 
-  if (rows.isLoading) return { fallback: <Message>{null}</Message> };
+  if (rows.isLoading) return { fallback: <Message /> };
   if (!mod || mod.row.status === "archived") {
     return {
       fallback: (
-        <Message>
-          <h1 className="text-xl font-semibold tracking-tight md:text-2xl">
-            {mod?.row.name ?? definition?.name ?? "Modül"}
-          </h1>
-          <p className="text-muted-foreground">
-            {mod
+        <Message
+          title={mod?.row.name ?? definition?.name ?? "Modül"}
+          sentence={
+            mod
               ? "Bu modül arşivde."
               : definition
                 ? "Bu modül etkin değil."
-                : "Böyle bir modül yok."}
-          </p>
-          <p>
-            <Link href="/ayarlar/moduller" className="underline underline-offset-4">
-              Modüller Ayarlar’dan açılır
-            </Link>
-          </p>
-        </Message>
+                : "Böyle bir modül yok."
+          }
+          link={{ href: "/ayarlar/moduller", label: "Modüller Ayarlar’dan açılır" }}
+        />
       ),
     };
   }
@@ -168,15 +246,11 @@ function ModuleRoute() {
 
 function NotFound({ mod }: { mod: KnownModule }) {
   return (
-    <Message>
-      <h1 className="text-xl font-semibold tracking-tight md:text-2xl">{mod.row.name}</h1>
-      <p className="text-muted-foreground">Bu modülde böyle bir sayfa yok.</p>
-      <p>
-        <Link href={`/m/${mod.row.slug}`} className="underline underline-offset-4">
-          Modül sayfasına dön
-        </Link>
-      </p>
-    </Message>
+    <Message
+      title={mod.row.name}
+      sentence="Bu modülde böyle bir sayfa yok."
+      link={{ href: `/m/${mod.row.slug}` as Route, label: "Modül sayfasına dön" }}
+    />
   );
 }
 

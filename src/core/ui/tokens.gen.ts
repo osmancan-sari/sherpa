@@ -45,6 +45,7 @@ export const TOKENS = {
   "color-edge-button": "rgba(255, 255, 255, 0.3)",
   "color-edge-quiet": "rgba(255, 255, 255, 0.16)",
   "color-edge-ai": "rgba(255, 255, 255, 0.45)",
+  "color-edge-suggestion": "rgba(255, 255, 255, 0.34)",
   "color-edge-pressed": "rgba(255, 255, 255, 0.5)",
   "color-edge-strip": "rgba(255, 255, 255, 0.18)",
   "color-edge-placeholder": "rgba(255, 255, 255, 0.4)",

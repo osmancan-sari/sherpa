@@ -3,8 +3,6 @@
 import { moduleColor } from "@/core/contract/colors";
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Sparkles } from "lucide-react";
 import { readSuggestion } from "@/core/ai/flows/enrich-apply";
 import { useConfirmSuggestion, useDismissEntry, useRouteEntry } from "@/core/app/actions";
@@ -17,8 +15,10 @@ import {
   TASK_MIN_MINUTES,
 } from "@/core/types";
 import { dayKey, formatDue, formatMinutes, istanbulInstant } from "@/lib/date";
-import { cn } from "@/lib/utils";
 import { ClientOnly } from "../ClientOnly";
+import { Button } from "../kit/Button";
+import { Chip } from "../kit/Choice";
+import { Field, Input } from "../kit/Field";
 import { EmptyState, PageShell } from "../PageShell";
 import { QuickAddButton } from "../QuickAdd";
 import { useNotify } from "../Notices";
@@ -31,7 +31,7 @@ import { LoadFailed } from "../today/TodayScreen";
 
 export function InboxScreen() {
   return (
-    <PageShell title="Gelen kutusu">
+    <PageShell title="Gelen kutusu" width="read" action={<QuickAddButton />}>
       <ClientOnly>
         <InboxBody />
       </ClientOnly>
@@ -58,9 +58,6 @@ function InboxBody() {
           ))}
         </ul>
       )}
-      <div>
-        <QuickAddButton />
-      </div>
     </>
   );
 }
@@ -132,24 +129,26 @@ function EntryRow({ entry, modules }: { entry: InboxEntry; modules: KnownModule[
   };
 
   return (
-    <li className="border-border flex flex-col gap-3 rounded-xl border p-4">
-      <p className="break-words whitespace-pre-wrap">{entry.raw_text}</p>
+    <li className="glass-dense rounded-dense flex flex-col gap-3.5 p-4 md:p-4.5">
+      <p className="text-base leading-snug break-words whitespace-pre-wrap md:text-lg">
+        {entry.raw_text}
+      </p>
 
       {mode === "idle" && entry.status === "needs_confirm" ? (
         <SuggestionCard entry={entry} modules={modules} />
       ) : null}
 
       {mode === "idle" ? (
-        <div className="flex flex-wrap gap-2">
-          <Button variant="outline" className="h-11 md:h-9" onClick={() => setMode("task")}>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button variant="secondary" size="sm" onClick={() => setMode("task")}>
             İşe çevir
           </Button>
-          <Button variant="outline" className="h-11 md:h-9" onClick={() => setMode("block")}>
+          <Button variant="secondary" size="sm" onClick={() => setMode("block")}>
             Bloğa çevir
           </Button>
           <Button
-            variant="ghost"
-            className="h-11 md:h-9"
+            variant="quiet"
+            size="sm"
             onClick={() => dismiss.mutate(entry.id)}
             aria-label={`Sil: ${entry.raw_text}`}
           >
@@ -161,105 +160,110 @@ function EntryRow({ entry, modules }: { entry: InboxEntry; modules: KnownModule[
       {mode === "task" ? (
         <div className="flex flex-col gap-3">
           {modules.length === 0 ? (
-            <p className="text-muted-foreground text-sm">
+            <p className="text-ink-2 text-note">
               İşin bir modülü olmalı.{" "}
-              <Link href="/ayarlar/moduller" className="underline underline-offset-4">
+              <Link href="/ayarlar/moduller" className="link-quiet text-ink">
                 Modüller Ayarlar’dan açılır.
               </Link>
             </p>
           ) : (
             <div role="group" aria-label="Modül" className="flex flex-wrap gap-2">
               {modules.map(({ row }) => (
-                <button
+                <Chip
                   key={row.id}
-                  type="button"
-                  aria-pressed={chosen?.row.id === row.id}
+                  selected={chosen?.row.id === row.id}
+                  dot={moduleColor({ row })}
                   onClick={() => setModuleSlug(row.slug)}
-                  className={cn(
-                    "border-border focus-visible:ring-ring/50 flex h-11 items-center gap-2 rounded-full border px-4 text-sm outline-none focus-visible:ring-3 md:h-9 md:px-3",
-                    chosen?.row.id === row.id
-                      ? "bg-foreground text-background border-transparent"
-                      : "hover:bg-muted",
-                  )}
                 >
-                  <span
-                    aria-hidden
-                    className="size-2 rounded-full"
-                    style={{ backgroundColor: moduleColor({ row }) }}
-                  />
                   {row.name}
-                </button>
+                </Chip>
               ))}
             </div>
           )}
-          <div className="flex flex-wrap items-end gap-3">
-            <Labelled label="Tarih">
-              <Input
-                type="date"
-                value={day}
-                onChange={(event) => setDay(event.target.value)}
-                className="h-11 w-44 md:h-9"
-              />
-            </Labelled>
-            <Labelled label="Süre (dk)">
-              <Input
-                type="number"
-                inputMode="numeric"
-                min={TASK_MIN_MINUTES}
-                step={5}
-                value={minutes}
-                onChange={(event) => setMinutes(event.target.value)}
-                className="h-11 w-28 md:h-9"
-              />
-            </Labelled>
-            <Button className="h-11 md:h-9" disabled={!taskReady} onClick={toTask}>
-              {overLimit ? "İş kalemi olarak kaydet" : "Kaydet"}
-            </Button>
-            <Button variant="ghost" className="h-11 md:h-9" onClick={() => setMode("idle")}>
-              Vazgeç
-            </Button>
+          <div className="grid grid-cols-[3fr_2fr] gap-3 md:flex md:flex-wrap md:items-end">
+            <Field label="Tarih" className="md:w-50">
+              {({ id }) => (
+                <Input
+                  id={id}
+                  type="date"
+                  value={day}
+                  onChange={(event) => setDay(event.target.value)}
+                />
+              )}
+            </Field>
+            <Field label="Süre (dk)" className="md:w-30">
+              {({ id }) => (
+                <Input
+                  id={id}
+                  type="number"
+                  inputMode="numeric"
+                  min={TASK_MIN_MINUTES}
+                  step={5}
+                  value={minutes}
+                  onChange={(event) => setMinutes(event.target.value)}
+                />
+              )}
+            </Field>
           </div>
           {overLimit ? (
-            <p role="note" className="text-muted-foreground text-sm">
+            <p role="note" className="text-ink-2 text-note">
               {TASK_MAX_MINUTES} dakikadan uzun iş tek oturuma sığmaz; iş kalemi olarak kaydedilir
               ve oturumlara bölünür.
             </p>
           ) : null}
+          <div className="flex flex-wrap gap-2.5">
+            <Button variant="primary" disabled={!taskReady} onClick={toTask}>
+              {overLimit ? "İş kalemi olarak kaydet" : "Kaydet"}
+            </Button>
+            <Button variant="secondary" onClick={() => setMode("idle")}>
+              Vazgeç
+            </Button>
+          </div>
         </div>
       ) : null}
 
       {mode === "block" ? (
-        <div className="flex flex-wrap items-end gap-3">
-          <Labelled label="Gün">
-            <Input
-              type="date"
-              value={blockDay}
-              onChange={(event) => setBlockDay(event.target.value)}
-              className="h-11 w-44 md:h-9"
-            />
-          </Labelled>
-          <Labelled label="Başlangıç">
-            <Input
-              type="time"
-              value={startTime}
-              onChange={(event) => setStartTime(event.target.value)}
-              className="h-11 w-32 md:h-9"
-            />
-          </Labelled>
-          <Labelled label="Bitiş">
-            <Input
-              type="time"
-              value={endTime}
-              onChange={(event) => setEndTime(event.target.value)}
-              className="h-11 w-32 md:h-9"
-            />
-          </Labelled>
-          <Button className="h-11 md:h-9" disabled={!blockReady} onClick={toBlock}>
-            Kaydet
-          </Button>
-          <Button variant="ghost" className="h-11 md:h-9" onClick={() => setMode("idle")}>
-            Vazgeç
-          </Button>
+        <div className="flex flex-col gap-3">
+          <div className="grid grid-cols-2 gap-3 md:flex md:flex-wrap md:items-end">
+            <Field label="Gün" className="col-span-2 md:w-50">
+              {({ id }) => (
+                <Input
+                  id={id}
+                  type="date"
+                  value={blockDay}
+                  onChange={(event) => setBlockDay(event.target.value)}
+                />
+              )}
+            </Field>
+            <Field label="Başlangıç" className="md:w-30">
+              {({ id }) => (
+                <Input
+                  id={id}
+                  type="time"
+                  value={startTime}
+                  onChange={(event) => setStartTime(event.target.value)}
+                />
+              )}
+            </Field>
+            <Field label="Bitiş" className="md:w-30">
+              {({ id }) => (
+                <Input
+                  id={id}
+                  type="time"
+                  value={endTime}
+                  onChange={(event) => setEndTime(event.target.value)}
+                />
+              )}
+            </Field>
+          </div>
+          <div className="flex flex-wrap gap-2.5">
+            <Button variant="primary" disabled={!blockReady} onClick={toBlock}>
+              Kaydet
+            </Button>
+            <Button variant="secondary" onClick={() => setMode("idle")}>
+              Vazgeç
+            </Button>
+          </div>
         </div>
       ) : null}
     </li>
@@ -294,44 +298,33 @@ function SuggestionCard({ entry, modules }: { entry: InboxEntry; modules: KnownM
   const reason = output.module.reason || output.target.reason;
 
   return (
-    <div className="bg-muted/40 flex flex-col gap-3 rounded-lg p-3">
+    <div className="bg-fill-box border-edge-suggestion flex flex-col gap-3 rounded-2xl border border-dashed p-3.5">
       <div className="flex flex-col gap-1">
-        <p className="flex items-center gap-1.5 text-sm">
-          <Sparkles aria-hidden className="text-muted-foreground size-3.5 shrink-0" />
+        <p className="text-note flex items-start gap-1.5">
+          <Sparkles aria-hidden className="mt-0.5 size-3.5 shrink-0" />
           <span>
-            <span className="text-muted-foreground">Öneri:</span> {parts.join(" · ")}
+            <span className="text-ink-2">Öneri:</span> {parts.join(" · ")}
           </span>
         </p>
-        {reason ? <p className="text-muted-foreground text-sm">{reason}</p> : null}
+        {reason ? <p className="text-ink-2 text-sm leading-snug">{reason}</p> : null}
       </div>
       {modules.length > 0 ? (
         <div role="group" aria-label="Önerilen modül" className="flex flex-wrap gap-2">
           {modules.map(({ row }) => (
-            <button
+            <Chip
               key={row.id}
-              type="button"
-              aria-pressed={slug === row.slug}
+              selected={slug === row.slug}
+              dot={moduleColor({ row })}
               onClick={() => setSlug(row.slug)}
-              className={cn(
-                "border-border focus-visible:ring-ring/50 flex h-11 items-center gap-2 rounded-full border px-4 text-sm outline-none focus-visible:ring-3 md:h-9 md:px-3",
-                slug === row.slug
-                  ? "bg-foreground text-background border-transparent"
-                  : "hover:bg-muted",
-              )}
             >
-              <span
-                aria-hidden
-                className="size-2 rounded-full"
-                style={{ backgroundColor: moduleColor({ row }) }}
-              />
               {row.name}
-            </button>
+            </Chip>
           ))}
         </div>
       ) : null}
       <div>
         <Button
-          className="h-11 md:h-9"
+          variant="primary"
           disabled={!chosen || confirm.isPending}
           onClick={() => {
             if (!chosen) return;
@@ -353,14 +346,5 @@ function SuggestionCard({ entry, modules }: { entry: InboxEntry; modules: KnownM
         </Button>
       </div>
     </div>
-  );
-}
-
-function Labelled({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <label className="flex flex-col gap-1.5 text-sm">
-      <span className="text-muted-foreground">{label}</span>
-      {children}
-    </label>
   );
 }

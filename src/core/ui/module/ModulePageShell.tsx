@@ -2,10 +2,9 @@
 
 import { useColors } from "@/core/app/facets";
 import { moduleColor } from "@/core/contract/colors";
-import { Check, Play } from "lucide-react";
+import { Check, ChevronLeft, Play, X } from "lucide-react";
 import Link from "next/link";
 import { useMemo } from "react";
-import { Button } from "@/components/ui/button";
 import {
   useCloseWorkItem,
   useCompleteTask,
@@ -23,7 +22,7 @@ import {
   useTasks,
   useWorkItems,
 } from "@/core/app/hooks";
-import type { ChipData, Health, ModuleReport } from "@/core/contract/types";
+import type { ChipData, ModuleReport } from "@/core/contract/types";
 import { type Candidate, minutesPerWeek, moduleUpcoming } from "@/core/today/select";
 import {
   dayKey,
@@ -34,8 +33,12 @@ import {
   shiftDay,
   weekStart,
 } from "@/lib/date";
-import { cn } from "@/lib/utils";
 import { BarChart } from "../kit";
+import { Button, buttonVariants, IconButton } from "../kit/Button";
+import { Status } from "../kit/Choice";
+import { ListRow } from "../kit/ListRow";
+import { Panel } from "../kit/Panel";
+import { HistoryLink, TabBar, TabLink } from "../kit/Tabs";
 import { SAVE_FAILED, useNotify } from "../Notices";
 import { useQuickAdd } from "../QuickAdd";
 import { sessionTargetOf } from "../today/NowCard";
@@ -47,12 +50,6 @@ import { useModule } from "./ModuleProvider";
 // The frame every module page shares (docs/05-arayuz.md, "Modül sayfası iskeleti"). Five
 // regions, always in this order; the module fills them and is free inside the body.
 //   1. status strip   2. upcoming   3. body (tabs)   4. history and trend   5. entry and settings
-
-const HEALTH_LABEL: Record<Health, string> = {
-  ok: "yolunda",
-  attention: "dikkat",
-  behind: "geride",
-};
 
 function shortDay(day: string): string {
   return new Intl.DateTimeFormat("tr-TR", { day: "numeric", month: "short" }).format(
@@ -67,66 +64,71 @@ export function ModulePageShell({ mod, tabKey }: { mod: KnownModule; tabKey: str
   const Body = active?.component;
   const History = definition?.ui.history;
 
+  // The five regions (docs/tasarim/ekranlar/moduller.md). The phone reads them in the order
+  // 1, 2, 3, 5, 4; the board puts the tab row across, the body and the entries on the left, the
+  // upcoming work and the history on the right.
   return (
-    <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 px-5 py-6 md:px-10 md:py-8">
+    <div className="flex w-full flex-1 flex-col gap-3.5 px-4 pt-3.5 pb-6 md:gap-4 md:px-10 md:pt-6">
       <StatusStrip mod={mod} />
-      <Upcoming mod={mod} />
-
-      <section aria-label="Gövde" className="flex flex-col gap-4">
+      <div className="flex flex-col gap-3.5 md:grid md:grid-cols-[minmax(0,5fr)_minmax(0,4fr)] md:items-start md:gap-x-5 md:gap-y-4">
+        <div className="md:col-start-2 md:row-start-2">
+          <Upcoming mod={mod} />
+        </div>
         {tabs.length > 1 ? (
-          <nav aria-label="Sekmeler" className="border-border flex gap-1 overflow-x-auto border-b">
-            {tabs.map((tab) => {
-              const current = tab.key === active?.key;
-              return (
-                <Link
+          <div className="flex items-center gap-2.5 md:col-span-2 md:row-start-1">
+            <TabBar label="Sekmeler" className="min-w-0">
+              {tabs.map((tab) => (
+                <TabLink
                   key={tab.key}
                   href={tab.key === tabs[0].key ? `/m/${row.slug}` : `/m/${row.slug}/${tab.key}`}
-                  aria-current={current ? "page" : undefined}
-                  className={cn(
-                    "focus-visible:ring-ring/50 -mb-px flex min-h-11 items-center border-b-2 px-3 text-sm whitespace-nowrap outline-none focus-visible:ring-3 md:min-h-9",
-                    current
-                      ? "border-foreground font-medium"
-                      : "text-muted-foreground hover:text-foreground border-transparent",
-                  )}
+                  selected={tab.key === active?.key}
                 >
                   {tab.label}
-                </Link>
-              );
-            })}
-          </nav>
+                </TabLink>
+              ))}
+            </TabBar>
+            <HistoryLink href="#gecmis" className="ml-auto">
+              Geçmiş
+            </HistoryLink>
+          </div>
         ) : null}
-        {Body ? (
-          <Body params={{}} />
-        ) : (
-          <p className="text-muted-foreground text-sm">Bu modülün kendi görünümü yok.</p>
-        )}
-      </section>
-
-      <section aria-label="Geçmiş ve gidişat" className="flex flex-col gap-3">
-        <RegionTitle>Geçmiş</RegionTitle>
-        {History ? <History /> : <WeeklyMinutes mod={mod} />}
-      </section>
-
-      <EntryAndSettings mod={mod} />
+        <section
+          aria-label="Gövde"
+          className="flex min-w-0 flex-col gap-4 md:col-start-1 md:row-start-2"
+        >
+          {Body ? (
+            <Body params={{}} />
+          ) : (
+            <p className="text-ink-2 text-base">Bu modülün kendi görünümü yok.</p>
+          )}
+        </section>
+        <div className="md:col-start-1 md:row-start-3">
+          <EntryAndSettings mod={mod} />
+        </div>
+        <Panel
+          id="gecmis"
+          variant="dense"
+          label="Geçmiş · son 8 hafta"
+          aria-label="Geçmiş ve gidişat"
+          className="scroll-mt-6 pb-4 md:col-start-2 md:row-start-3"
+        >
+          <div className="px-4 md:px-4.5">
+            {History ? <History /> : <WeeklyMinutes mod={mod} />}
+          </div>
+        </Panel>
+      </div>
     </div>
   );
 }
 
-function RegionTitle({ children }: { children: React.ReactNode }) {
-  return (
-    <h2 className="text-muted-foreground text-xs font-medium tracking-widest uppercase">
-      {children}
-    </h2>
-  );
-}
-
-/** Region 1: one sentence of status, its health, the week's numbers; quick actions beside it. */
+/** Region 1: the name and one line of status, its health, the week's numbers; quick actions. */
 function StatusStrip({ mod }: { mod: KnownModule }) {
   const { row, definition } = mod;
   const { ctx } = useModule();
   const now = useNow();
   const notify = useNotify();
   const refreshAll = useRefreshAll();
+  const quickAdd = useQuickAdd();
   const week = useMemo(() => {
     const from = weekStart(dayKey(now));
     return { from, to: shiftDay(from, 6) };
@@ -150,66 +152,76 @@ function StatusStrip({ mod }: { mod: KnownModule }) {
     }
   };
 
+  const health = chip.data && chip.data.health !== "ok" ? chip.data.health : null;
+  const line = [
+    definition?.area?.name,
+    row.status === "paused" ? "Duraklatıldı" : null,
+    chip.data?.text,
+  ]
+    .filter(Boolean)
+    .join(" · ");
+
   return (
-    <section aria-label="Durum" className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div className="flex flex-col gap-1">
-          <h1 className="flex items-center gap-3 text-xl font-semibold tracking-tight md:text-2xl">
+    <section aria-label="Durum" className="flex flex-col gap-3.5 md:gap-4">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+        <div className="flex min-w-0 flex-1 items-center gap-2">
+          <Link
+            href="/m"
+            aria-label="Modüller"
+            className="size-touch focus-visible:shadow-focus -ml-2.5 flex shrink-0 items-center justify-center rounded-full outline-none md:hidden"
+          >
+            <ChevronLeft aria-hidden className="size-5.5" />
+          </Link>
+          <h1 className="text-title tracking-title flex min-w-0 items-center gap-2.5 font-bold md:text-3xl">
             <span
               aria-hidden
-              className="size-3 rounded-full"
+              className="size-3 shrink-0 rounded-full"
               style={{ backgroundColor: moduleColor(mod) }}
             />
-            {row.name}
+            <span className="truncate">{row.name}</span>
           </h1>
-          <p className="text-muted-foreground min-h-5 text-sm md:text-base">
-            {row.status === "paused" ? "Duraklatıldı · " : ""}
-            {chip.data?.text}
-            {chip.data && chip.data.health !== "ok" ? (
-              <span className={cn("ml-2 text-xs", `health-${chip.data.health}`)}>
-                {HEALTH_LABEL[chip.data.health]}
-              </span>
-            ) : null}
-          </p>
+          <p className="text-ink-2 text-note hidden min-w-0 truncate md:block">{line}</p>
+          {health ? <Status health={health} /> : null}
         </div>
-
-        {definition && (definition.ui.actions?.length || definition.ui.fullscreen?.length) ? (
-          <div role="toolbar" aria-label="Hızlı eylemler" className="flex flex-wrap gap-2">
-            {(definition.ui.actions ?? []).map((action) => (
-              <Button
-                key={action.key}
-                variant="outline"
-                className="h-11 md:h-9"
-                onClick={() => void run(action)}
-              >
-                {action.label}
-              </Button>
-            ))}
-            {(definition.ui.fullscreen ?? []).map((view) => (
-              <Link
-                key={view.key}
-                href={`/m/${row.slug}/tam/${view.key}`}
-                className="border-border hover:bg-muted focus-visible:ring-ring/50 flex h-11 items-center rounded-lg border px-2.5 text-sm font-medium outline-none focus-visible:ring-3 md:h-9"
-              >
-                {view.label}
-              </Link>
-            ))}
-          </div>
-        ) : null}
+        <Button size="sm" onClick={() => quickAdd.open({ moduleSlug: row.slug })}>
+          İş ekle
+        </Button>
       </div>
+      {line ? <p className="text-ink-2 -mt-2 text-sm md:hidden">{line}</p> : null}
+
+      {definition && (definition.ui.actions?.length || definition.ui.fullscreen?.length) ? (
+        <div role="toolbar" aria-label="Hızlı eylemler" className="flex flex-wrap gap-2">
+          {(definition.ui.actions ?? []).map((action) => (
+            <Button key={action.key} size="sm" onClick={() => void run(action)}>
+              {action.label}
+            </Button>
+          ))}
+          {(definition.ui.fullscreen ?? []).map((view) => (
+            <Link
+              key={view.key}
+              href={`/m/${row.slug}/tam/${view.key}`}
+              className={buttonVariants({ variant: "secondary", size: "sm" })}
+            >
+              {view.label}
+            </Link>
+          ))}
+        </div>
+      ) : null}
 
       {report.data && report.data.metrics.length > 0 ? (
-        <dl aria-label="Bu hafta" className="flex flex-wrap gap-x-8 gap-y-2">
-          {report.data.metrics.map((metric) => (
-            <div key={metric.label} className="flex flex-col">
-              <dt className="text-muted-foreground text-xs">{metric.label}</dt>
-              <dd className="text-lg font-medium tabular-nums">{metric.value}</dd>
-            </div>
-          ))}
-        </dl>
+        <Panel variant="dense" className="px-4 py-3.5 md:px-6">
+          <dl aria-label="Bu hafta" className="flex flex-wrap gap-x-8 gap-y-2.5">
+            {report.data.metrics.map((metric) => (
+              <div key={metric.label} className="flex flex-col gap-0.5">
+                <dt className="text-ink-2 text-sm">{metric.label}</dt>
+                <dd className="text-section font-bold tabular-nums">{metric.value}</dd>
+              </div>
+            ))}
+          </dl>
+        </Panel>
       ) : null}
       {report.data?.suggestions.slice(0, 2).map((suggestion) => (
-        <p key={suggestion} className="text-muted-foreground text-sm">
+        <p key={suggestion} className="text-ink-2 text-note">
           {suggestion}
         </p>
       ))}
@@ -242,13 +254,14 @@ function Upcoming({ mod }: { mod: KnownModule }) {
   const loading = [tasks, workItems, rhythms, rhythmLogs].some((query) => query.isLoading);
 
   return (
-    <section aria-label="Yaklaşanlar" className="flex flex-col gap-3">
-      <RegionTitle>Yaklaşanlar</RegionTitle>
-      <SplitSuggestions moduleId={mod.row.id} />
+    <Panel variant="dense" label="Yaklaşanlar" className="pb-1.5">
+      <div className="px-4 empty:hidden md:px-4.5">
+        <SplitSuggestions moduleId={mod.row.id} />
+      </div>
       {loading ? null : list.length === 0 ? (
-        <p className="text-muted-foreground text-sm">Bu modülde sırada iş yok.</p>
+        <p className="text-ink-2 px-4 pb-3 text-base md:px-4.5">Bu modülde sırada iş yok.</p>
       ) : (
-        <ul className="divide-border border-border divide-y rounded-xl border">
+        <ul>
           {list.map((candidate) => (
             <UpcomingRow
               key={`${candidate.type}-${candidate.id}`}
@@ -258,7 +271,7 @@ function Upcoming({ mod }: { mod: KnownModule }) {
           ))}
         </ul>
       )}
-    </section>
+    </Panel>
   );
 }
 
@@ -282,75 +295,69 @@ function UpcomingRow({ candidate, now }: { candidate: Candidate; now: Date }) {
     candidate.task?.status === "waiting" ? "bekliyor" : null,
   ].filter(Boolean);
 
+  const waiting = candidate.task?.status === "waiting";
   return (
-    <li className="flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-2.5">
-      <span
-        aria-hidden
-        data-testid="work-dot"
-        className="size-2.5 shrink-0 rounded-full"
-        style={{ backgroundColor: colors.of(candidate.moduleId, candidate) }}
-      />
-      <div className="min-w-0 flex-1 basis-48">
-        <p className="truncate font-medium">{candidate.title}</p>
-        <p className="text-muted-foreground truncate text-sm tabular-nums">{parts.join(" · ")}</p>
-      </div>
-      <div className="flex shrink-0 items-center gap-1">
-        {(candidate.task ?? candidate.item) ? (
-          <AiBadge row={(candidate.task ?? candidate.item)!} align="right" />
-        ) : null}
-        <EditWorkButton candidate={candidate} />
-        <Button
-          variant="ghost"
-          className="size-11 md:size-9"
-          aria-label={`Başla: ${candidate.title}`}
-          title="Başla"
-          onClick={() => start.mutate(sessionTargetOf(candidate))}
-        >
-          <Play aria-hidden />
-        </Button>
-        {candidate.type === "task" ? (
-          <Button
-            variant="ghost"
-            className="size-11 md:size-9"
-            aria-label={`Bitti: ${candidate.title}`}
-            title="Bitti"
-            onClick={() => complete.mutate(candidate.id)}
-          >
-            <Check aria-hidden />
-          </Button>
-        ) : null}
-        {candidate.type === "rhythm" ? (
-          <Button
-            variant="ghost"
-            className="size-11 md:size-9"
-            aria-label={`Yapıldı: ${candidate.title}`}
-            title="Yapıldı"
-            onClick={() => logRhythm.mutate(candidate.id)}
-          >
-            <Check aria-hidden />
-          </Button>
-        ) : null}
-        {candidate.type === "item" ? (
+    <li className="border-line border-t">
+      <ListRow
+        dot={colors.of(candidate.moduleId, candidate)}
+        dotTestId="work-dot"
+        pending={waiting}
+        title={candidate.title}
+        titleProps={{ className: "truncate" }}
+        subtitle={<span className="tabular-nums">{parts.join(" · ")}</span>}
+        className="border-b-0 md:pl-4.5"
+        trailing={
           <>
-            <Button
-              variant="outline"
-              className="h-11 md:h-9"
-              aria-label={`Kalemi bitir: ${candidate.title}`}
-              onClick={() => closeItem.mutate({ itemId: candidate.id, result: "done" })}
+            {(candidate.task ?? candidate.item) ? (
+              <AiBadge row={(candidate.task ?? candidate.item)!} align="right" />
+            ) : null}
+            <IconButton
+              label={`Başla: ${candidate.title}`}
+              title="Başla"
+              onClick={() => start.mutate(sessionTargetOf(candidate))}
             >
-              Bitti
-            </Button>
-            <Button
-              variant="ghost"
-              className="h-11 md:h-9"
-              aria-label={`Kalemi bırak: ${candidate.title}`}
-              onClick={() => closeItem.mutate({ itemId: candidate.id, result: "dropped" })}
-            >
-              Bırak
-            </Button>
+              <Play aria-hidden />
+            </IconButton>
+            {candidate.type === "task" ? (
+              <IconButton
+                label={`Bitti: ${candidate.title}`}
+                title="Bitti"
+                onClick={() => complete.mutate(candidate.id)}
+              >
+                <Check aria-hidden />
+              </IconButton>
+            ) : null}
+            {candidate.type === "rhythm" ? (
+              <IconButton
+                label={`Yapıldı: ${candidate.title}`}
+                title="Yapıldı"
+                onClick={() => logRhythm.mutate(candidate.id)}
+              >
+                <Check aria-hidden />
+              </IconButton>
+            ) : null}
+            {candidate.type === "item" ? (
+              <>
+                <IconButton
+                  label={`Kalemi bitir: ${candidate.title}`}
+                  title="Bitti"
+                  onClick={() => closeItem.mutate({ itemId: candidate.id, result: "done" })}
+                >
+                  <Check aria-hidden />
+                </IconButton>
+                <IconButton
+                  label={`Kalemi bırak: ${candidate.title}`}
+                  title="Bırak"
+                  onClick={() => closeItem.mutate({ itemId: candidate.id, result: "dropped" })}
+                >
+                  <X aria-hidden />
+                </IconButton>
+              </>
+            ) : null}
+            <EditWorkButton candidate={candidate} />
           </>
-        ) : null}
-      </div>
+        }
+      />
     </li>
   );
 }
@@ -368,7 +375,7 @@ function WeeklyMinutes({ mod }: { mod: KnownModule }) {
     [sessions.data, mod.row.id, now],
   );
   if (data.every((week) => week.value === 0)) {
-    return <p className="text-muted-foreground text-sm">Son 8 haftada kayıtlı oturum yok.</p>;
+    return <p className="text-ink-2 text-base">Son 8 haftada kayıtlı oturum yok.</p>;
   }
   return (
     <BarChart
@@ -385,34 +392,28 @@ function EntryAndSettings({ mod }: { mod: KnownModule }) {
   const quickAdd = useQuickAdd();
   const { row, definition } = mod;
   return (
-    <section aria-label="Giriş ve ayarlar" className="flex flex-col gap-3">
-      <RegionTitle>Giriş ve ayarlar</RegionTitle>
-      <div className="flex flex-wrap gap-2">
-        <Button
-          variant="outline"
-          className="h-11 md:h-9"
-          onClick={() => quickAdd.open({ moduleSlug: row.slug })}
-        >
+    <Panel variant="dense" label="Giriş ve ayarlar" className="gap-3 pb-4">
+      <div className="flex flex-wrap gap-2 px-4 md:px-4.5">
+        <Button size="sm" onClick={() => quickAdd.open({ moduleSlug: row.slug })}>
           İş ekle
         </Button>
         {(definition?.intake ?? []).map((type) => (
           <Button
             key={type.key}
-            variant="outline"
-            className="h-11 md:h-9"
+            size="sm"
             onClick={() => quickAdd.open({ moduleSlug: row.slug, intakeKey: type.key })}
           >
             {type.label} ekle
           </Button>
         ))}
         <AddRhythmButton moduleId={row.id} />
-        <Link
-          href={`/ayarlar/moduller/${row.slug}`}
-          className="text-muted-foreground hover:text-foreground focus-visible:ring-ring/50 flex h-11 items-center rounded-lg px-2.5 text-sm underline-offset-4 outline-none hover:underline focus-visible:ring-3 md:h-9"
-        >
-          Modül ayarları
-        </Link>
       </div>
-    </section>
+      <Link
+        href={`/ayarlar/moduller/${row.slug}`}
+        className="link-quiet text-note mx-4 w-fit font-semibold md:mx-4.5"
+      >
+        Modül ayarları
+      </Link>
+    </Panel>
   );
 }

@@ -1,20 +1,41 @@
 import type { ReactNode } from "react";
+import { cn } from "@/lib/utils";
 
-/** Common frame of a screen: a title and the content under it. */
-export function PageShell({ title, children }: { title: string; children: ReactNode }) {
+// The frame of a list screen (docs/tasarim/ekranlar/menu.md, "Sayfa başlığı"): the title, an
+// action at its right on the board, and the content under it on the calm backdrop.
+
+const WIDTH = {
+  /** One column of cards (Gelen kutusu). */
+  read: "md:max-w-read",
+  /** Lists and panels side by side (Modüller). */
+  board: "md:max-w-board",
+  full: "",
+} as const;
+
+export function PageShell({
+  title,
+  action,
+  width = "board",
+  children,
+}: {
+  title: string;
+  /** At the title's right on the board ("+ Yeni giriş"). */
+  action?: ReactNode;
+  width?: keyof typeof WIDTH;
+  children: ReactNode;
+}) {
   return (
-    <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 px-5 py-6 md:px-10 md:py-8">
-      <h1 className="text-xl font-semibold tracking-tight md:text-2xl">{title}</h1>
-      {children}
+    <div className="flex w-full flex-1 flex-col gap-3.5 px-4 pt-4.5 pb-6 md:gap-4 md:px-10 md:pt-6">
+      <header className={cn("flex items-center gap-3 px-1 md:px-0", WIDTH[width])}>
+        <h1 className="text-title tracking-title flex-1 font-bold md:text-3xl">{title}</h1>
+        {action ? <div className="hidden md:block">{action}</div> : null}
+      </header>
+      <div className={cn("flex flex-col gap-3.5 md:gap-4", WIDTH[width])}>{children}</div>
     </div>
   );
 }
 
 /** What a screen shows while it has nothing to show. One plain sentence, nothing to feel bad about. */
 export function EmptyState({ children }: { children: ReactNode }) {
-  return (
-    <p className="border-border text-muted-foreground rounded-xl border border-dashed px-5 py-10 text-center text-sm">
-      {children}
-    </p>
-  );
+  return <p className="text-ink-2 p-1 text-base">{children}</p>;
 }

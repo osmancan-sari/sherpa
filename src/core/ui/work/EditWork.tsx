@@ -28,6 +28,7 @@ import { dayKey } from "@/lib/date";
 import { aiHints } from "../ai/AiMarks";
 import { SplitButton } from "../ai/Splits";
 import { EditDialog, type EditField, type EditValues } from "../EditDialog";
+import { IconButton } from "../kit/Button";
 import { TimingSection, useTimingDraft } from "./TimingSection";
 
 // Changing work by hand: a task, a work item or a rhythm. What the user sets here is the
@@ -240,15 +241,13 @@ export function EditWorkButton({ candidate }: { candidate: Candidate }) {
 
   return (
     <>
-      <Button
-        variant="ghost"
-        className="size-11 md:size-9"
-        aria-label={`Düzenle: ${candidate.title}`}
+      <IconButton
+        label={`Düzenle: ${candidate.title}`}
         title="Düzenle"
         onClick={() => setOpen(true)}
       >
         <Pencil aria-hidden />
-      </Button>
+      </IconButton>
       {open && candidate.task ? <TaskEditor task={candidate.task} onClose={close} /> : null}
       {open && candidate.type === "item" && candidate.item ? (
         <ItemEditor item={candidate.item} onClose={close} />
@@ -439,7 +438,7 @@ export function AddRhythmButton({ moduleId }: { moduleId: string }) {
   const add = useAddRhythm();
   return (
     <>
-      <Button variant="outline" className="h-11 md:h-9" onClick={() => setOpen(true)}>
+      <Button size="sm" onClick={() => setOpen(true)}>
         Ritim ekle
       </Button>
       {open ? (

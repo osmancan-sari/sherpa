@@ -18,6 +18,7 @@ export function ListRow({
   onClick,
   className,
   titleProps,
+  dotTestId = "color-dot",
   ...props
 }: {
   /** The work's or the module's colour: a 9 px dot before the text. */
@@ -34,13 +35,14 @@ export function ListRow({
   onClick?: () => void;
   className?: string;
   titleProps?: ComponentProps<"span">;
+  dotTestId?: string;
 } & Omit<ComponentProps<"div">, "title" | "onClick">) {
   const body = (
     <>
       {dot ? (
         <span
           aria-hidden
-          data-testid="color-dot"
+          data-testid={dotTestId}
           className="size-2.25 shrink-0 rounded-full"
           style={{ backgroundColor: dot }}
         />
