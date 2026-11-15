@@ -102,7 +102,8 @@ test("Takvim: a week asking more than its time says so, and what may not make it
   await insert("work_items", {
     module_id: okul.id,
     title: "Büyük teslim",
-    effort_total_minutes: 90 * 60,
+    // More than a whole week holds, on any day of it (a Monday has about 107 hours).
+    effort_total_minutes: 200 * 60,
     // Due within the week whatever its day (the run's moment is 10:00 at the latest).
     due_at: runAt(60),
   });

@@ -476,10 +476,13 @@ test("Yatıyorum writes the bedtime, İyi geceler stays after a reload, Geri al 
   // The sleep plan's waking (the day's keeper writes its own over the one put here).
   await expect(tomorrowBox).toContainText(/Uyanış\d\d:\d\d/);
   await expect(tomorrowBox).toContainText(/yaklaşık \d/);
-  const [day] = await waitFor(
-    () => rows("days"),
-    (list) => list.some((row) => row.bed_at !== null),
-  );
+  // The row with the bedtime (after midnight more than one day's row is there).
+  const day = (
+    await waitFor(
+      () => rows("days"),
+      (list) => list.some((row) => row.bed_at !== null),
+    )
+  ).find((row) => row.bed_at !== null)!;
   expect(day.bed_session_id).not.toBeNull();
   await waitFor(open, (list) => list.length === 0);
   // The page wrote the bedtime on the run's clock (tests/e2e/clock.ts); the database judges the
