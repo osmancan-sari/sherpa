@@ -5,7 +5,7 @@ Bu dosyayı Claude Code günceller. Yeni bir oturum yalnızca bu dosyayı ve `pr
 ## Durum
 
 - Faz: **Ç4c. Bugün, Takvim, kapanış ve alan sayfası** (15 Kas 2026; istem `prompts/c4c-bugun-takvim-kapanis.md`). Ç4b (`c4b-tamam`) yayında
-- Adım: 7 (kapanış) bitti: üç adım denetimi ve iki tur faz denetimi (GEÇMEDİ, GEÇTİ); `check:full` yeşil; görüntüler `docs/ekran-goruntuleri/c4c/`; `c4c-tamam`. Yayın senin izninle ("Senden bekleyenler" → Ç4c yayını)
+- Adım: 7 (kapanış) bitti: üç adım denetimi ve iki tur faz denetimi (GEÇMEDİ, GEÇTİ); `check:full` yeşil (`c80f7ba`, 610 / 304 / 279); görüntüler `docs/ekran-goruntuleri/c4c/`; `c4c-tamam`. Yayın senin izninle ("Senden bekleyenler" → Ç4c yayını)
 - Son commit: faz denetimi tur 2'nin düzeltmeleri
 
 ### Ç4c planı
@@ -21,7 +21,7 @@ Bu dosyayı Claude Code günceller. Yeni bir oturum yalnızca bu dosyayı ve `pr
 | 4 | Kapanış: sahnede (`controls.closing()` sonucunu döndürür), `/kapanis` ve Bugün'deki "Günü kapat" kalkar; sözleşme `hostsClosing`; barındıran modül yoksa akşam kartında "Kapanış" ve standart sahne kabuğu; Rutin'in "Yarının listesi" adımı açık (migration ile mevcut kullanıcıda da); `rutin.md`; adım denetimi (kapanış) | bitti (`88ea999`; `20261116090000_rutin_closing_step_on.sql`): `ClosingShell`, `closing-host.ts`, Rutin `hostsClosing` ve sahnede kapanış adımı, `deneme` örneği; testler `registry.test.ts` +2, `flow.test.ts` (Rutin), `rutin.test.ts` (db), `rutin.spec.ts` +1, `day-screens.spec.ts`; adım denetimi GEÇMEDİ, düzeltildi (`cfad191`) |
 | 5 | Alan sayfası: `/a/<alan>` kabuğu, üye panelleri, sözleşmede `ui.areaViews`, Rutin'in örneği; Modüller'de "Alan sayfası", modül sayfasında alanın bağlantısı | bitti (`55204b3`): `AreaScreen.tsx`, Rutin `BasicStepsView`; `rutin.spec.ts` +1; dokümanlar (`docs/05`, `06`, `09`, `rutin.md`, `docs/tasarim`) |
 | 6 | Ayarlar'da kalanlar (`ayarlar.md` ile ayrışanlar) | bitti (`030699a`): Günün çerçevesi satır düzeninde, yapay zekanın aylık çubuğu |
-| 7 | Görsel denetim, ekran görüntüleri (`docs/ekran-goruntuleri/c4c/`), karelerle karşılaştırma, `docs/05`, `check:full`, faz denetimi, rapor, `c4c-tamam`; yayın senin izninle | bitti: görsel denetim (33 onaylı görüntü), görüntüler, karşılaştırma, rapor; faz denetimi iki tur (GEÇMEDİ, GEÇTİ); `check:full` yeşil; `c4c-tamam`. Yayın iznini bekliyor |
+| 7 | Görsel denetim, ekran görüntüleri (`docs/ekran-goruntuleri/c4c/`), karelerle karşılaştırma, `docs/05`, `check:full`, faz denetimi, rapor, `c4c-tamam`; yayın senin izninle | bitti: görsel denetim (33 onaylı görüntü), görüntüler, karşılaştırma, rapor; faz denetimi iki tur (GEÇMEDİ, GEÇTİ); `check:full` yeşil (610 / 304 / 279); `c4c-tamam`. Yayın iznini bekliyor |
 
 ### Çekirdek ekranlarının cam tasarım oturumu (14–15 Kas 2026)
 
