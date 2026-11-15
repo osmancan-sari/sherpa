@@ -34,6 +34,8 @@ Sherpa adlı kişisel planlama uygulamam için **<modül adı>** modülünü tas
 
 Başlamadan önce `docs/moduller/ORTAK.md` dosyasını oku ve oradaki kararları bu modüle uygula; oturumun sonunda bu modülde alınan ve öbür modüller için de geçerli olan yeni kararları o dosyaya ekle. Ekranları çizerken bir akışın her adımını ve modül sayfasının açılan her ekranını göster.
 
+**Tasarım depoda yaşar (15 Kas 2026).** Pano taslak ve onay aşamasıdır. Kullanıcı bir ekranı onaylayınca: (1) onaylı karelerin kaynak dosyalarını `docs/tasarim/kareler/<modül>/` altına kopyala ve `DIZIN.md`'ye ekle; (2) `docs/tasarim/ekranlar/<modül>-*.md` dosyasını yaz (düzen, durumlar, kare adları; değer değil token adı); (3) yeni bir ortak parça gerekiyorsa `docs/tasarim/parcalar.md`'ye öneri olarak yaz. Çizime başlamadan önce `docs/tasarim/` ve galerinin bugünkü halini oku; eski panodan değil depodan başla. Geçersiz kalan kareyi panoda ve depoda bırakma.
+
 Kurallar: sabit haftalık program önerme; ölçülemeyen durumu takip ettirme; oyunlaştırma ekleme; modülün iki hafta kullanılmadan büyütülmesini önerme.
 
 ---

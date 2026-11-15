@@ -5,7 +5,7 @@
 - **Sakin ve net.** Ekran gün boyu göz ucunda durur; dikkat çekmek için değil, bakıldığında cevap vermek için vardır. Hareketli öğe, rozet, bildirim balonu yok.
 - **Tek odak.** Bugün ekranında en büyük öğe her zaman "şimdi" kartıdır. Geri kalan her şey ikincildir.
 - **Yoğun ama okunur.** Modül sayfaları veri yoğundur (tablolar, zaman çizelgesi); Bugün ekranı seyrektir.
-- **Açık ve koyu tema.** İkinci ekranda koyu tema varsayılan; gece durumunda parlaklık daha da düşer.
+- **Cam dili, tek renk sistemi** (14–15 Kas 2026; kurulmadı). Bütün ekranlar cam panellerdir; her saatte koyu cam ve açık metin, açık / koyu tema seçimi yok. Bugün, sahne ve giriş ekranında zemin günün saatine göre gökyüzüdür; öbür ekranlarda aynı saatin sakin zemini. Gece durumunda ekran karartılır. Ölçüler, parçalar ve bütün ekranların çizimi: `docs/13-cam-dili.md`. **O dosya bu dokümandan ayrıldığı yerlerde geçerlidir** (bölüm 6: üst satır, hayat modu, bağlam, bitiş saati, "Vakit kalırsa", günün 3 işi, Takvim, kapanış, Ayarlar); bu doküman kurulu olan hali anlatır ve kurulum fazında güncellenir.
 - **Renk anlam taşır.** Her modülün bir rengi vardır; bölümü olan modülde her bölümün (Okul içinde her dersin, rutinde sabahın ve akşamın) kendi rengi. Renkleri kullanıcı Ayarlar'dan değiştirir (Ç3e, aşağıda "Renkler ve bölümler"). Durum renkleri yalnızca üç anlam için kullanılır: yolunda, dikkat, geride. Kırmızı "gecikti" etiketi yoktur.
 - **Tipografi.** Şimdi kartının başlığı ekranın en büyük yazısıdır ve masadan bir bakışta okunur.
 
@@ -90,10 +90,10 @@ Geniş ekranda tek sayfa, kaydırma yok:
 - **Devam ediyor musun?** Oturum tahminin iki katını geçince kart sorar; "Devam ediyorum" cevabı oturumda saklanır (`sessions.confirmed_at`, her ekran bilir) ve soru bir tahmin süresi sonra yeniden gelir. 30 dakika cevap gelmezse oturum tahmini sürede bitmiş sayılarak kapatılır, ölçülmez (`close_unanswered_session`).
 - **Takıldım → Adımı küçült** aynı modülde (kalemin oturumuysa aynı kalemde) bugüne 15 dakikalık bir iş açar; **Birini bekliyorum** işi (oturumsa kalemiyle birlikte) bekletir, takip üç gün sonra gelir; **Bugün değil** ertelemedir.
 - **Takip** günü gelen bekleyen iş kartta "… bekleniyor. Takip et." olarak çıkar: Cevap geldi, Hâlâ bekliyor.
-- **Sıradakiler** sonraki üç atamadır; kalanı ve sığmayanlar "Vakit kalırsa" altında kapalı durur. Gün tamamlanınca planda kalanlar da oraya geçer.
+- **Sıradakiler** sonraki üç atamadır; kalanı ve sığmayanlar "Vakit kalırsa" altında kapalı durur. Gün tamamlanınca planda kalanlar da oraya geçer. **14 Kas 2026 kararı (kurulmadı):** "Vakit kalırsa" kalkar; Sıradakiler günün kalan planıdır (`docs/09-kararlar.md`).
 - **Gece** büyük saat ve "Yarın ilk iş: …"; **geri dönüş** "Kaldığın yerden devam", günün üç işi ve Başla. İkisinde de ekran sakindir: sıradakiler, "vakit kalırsa", günün şeridi, sabit bloklar ve uyarılar gösterilmez.
 - Alt satırda **X dk'm var** (`X`) ve **Yeniden planla** (`R`); Yeniden planla günün üç işinin bitmiş olanlarını tutar, kalanını yeniden seçer (yapay zeka açıkken 7. adımda `replan`).
-- **TopBar:** tarih ve saat, "Bugün n/3", bitiş çizgisi, hayat modu (Hafta'ya bağlantı), telefonda bağlam seçici (cihazda saklanır).
+- **TopBar:** tarih ve saat, "Bugün n/3", bitiş çizgisi, hayat modu (Hafta'ya bağlantı), telefonda bağlam seçici (cihazda saklanır). **14 Kas 2026 kararı (kurulmadı):** üst satır yalnızca başlık ve tarihe iner; ilerleme, bitiş, uyanış ve yatış, hayat modu ve bağlam seçici kalkar (`docs/13-cam-dili.md` 4.1, `docs/09-kararlar.md`).
 - **DayStrip:** günün başından bitiş çizgisine şerit; sabit bloklar gri, atanan işler işin rengiyle (Ç3e'den beri bölümün rengi; "Renkler ve bölümler"), şimdiki an çizgisi. Telefonda yana kayar.
 - **AlertBar:** en çok iki uyarı; son tarih ve taban uyarısında "Haftaya bak", öbürlerinde "Modüle git".
 
@@ -238,6 +238,8 @@ Yönlendirilmemiş girişlerin listesi. Her satırda: metin, önerilen modül (v
 
 ## Hafta
 
+**15 Kas 2026 kararı (kurulmadı):** bu ekranın adı "Takvim" olur ve baştan tasarlanır; yeni içerik `docs/13-cam-dili.md` bölüm 4.3'tedir. Aşağıdaki metin kurulu olan hali anlatır.
+
 - Üstte 7 günlük şerit: her gün için sabit bloklar ve kullanılabilir süre.
 - Altında kapasite çubuğu: haftanın kullanılabilir süresi ile modüllerin istediği sürenin karşılaştırması, modül renkleriyle yığılmış. Talep kapasiteyi aşıyorsa hangi son tarihlerin tehlikede olduğu listelenir.
 - Hayat modu seçimi burada yapılır (tarih aralığıyla).
@@ -269,6 +271,8 @@ Kodu olmayan modül satırının (örnek veri, kodu kaldırılmış modül) sayf
 Alan sayfası (`/a/[slug]`) aynı iskeleti kullanır ve üye modüllerin durum şeritlerini ve seçilmiş görünümlerini birleştirir.
 
 ## Akşam kapanışı
+
+**15 Kas 2026 kararı (kurulmadı):** kapanış Rutin'in akşam sahnesinin içinde yapılır; ayrı sayfa ve Bugün'deki "Günü kapat" kalkar (`docs/13-cam-dili.md` 4.6, `docs/09-kararlar.md`). Aşağıdaki metin kurulu olan hali anlatır.
 
 `/kapanis`, tek akış; her adım tek ekran, klavyeyle geçilir (Enter ilerler, Escape geri döner; metin kutusunda Ctrl+Enter). İçerik `docs/04-planlayici.md` içinde: sorular (en çok 5), "Bugün başka ne yaptın?" (bugün için açık kalan işler ve ritimler, tek dokunuşla "Yaptım"), yarının taslağı (günün üç işi işaretli; dokunarak değişir, "Çıkar" yarının listesinden alır), aklında kalanlar (her satır gelen kutusuna), onay. Onayla yarının kaydını (`plan_source = closing`, çıkarılanlar `skipped`) ve bugünün kapanışını yazar, Bugün'e döner; ekran gece durumundadır. Bugün ekranının alt satırında "Günü kapat". İstenirse hiç yapılmaz. **Görüşün gerek** (adımlar ve metinler).
 
