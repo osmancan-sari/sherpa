@@ -5,7 +5,7 @@ Bu dosyayı Claude Code günceller. Yeni bir oturum yalnızca bu dosyayı ve `pr
 ## Durum
 
 - Faz: **Ç4c. Bugün, Takvim, kapanış ve alan sayfası** (15 Kas 2026; istem `prompts/c4c-bugun-takvim-kapanis.md`). Ç4b (`c4b-tamam`) yayında
-- Adım: 7 (kapanış) bitti: üç adım denetimi ve iki tur faz denetimi (GEÇMEDİ, GEÇTİ); `check:full` yeşil (`c80f7ba`, 610 / 304 / 279); görüntüler `docs/ekran-goruntuleri/c4c/`; `c4c-tamam`. Yayın senin izninle ("Senden bekleyenler" → Ç4c yayını)
+- Adım: 7 (kapanış) bitti: üç adım denetimi ve iki tur faz denetimi (GEÇMEDİ, GEÇTİ); `check:full` yeşil (`c80f7ba`, 610 / 304 / 279); görüntüler `docs/ekran-goruntuleri/c4c/`; `c4c-tamam`. Yayında (16 Kas: migration `sherpa-dev` ve `sherpa-prod`, `git push`)
 - Son commit: faz denetimi tur 2'nin düzeltmeleri
 
 ### Ç4c planı
@@ -21,7 +21,7 @@ Bu dosyayı Claude Code günceller. Yeni bir oturum yalnızca bu dosyayı ve `pr
 | 4 | Kapanış: sahnede (`controls.closing()` sonucunu döndürür), `/kapanis` ve Bugün'deki "Günü kapat" kalkar; sözleşme `hostsClosing`; barındıran modül yoksa akşam kartında "Kapanış" ve standart sahne kabuğu; Rutin'in "Yarının listesi" adımı açık (migration ile mevcut kullanıcıda da); `rutin.md`; adım denetimi (kapanış) | bitti (`88ea999`; `20261116090000_rutin_closing_step_on.sql`): `ClosingShell`, `closing-host.ts`, Rutin `hostsClosing` ve sahnede kapanış adımı, `deneme` örneği; testler `registry.test.ts` +2, `flow.test.ts` (Rutin), `rutin.test.ts` (db), `rutin.spec.ts` +1, `day-screens.spec.ts`; adım denetimi GEÇMEDİ, düzeltildi (`cfad191`) |
 | 5 | Alan sayfası: `/a/<alan>` kabuğu, üye panelleri, sözleşmede `ui.areaViews`, Rutin'in örneği; Modüller'de "Alan sayfası", modül sayfasında alanın bağlantısı | bitti (`55204b3`): `AreaScreen.tsx`, Rutin `BasicStepsView`; `rutin.spec.ts` +1; dokümanlar (`docs/05`, `06`, `09`, `rutin.md`, `docs/tasarim`) |
 | 6 | Ayarlar'da kalanlar (`ayarlar.md` ile ayrışanlar) | bitti (`030699a`): Günün çerçevesi satır düzeninde, yapay zekanın aylık çubuğu |
-| 7 | Görsel denetim, ekran görüntüleri (`docs/ekran-goruntuleri/c4c/`), karelerle karşılaştırma, `docs/05`, `check:full`, faz denetimi, rapor, `c4c-tamam`; yayın senin izninle | bitti: görsel denetim (33 onaylı görüntü), görüntüler, karşılaştırma, rapor; faz denetimi iki tur (GEÇMEDİ, GEÇTİ); `check:full` yeşil (610 / 304 / 279); `c4c-tamam`. Yayın iznini bekliyor |
+| 7 | Görsel denetim, ekran görüntüleri (`docs/ekran-goruntuleri/c4c/`), karelerle karşılaştırma, `docs/05`, `check:full`, faz denetimi, rapor, `c4c-tamam`; yayın senin izninle | bitti: görsel denetim (33 onaylı görüntü), görüntüler, karşılaştırma, rapor; faz denetimi iki tur (GEÇMEDİ, GEÇTİ); `check:full` yeşil (610 / 304 / 279); `c4c-tamam`; yayında (16 Kas, senin izninle) |
 
 ### Çekirdek ekranlarının cam tasarım oturumu (14–15 Kas 2026)
 
@@ -1017,13 +1017,13 @@ Testler: 413 birim, 207 veritabanı, 166 uçtan uca (`npm run check:full` yeşil
 
 ## Sıradaki adım
 
-Ç4d (teknik cila; `docs/07`) ya da Rutin 2: senin seçimin. Ç4c'nin yayını senin izninle (migration önce); gerçek cihazda bakılacaklar "Senden bekleyenler"de.
+Ç4d (teknik cila; `docs/07`) ya da Rutin 2: senin seçimin. Ç4c yayında; gerçek cihazda bakılacaklar "Senden bekleyenler"de.
 
 ## Senden bekleyenler
 
 ### Ç4c yayını
 
-Bir migration var; yalnızca güncelleme yapar (yeni sütun yok), kod ondan bağımsız da çalışır (faz içinde bir kez değişti, `minimum = false` eklendi; hiçbir bulut projesine uygulanmadı, yalnızca yerelde): `20261116090000_rutin_closing_step_on.sql` (Rutin'in "Yarının listesi" adımını mevcut listede bir kez açar, akşam ritminin süresine adımın dakikalarını ekler). Sıra: 1) `sherpa-dev`, 2) `sherpa-prod` (`npx supabase db push --remote=<prod ref>`), 3) `git push origin main`, `git push origin c4c-tamam`. İznini bekliyor.
+Bir migration var; yalnızca güncelleme yapar (yeni sütun yok), kod ondan bağımsız da çalışır (faz içinde bir kez değişti, `minimum = false` eklendi; hiçbir bulut projesine uygulanmadı, yalnızca yerelde): `20261116090000_rutin_closing_step_on.sql` (Rutin'in "Yarının listesi" adımını mevcut listede bir kez açar, akşam ritminin süresine adımın dakikalarını ekler). Sıra: 1) ~~`sherpa-dev`~~ **yapıldı**; 2) ~~`sherpa-prod`~~ **yapıldı** (ikisinde de deneme çalıştırması yalnızca bu migration'ı gösterdi, ardından "up to date"); 3) ~~`git push origin main`, `git push origin c4c-tamam`~~ **yapıldı** (16 Kas, senin izninle). Görüş bekleyen kararlar şimdilik kurulduğu gibi kalıyor (senin kararın); gerçek cihazda görünce değiştirmek istediğin olursa ayrıca yazacaksın.
 
 ### Ç4c: gerçek cihazda bakılacaklar
 
