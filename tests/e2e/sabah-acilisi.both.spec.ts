@@ -227,3 +227,21 @@ test("a welcome that fails gives the Today screen back", async ({ page }) => {
   await expect(card(page).getByRole("heading", { name: "Günaydın" })).toBeVisible();
   await expect(welcome(page)).toBeHidden();
 });
+
+test("Şimdi değil holds on this screen even when it cannot be written (offline)", async ({
+  page,
+}) => {
+  await setUp(page);
+  await page.clock.setFixedTime(dayAt("07:00"));
+  await page.goto("/");
+  // Every write of the day's row fails from here on.
+  await page.route("**/rest/v1/days**", (route) =>
+    route.request().method() === "GET" ? route.continue() : route.abort("internetdisconnected"),
+  );
+  await page.getByTestId("rutin-welcome").getByRole("button", { name: "Şimdi değil" }).click();
+  await expect(card(page).getByRole("heading", { name: "Günaydın" })).toBeVisible();
+  // The write was taken back, the screen stays on Today.
+  await page.waitForTimeout(1500);
+  await expect(welcome(page)).toBeHidden();
+  expect((await dayRow())?.welcome_later_at ?? null).toBeNull();
+});

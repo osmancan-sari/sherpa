@@ -123,6 +123,9 @@ function TodayBody() {
   // the moment is no longer the welcome's), or for a while if nothing comes.
   const welcomeLater = useWelcomeLater();
   const [failedWelcome, setFailedWelcome] = useState<string | null>(null);
+  // "Şimdi değil" said on this screen: it holds here even if the write fails (offline), so the
+  // full-screen welcome never keeps the user from Today.
+  const [laterHere, setLaterHere] = useState<string | null>(null);
   const [held, setHeld] = useState<Welcome | null>(null);
   const sceneReady = plan?.now.kind === "running" && plan.now.session.id !== "pending";
   useEffect(() => {
@@ -228,8 +231,9 @@ function TodayBody() {
         ? welcomeOf(
             input,
             chains.wake,
-            rows?.days.some((day) => day.date === input.date && day.welcome_later_at !== null) ??
-              false,
+            laterHere === input.date ||
+              (rows?.days.some((day) => day.date === input.date && day.welcome_later_at !== null) ??
+                false),
           )
         : null;
   const welcomeMod = welcome ? moduleMap.get(welcome.row.moduleId) : undefined;
@@ -251,7 +255,10 @@ function TodayBody() {
           brief={briefOf(input, plan, moduleMap)}
           onStart={() => setHeld(welcome)}
           onStartFailed={() => setHeld(null)}
-          onLater={() => welcomeLater.mutate({ date: input.date, at: new Date() })}
+          onLater={() => {
+            setLaterHere(input.date);
+            welcomeLater.mutate({ date: input.date, at: new Date() });
+          }}
           onFailed={() => setFailedWelcome(input.date)}
         />
       </>

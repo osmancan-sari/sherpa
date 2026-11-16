@@ -21,7 +21,7 @@ Bu dosyayı Claude Code günceller. Yeni bir oturum yalnızca bu dosyayı ve `pr
 | 3 | Rutin'in karşılaması (sabah gökyüzü, "Günaydın", tarih, "Başla"; "Başla"dan sonra Rutin'in kendi "Günaydın"ı yok, özet okunur); `deneme` örneği; `docs/tasarim/ekranlar/`, `docs/moduller/rutin.md` | bitti: `RutinWelcome` (`RutinScene.tsx`), "Başla"dan sonra ikinci "Günaydın" yok (`welcomedOn`); `deneme` `DenemeWelcome` (odak ve antrenman); dokümanlar `docs/05` "Sabah açılışı", `docs/12` D, `docs/moduller/rutin.md` 8.3, `docs/tasarim/ekranlar/rutin.md` "Karşılama", `bugun.md`. Adım denetimi GEÇTİ; önemliler düzeltildi (saate bağlı `sync.spec.ts` testi, dokümanlar, sahne gelmezse karşılamanın bırakılması, görevin ertelenme testi) |
 | 4 | Uçtan uca testler (`tests/e2e/sabah-acilisi.both.spec.ts`), etkilenen eski testler, görsel test, ekran görüntüleri `docs/ekran-goruntuleri/sabah-acilisi/` | bitti: `sabah-acilisi.both.spec.ts` (8 × 2), `rutin.spec.ts` (1 test "Şimdi değil" adımıyla), `gorsel.spec.ts` (`karsilama-telefon`, `karsilama-pano`; toplam 31 onaylı görüntü), `safe-area.spec.ts` (+1), `screenshots.spec.ts` ("morning welcome screens"; 10 görüntü). Panoda bulunan çekirdek hatası düzeltildi: `Landscape`'in tepeleri kabın en-boy oranı 1440:900'den dikse altta gök rengi şerit bırakıyordu (menünün yanındaki sahne ve karşılama, 1440 pano) |
 | 5 | `check:full`, denetçi, rapor, commit; yayın senin izninle | bitti: `check:full` yeşil (`350ed8f`: 621 / 304 / 298); son adım denetimi GEÇTİ (notlar düzeltildi ya da rapora yazıldı); yayın iznini bekliyor |
-| 6 | Yayından önce düzeltmeler (senin isteğin): "Şimdi değil" gün kaydında ve hesap genelinde, iki cihazlı canlı test; karşılama o günün beklenen uyanışından (daha erkense); panoda tek gökyüzü (Rutin'in bütün pano sahneleri); `check:full`, denetçi (adım); yayın | bitti: migration `days.welcome_later_at`, `useWelcomeLater` (`frame-actions.ts`), `welcome.ts` (+1 test), `Landscape` `screen`, `AppNav` `md:z-20`, şerit `z-20`, `animate-scene-in`; `sync.spec.ts` +2; `karsilama-pano` bilerek yenilendi; görüntüler `docs/ekran-goruntuleri/sabah-acilisi/` (karşılama ve Rutin'in pano sahneleri) |
+| 6 | Yayından önce düzeltmeler (senin isteğin): "Şimdi değil" gün kaydında ve hesap genelinde, iki cihazlı canlı test; karşılama o günün beklenen uyanışından (daha erkense); panoda tek gökyüzü (Rutin'in bütün pano sahneleri); `check:full`, denetçi (adım); yayın | kod bitti: migration `days.welcome_later_at`, `useWelcomeLater` (`frame-actions.ts`; "Şimdi değil" yazılamasa da o ekranda tutulur), `welcome.ts` (+2 test), `Landscape` `screen`, `AppNav` `md:z-20`, şerit `z-20`, `animate-scene-in`; `sync.spec.ts` +2, `sabah-acilisi.both.spec.ts` +1 (çevrimdışı "Şimdi değil"); `karsilama-pano` bilerek yenilendi, `rutin-sahne-*` eklendi (33 onaylı görüntü); görüntüler `docs/ekran-goruntuleri/sabah-acilisi/`. `check:full` yeşil (`d0d0f3d`: 622 / 304 / 300); denetim GEÇTİ, iki önemli bulgu (çevrimdışı "Şimdi değil", Rutin'in pano sahnesinin onaylı görüntüsü) ve notlar düzeltildi; yayın aşağıda |
 
 ### Ç4c planı
 
@@ -254,7 +254,7 @@ Her adımın sonunda `npm run check` ve commit; şema, geçit ve zarf adımları
 | Karşılama için kare yok: sabah sahnesinin diliyle, `docs/tasarim/ekranlar/`'e yazıldı, görüşün gerek | sağlandı | `docs/tasarim/ekranlar/rutin.md` "Karşılama" |
 | Güvenli alan | sağlandı | `safe-area.spec.ts` "the morning's welcome takes the whole screen under the island…" |
 | Sesli özet "Başla"dan sonra | sağlandı | testte `spoken == []` önce, "Günaydın." sonra |
-| Görüntüler ve görsel test | sağlandı | `docs/ekran-goruntuleri/sabah-acilisi/` (10), `gorsel.spec.ts` `karsilama-telefon`, `karsilama-pano` |
+| Görüntüler ve görsel test | sağlandı | `docs/ekran-goruntuleri/sabah-acilisi/` (17: karşılama 10, Rutin'in pano sahneleri tek gökyüzünde 7), `gorsel.spec.ts` `karsilama-*`, `rutin-sahne-*` |
 
 **Karelerle karşılaştırma:** karşılamanın onaylı karesi yok; sabah sahnesinin "Günaydın" ekranından türetildi (`c4c/*-rutin-gunaydin.png` ile yan yana). Farklar: şerit yok, bu yüzden "Günaydın" şerit kadar yukarıda; "Kalktım" yerine "Başla" ve altında iki sessiz yazı. Hepsi görüşün gerek.
 
@@ -1069,7 +1069,7 @@ Sabah açılışının yayını (senin izninle, `git push`); sonra Ç4d (teknik 
 
 ### Sabah açılışı: yayın ve telefonda bakılacaklar
 
-Yayın (16 Kas 2026 akşamı, senin izninle): migration `20261116160307_welcome_later.sql` önce `sherpa-dev`, sonra `sherpa-prod`; sonra `git push` (Vercel).
+Yayın (senin izninle, `check:full` yeşil ve denetim engelsizse): migration `20261116160307_welcome_later.sql` önce `sherpa-dev`, sonra `sherpa-prod`; sonra `git push` (Vercel). Durumu bu satırda güncellenir.
 
 1. **Telefon, sabah:** uygulamayı uyanış aralığında (çerçevenin ilk saati) ilk kez aç: doğrudan Rutin'in karşılaması mı geliyor? Saat şeridi ve adanın altında mı, düğmeler ana ekran çizgisinin üstünde mi?
 2. **"Başla":** tek dokunuşta Diş bakımı geliyor ve günün özeti okunuyor mu (ses açıksa)? Karşılamada önceden hiçbir şey söylenmiyor mu?

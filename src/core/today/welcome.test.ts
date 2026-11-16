@@ -128,6 +128,15 @@ describe("welcomeOf", () => {
     expect(welcomeAt(morning({ expected_wake: "07:30:00" }).data, "06:00")).not.toBeNull();
   });
 
+  it("comes earlier when an early fixed block pulls the day's expected waking before the range", () => {
+    // A block at 06:15: the latest waking is 06:15 less the morning (10 + 15 min) = 05:50.
+    const { data } = morning(null, {
+      blocks: [block({ title: "Erken ders", starts_at: iso("06:15"), ends_at: iso("08:00") })],
+    });
+    expect(welcomeAt(data, "05:49")).toBeNull();
+    expect(welcomeAt(data, "05:50")).not.toBeNull();
+  });
+
   it("follows the day type's own waking range", () => {
     const { data } = morning(null, {
       settings: settingsRow({

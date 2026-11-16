@@ -212,6 +212,42 @@ for (const device of DEVICES) {
       ).toBeVisible();
       await shot(page, `karsilama-${device.name}`);
     });
+
+    // Sabah açılışı, before release: Rutin's scene stands on one sky; on the board it reaches the
+    // whole screen behind the menu, with the menu and the core's strip over it.
+    test(`Rutin's scene, its first step (${device.name})`, async ({ page }) => {
+      await page.goto("/ayarlar/moduller");
+      await page.getByRole("button", { name: "Rutin: etkinleştir" }).click();
+      const rhythms = await waitFor(
+        () => rows("rhythms"),
+        (list) => list.length === 3,
+      );
+      const [settings] = await rows("settings");
+      await update("settings", settings.id as string, {
+        day_frame: { wake: ["06:00", "09:00"], bed: ["22:00", "01:00"], sleep_minutes: 480 },
+      });
+      const [mod] = await rows("modules");
+      // The screens may have written the day's row already (the first touch).
+      const woke = {
+        woke_at: "2026-11-13T04:00:00Z",
+        woke_estimated: false,
+        woke_source: "screen",
+      };
+      const known = (await rows("days")).find((row) => row.date === "2026-11-13");
+      if (known) await update("days", known.id as string, woke);
+      else await insert("days", { date: "2026-11-13", ...woke });
+      await insert("sessions", {
+        rhythm_id: rhythms.find((row) => row.key === "rutin:sabah")!.id,
+        module_id: mod.id,
+        started_at: "2026-11-13T04:00:00Z",
+      });
+      await page.clock.setFixedTime(new Date("2026-11-13T07:05:00+03:00"));
+      await page.goto("/");
+      const scene = page.getByTestId("rutin-scene");
+      await expect(scene).toHaveAttribute("data-screen", "adim");
+      await expect(page.getByTestId("strip-title")).toHaveText("Sabah");
+      await shot(page, `rutin-sahne-${device.name}`);
+    });
   });
 }
 
