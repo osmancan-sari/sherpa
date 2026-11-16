@@ -45,6 +45,8 @@ Metinler koddaki metinlerdir (`src/core/ui/today/`); örnek işler uydurmadır. 
 | "X dk'm var", uyan iş yok | `BT29` | `BP30` |
 | Ekranın alt yarısı | `BT31`, `BT32` (aşağı kaydırınca) | `BP01` (hepsi tek ekranda); `BP27` (sağ sütunda "Bugün bitenler") |
 
+**Sabah açılışı (16 Kas 2026).** Uyanış dizisini sahneleyen bir modül varsa sabah Bugün yerine o sahnenin karşılaması tam ekran gelir (`docs/05-arayuz.md` "Sabah açılışı"; Rutin'inki `rutin.md` "Karşılama"). Günaydın kartı (`BT20`, `BT21`, `BP19`, `BP20`) o zaman yalnızca "Şimdi değil"den sonra, sahneleyen modül yokken ya da karşılamanın penceresi dışında görünür.
+
 **Bu grupta çizilmeyenler.** Hızlı giriş ve düzenleme pencereleri (5. grup). Bildirimler ("Gün yeniden planlandı.") ve "Veri okunamadı…" satırı, yapay zeka bütçesi satırı (10. grup). Sahne ve şeridi (Rutin tuvalinde çizili; standart hali 7. grup).
 
 ### 4.2 Zaman çizelgesi ve Sıradakiler ("2 · Zaman çizelgesi" sayfası; onaylandı, 15 Kas 2026)

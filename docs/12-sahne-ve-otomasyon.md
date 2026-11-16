@@ -160,7 +160,7 @@ Uyanış ve yatış birer saat değil birer aralıktır; uyku hedefi bir süredi
 
 **Kayıt.**
 
-- Sabah ilk açılışta ekran "Günaydın" durumundadır (`now = morning`): tek düğme, "Uyandım". Dokunuş `woke_at`'i şimdi olarak yazar; yanında "biraz önce" seçeneği (15, 30, 60 dk önce).
+- Sabah ilk açılışta ekran "Günaydın" durumundadır (`now = morning`): tek düğme, "Uyandım". Dokunuş `woke_at`'i şimdi olarak yazar; yanında "biraz önce" seçeneği (15, 30, 60 dk önce). (16 Kas 2026: uyanış dizisini sahneleyen bir modül varsa açılış o sahnenin karşılamasıdır, "Başla" uyanışı yazar ve diziyi başlatır; `docs/05-arayuz.md` "Sabah açılışı", `docs/06` "Sahne" kural 7.)
 - "Uyandım" denmeden başka bir şeye dokunulursa uyanış o an sayılır ve `woke_estimated` işaretlenir.
 - Gece: akşam ekranında ve akşam kapanışının sonunda "Yatıyorum". `bed_at` yazılır, ekran geceye geçer. Denmezse yatış kaydedilmez; uygulama uydurmaz.
 - Uyku süresi = sonraki günün `woke_at`'i − `bed_at`; ikisi de kayıtlıysa hesaplanır. Tahmini uyanışla hesaplanan süre tahmini diye işaretlenir.

@@ -224,18 +224,19 @@ test("an open Today shows a waking told from outside in its day's flow (Ç4c)", 
   page,
   baseURL,
 }) => {
-  // A morning moment the waking can be told for at any real hour (core/wake takes a moment up
-  // to a day back): today's 10:00 once it has passed, else yesterday's. The page stands half an
-  // hour after it, with a piece of work so the day's flow is drawn.
+  // A waking that can be told at any real hour (core/wake takes a moment up to a day back, never
+  // ahead): today's 07:15 once it has passed, else yesterday's. The page stands at 10:30 of that
+  // day, or at the real time when that is earlier (never ahead of it), with a piece of work so the
+  // day's flow is drawn. (Before 16 Nov 2026 it took yesterday's 07:15 between 07:15 and 10:00,
+  // more than a day back: 400.)
   const zone = "Europe/Istanbul";
   const dayOf = (instant: Date) =>
     new Intl.DateTimeFormat("en-CA", { timeZone: zone }).format(instant);
   const real = new Date();
-  const todayTen = new Date(`${dayOf(real)}T10:00:00+03:00`);
-  const ten =
-    todayTen <= real
-      ? todayTen
-      : new Date(`${dayOf(new Date(real.getTime() - 86_400_000))}T10:00:00+03:00`);
+  real.setSeconds(0, 0);
+  const todayWake = new Date(`${dayOf(real)}T07:15:00+03:00`);
+  const woke = todayWake < real ? todayWake : new Date(todayWake.getTime() - 86_400_000);
+  const pageAt = new Date(Math.min(woke.getTime() + (3 * 60 + 15) * 60_000, real.getTime()));
   const [settings] = await rows("settings");
   await update("settings", settings.id as string, {
     day_frame: { wake: ["06:00", "09:00"], bed: ["22:00", "01:00"], sleep_minutes: 480 },
@@ -243,13 +244,12 @@ test("an open Today shows a waking told from outside in its day's flow (Ç4c)", 
   const mod = await seedModule();
   await insert("tasks", { module_id: mod.id, title: "Okuma", est_minutes: 30 });
   const { token } = await deviceToken(["core/wake"]);
-  await page.clock.setFixedTime(new Date(ten.getTime() + 30 * 60_000));
+  await page.clock.setFixedTime(pageAt);
   await page.goto("/");
   const ends = page.getByTestId("flow-ends");
   await expect(ends).toHaveText(/^09:00 uyanış · /);
   const navigations = forbidReloads(page);
 
-  const woke = new Date(ten.getTime() - 2 * 60 * 60_000 - 45 * 60_000); // 07:15
   expect((await postIngest(baseURL!, "core/wake", token, { at: woke.toISOString() })).status).toBe(
     200,
   );

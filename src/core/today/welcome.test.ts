@@ -183,6 +183,17 @@ describe("welcomeOf", () => {
       days: [dayRow({ date: DATE, plan: { skipped: [own.id], putOff: [own.id] } })],
     });
     expect(welcomeAt(putOff, "07:00")).toBeNull();
+    // A task moved to tomorrow today with "Ertele" stays in the chain as passed: begun.
+    const deferred = {
+      ...teeth,
+      planned_date: "2026-11-13",
+      defer_count: 1,
+      updated_at: iso("06:30"),
+    };
+    expect(welcomeAt({ ...data, tasks: [deferred] }, "07:00")).toBeNull();
+    // Put off on another day (changed yesterday): no beginning today.
+    const older = { ...deferred, updated_at: iso("20:00", "2026-11-11") };
+    expect(welcomeAt({ ...data, tasks: [older] }, "07:00")).not.toBeNull();
   });
 
   it("with a waking told from outside, its chain must still be offered", () => {

@@ -73,7 +73,15 @@ export function useWelcomeLater(): [string | null, (date: string) => void] {
   const later = useSyncExternalStore(
     (listener) => {
       laterListeners.add(listener);
-      return () => laterListeners.delete(listener);
+      // Another tab of this browser said it.
+      const onStorage = (event: StorageEvent) => {
+        if (event.key === LATER_KEY) listener();
+      };
+      window.addEventListener("storage", onStorage);
+      return () => {
+        laterListeners.delete(listener);
+        window.removeEventListener("storage", onStorage);
+      };
     },
     readLater,
     () => null,
@@ -116,7 +124,7 @@ export function WelcomeFrame({
   brief: TodayBrief;
   /** "Başla" was pressed: the screen keeps the welcome until the scene comes. */
   onStart: () => void;
-  /** It could not be written: the welcome is back to itself. */
+  /** It could not be written, or nothing started (another screen did): nothing to wait for. */
   onStartFailed?: () => void;
   onLater: () => void;
   onFailed: () => void;
@@ -144,10 +152,12 @@ export function WelcomeFrame({
           // "Uyandım"'s own way (`core.day_started`), then the chain's start: if another screen
           // started something since the waking, nothing more starts here.
           if (!welcome.woke) await wake.mutateAsync({ date, at });
-          await start.mutateAsync({
+          const started = await start.mutateAsync({
             since: at.toISOString(),
             target: sessionTargetOf(welcome.target),
           });
+          // Another screen started something meanwhile: nothing comes here to wait for.
+          if (!started) onStartFailed?.();
         } catch (error) {
           onStartFailed?.();
           throw error;

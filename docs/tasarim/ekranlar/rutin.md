@@ -39,6 +39,16 @@ Panellerin opaklığı, arkasındaki gökyüzü metni 4,5:1'in altına düşüre
 
 Ekranların içeriği ve akışı `docs/moduller/rutin.md` (8.2–8.6) ve `../kareler/rutin-degerler.md` bölüm 3–7'dedir.
 
+## Karşılama (sabah açılışı, 16 Kas 2026; **görüşün gerek**)
+
+Onaylı karesi yoktur; sabah sahnesinin ilk karesinden ("Günaydın") türetildi. Ne zaman geldiği `docs/06-modul-sozlesmesi.md` "Sahne" kural 7'de, akışı `docs/moduller/rutin.md` 8.3'te. Kod: `RutinWelcome` (`src/modules/rutin/components/RutinScene.tsx`); kabuk çekirdeğin (`src/core/ui/today/Welcome.tsx`).
+
+- **Zemin ve dil:** sabah sahnesinin gökyüzü (saatin gökyüzü, `RutinSky`; baykuş ve ay yok), metin `warm-ink`. Şerit yoktur (oturum yok); güvenli alan sahnedeki gibidir: telefonda içerik saatin ve adanın altından başlar, gökyüzü arkasına uzanır (`menu.md`, "Saat şeridi ve ada").
+- **Düzen:** ortada "Günaydın" (`text-greet`, `tracking-greet`) ve altında tarih (`text-lead`, `warm-date`); "Günaydın" telefonda Günaydın ekranıyla aynı yükseklikte, panoda da öyle. Altta tam genişlikte (en çok `max-w-md`) ana düğme "Başla" (ana düğmenin sabah camı, `text-heading`, yükseklik 16). Hemen altında sessiz yazı düğmeleri (`warm-plain`, `text-note`, en az 44 px): "Biraz önce uyandım" ve "Şimdi değil"; "Biraz önce uyandım"a dokununca yerini "15 dk önce", "30 dk önce", "60 dk önce" alır. Uyanış dışarıdan kayıtlıysa "Biraz önce uyandım" yoktur.
+- **Pano:** aynı parçalar, yan menü görünür; "Günaydın" Günaydın ekranının panodaki yerinde, düğmeler ortada. Panoda "Günün planı" paneli yoktur (karşılamada konuşulmaz, özet "Başla"dan sonra sahnede okunur).
+- **"Başla"dan sonra:** düğmeler soluklaşır (tekrar dokunulmasın), sahne gelince yerini Diş bakımı alır.
+- Ayrımlar (görüşün gerek): ikincillerin ana düğmenin altında tek satır sessiz yazı olması; karşılamada günün özetinin yazılı da olmaması; panoda ek panel olmaması.
+
 ## Modül sayfası
 
 Çekirdeğin iskeletindedir (`moduller.md`), **sakin zeminde** (karar 2). Başlığın sağında "Adım ekle"; "Bu hafta" sayıları; "Yaklaşanlar"; sekmeler "Sabah" ve "Akşam" ve geçmiş düğmesi (Rutin'in geçmiş görünümü "Düzenlilik" Rutin 2'dedir; o zamana kadar düğme "Geçmiş").
