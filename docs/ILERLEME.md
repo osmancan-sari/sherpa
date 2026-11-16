@@ -7,7 +7,7 @@ Bu dosyayı Claude Code günceller. Yeni bir oturum yalnızca bu dosyayı ve `pr
 - Faz: **Ç4c. Bugün, Takvim, kapanış ve alan sayfası** (15 Kas 2026; istem `prompts/c4c-bugun-takvim-kapanis.md`). Ç4b (`c4b-tamam`) yayında
 - Adım: 7 (kapanış) bitti: üç adım denetimi ve iki tur faz denetimi (GEÇMEDİ, GEÇTİ); `check:full` yeşil (`c80f7ba`, 610 / 304 / 279); görüntüler `docs/ekran-goruntuleri/c4c/`; `c4c-tamam`. Yayında (16 Kas: migration `sherpa-dev` ve `sherpa-prod`, `git push`)
 - Son commit: faz denetimi tur 2'nin düzeltmeleri
-- **Ek: Sabah açılışı** (16 Kas 2026; istem `prompts/sabah-acilisi.md`; Ç4c sonrası küçük çekirdek eki, yeni faz değil): bitti; yayından önce senin üç düzeltmen yapıldı (6. adım); yayın senin izninle (migration `20261116160307_welcome_later.sql`: önce `sherpa-dev`, sonra `sherpa-prod`; sonra `git push`)
+- **Ek: Sabah açılışı** (16 Kas 2026; istem `prompts/sabah-acilisi.md`; Ç4c sonrası küçük çekirdek eki, yeni faz değil): bitti ve yayında (16 Kas 2026: migration `sherpa-dev` ve `sherpa-prod`, `git push`); yayından önce senin üç düzeltmen yapıldı (6. adım)
 
 ### Sabah açılışı planı
 
@@ -1063,13 +1063,13 @@ Testler: 413 birim, 207 veritabanı, 166 uçtan uca (`npm run check:full` yeşil
 
 ## Sıradaki adım
 
-Sabah açılışının yayını (senin izninle, `git push`); sonra Ç4d (teknik cila; `docs/07`) ya da Rutin 2: senin seçimin. Gerçek cihazda bakılacaklar "Senden bekleyenler"de.
+Sabah açılışı yayında; telefonda bakılacaklar "Senden bekleyenler"de. Sonra Ç4d (teknik cila; `docs/07`) ya da Rutin 2: senin seçimin. Gerçek cihazda bakılacaklar "Senden bekleyenler"de.
 
 ## Senden bekleyenler
 
 ### Sabah açılışı: yayın ve telefonda bakılacaklar
 
-Yayın (senin izninle, `check:full` yeşil ve denetim engelsizse): migration `20261116160307_welcome_later.sql` önce `sherpa-dev`, sonra `sherpa-prod`; sonra `git push` (Vercel). Durumu bu satırda güncellenir.
+Yayın (16 Kas 2026, senin izninle; `check:full` yeşil, 4. denetim turu engelsiz): 1) ~~`sherpa-dev`~~ **yapıldı**; 2) ~~`sherpa-prod`~~ **yapıldı** (ikisinde de deneme çalıştırması yalnızca `20261116160307_welcome_later.sql`, ardından "up to date"); 3) ~~`git push origin main`~~ **yapıldı**.
 
 1. **Telefon, sabah:** uygulamayı uyanış aralığında (çerçevenin ilk saati) ilk kez aç: doğrudan Rutin'in karşılaması mı geliyor? Saat şeridi ve adanın altında mı, düğmeler ana ekran çizgisinin üstünde mi?
 2. **"Başla":** tek dokunuşta Diş bakımı geliyor ve günün özeti okunuyor mu (ses açıksa)? Karşılamada önceden hiçbir şey söylenmiyor mu?
