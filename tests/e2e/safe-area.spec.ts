@@ -1,5 +1,5 @@
 import type { Locator, Page } from "@playwright/test";
-import { insert, rows, waitFor } from "./data";
+import { insert, rows, update, waitFor } from "./data";
 import { runNow } from "./clock";
 import { expect, test } from "./fixtures";
 import { openQuickAdd, roomInTheDay } from "./helpers";
@@ -215,4 +215,35 @@ test("sheets and quick add stay under the island; so does the scene", async ({ p
     () => rows("sessions"),
     (list) => list.length === 1,
   );
+});
+
+test("the morning's welcome takes the whole screen under the island, with its own band", async ({
+  page,
+}) => {
+  // Sabah açılışı (16 Nov 2026): Rutin on, the frame on, no waking yet, yesterday at 07:00 (the
+  // browser's clock never ahead of the database's).
+  await page.goto("/ayarlar/moduller");
+  await page.getByRole("button", { name: "Rutin: etkinleştir" }).click();
+  await waitFor(
+    () => rows("rhythms"),
+    (list) => list.length === 3,
+  );
+  const [settings] = await rows("settings");
+  await update("settings", settings.id as string, {
+    day_frame: { wake: ["06:00", "09:00"], bed: ["22:00", "01:00"], sleep_minutes: 480 },
+  });
+  const yesterday = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Istanbul" }).format(
+    new Date(Date.now() - 86_400_000),
+  );
+  await page.clock.setFixedTime(new Date(`${yesterday}T07:00:00+03:00`));
+  await page.goto("/");
+  const welcome = page.getByTestId("welcome");
+  await expect(welcome.getByRole("heading", { name: "Günaydın" })).toBeVisible();
+  expect(await firstTop(welcome)).toBeGreaterThanOrEqual(TOP);
+  const band = (await welcome.getByTestId("safe-top").boundingBox())!;
+  expect(band.y).toBe(0);
+  expect(band.height).toBe(TOP);
+  // The buttons stay above the home indicator.
+  const later = (await welcome.getByRole("button", { name: "Şimdi değil" }).boundingBox())!;
+  expect(later.y + later.height).toBeLessThanOrEqual(844 - BOTTOM);
 });

@@ -342,7 +342,9 @@ function Hills({
   return (
     <svg
       className="absolute inset-x-0 bottom-0 w-full"
-      style={{ top: `${(below / height) * 100}%` }}
+      // The height is given: an svg's own ratio would win over `bottom`, and a box taller for its
+      // width than the drawing (a scene beside the board's menu) showed the sky under the hills.
+      style={{ top: `${(below / height) * 100}%`, height: `${((height - below) / height) * 100}%` }}
       viewBox={`0 ${below} ${width} ${height - below}`}
       preserveAspectRatio="xMidYMin slice"
     >

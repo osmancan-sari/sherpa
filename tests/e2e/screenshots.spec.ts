@@ -1042,3 +1042,68 @@ test("empty and error screens", async ({ page, context }, testInfo) => {
   await shot("hata-baglanti-yok");
   await context.setOffline(false);
 });
+
+// Sabah açılışı (16 Nov 2026): the morning's welcome instead of Today (no waking yet; "Biraz önce"
+// open; a waking told from outside), the first step after "Başla", and Today after "Şimdi değil".
+// The clock is yesterday's (the browser's clock never ahead of the database's).
+test("morning welcome screens", async ({ page }, testInfo) => {
+  test.setTimeout(120_000);
+  await roomInTheDay(page);
+  const shotDay = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Istanbul" }).format(
+    new Date(Date.now() - 86_400_000),
+  );
+  const at = (time: string) => new Date(`${shotDay}T${time}:00+03:00`);
+  const phone = testInfo.project.use.isMobile === true;
+  const shot = async (name: string) => {
+    await page.mouse.move(0, 0);
+    await page.screenshot({
+      path: path.join(folder, `${testInfo.project.name}-${name}.png`),
+      fullPage: !phone,
+      animations: "disabled",
+    });
+  };
+  await page.goto("/ayarlar/moduller");
+  await page.getByRole("button", { name: "Rutin: etkinleştir" }).click();
+  await waitFor(
+    () => rows("rhythms"),
+    (list) => list.length === 3,
+  );
+  const [settings] = await rows("settings");
+  await update("settings", settings.id as string, {
+    day_frame: { wake: ["06:00", "09:00"], bed: ["22:00", "01:00"], sleep_minutes: 480 },
+    day_start_default: "08:00",
+  });
+  const own = page.getByTestId("rutin-welcome");
+
+  // No waking yet, at dawn.
+  await page.clock.setFixedTime(at("07:00"));
+  await page.goto("/");
+  await expect(own.getByRole("heading", { name: "Günaydın" })).toBeVisible();
+  await shot("karsilama");
+  await own.getByRole("button", { name: "Biraz önce uyandım" }).click();
+  await expect(own.getByRole("button", { name: "15 dk önce" })).toBeVisible();
+  await shot("karsilama-biraz-once");
+
+  // "Şimdi değil": Today with the Günaydın card.
+  await own.getByRole("button", { name: "Şimdi değil" }).click();
+  await expect(
+    page.getByRole("region", { name: "Şimdi" }).getByRole("heading", { name: "Günaydın" }),
+  ).toBeVisible();
+  await shot("simdi-degil-bugun");
+
+  // A waking told from outside (another morning on this device: "Şimdi değil" forgotten).
+  await page.evaluate(() => localStorage.removeItem("sherpa.welcome.later"));
+  const woke = { woke_at: at("06:58").toISOString(), woke_source: "outside" };
+  const known = (await rows("days")).find((row) => row.date === shotDay);
+  if (known) await update("days", known.id as string, woke);
+  else await insert("days", { date: shotDay, ...woke });
+  await page.clock.setFixedTime(at("07:05"));
+  await page.goto("/");
+  await expect(own).toHaveAttribute("data-woke", "");
+  await shot("karsilama-disaridan");
+
+  // "Başla": the routine's first step at once.
+  await own.getByRole("button", { name: "Başla" }).click();
+  await expect(page.getByTestId("rutin-scene")).toHaveAttribute("data-screen", "adim");
+  await shot("basla-ilk-adim");
+});

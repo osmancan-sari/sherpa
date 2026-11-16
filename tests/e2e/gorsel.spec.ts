@@ -1,5 +1,5 @@
 import type { Page } from "@playwright/test";
-import { insert, rows, seedModule, waitFor } from "./data";
+import { insert, rows, seedModule, update, waitFor } from "./data";
 import { expect, quietTest, test } from "./fixtures";
 import { openQuickAdd } from "./helpers";
 
@@ -191,6 +191,26 @@ for (const device of DEVICES) {
         "Proje önerisi taslağı",
       );
       await shot(page, `takvim-${device.name}`);
+    });
+
+    // Sabah açılışı (16 Nov 2026): Rutin's welcome in the morning's place of Today, at dawn.
+    test(`the morning's welcome (${device.name})`, async ({ page }) => {
+      await page.goto("/ayarlar/moduller");
+      await page.getByRole("button", { name: "Rutin: etkinleştir" }).click();
+      await waitFor(
+        () => rows("rhythms"),
+        (list) => list.length === 3,
+      );
+      const [settings] = await rows("settings");
+      await update("settings", settings.id as string, {
+        day_frame: { wake: ["06:00", "09:00"], bed: ["22:00", "01:00"], sleep_minutes: 480 },
+      });
+      await page.clock.setFixedTime(new Date("2026-11-13T07:00:00+03:00"));
+      await page.goto("/");
+      await expect(
+        page.getByTestId("rutin-welcome").getByRole("heading", { name: "Günaydın" }),
+      ).toBeVisible();
+      await shot(page, `karsilama-${device.name}`);
     });
   });
 }
