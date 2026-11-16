@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useRefreshAll } from "@/core/app/actions";
 import { useModuleQuery } from "@/core/app/hooks";
-import type { SceneChain, SceneKey, SceneProps } from "@/core/contract/types";
+import type { SceneChain, SceneKey, SceneProps, SceneWelcomeProps } from "@/core/contract/types";
 import { type Step, StepRunner } from "@/core/ui/kit";
 import { useNotify } from "@/core/ui/Notices";
 import { SAVE_FAILED } from "@/core/ui/Notices";
@@ -92,6 +92,51 @@ function FocusScene({ subject, session, controls, say, today, device, keys }: Sc
         <Button variant="outline" className="h-12 px-5 text-base" onClick={controls.stuck}>
           Takıldım
         </Button>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Sabah açılışı (docs/06-modul-sozlesmesi.md, "Sahne", rule 7): the welcome of a focused sitting
+ * or a workout that begins the morning's chain. "Günaydın", the work, one "Başla"; small, "Biraz
+ * önce uyandım" (while no waking is recorded) and "Şimdi değil". A title with "[hata]" throws:
+ * the core gives the Today screen back.
+ */
+export function DenemeWelcome({ subject, woke, controls, device }: SceneWelcomeProps) {
+  const title = subject.kind === "task" ? subject.task.title : subject.rhythm.title;
+  const [earlier, setEarlier] = useState(false);
+  if (title.includes("[hata]")) throw new Error("deneme: the welcome fails on purpose");
+  const begin = (minutes?: number) => void controls.start(minutes).catch(() => undefined);
+  return (
+    <div className="flex flex-1 flex-col justify-between gap-8" data-testid="deneme-welcome">
+      <div className="flex flex-col gap-3">
+        <p className="text-muted-foreground text-sm">
+          Karşılama · {device === "pano" ? "pano" : "telefon"}
+        </p>
+        <h2 className="text-3xl leading-tight font-semibold md:text-6xl">Günaydın</h2>
+        <p className="text-lg md:text-2xl">Önce: {title}</p>
+      </div>
+      <div className="flex flex-col gap-2">
+        <Button className="h-12 px-6 text-base" onClick={() => begin()}>
+          Başla
+        </Button>
+        <div className="flex flex-wrap gap-2">
+          {earlier ? (
+            [15, 30, 60].map((minutes) => (
+              <Button key={minutes} variant="quiet" size="sm" onClick={() => begin(minutes)}>
+                {minutes} dk önce
+              </Button>
+            ))
+          ) : woke ? null : (
+            <Button variant="quiet" size="sm" onClick={() => setEarlier(true)}>
+              Biraz önce uyandım
+            </Button>
+          )}
+          <Button variant="quiet" size="sm" onClick={controls.later}>
+            Şimdi değil
+          </Button>
+        </div>
       </div>
     </div>
   );

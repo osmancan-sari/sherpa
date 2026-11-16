@@ -350,6 +350,44 @@ export type ModuleScene = {
    * core's keys work as on the standard card.
    */
   keys?: "scene";
+  /**
+   * Sabah açılışı (16 Nov 2026): the scene's welcome, drawn before its work starts. In the
+   * morning, while the wake chain has not begun and this scene would show its first work, the
+   * app opens on it instead of the Today screen (docs/06-modul-sozlesmesi.md, "Sahne", rule 7).
+   * From a "use client" file, like `component`.
+   */
+  welcome?: ComponentType<SceneWelcomeProps>;
+};
+
+/**
+ * Sabah açılışı: what a scene's welcome gets. No session runs yet: the welcome only asks the core
+ * to begin (`start`) or to leave it for today (`later`). It offers "Günaydın", one primary
+ * "Başla", and, small, "Biraz önce uyandım" (only while `woke` is null) and "Şimdi değil".
+ */
+export type SceneWelcomeProps = {
+  /** The wake chain's first work, the one "Başla" starts (not running yet). */
+  subject: SceneSubject;
+  device: "pano" | "telefon";
+  /**
+   * The waking, when it is recorded already (told from outside, `core/wake`): "Başla" then only
+   * starts the work. Null: "Başla" records the waking first, as "Uyandım" does.
+   */
+  woke: Date | null;
+  controls: {
+    /**
+     * "Başla": records the waking (now, or `minutesAgo` before it: "Biraz önce uyandım", 15, 30
+     * or 60) unless `woke` holds one, then starts the work. The scene comes in the welcome's
+     * place. Rejects when it could not be written; the welcome stays.
+     */
+    start: (minutesAgo?: number) => Promise<void>;
+    /** "Şimdi değil": the Today screen; the welcome does not come by itself again today here. */
+    later: () => void;
+  };
+  /** The day's short summary, for reading only (not to be said before "Başla"). */
+  today: TodayBrief;
+  ctx: ModuleUiContext;
+  /** The work's facet (its colour resolved); null when it has none. */
+  facet: { key: string; name: string; color: string } | null;
 };
 
 // ---------------------------------------------------------------------------------------------

@@ -234,6 +234,21 @@ type ModuleScene = {
   component: ComponentType<SceneProps>
   look?: { tone: 'calm' | 'focus' | 'energy' } // çekirdeğin geçiş ve arka plan tonu
   keys?: 'scene'                               // Ç3g: sahne açıkken Bugün'ün tuşları (Boşluk ve öbürleri) sahnenindir
+  welcome?: ComponentType<SceneWelcomeProps>   // Sabah açılışı (16 Kas 2026): iş başlamadan önceki karşılama (kural 7)
+}
+
+type SceneWelcomeProps = {                     // Sabah açılışı: oturum yok; karşılama yalnızca başlatmayı ister
+  subject: SceneSubject                        // uyanış dizisinin ilk işi ("Başla"nın başlatacağı; henüz çalışmıyor)
+  device: 'pano' | 'telefon'
+  woke: Date | null                            // uyanış zaten kayıtlıysa (dışarıdan, `core/wake`); null: "Başla" önce uyanışı yazar
+  controls: {
+    start: (minutesAgo?: number) => Promise<void>   // "Başla": uyanışı (şimdi ya da 15/30/60 dk önce; `woke` varsa yazmaz) "Uyandım"ın yoluyla
+                                                    // kaydeder, işi başlatır; sahne karşılamanın yerine gelir. Yazılamazsa reddeder, karşılama kalır
+    later: () => void                          // "Şimdi değil": Bugün; o gün bu cihazda karşılama bir daha kendiliğinden gelmez
+  }
+  today: TodayBrief                            // yalnızca okuma; "Başla"dan önce söylenmez
+  ctx: ModuleUiContext
+  facet: { key: string; name: string; color: string } | null
 }
 
 type SceneSubject =
@@ -281,6 +296,7 @@ Kurallar:
 4. **Sahne serbesttir** ama çekirdeğin tasarım dilini ve temasını kullanır, hareket azaltma tercihine uyar. Pano ve telefon aynı sahneyi kendi yerleşimiyle çizer (`device`). Sahnenin kalıcı durumu (hangi adımdayım) modülün kendi tablosundadır; ekranda tutulan durum öbür cihaza taşınmaz.
 5. **Hata.** Sahne bileşeni hata verirse çekirdek standart kartı gösterir ve tek satırla bildirir ("Sahne açılamadı; iş sürüyor."); oturum etkilenmez.
 6. **Tam ekranla ilişkisi.** `fullscreen` kullanıcının modül sayfasından açtığı görünümdür; sahne iş çalışırken Bugün ekranında kendiliğinden gelir. Aynı bileşen ikisinde de kullanılabilir.
+7. **Karşılama (sabah açılışı; kullanıcının kararı, 16 Kas 2026).** Sahne bir karşılama verebilir (`welcome`): işi başlamadan önce, sabah uygulama Bugün yerine onunla açılır. **Ne zaman** (saf `welcomeOf`, `src/core/today/welcome.ts`): günün çerçevesi açık; bugünün uyanış kaydı yok ya da uyanış dışarıdan kaydedildi (`core/wake`; ekranda söylenen ya da dokunuştan tahmin edilen uyanışta karşılama yoktur, o an geçmiştir); saat bugünün uyanış aralığının başı ile en geç uyanıştan (`lastNight.latestWake`) 2 saat sonrası arasında; çalışan oturum yok; uyanış dizisi başlamamış (içinde bugün yapılan, çalışan ya da "Ertele" denen iş yok; uyanış kayıtlıysa dizinin tamamı hâlâ sırada) ve bu cihazda o gün "Şimdi değil" denmemiş. O zaman dizinin ilk işinin modülü etkinse, iş bir görev ya da ritimse (henüz oturum işi açılmamış kalemde karşılama yoktur), o iş için seçilecek sahnenin (bölümün sahnesi, yoksa varsayılan; kural 1 ve "Bölümler" kural 5) `welcome`'ı varsa Bugün yerine karşılama çizilir. Sahneleyen modül yoksa Bugün olduğu gibidir (Günaydın kartı). Dışarıdan gelen uyanışta `start_on_wake` diziyi o an kendisi başlatıyorsa ("Diziler" kural 5) karşılama araya girmez. Akşam için karşılama yoktur. **Çekirdek** kabuğu verir (telefonda ekranın tamamı, panoda yan menünün yanında sayfa; sahnenin zemini, güvenli alan; şerit yoktur, çünkü oturum yoktur), "Başla"dan sonra sahne gelene kadar karşılamayı tutar, karşılamaya dokunuşu uyanış tahmini saymaz ve Bugün'ün tuşlarını karşılama açıkken dinlemez (düğmeler Boşluk ve Enter'ı kendileri alır). **Modül** bütün ekranı çizer: "Günaydın", tek birincil "Başla", küçük "Biraz önce uyandım" (yalnızca `woke` yokken; 15/30/60 dk) ve "Şimdi değil". "Başla"dan önce konuşmaz (sesli özet "Başla"nın dokunuşuyla açılır; sahne söyler). Karşılama hata verirse çekirdek o gün Bugün'ü gösterir. Kayıt `welcome`'ın bir bileşen olduğunu denetler; tanımlandığı yer `component` gibidir. Örnekler: Rutin'in sabah sahnesi (`docs/tasarim/ekranlar/rutin.md`, "Karşılama"), `deneme`'nin odak ve antrenman sahnesi.
 
 **Nerede tanımlanır.** `scene` nesnesi (`when` dahil) modülün sıradan bir dosyasında (`module.ts` ya da `scene.ts`) tanımlanır; yalnızca `component` `"use client"` dosyasından gelir. İstemci dosyasının dışa aktardığı nesne sunucuda yalnızca bir başvurudur: `when` orada fonksiyon olmaz ve kayıt denetimi uygulamayı açtırmaz.
 

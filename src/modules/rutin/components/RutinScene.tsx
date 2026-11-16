@@ -4,7 +4,7 @@ import { Check, Volume2 } from "lucide-react";
 import { type CSSProperties, type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { useRefreshAll } from "@/core/app/actions";
 import { useModuleQuery } from "@/core/app/hooks";
-import type { SceneKey, SceneProps } from "@/core/contract/types";
+import type { SceneKey, SceneProps, SceneWelcomeProps } from "@/core/contract/types";
 import {
   glassAlpha,
   PANEL_RANGE,
@@ -120,6 +120,105 @@ const lineTitle = (line: Line) =>
 export function RutinScene(props: SceneProps) {
   // A new session (the morning's second block, a day later) is a new scene.
   return <Scene key={props.session.id} {...props} />;
+}
+
+/**
+ * Sabah açılışı (16 Nov 2026): the planning day whose morning was begun with the welcome's
+ * "Başla" on this device. That touch unlocked the voice and stood for "Kalktım": the scene does
+ * not greet again (Günaydın), its steps and the day's summary come at once.
+ */
+let welcomedOn: string | null = null;
+
+/**
+ * The welcome (docs/tasarim/ekranlar/rutin.md, "Karşılama"): the morning scene's first screen
+ * before the routine starts: the hour's sky, "Günaydın" and the date, one "Başla"; small, "Biraz
+ * önce uyandım" (15, 30, 60 min; only while no waking is recorded) and "Şimdi değil". Nothing is
+ * said before "Başla".
+ */
+export function RutinWelcome({ device, woke, controls, today }: SceneWelcomeProps) {
+  const board = device === "pano";
+  const glass = GLASS.sabah;
+  const now = useTick(false);
+  const sky = useMemo(() => {
+    const minute = new Date(Math.floor(now / 60_000) * 60_000);
+    return skyOf(sunElevation(minute), { night: false, rising: sunRising(minute) });
+  }, [now]);
+  const [earlier, setEarlier] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const begin = (minutesAgo?: number) => {
+    if (busy) return;
+    setBusy(true);
+    welcomedOn = today.date;
+    controls.start(minutesAgo).catch(() => {
+      welcomedOn = null;
+      setBusy(false);
+    });
+  };
+  return (
+    <div
+      data-testid="rutin-welcome"
+      data-device={device}
+      data-sky={sky.phase}
+      data-woke={woke ? "" : undefined}
+      className="relative -m-5 flex flex-1 flex-col overflow-hidden md:-m-10 md:min-h-[82vh]"
+      style={{ color: glass.text }}
+    >
+      <RutinSky sky={sky} device={device} evening={false} owlAsleep={false} />
+      <div className="relative z-10 flex flex-1 flex-col items-center px-6">
+        <div className={`flex flex-col items-center gap-2 ${board ? "mt-55" : "mt-37.5"}`}>
+          <h2 className="text-greet tracking-greet font-semibold">Günaydın</h2>
+          <p className="text-lead text-warm-date font-medium">{formatDayLabel(new Date(now))}</p>
+        </div>
+        <div className="flex-1" />
+        <button
+          type="button"
+          onClick={() => begin()}
+          disabled={busy}
+          className={`${MAIN_BUTTON} text-heading h-16 w-full max-w-md`}
+          style={mainButton(glass)}
+        >
+          Başla
+        </button>
+        <div
+          className={`mt-1.5 flex w-full max-w-md flex-wrap items-center justify-center ${board ? "mb-6" : "mb-4.5"}`}
+        >
+          {earlier ? (
+            [15, 30, 60].map((minutes) => (
+              <button
+                key={minutes}
+                type="button"
+                disabled={busy}
+                onClick={() => begin(minutes)}
+                className={PLAIN_BUTTON}
+                style={{ color: glass.plain }}
+              >
+                {minutes} dk önce
+              </button>
+            ))
+          ) : woke ? null : (
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => setEarlier(true)}
+              className={PLAIN_BUTTON}
+              style={{ color: glass.plain }}
+            >
+              Biraz önce uyandım
+            </button>
+          )}
+          <button
+            type="button"
+            disabled={busy}
+            onClick={controls.later}
+            className={PLAIN_BUTTON}
+            style={{ color: glass.plain }}
+          >
+            Şimdi değil
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 type Screen = "steps" | "goodbye";
@@ -268,7 +367,8 @@ function Scene(props: SceneProps) {
     !(chain?.items ?? []).slice(0, Math.max(0, runningAt)).some((row) => row.state === "done");
   // "Kalktım" on any screen stamps the step's start: the other screens leave Günaydın too.
   const woken = view?.step_started_at != null;
-  const greets = fromOutside && atStart && firstOfMorning;
+  // Sabah açılışı: begun with the welcome's "Başla" on this device: no second greeting.
+  const greets = fromOutside && atStart && firstOfMorning && welcomedOn !== today.date;
   const greeting = !greeted && greets && !woken;
   // No Günaydın to wait on: the step starts now (on every screen; the first write wins).
   const stampStart = Boolean(view && !woken && !greets && !bedtime);

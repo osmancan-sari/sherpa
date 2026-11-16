@@ -1,5 +1,5 @@
 import type { ModuleScene } from "@/core/contract/types";
-import { DenemeScene, NightScene, SunScene } from "./components/Scenes";
+import { DenemeScene, DenemeWelcome, NightScene, SunScene } from "./components/Scenes";
 import { kindOf } from "./subject";
 
 // The module's scene (docs/06-modul-sozlesmesi.md, "Sahne"): when it comes, here (it runs on the
@@ -12,6 +12,9 @@ export const denemeScene: ModuleScene = {
   look: { tone: "focus" },
   // Ç3g: the scene takes the Today keys: Space is the workout's next step, the focus's "Bitti".
   keys: "scene",
+  // Sabah açılışı: a focused sitting or a workout bound to the waking, first in the morning's
+  // chain, opens the app on this welcome (the facets' sunny and night scenes have none).
+  welcome: DenemeWelcome,
 };
 
 // Ç3e: the scenes the fixed facets name (module.ts, `facets`): any running work of the morning

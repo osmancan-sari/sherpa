@@ -230,6 +230,34 @@ describe("the scene (Ç3c)", () => {
       ]),
     ).toThrow(/scene "gece": keys can only be "scene"/);
   });
+
+  it("takes a welcome only as a component (Sabah açılışı)", () => {
+    const view = () => null;
+    const scene = { when: () => true, component: view };
+    expect(() =>
+      createRegistry([
+        definition({
+          ui: {
+            ...definition().ui,
+            scene: { ...scene, welcome: view },
+            scenes: { gunes: { ...scene, welcome: view } },
+          },
+        }),
+      ]),
+    ).not.toThrow();
+    expect(() =>
+      createRegistry([
+        definition({ ui: { ...definition().ui, scene: { ...scene, welcome: null as never } } }),
+      ]),
+    ).toThrow(/the scene: welcome must be a component/);
+    expect(() =>
+      createRegistry([
+        definition({
+          ui: { ...definition().ui, scenes: { gunes: { ...scene, welcome: undefined } } },
+        }),
+      ]),
+    ).toThrow(/scene "gunes": welcome must be a component/);
+  });
 });
 
 describe("facets and named scenes (Ç3e)", () => {

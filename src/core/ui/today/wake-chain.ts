@@ -41,11 +41,15 @@ function markStarted(date: string) {
   }
 }
 
+/**
+ * Starts the wake chain when the moment is its own. True while this coming to the front is about
+ * to start it (Sabah açılışı: the welcome waits meanwhile; it does not come between).
+ */
 export function useWakeChainStart(
   input: PlanInput | undefined,
   plan: Plan | undefined,
   wake: Chain | null,
-) {
+): boolean {
   const start = useStartChain();
   // When the app last came to the front on this device; null once that moment is over.
   const [front, setFront] = useState<Date | null>(openedJustNow);
@@ -81,4 +85,8 @@ export function useWakeChainStart(
       { onSuccess: () => markStarted(date) },
     );
   }, [front, input, plan, wake, start]);
+
+  return Boolean(
+    front && input && plan && startedOn() !== input.date && wakeChainStart(input, wake, front),
+  );
 }

@@ -32,6 +32,10 @@ export function definitionProblems(def: ModuleDefinition): string[] {
     if (scene && scene.keys !== undefined && scene.keys !== "scene") {
       say(`${name}: keys can only be "scene"`);
     }
+    // Sabah açılışı: a welcome is a component (a client reference on the server, never empty).
+    if (scene && "welcome" in scene && !scene.welcome) {
+      say(`${name}: welcome must be a component`);
+    }
   }
   // Ç3e: named scenes for the facets. The facet list itself is computed with the module's
   // context, so it is checked every time it is computed (src/core/contract/facets.ts).

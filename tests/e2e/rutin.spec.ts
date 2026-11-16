@@ -341,6 +341,9 @@ test("Uyandım on this screen skips Günaydın: the teeth and the day's summary 
   await setUp(page, { start_on_wake: true }, null);
   await page.clock.setFixedTime(dayAt("07:00"));
   await page.goto("/");
+  // Sabah açılışı (16 Nov 2026): the morning opens on Rutin's welcome; the card's "Uyandım" is
+  // there once it was left for the day (sabah-acilisi.both.spec.ts has the welcome's own way).
+  await page.getByTestId("rutin-welcome").getByRole("button", { name: "Şimdi değil" }).click();
   await card(page).getByRole("button", { name: "Uyandım" }).click();
   await expect(scene(page)).toHaveAttribute("data-screen", "adim");
   await expect(scene(page).getByRole("heading", { name: "Diş bakımı" })).toBeVisible();

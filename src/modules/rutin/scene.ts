@@ -1,5 +1,5 @@
 import type { ModuleScene } from "@/core/contract/types";
-import { RutinScene } from "./components/RutinScene";
+import { RutinScene, RutinWelcome } from "./components/RutinScene";
 import { isRoutineKey } from "./server/flow";
 
 // The scene (docs/06-modul-sozlesmesi.md, "Sahne"; docs/moduller/rutin.md, 8.2): any of the three
@@ -14,4 +14,7 @@ export const rutinScene: ModuleScene = {
   look: { tone: "calm" },
   // Ç3g: Space and Enter are the scene's "Sonraki", not the core's "Bitti" of the whole routine.
   keys: "scene",
+  // Sabah açılışı (16 Nov 2026): the morning opens on its welcome ("Günaydın", "Başla"; rutin.md
+  // 8.3). The core shows it only for the wake chain's first work (the morning's routine).
+  welcome: RutinWelcome,
 };

@@ -30,6 +30,7 @@ import type { PlannedTarget } from "@/core/data/sessions";
 import { chainLine, chainsOf, chainWith, nextInChain, sceneChain } from "@/core/today/chain";
 import { breakText, closedUpNext, type UpNextRow, upNextOf } from "@/core/today/flow";
 import { blocksOfDay } from "@/core/today/select";
+import { type Welcome, welcomeOf } from "@/core/today/welcome";
 import type { Block, Task } from "@/core/types";
 import { dayKey, formatDue, formatMinutes, formatTime } from "@/lib/date";
 import { cn } from "@/lib/utils";
@@ -49,6 +50,7 @@ import { chainLook } from "./chains";
 import { ClosingShell, SceneFrame, sceneFor, useSceneExit } from "./Scene";
 import { briefLine } from "./frame-text";
 import { useWakeChainStart } from "./wake-chain";
+import { useWelcomeLater, WelcomeFrame, welcomeSceneFor } from "./Welcome";
 
 // The Today screen (docs/05-arayuz.md; look docs/tasarim/ekranlar/bugun.md, Ç4c): drawn from
 // the planner's plan, re-made on every change and every minute. The "now" card, "Sıradakiler",
@@ -112,7 +114,21 @@ function TodayBody() {
   }, [chains, runningWork, runningModule, moduleMap, colors]);
 
   // Ç3f: a waking told from outside starts the wake chain when the app comes to the front.
-  useWakeChainStart(input, plan, chains.wake);
+  const chainStarting = useWakeChainStart(input, plan, chains.wake);
+
+  // Sabah açılışı: the welcome of the wake chain's scene in the Today screen's place. "Şimdi
+  // değil" leaves it for the day on this device; one that fails gives Today back for the day.
+  // After "Başla" the welcome is held until the scene comes (the waking is written at once, so
+  // the moment is no longer the welcome's), or for a while if nothing comes.
+  const [later, sayLater] = useWelcomeLater();
+  const [failedWelcome, setFailedWelcome] = useState<string | null>(null);
+  const [held, setHeld] = useState<Welcome | null>(null);
+  const sceneReady = plan?.now.kind === "running" && plan.now.session.id !== "pending";
+  useEffect(() => {
+    if (!held) return;
+    const timer = setTimeout(() => setHeld(null), sceneReady ? 0 : HOLD_WELCOME_MS);
+    return () => clearTimeout(timer);
+  }, [held, sceneReady]);
 
   // Ç3f: the chain's next work after `id`, when the setting is on (Bitti and Ertele start it).
   const chainAuto = input?.settings.frame?.chainAuto ?? false;
@@ -139,6 +155,8 @@ function TodayBody() {
       if (document.querySelector("[data-scene-closing]")) return;
       // Ç3g: a scene that takes the keys has them (SceneProps.keys).
       if (document.querySelector("[data-scene-keys]")) return;
+      // Sabah açılışı: the welcome is on the screen; its buttons take Space and Enter themselves.
+      if (document.querySelector("[data-welcome]")) return;
       if (!state || !input) return;
       const key = event.key.toLowerCase();
       // Space and Enter on a focused button are that button's (the browser presses it).
@@ -196,6 +214,40 @@ function TodayBody() {
       <>
         <h1 className="sr-only">Bugün</h1>
         <ClosingShell onDone={() => setClosingOpen(false)} />
+      </>
+    );
+  }
+
+  // Sabah açılışı (docs/06-modul-sozlesmesi.md, "Sahne", rule 7): in the morning, before the
+  // wake chain begins, the welcome of the scene that would show its first work.
+  const welcome =
+    held && !sceneReady
+      ? held
+      : !chainStarting && failedWelcome !== input.date
+        ? welcomeOf(input, chains.wake, later === input.date)
+        : null;
+  const welcomeMod = welcome ? moduleMap.get(welcome.row.moduleId) : undefined;
+  const welcomeScene =
+    welcome && welcomeMod
+      ? welcomeSceneFor(welcomeMod, welcome, colors.lists.get(welcomeMod.row.id) ?? null)
+      : null;
+  if (welcome && welcomeScene && welcomeMod) {
+    return (
+      <>
+        <h1 className="sr-only">Bugün</h1>
+        <WelcomeFrame
+          mod={welcomeMod}
+          scene={welcomeScene.scene}
+          subject={welcomeScene.subject}
+          facet={welcomeScene.facet}
+          welcome={welcome}
+          date={input.date}
+          brief={briefOf(input, plan, moduleMap)}
+          onStart={() => setHeld(welcome)}
+          onStartFailed={() => setHeld(null)}
+          onLater={() => sayLater(input.date)}
+          onFailed={() => setFailedWelcome(input.date)}
+        />
       </>
     );
   }
@@ -411,6 +463,9 @@ function TodayBody() {
     </>
   );
 }
+
+/** How long the welcome waits for its scene after "Başla" before Today comes back. */
+const HOLD_WELCOME_MS = 15_000;
 
 /** Shown when the data could not be read. One plain sentence and a way to try again. */
 /** "Veri okunamadı": the screen's main panel in its place (docs/tasarim/ekranlar/bos-ve-hata.md). */

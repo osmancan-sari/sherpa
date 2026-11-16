@@ -7,6 +7,20 @@ Bu dosyayı Claude Code günceller. Yeni bir oturum yalnızca bu dosyayı ve `pr
 - Faz: **Ç4c. Bugün, Takvim, kapanış ve alan sayfası** (15 Kas 2026; istem `prompts/c4c-bugun-takvim-kapanis.md`). Ç4b (`c4b-tamam`) yayında
 - Adım: 7 (kapanış) bitti: üç adım denetimi ve iki tur faz denetimi (GEÇMEDİ, GEÇTİ); `check:full` yeşil (`c80f7ba`, 610 / 304 / 279); görüntüler `docs/ekran-goruntuleri/c4c/`; `c4c-tamam`. Yayında (16 Kas: migration `sherpa-dev` ve `sherpa-prod`, `git push`)
 - Son commit: faz denetimi tur 2'nin düzeltmeleri
+- **Ek: Sabah açılışı** (16 Kas 2026; istem `prompts/sabah-acilisi.md`; Ç4c sonrası küçük çekirdek eki, yeni faz değil). Durum aşağıdaki planda
+
+### Sabah açılışı planı
+
+İstem `prompts/sabah-acilisi.md`; karar `docs/09-kararlar.md` (16 Kas 2026). Sabah uygulama Bugün yerine uyanış dizisini sahneleyen modülün karşılamasıyla tam ekran açılır: "Günaydın", tek "Başla" (uyanışı kaydeder, dizinin ilk işini başlatır), küçük "Biraz önce uyandım" ve "Şimdi değil". Her adımda `npm run check` ve commit; sözleşme adımından sonra denetçi (adım kipi); sonunda `check:full` ve denetçi.
+
+| # | Adım | Durum |
+| --- | --- | --- |
+| 0 | Plan; `docs/09` kararı | bitti |
+| 1 | Sözleşme: `ModuleScene.welcome` (karşılama bileşeni) ve `SceneWelcomeProps`; kayıt denetimi; saf `welcomeOf` (`src/core/today/welcome.ts`, koşul: çerçeve açık, uyanış yok ya da dışarıdan, saat uyanış aralığının başı ile en geç uyanış + 2 sa arasında, dizi başlamamış, oturum yok, "Şimdi değil" denmemiş) ve birim testleri; `docs/06` | bitti: `types.ts` (`welcome`, `SceneWelcomeProps`), `registry.ts` (+1 test), `welcome.ts` (`welcome.test.ts` 10), `docs/06` kural 7 |
+| 2 | Bugün: karşılamanın kabuğu (telefonda tam ekran, panoda sayfada; güvenli alan), "Başla" (uyanış + ilk iş; sahne gelene kadar karşılama kalır), "Biraz önce uyandım", "Şimdi değil" (bu cihazda o gün); dışarıdan uyanışta kendiliğinden başlatma sürerken karşılama yok; denetçi (adım) | kod bitti: `Welcome.tsx` (`WelcomeFrame`, `welcomeSceneFor`, `useWelcomeLater`), `TodayScreen.tsx`, `wake-chain.ts` (başlatıyor bilgisi); uçtan uca `sabah-acilisi.both.spec.ts` (8 test, iki cihazda) |
+| 3 | Rutin'in karşılaması (sabah gökyüzü, "Günaydın", tarih, "Başla"; "Başla"dan sonra Rutin'in kendi "Günaydın"ı yok, özet okunur); `deneme` örneği; `docs/tasarim/ekranlar/`, `docs/moduller/rutin.md` | |
+| 4 | Uçtan uca testler (`tests/e2e/sabah-acilisi.spec.ts`), etkilenen eski testler, görsel test, ekran görüntüleri `docs/ekran-goruntuleri/sabah-acilisi/` | |
+| 5 | `check:full`, denetçi, rapor, commit; yayın senin izninle | |
 
 ### Ç4c planı
 
