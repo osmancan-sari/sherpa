@@ -7,6 +7,7 @@ import {
   correctWake,
   recordBed,
   recordWake,
+  recordWelcomeLater,
   saveDayFrame,
   setExpected,
   undoSceneBed,
@@ -59,6 +60,7 @@ function patchDay(date: string, patch: Partial<DayRow>) {
       woke_source: null,
       bed_at: null,
       bed_session_id: null,
+      welcome_later_at: null,
       planned_wake: null,
       planned_bed: null,
       expected_wake: null,
@@ -98,6 +100,22 @@ export function useRecordWake() {
           woke_source: "screen",
         }),
       },
+    ],
+    invalidate: [keys.days],
+    onError,
+  });
+}
+
+/**
+ * Sabah açılışı: "Şimdi değil" on the welcome, for the day and the whole account (the day's row;
+ * the other screens hear it live).
+ */
+export function useWelcomeLater() {
+  const onError = useFailureNotice();
+  return useCoreMutation({
+    mutate: (db, args: { date: string; at: Date }) => recordWelcomeLater(db, args.date, args.at),
+    optimistic: ({ date, at }) => [
+      { key: keys.days, update: patchDay(date, { welcome_later_at: at.toISOString() }) },
     ],
     invalidate: [keys.days],
     onError,

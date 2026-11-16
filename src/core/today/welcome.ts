@@ -22,11 +22,11 @@ export type Welcome = {
 /**
  * The welcome, when the moment is its own: the day's frame is on; no waking is recorded, or one
  * told from outside (`core/wake`; one said on a screen or estimated from a touch has had its
- * moment); the clock is between the start of today's waking range and two hours after today's
- * latest waking; nothing runs; the wake chain has not begun (nothing in it done, running or put
- * off today; with a recorded waking, all of it still offered) and its first work can be started;
- * and "Şimdi değil" was not said today on this device (`dismissed`). Null otherwise: the Today
- * screen as it is.
+ * moment); the clock is between the start of today's waking range (or the day's expected waking,
+ * if earlier) and two hours after today's latest waking; nothing runs; the wake chain has not
+ * begun (nothing in it done, running or put off today; with a recorded waking, all of it still
+ * offered) and its first work can be started; and "Şimdi değil" was not said today on any device
+ * (`dismissed`, the day's row). Null otherwise: the Today screen as it is.
  */
 export function welcomeOf(
   input: PlanInput,
@@ -43,7 +43,12 @@ export function welcomeOf(
     woke = frame.wake;
   }
   const now = input.now.getTime();
-  const from = istanbulInstant(input.date, rangesFor(settings, input.dayType).wake[0]).getTime();
+  // From the waking range's start, or the day's expected waking when it is earlier ("Yarın erken
+  // kalkacağım": the welcome is there at that hour).
+  const from = Math.min(
+    istanbulInstant(input.date, rangesFor(settings, input.dayType).wake[0]).getTime(),
+    frame.lastNight.expectedWake.getTime(),
+  );
   const until = frame.lastNight.latestWake.getTime() + WELCOME_AFTER_LATEST * 60_000;
   if (now < from || now > until) return null;
   if (woke) {

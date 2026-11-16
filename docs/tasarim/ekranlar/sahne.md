@@ -5,7 +5,7 @@ Kaynak: `docs/13-cam-dili.md` bölüm 4.7 ("Sahne kabuğu"; kareler `MS1`–`MS3
 ## Düzen
 
 - **Telefon:** sahne ekranı kaplar; alt menü ve "+" altında kalır. Şerit en üstte, kenardan kenara: yükseklik `spacing-strip`, `color-scene-strip-night` dolgu, `blur-strip`, altında `color-line` çizgi, yazı `text-sm`.
-- **Pano:** sahne sayfanın içindedir, yan menü görünür kalır; şerit cam hap (`radius-rail`, `color-scene-strip`, kenar `color-edge-strip`, yazı `text-note`).
+- **Pano:** sahne sayfanın içindedir, yan menü görünür kalır (menü sahnenin üstündedir: kendi gökyüzünü çizen sahne onu ekranın tamamına çizer, `Landscape` `screen`; Rutin, `rutin.md`); şerit cam hap (`radius-rail`, `color-scene-strip`, kenar `color-edge-strip`, yazı `text-note`).
 - **Şeridin içeriği:** saat (orta kalın, hizalı rakam), işin renginde nokta, ad (yarı kalın; sığmazsa kesilir), "· n dk" (ikincil), sağda "Çık" (yarı kalın, en az `spacing-touch`). Sahne şeridi kendisi verebilir ya da gizleyebilir (`SceneProps.strip`, `docs/06`).
 
 ## Zemin: tonlar

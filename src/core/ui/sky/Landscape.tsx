@@ -79,6 +79,7 @@ export function Landscape({
   shade = false,
   children,
   testId = "sky",
+  screen = false,
 }: {
   sky: Sky;
   device: Device;
@@ -89,6 +90,11 @@ export function Landscape({
   /** A module's figures over the sky, in its coordinates. */
   children?: ReactNode;
   testId?: string;
+  /**
+   * Drawn over the whole screen, not its box: a board's scene beside the menu stands on one sky
+   * reaching behind the menu, not on a second landscape inside the page's (the menu keeps over it).
+   */
+  screen?: boolean;
 }) {
   const id = useId().replaceAll(":", "");
   const board = device === "pano";
@@ -105,7 +111,7 @@ export function Landscape({
       aria-hidden
       data-testid={testId}
       data-phase={sky.phase}
-      className="pointer-events-none absolute inset-0 overflow-hidden"
+      className={`pointer-events-none ${screen ? "fixed" : "absolute"} inset-0 overflow-hidden`}
       style={{ background: last }}
     >
       <svg

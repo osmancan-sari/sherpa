@@ -1091,9 +1091,12 @@ test("morning welcome screens", async ({ page }, testInfo) => {
   ).toBeVisible();
   await shot("simdi-degil-bugun");
 
-  // A waking told from outside (another morning on this device: "Şimdi değil" forgotten).
-  await page.evaluate(() => localStorage.removeItem("sherpa.welcome.later"));
-  const woke = { woke_at: at("06:58").toISOString(), woke_source: "outside" };
+  // A waking told from outside (as on another morning: "Şimdi değil" not said).
+  const woke = {
+    woke_at: at("06:58").toISOString(),
+    woke_source: "outside",
+    welcome_later_at: null,
+  };
   const known = (await rows("days")).find((row) => row.date === shotDay);
   if (known) await update("days", known.id as string, woke);
   else await insert("days", { date: shotDay, ...woke });

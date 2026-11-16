@@ -41,6 +41,20 @@ export async function recordWake(
 }
 
 /**
+ * Sabah açılışı: "Şimdi değil" on the morning's welcome. Kept on the day's row, so every device
+ * leaves the welcome for the day (docs/06-modul-sozlesmesi.md, "Sahne", rule 7).
+ */
+export async function recordWelcomeLater(db: Db, date: string, at: Date): Promise<DayRow> {
+  return unwrap(
+    await db
+      .from("days")
+      .upsert({ date, welcome_later_at: at.toISOString() }, onDay)
+      .select()
+      .single(),
+  );
+}
+
+/**
  * Nobody said "Uyandım" but the user touched a screen: the waking is taken from that moment and
  * marked estimated. Only when no waking is recorded yet; returns the row when it wrote one.
  */

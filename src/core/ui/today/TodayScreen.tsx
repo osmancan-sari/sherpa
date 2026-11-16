@@ -20,6 +20,7 @@ import {
   useTodayPlan,
 } from "@/core/app/hooks";
 import { useColors } from "@/core/app/facets";
+import { useWelcomeLater } from "@/core/app/frame-actions";
 import { useAnswerFollowUp, useDefer, useReplan, useStopForStuck } from "@/core/app/plan-actions";
 import { moduleColor } from "@/core/contract/colors";
 import type { ChipData, Health } from "@/core/contract/types";
@@ -50,7 +51,7 @@ import { chainLook } from "./chains";
 import { ClosingShell, SceneFrame, sceneFor, useSceneExit } from "./Scene";
 import { briefLine } from "./frame-text";
 import { useWakeChainStart } from "./wake-chain";
-import { useWelcomeLater, WelcomeFrame, welcomeSceneFor } from "./Welcome";
+import { WelcomeFrame, welcomeSceneFor } from "./Welcome";
 
 // The Today screen (docs/05-arayuz.md; look docs/tasarim/ekranlar/bugun.md, Ç4c): drawn from
 // the planner's plan, re-made on every change and every minute. The "now" card, "Sıradakiler",
@@ -117,10 +118,10 @@ function TodayBody() {
   const chainStarting = useWakeChainStart(input, plan, chains.wake);
 
   // Sabah açılışı: the welcome of the wake chain's scene in the Today screen's place. "Şimdi
-  // değil" leaves it for the day on this device; one that fails gives Today back for the day.
+  // değil" leaves it for the day on every device (the day's row); one that fails gives Today back.
   // After "Başla" the welcome is held until the scene comes (the waking is written at once, so
   // the moment is no longer the welcome's), or for a while if nothing comes.
-  const [later, sayLater] = useWelcomeLater();
+  const welcomeLater = useWelcomeLater();
   const [failedWelcome, setFailedWelcome] = useState<string | null>(null);
   const [held, setHeld] = useState<Welcome | null>(null);
   const sceneReady = plan?.now.kind === "running" && plan.now.session.id !== "pending";
@@ -224,7 +225,12 @@ function TodayBody() {
     held && !sceneReady
       ? held
       : !chainStarting && failedWelcome !== input.date
-        ? welcomeOf(input, chains.wake, later === input.date)
+        ? welcomeOf(
+            input,
+            chains.wake,
+            rows?.days.some((day) => day.date === input.date && day.welcome_later_at !== null) ??
+              false,
+          )
         : null;
   const welcomeMod = welcome ? moduleMap.get(welcome.row.moduleId) : undefined;
   const welcomeScene =
@@ -245,7 +251,7 @@ function TodayBody() {
           brief={briefOf(input, plan, moduleMap)}
           onStart={() => setHeld(welcome)}
           onStartFailed={() => setHeld(null)}
-          onLater={() => sayLater(input.date)}
+          onLater={() => welcomeLater.mutate({ date: input.date, at: new Date() })}
           onFailed={() => setFailedWelcome(input.date)}
         />
       </>

@@ -120,6 +120,14 @@ describe("welcomeOf", () => {
     expect(welcomeAt(data, "10:06")).toBeNull();
   });
 
+  it("comes from the day's expected waking when it is before the range ('Yarın erken kalkacağım')", () => {
+    const { data } = morning({ expected_wake: "05:15:00" });
+    expect(welcomeAt(data, "05:14")).toBeNull();
+    expect(welcomeAt(data, "05:15")).not.toBeNull();
+    // A later expected waking does not move the start: the range's start stands.
+    expect(welcomeAt(morning({ expected_wake: "07:30:00" }).data, "06:00")).not.toBeNull();
+  });
+
   it("follows the day type's own waking range", () => {
     const { data } = morning(null, {
       settings: settingsRow({

@@ -1,6 +1,6 @@
 "use client";
 
-import { Component, type ReactNode, useSyncExternalStore } from "react";
+import { Component, type ReactNode } from "react";
 import { useStartChain } from "@/core/app/actions";
 import { useRecordWake } from "@/core/app/frame-actions";
 import type { KnownModule } from "@/core/app/hooks";
@@ -26,7 +26,7 @@ import { useDevice } from "./Scene";
 // the Today screen ("Günaydın", one "Başla"). The core decides when (`welcomeOf`, pure) and owns
 // the frame (the phone's whole screen, the board's page beside the menu; the backdrop; the safe
 // area); the module draws the welcome. "Başla" records the waking as "Uyandım" does and starts the
-// work; "Şimdi değil" leaves it for the day on this device.
+// work; "Şimdi değil" leaves it for the day on every device (the day's row, `welcome_later_at`).
 
 /** The welcome's scene for the chain's first work: its module's, if that scene has a welcome. */
 export function welcomeSceneFor(
@@ -51,51 +51,6 @@ export function welcomeSceneFor(
   const facet = findFacet(facets, facetKey);
   const scene = chooseScene(ui, facet, subject);
   return scene?.welcome ? { scene, subject, facet } : null;
-}
-
-// --- "Şimdi değil": remembered on this device, for the day -------------------------------------
-
-const LATER_KEY = "sherpa.welcome.later";
-const laterListeners = new Set<() => void>();
-/** Where the browser keeps nothing (a private window): this page remembers it. */
-let sessionLater: string | null = null;
-
-function readLater(): string | null {
-  try {
-    return localStorage.getItem(LATER_KEY);
-  } catch {
-    return null;
-  }
-}
-
-/** The day "Şimdi değil" was said on this device, and how to say it. */
-export function useWelcomeLater(): [string | null, (date: string) => void] {
-  const later = useSyncExternalStore(
-    (listener) => {
-      laterListeners.add(listener);
-      // Another tab of this browser said it.
-      const onStorage = (event: StorageEvent) => {
-        if (event.key === LATER_KEY) listener();
-      };
-      window.addEventListener("storage", onStorage);
-      return () => {
-        laterListeners.delete(listener);
-        window.removeEventListener("storage", onStorage);
-      };
-    },
-    readLater,
-    () => null,
-  );
-  const say = (date: string) => {
-    try {
-      localStorage.setItem(LATER_KEY, date);
-    } catch {
-      // This page only: kept below until it is reloaded.
-    }
-    sessionLater = date;
-    laterListeners.forEach((listener) => listener());
-  };
-  return [later ?? sessionLater, say];
 }
 
 /** The longest "Biraz önce uyandım" goes back. */
@@ -180,7 +135,7 @@ export function WelcomeFrame({
       data-device={device}
       data-backdrop={backdrop.kind}
       className={cn(
-        "animate-in fade-in flex flex-col duration-300 motion-reduce:animate-none",
+        "animate-scene-in flex flex-col motion-reduce:animate-none",
         // As the scene: the phone's whole screen (the menu and "+" under it), the board's page.
         device === "telefon"
           ? "bg-solid fixed inset-0 z-30 overflow-x-hidden overflow-y-auto overscroll-contain pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]"

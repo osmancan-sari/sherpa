@@ -292,6 +292,7 @@ export const TOKENS = {
   "blur-sheet": "34px",
   "ease-glass": "cubic-bezier(0.2, 0.8, 0.2, 1)",
   "animate-fade-in": "fade-in 0.6s var(--ease-glass) both",
+  "animate-scene-in": "fade-in 0.3s var(--ease-glass) both",
   "motion-fast": "150ms",
   "motion-base": "250ms",
   "motion-slow": "600ms",

@@ -332,6 +332,7 @@ export type Database = {
           top3: string[];
           updated_at: string;
           user_id: string;
+          welcome_later_at: string | null;
           woke_at: string | null;
           woke_estimated: boolean;
           woke_source: string | null;
@@ -359,6 +360,7 @@ export type Database = {
           top3?: string[];
           updated_at?: string;
           user_id?: string;
+          welcome_later_at?: string | null;
           woke_at?: string | null;
           woke_estimated?: boolean;
           woke_source?: string | null;
@@ -385,6 +387,7 @@ export type Database = {
           top3?: string[];
           updated_at?: string;
           user_id?: string;
+          welcome_later_at?: string | null;
           woke_at?: string | null;
           woke_estimated?: boolean;
           woke_source?: string | null;

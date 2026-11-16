@@ -352,3 +352,79 @@ test("Rutin: Sonraki on one screen brings the other to the same sub-step within 
   expect((await said(hand)).filter((text) => text.startsWith("Günaydın."))).toHaveLength(1);
   await context.close();
 });
+
+// --- Sabah açılışı (16 Nov 2026): the morning's welcome on two screens ---------------------------
+
+/** Rutin on, the frame on, no waking; both screens at yesterday's 07:00, on the welcome. */
+async function welcomeOnBoth(desktop: Page, hand: Page) {
+  await desktop.goto("/ayarlar/moduller");
+  await desktop.getByRole("button", { name: "Rutin: etkinleştir" }).click();
+  await waitFor(
+    () => rows("rhythms"),
+    (list) => list.length === 3,
+  );
+  const [settings] = await rows("settings");
+  await update("settings", settings.id as string, {
+    day_frame: { wake: ["06:00", "09:00"], bed: ["22:00", "01:00"], sleep_minutes: 480 },
+    day_start_default: "08:00",
+  });
+  const day = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Istanbul" }).format(
+    new Date(Date.now() - 86_400_000),
+  );
+  const seven = new Date(`${day}T07:00:00+03:00`);
+  await desktop.clock.setFixedTime(seven);
+  await hand.clock.setFixedTime(seven);
+  await Promise.all([desktop.goto("/"), hand.goto("/")]);
+  await expect(desktop.getByTestId("rutin-welcome")).toBeVisible();
+  await expect(hand.getByTestId("rutin-welcome")).toBeVisible();
+  return day;
+}
+
+test("Şimdi değil on one screen leaves the welcome on the other too, live", async ({
+  page: desktop,
+  browser,
+  baseURL,
+}) => {
+  const { context, page: hand } = await phone(browser, baseURL!);
+  const day = await welcomeOnBoth(desktop, hand);
+  const navigations = forbidReloads(desktop);
+  await hand.getByTestId("rutin-welcome").getByRole("button", { name: "Şimdi değil" }).click();
+  // The day's row holds it, for the account.
+  await waitFor(
+    () => rows("days"),
+    (list) => list.some((row) => row.date === day && row.welcome_later_at !== null),
+  );
+  // The board leaves its welcome without a reload: Today with the Günaydın card.
+  await expect(desktop.getByTestId("welcome")).toBeHidden();
+  await expect(
+    desktop.getByRole("region", { name: "Şimdi" }).getByRole("heading", { name: "Günaydın" }),
+  ).toBeVisible();
+  expect(navigations()).toBe(0);
+  // Opened again on the board: still Today.
+  await desktop.reload();
+  await expect(
+    desktop.getByRole("region", { name: "Şimdi" }).getByRole("heading", { name: "Günaydın" }),
+  ).toBeVisible();
+  await expect(desktop.getByTestId("welcome")).toBeHidden();
+  await context.close();
+});
+
+test("Başla on one screen brings the other from its welcome to the scene, live", async ({
+  page: desktop,
+  browser,
+  baseURL,
+}) => {
+  await roomInTheDay(desktop);
+  const { context, page: hand } = await phone(browser, baseURL!);
+  await welcomeOnBoth(desktop, hand);
+  const navigations = forbidReloads(desktop);
+  await hand.getByTestId("rutin-welcome").getByRole("button", { name: "Başla" }).click();
+  await expect(hand.getByTestId("rutin-scene")).toHaveAttribute("data-screen", "adim");
+  // The board goes from its welcome to the same step without a reload; one session.
+  await expect(desktop.getByTestId("rutin-scene")).toHaveAttribute("data-screen", "adim");
+  await expect(desktop.getByTestId("welcome")).toBeHidden();
+  expect(navigations()).toBe(0);
+  const open = (await rows("sessions")).filter((row) => row.ended_at === null);
+  expect(open).toHaveLength(1);
+  await context.close();
+});

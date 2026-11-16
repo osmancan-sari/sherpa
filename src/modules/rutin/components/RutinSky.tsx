@@ -22,7 +22,7 @@ export function RutinSky({
   const id = useId().replaceAll(":", "");
   const board = device === "pano";
   return (
-    <Landscape sky={sky} device={device} sun={!evening} shade testId="rutin-sky">
+    <Landscape sky={sky} device={device} sun={!evening} shade testId="rutin-sky" screen={board}>
       {evening ? (
         <>
           <defs>

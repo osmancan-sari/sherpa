@@ -330,7 +330,7 @@ export function SceneFrame({
       data-device={device}
       data-backdrop={backdrop.kind}
       className={cn(
-        "animate-in fade-in flex flex-col duration-300 motion-reduce:animate-none",
+        "animate-scene-in flex flex-col motion-reduce:animate-none",
         // The phone gives the whole screen to the scene: the bottom menu and "+" stay under it
         // (dialogs still open above it). The second screen keeps it in the page, beside the menu.
         device === "telefon"
@@ -389,7 +389,9 @@ function SceneStripBar({
       aria-label="Sahne şeridi"
       data-glass=""
       className={cn(
-        "h-strip backdrop-blur-strip relative z-10 flex shrink-0 items-center gap-2.5 backdrop-saturate-170",
+        // Over the scene's section: on the board a scene's sky may reach the whole screen
+        // (`Landscape` `screen`) and must not cover the strip.
+        "h-strip backdrop-blur-strip relative z-20 flex shrink-0 items-center gap-2.5 backdrop-saturate-170",
         device === "telefon"
           ? "bg-scene-strip-night border-line border-b pr-2 pl-5 text-sm"
           : "bg-scene-strip border-edge-strip rounded-rail text-note gap-3 border pr-3 pl-5.5",
@@ -444,7 +446,7 @@ export function ClosingShell({ onDone }: { onDone: () => void }) {
       data-testid="closing-shell"
       data-device={device}
       className={cn(
-        "animate-in fade-in flex flex-col duration-300 motion-reduce:animate-none",
+        "animate-scene-in flex flex-col motion-reduce:animate-none",
         device === "telefon"
           ? "bg-solid fixed inset-0 z-30 overflow-x-hidden overflow-y-auto overscroll-contain pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]"
           : "min-h-[70vh] flex-1",

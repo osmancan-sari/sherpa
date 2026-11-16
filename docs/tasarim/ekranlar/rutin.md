@@ -9,6 +9,7 @@ Kod: sahne `src/modules/rutin/components/RutinScene.tsx`, gökyüzü `RutinSky.t
 - Sahne çekirdeğin tam manzarasında durur (`ilkeler.md`, "Gökyüzü"). Sabah sahnesi saatin gökyüzündedir; **akşam sahnesi her saatte gecededir** (yıldızlar baştan).
 - Rutin manzarayı kendi figürleriyle giydirir: akşam sağda ufka yakın **ay** (yeri ve evresi hesaplanmaz), solda dalında **baykuş** ("İyi geceler"de gözleri kapalı); akşam çekirdeğin güneşi kapalıdır. Renkler `--sky-moon*`, `--sky-owl*`; çizim verisi `RutinSky.tsx`.
 - Telefonda düğmelerin arkasında alt karartma vardır (şafak ve gündüz; `--sky-shade`).
+- **Panoda tek gökyüzü (16 Kas 2026, kullanıcının düzeltmesi):** sahnenin gökyüzü kutusuna değil ekranın tamamına çizilir (`Landscape` `screen`): menünün yanındaki alanı kenar bırakmadan doldurur, menünün arkasına uzanır, sayfanın kendi manzarası arkada ikinci bir dikdörtgen olarak görünmez. Menü (`md:z-20`) ve sahnenin şeridi (`z-20`) onun üstündedir. Sahne yalnızca saydamlıkla belirir (`animate-scene-in`; bir dönüşüm, ekranın tamamına çizilen gökyüzünü geçiş boyunca kutuya hapsederdi).
 
 ## Sahnenin camı: iki ton
 
@@ -45,7 +46,7 @@ Onaylı karesi yoktur; sabah sahnesinin ilk karesinden ("Günaydın") türetildi
 
 - **Zemin ve dil:** sabah sahnesinin gökyüzü (saatin gökyüzü, `RutinSky`; baykuş ve ay yok), metin `warm-ink`. Şerit yoktur (oturum yok); güvenli alan sahnedeki gibidir: telefonda içerik saatin ve adanın altından başlar, gökyüzü arkasına uzanır (`menu.md`, "Saat şeridi ve ada").
 - **Düzen:** ortada "Günaydın" (`text-greet`, `tracking-greet`) ve altında tarih (`text-lead`, `warm-date`); "Günaydın" sahnenin Günaydın ekranındaki boşlukla durur; şerit olmadığı için onun yüksekliği kadar daha yukarıdadır (telefonda ve panoda). Altta tam genişlikte (en çok `max-w-md`) ana düğme "Başla" (ana düğmenin sabah camı, `text-heading`, yükseklik 16). Hemen altında sessiz yazı düğmeleri (`warm-plain`, `text-note`, en az 44 px): "Biraz önce uyandım" ve "Şimdi değil"; "Biraz önce uyandım"a dokununca yerini "15 dk önce", "30 dk önce", "60 dk önce" alır. Uyanış dışarıdan kayıtlıysa "Biraz önce uyandım" yoktur.
-- **Pano:** aynı parçalar, yan menü görünür; "Günaydın" Günaydın ekranının panodaki yerinde, düğmeler ortada. Panoda "Günün planı" paneli yoktur (karşılamada konuşulmaz, özet "Başla"dan sonra sahnede okunur).
+- **Pano:** aynı parçalar, yan menü görünür ve gökyüzünün üstünde durur (gökyüzü ekranın tamamına çizilir, menünün arkasına uzanır; sahnenin bütün ekranlarında da böyle, aşağıda "Gökyüzü"); "Günaydın" Günaydın ekranının panodaki yerinde, düğmeler ortada. Panoda "Günün planı" paneli yoktur (karşılamada konuşulmaz, özet "Başla"dan sonra sahnede okunur).
 - **"Başla"dan sonra:** düğmeler soluklaşır (tekrar dokunulmasın), sahne gelince yerini Diş bakımı alır.
 - Ayrımlar (görüşün gerek): "Günaydın"ın sahnedekinden şerit kadar yukarıda durması; ikincillerin ana düğmenin altında sessiz yazı olması ("Biraz önce" açıkken telefonda iki satıra iner); karşılamada günün özetinin yazılı da olmaması; panoda ek panel olmaması.
 

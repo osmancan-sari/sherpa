@@ -7,7 +7,7 @@ Bu dosyayı Claude Code günceller. Yeni bir oturum yalnızca bu dosyayı ve `pr
 - Faz: **Ç4c. Bugün, Takvim, kapanış ve alan sayfası** (15 Kas 2026; istem `prompts/c4c-bugun-takvim-kapanis.md`). Ç4b (`c4b-tamam`) yayında
 - Adım: 7 (kapanış) bitti: üç adım denetimi ve iki tur faz denetimi (GEÇMEDİ, GEÇTİ); `check:full` yeşil (`c80f7ba`, 610 / 304 / 279); görüntüler `docs/ekran-goruntuleri/c4c/`; `c4c-tamam`. Yayında (16 Kas: migration `sherpa-dev` ve `sherpa-prod`, `git push`)
 - Son commit: faz denetimi tur 2'nin düzeltmeleri
-- **Ek: Sabah açılışı** (16 Kas 2026; istem `prompts/sabah-acilisi.md`; Ç4c sonrası küçük çekirdek eki, yeni faz değil): bitti. `check:full` yeşil (621 / 304 / 298), iki adım denetimi GEÇTİ; rapor "Biten fazlar"da. Yayın senin iznini bekliyor (migration yok; yalnızca `git push`)
+- **Ek: Sabah açılışı** (16 Kas 2026; istem `prompts/sabah-acilisi.md`; Ç4c sonrası küçük çekirdek eki, yeni faz değil): bitti; yayından önce senin üç düzeltmen yapıldı (6. adım); yayın senin izninle (migration `20261116160307_welcome_later.sql`: önce `sherpa-dev`, sonra `sherpa-prod`; sonra `git push`)
 
 ### Sabah açılışı planı
 
@@ -21,6 +21,7 @@ Bu dosyayı Claude Code günceller. Yeni bir oturum yalnızca bu dosyayı ve `pr
 | 3 | Rutin'in karşılaması (sabah gökyüzü, "Günaydın", tarih, "Başla"; "Başla"dan sonra Rutin'in kendi "Günaydın"ı yok, özet okunur); `deneme` örneği; `docs/tasarim/ekranlar/`, `docs/moduller/rutin.md` | bitti: `RutinWelcome` (`RutinScene.tsx`), "Başla"dan sonra ikinci "Günaydın" yok (`welcomedOn`); `deneme` `DenemeWelcome` (odak ve antrenman); dokümanlar `docs/05` "Sabah açılışı", `docs/12` D, `docs/moduller/rutin.md` 8.3, `docs/tasarim/ekranlar/rutin.md` "Karşılama", `bugun.md`. Adım denetimi GEÇTİ; önemliler düzeltildi (saate bağlı `sync.spec.ts` testi, dokümanlar, sahne gelmezse karşılamanın bırakılması, görevin ertelenme testi) |
 | 4 | Uçtan uca testler (`tests/e2e/sabah-acilisi.both.spec.ts`), etkilenen eski testler, görsel test, ekran görüntüleri `docs/ekran-goruntuleri/sabah-acilisi/` | bitti: `sabah-acilisi.both.spec.ts` (8 × 2), `rutin.spec.ts` (1 test "Şimdi değil" adımıyla), `gorsel.spec.ts` (`karsilama-telefon`, `karsilama-pano`; toplam 31 onaylı görüntü), `safe-area.spec.ts` (+1), `screenshots.spec.ts` ("morning welcome screens"; 10 görüntü). Panoda bulunan çekirdek hatası düzeltildi: `Landscape`'in tepeleri kabın en-boy oranı 1440:900'den dikse altta gök rengi şerit bırakıyordu (menünün yanındaki sahne ve karşılama, 1440 pano) |
 | 5 | `check:full`, denetçi, rapor, commit; yayın senin izninle | bitti: `check:full` yeşil (`350ed8f`: 621 / 304 / 298); son adım denetimi GEÇTİ (notlar düzeltildi ya da rapora yazıldı); yayın iznini bekliyor |
+| 6 | Yayından önce düzeltmeler (senin isteğin): "Şimdi değil" gün kaydında ve hesap genelinde, iki cihazlı canlı test; karşılama o günün beklenen uyanışından (daha erkense); panoda tek gökyüzü (Rutin'in bütün pano sahneleri); `check:full`, denetçi (adım); yayın | bitti: migration `days.welcome_later_at`, `useWelcomeLater` (`frame-actions.ts`), `welcome.ts` (+1 test), `Landscape` `screen`, `AppNav` `md:z-20`, şerit `z-20`, `animate-scene-in`; `sync.spec.ts` +2; `karsilama-pano` bilerek yenilendi; görüntüler `docs/ekran-goruntuleri/sabah-acilisi/` (karşılama ve Rutin'in pano sahneleri) |
 
 ### Ç4c planı
 
@@ -247,7 +248,7 @@ Her adımın sonunda `npm run check` ve commit; şema, geçit ve zarf adımları
 | 3. "Biraz önce uyandım" (15/30/60) ve "Şimdi değil" (o gün yeniden gelmez, Günaydın kartı kalır) | sağlandı | "Biraz önce uyandım…" (07:40 → 07:10), "Şimdi değil…" (yeniden yüklemede de Bugün) |
 | 4. Uyanış dışarıdan kayıtlıysa doğrudan "Başla" | sağlandı | "a waking told from outside…" ("Biraz önce" yok, uyanış korunur, ikinci Günaydın yok); `start_on_wake` açıkken eski akış: `rutin.spec.ts` "a waking told from outside shows Günaydın" |
 | 5. Sahneleyen modül yoksa Günaydın kartı | sağlandı | "with no module staging the morning…"; hata veren karşılamada da Bugün |
-| 6. Pano: aynı kural; telefonda başlayan zincir panoda canlı | sağlandı / kısmen elle | `.both` testleri panoda da; iki cihazlı canlı test yok (mantık: açık oturum varken `welcomeOf` null; eşitleme mevcut davranış) — elle bakılacak |
+| 6. Pano: aynı kural; telefonda başlayan zincir panoda canlı | sağlandı | `.both` testleri panoda da; `sync.spec.ts` "Şimdi değil on one screen…" ve "Başla on one screen…" (iki cihaz, canlı, yeniden yüklemesiz; 6. adım) |
 | 7. Akşam için yok | sağlandı | `welcomeOf` yalnızca uyanış dizisi ve sabah penceresi |
 | Sınırlar: çekirdek genel, sözleşmeye en küçük ek, `docs/06` | sağlandı | lint (çekirdek → modül yasağı), `docs/06` kural 7 |
 | Karşılama için kare yok: sabah sahnesinin diliyle, `docs/tasarim/ekranlar/`'e yazıldı, görüşün gerek | sağlandı | `docs/tasarim/ekranlar/rutin.md` "Karşılama" |
@@ -259,7 +260,7 @@ Her adımın sonunda `npm run check` ve commit; şema, geçit ve zarf adımları
 
 #### Denetim
 
-İki adım denetimi. 1. tur (`5a42dd9..fad9963`) GEÇTİ; önemli bulgular düzeltildi: saate bağlı `sync.spec.ts` testi (gerçek saat 07:15–10:00 arasında 400 alıyordu; bu ekten bağımsız eski hata), eksik dokümanlar (`docs/05`, `12`, `moduller/rutin.md`, `tasarim/ekranlar/rutin.md` ve `bugun.md`), `ILERLEME` kaydı, görsel test ve güvenli alan; notlardan sahne gelmezse karşılamanın bırakılması, "Şimdi değil"in öbür sekmeye yayılması, görevin ertelenme testi. 2. tur (`5a42dd9..350ed8f`) GEÇTİ; denetçinin koşusunda `shell.both.spec.ts`'in çevrimdışı testi kırıldı (veri gelmeden çevrimdışına geçiyordu; ekten bağımsız, kendi koşumda yeşildi): veri beklenerek düzeltildi (48/48). Açık kalan notlar: erken kalkılan sabah (aşağıda "Bilinen sorunlar") ve iki cihazlı canlı test.
+İki adım denetimi. 1. tur (`5a42dd9..fad9963`) GEÇTİ; önemli bulgular düzeltildi: saate bağlı `sync.spec.ts` testi (gerçek saat 07:15–10:00 arasında 400 alıyordu; bu ekten bağımsız eski hata), eksik dokümanlar (`docs/05`, `12`, `moduller/rutin.md`, `tasarim/ekranlar/rutin.md` ve `bugun.md`), `ILERLEME` kaydı, görsel test ve güvenli alan; notlardan sahne gelmezse karşılamanın bırakılması, "Şimdi değil"in öbür sekmeye yayılması, görevin ertelenme testi. 2. tur (`5a42dd9..350ed8f`) GEÇTİ; denetçinin koşusunda `shell.both.spec.ts`'in çevrimdışı testi kırıldı (veri gelmeden çevrimdışına geçiyordu; ekten bağımsız, kendi koşumda yeşildi): veri beklenerek düzeltildi (48/48). Açık kalan iki not (erken kalkılan sabah, iki cihazlı canlı test) senin düzeltmelerinle 6. adımda kapandı.
 
 ### Ç4c: Bugün, Takvim, kapanış ve alan sayfası (15–16 Kas 2026)
 
@@ -1068,14 +1069,14 @@ Sabah açılışının yayını (senin izninle, `git push`); sonra Ç4d (teknik 
 
 ### Sabah açılışı: yayın ve telefonda bakılacaklar
 
-Yayın: migration yok; `git push` (Vercel). Senin iznini bekliyor.
+Yayın (16 Kas 2026 akşamı, senin izninle): migration `20261116160307_welcome_later.sql` önce `sherpa-dev`, sonra `sherpa-prod`; sonra `git push` (Vercel).
 
 1. **Telefon, sabah:** uygulamayı uyanış aralığında (çerçevenin ilk saati) ilk kez aç: doğrudan Rutin'in karşılaması mı geliyor? Saat şeridi ve adanın altında mı, düğmeler ana ekran çizgisinin üstünde mi?
 2. **"Başla":** tek dokunuşta Diş bakımı geliyor ve günün özeti okunuyor mu (ses açıksa)? Karşılamada önceden hiçbir şey söylenmiyor mu?
 3. **"Şimdi değil":** Bugün'deki Günaydın kartı kalıyor mu; uygulamayı kapatıp açınca karşılama yeniden gelmiyor mu?
-4. **Pano:** sabah açık duran panoda karşılama aralığın başında kendiliğinden geliyor mu; telefonda "Başla" deyince pano sahneye geçiyor mu? ("Şimdi değil" cihaz başınadır: telefonda denmesi panodakini kapatmaz.)
+4. **Pano:** sabah açık duran panoda karşılama aralığın başında kendiliğinden geliyor mu; gökyüzü menünün arkasına kadar tek parça mı? Telefonda "Başla" ya da "Şimdi değil" deyince pano da sahneye ya da Bugün'e geçiyor mu?
 5. **Alarm kısayolu kurulunca** (`core/wake`, `start_on_wake` kapalı): karşılama "Biraz önce uyandım"sız geliyor mu?
-6. **Görüşün gerek:** karşılamanın görünüşü (`docs/tasarim/ekranlar/rutin.md` "Karşılama"); "Şimdi değil"in cihaz başına olması; erken kalkılan sabah (karşılama aralığın başında açılır; "Yarın erken kalkacağım" ile daha erken kalkılırsa o ana kadar Günaydın kartı) — istersen başlangıç o günün beklenen uyanışına çekilir; karşılamanın yalnızca dizinin ilk işinin sahnesinde aranması (ilk iş karşılamasız bir modülünse karşılama yok).
+6. **Görüşün gerek:** karşılamanın görünüşü (`docs/tasarim/ekranlar/rutin.md` "Karşılama"; telefonda bakıp karar vereceksin); karşılamanın yalnızca dizinin ilk işinin sahnesinde aranması (olduğu gibi kalır, senin kararın).
 
 ### Ç4c yayını
 
@@ -1407,7 +1408,7 @@ Süre sapmasındaki artış çoğunlukla `enrich`'in kendi tahminlerinin çalı�
 
 - **Sözleşme:** karşılama sahnenin ayrı bir bileşenidir (`ModuleScene.welcome`), `SceneProps`'a eklenmedi: oturum yokken sahte bir `session` vermek yerine kendi küçük prop'ları (`SceneWelcomeProps`). Hangi sahnenin karşılaması: dizinin ilk işi için seçilecek sahne (bölümün sahnesi, yoksa varsayılan); onda `welcome` yoksa karşılama yok. Henüz oturum işi açılmamış kalemde (konu `task` ya da `rhythm` değil) karşılama yok.
 - **Koşulun ayrıntısı:** "uyanış kaydı yok" dokunuştan tahmin edilen ve ekranda söylenen uyanışı dışarıda bırakır; 4. madde yalnızca dışarıdan (`core/wake`) gelen uyanış. Uyanış yokken dizi yalnızca bir işi bugün yapıldı, çalışıyor ya da ertelendiyse başlamış sayılır (planlayıcı 10:00'dan sonra uyanmamış dizinin işlerini "zamanı geçti" okur; "Başla" uyanışı şimdi yazınca dizi yeniden sırada). Dışarıdan uyanışta `wakeChainStart` gibi bütün dizi hâlâ sırada olmalı. Pencerenin başı ayardaki uyanış aralığının başı (o günün beklenen uyanışı değil; istemin lafzı). **Görüşün gerek.**
-- **"Şimdi değil" cihaz başınadır** (`localStorage`, `sherpa.welcome.later`; aynı tarayıcının öbür sekmesine yayılır). Migration gerektirmesin diye gün kaydına yazılmadı. **Görüşün gerek.**
+- **"Şimdi değil" gün kaydındadır** (`days.welcome_later_at`, migration `20261116160307_welcome_later.sql`; senin düzeltmen): hesap genelinde, canlı eşitlemeyle öbür cihaza geçer. İlk sürümde cihaz başınaydı (`localStorage`); kalktı. **Karşılamanın başı** aralığın başı ile o günün beklenen uyanışından (`lastNight.expectedWake`) erken olanı. Sınır: beklenen uyanış gecenin bittiği andan (05:00 ya da aralığın başı) önceyse, o ana kadar ekran hâlâ önceki günündedir; karşılama gecenin bittiği anda gelir.
 - **"Başla"nın başlatması** dizinin kendi yolundan (`useStartChain`, `since` uyanış anı): o arada başka ekran bir şey başlattıysa burada bir şey başlamaz ve karşılama bırakılır. Karşılama sahne gelene kadar en çok 15 sn tutulur.
 - **Rutin:** karşılamadan "Başla" denince (`welcomedOn`) sahnenin kendi "Günaydın" / "Kalktım" ekranı gelmez; o dokunuş sesin kilidini açtığı için özet hemen okunur. `start_on_wake` açıkken dışarıdan uyanışta eski akış (kendiliğinden başlar, "Günaydın" / "Kalktım").
 - **Testler:** `rutin.spec.ts` "Uyandım on this screen skips Günaydın" artık önce "Şimdi değil" der (karar gereği sabah karşılama açılır; testin sınadığı, karttaki "Uyandım"ın Rutin'in Günaydın'ını atlaması, aynı). `sync.spec.ts` "an open Today shows a waking told from outside…" uyanışı gerçek saate göre seçer (07:15–10:00 arasında bir günden eski uyanış gönderip 400 alıyordu). `shell.both.spec.ts` çevrimdışı testi listeyi okuduktan sonra bağlantıyı keser (tam koşuda kırılgandı).
@@ -1742,8 +1743,6 @@ Süre sapmasındaki artış çoğunlukla `enrich`'in kendi tahminlerinin çalı�
 
 ## Bilinen sorunlar
 
-- **Sabah açılışı, erken kalkılan sabah:** karşılamanın penceresi ayardaki uyanış aralığının başında açılır; "Yarın erken kalkacağım" ile beklenen uyanış bunun önüne alınmışsa o ana kadar Bugün'deki Günaydın kartı görünür (karar senin; "Senden bekleyenler").
-- **Sabah açılışı, iki cihaz:** panoda karşılama açıkken telefonda "Başla" denince panonun sahneye geçmesinin uçtan uca testi yok (mantık testli: açık oturum varken karşılama yok). Elle bakılacak.
 - **Sabah açılışı, karşılamanın yazı karşıtlığı:** Rutin'in sessiz düğmeleri ("Biraz önce uyandım", "Şimdi değil") sahnenin "Hepsini yaptım"ıyla aynı renk ve yerde; ayrıca ölçülmedi.
 
 - **Ç4c, görsel denetimin eşiği:** panoda saat etiketlerinin seyrelmesi gibi yalnızca küçük yazıları değiştiren bir değişiklik `maxDiffPixelRatio` 0,002'nin altında kaldı, test kırılmadı (onaylı görüntüler `--update-snapshots=all` ile yazıldı). Ç4d'de yazı bölgeleri için ayrı, daha sıkı bir karşılaştırma düşünülebilir.
