@@ -189,6 +189,9 @@ test("offline: a small pill says so at the right of the title; the screen stays"
   await page.goto("/gelen");
   await expect(page.getByRole("heading", { level: 1, name: "Gelen kutusu" })).toBeVisible();
   await expect(page.getByText("bağlantı yok")).toHaveCount(0);
+  // The list is read before the connection goes (16 Nov 2026: in a full run the inbox's data
+  // could still be on its way, and offline it never came; the screen staying is what is tested).
+  await expect(page.getByText("Gelen kutusu boş.")).toBeVisible();
   await context.setOffline(true);
   await expect(page.getByRole("status").filter({ hasText: "bağlantı yok" })).toBeVisible();
   await expect(page.getByText("Gelen kutusu boş.")).toBeVisible();
