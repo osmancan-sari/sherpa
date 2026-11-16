@@ -240,8 +240,8 @@ test("Şimdi değil holds on this screen even when it cannot be written (offline
   );
   await page.getByTestId("rutin-welcome").getByRole("button", { name: "Şimdi değil" }).click();
   await expect(card(page).getByRole("heading", { name: "Günaydın" })).toBeVisible();
-  // The write was taken back, the screen stays on Today.
-  await page.waitForTimeout(1500);
+  // The write was taken back (its notice), and the screen stays on Today.
+  await expect(page.getByText("Kaydedilemedi. Değişiklik geri alındı.")).toBeVisible();
   await expect(welcome(page)).toBeHidden();
   expect((await dayRow())?.welcome_later_at ?? null).toBeNull();
 });
