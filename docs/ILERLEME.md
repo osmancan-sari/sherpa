@@ -5,8 +5,8 @@ Bu dosyayı Claude Code günceller. Yeni bir oturum yalnızca bu dosyayı ve `pr
 ## Durum
 
 - Faz: **Okul 1. adım sürüyor** (23 Kas 2026; istem `prompts/okul-adim-1.md`; etiket `okul-1-tamam`; görüntüler `docs/ekran-goruntuleri/okul-1/`). Okul modülünün temeli: tablolar, Notion aktarımı, sayfalar, ders blokları ve Derste görünümü, sınav hazırlığı (yer tutucu ve "Dokümanım hazır"), ödev ve proje sahneleri, teslim ve toplantı listesi. Oturum gözetimsiz: `sherpa-prod`'a ve `git push`'a dokunulmaz
-- Adım: 2 (teklifler) sürüyor; 0–1 bitti
-- Son commit: Okul 1 adım 1 (modül iskeleti ve tablolar)
+- Adım: 3 (Notion aktarımı) sürüyor; 0–2 bitti
+- Son commit: Okul 1 adım 2 (teklifler ve veritabanı testleri)
 - Önceki: Okul çekirdek A (`okul-cekirdek-a-tamam`, 23 Kas 2026, yayında)
 
 ### Okul 1 planı
@@ -17,7 +17,7 @@ Bu dosyayı Claude Code günceller. Yeni bir oturum yalnızca bu dosyayı ve `pr
 | --- | --- | --- |
 | 0 | Plan; ilk commit (tasarım sohbetlerinin dosyaları, dokunulmadan) | bitti: `af61f4b`; commit edilmemiş kod yoktu |
 | 1 | Modül iskeleti (`_sablon`'dan, `slug: okul`, `kind: term`), kayıt; tablolar (`okul_`), RLS, Realtime, tipler, dışa aktarım listesi; türetilenler (saf) ve birim testleri; istemin kararları `docs/09`'a | bitti: migration `20261123174511_okul_tables.sql` (9 tablo), `src/modules/okul/` (kayıtlı; sayfalar ve sahne iskelet), `server/derive.ts` (+9 birim testi), `server/sentence.ts` (+4), RLS testi; kararlar `docs/09` (10 satır), `okul.md` bölüm 3 |
-| 2 | Teklifler (`rules.ts`: hazırlık, sınav bloğu, ders blokları, ödev, alt iş, teslim, toplantı, aktarılan iş), günlük iş, "Dokümanım hazır", `facets`, `chip`, `sizingHints`, `sizingActuals`, `onOutcome`, haftalık rapor; veritabanı testleri; denetçi (adım) | bekliyor |
+| 2 | Teklifler (`rules.ts`: hazırlık, sınav bloğu, ders blokları, ödev, alt iş, teslim, toplantı, aktarılan iş), günlük iş, "Dokümanım hazır", `facets`, `chip`, `sizingHints`, `sizingActuals`, `onOutcome`, haftalık rapor; veritabanı testleri; denetçi (adım) | bitti (denetçi 3. adımdan sonra, veri ve tekliflerin tamamı için): `rules.ts`, `server/proposals.ts`, `jobs.ts` (`gunluk` 00:30, `devam` saatte bir), `module.ts` (çip, bölümler tek sorguyla, haftalık rapor, girişler); `tests/db/okul.test.ts` (11) |
 | 3 | Notion aktarımı (`import:notion`, `--dry-run`), uydurma dışa aktarımla testler; örnek veri (`scripts/demo-okul.ts`); `docs/08` | bekliyor |
 | 4 | Girişler (bölüm 7) | bekliyor |
 | 5 | Modül sayfaları (ana sayfa, ders, devam, iş ve sınav ayrıntısı, ayarlar), zemin ve token'lar, galeri | bekliyor |
