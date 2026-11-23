@@ -78,3 +78,14 @@ Onaylı karesi olmayanlar en yakın kareden türetilir ve "görüşün gerek" di
 - Boş haller (dersin hiç dosyası ya da notu yokken), ilk kurulum, okuma hiç gelmemişken.
 - "4 değişiklik · Gör"ün açtığı liste.
 - Haftalık rapora gidenler (`okul.md` bölüm 10; öneri).
+
+## Adım 1'de kurulan hal (23 Kas 2026)
+
+Kod: `src/modules/okul/components/` (`Home.tsx`, `CoursePage.tsx`, `DetailPages.tsx`, `Sheets.tsx`, `Settings.tsx`); onaylı görüntüler `okul-ana-sayfa-*`, `okul-ders-*`, `okul-devam-*`, `okul-sinav-*`, `okul-is-*`, `okul-ayarlar-*`.
+
+- **Ana sayfa:** "Geçenler" katlı satır, hafta başlıkları (aralık, iş sayısı, "%40 + tahmini %5"), final dönemi, "Tahmin edilemeyen"; satır: gün sütunu (kit `ListRow` `lead`), ad ve "tahmini", ders · tür · ağırlık, "hazırlık 0 dk / yaklaşık 8 sa", "dokümanlar hazır" ya da "dokümanlar: 1 Ara"; sağda dersin rengi. "Haftanın ağırlığı" kit'in çubuk grafiğiyle (kesin ve tahmini ayrı tonda değil: fark). "Dersler": kazanılan / açıklanan ve sıradaki. Panoda dört özet kutusu; liste tablo değil, aynı satırlar (fark). Yok: değişiklik satırı, "duyurudan", doküman durumunun "güncellendi" hali.
+- **Ders sayfası:** başlık, kod · gün · saat, "Sınav ya da teslim ekle"; özet (anlık toplam, kalan devamsızlık, sıradaki; "Açıklanan · kalan"); "Sorumluluklar" ve "Devam" (Dosyalar Adım 2); "Tüm işler" (Sırada, alt işler projenin altında girintili, "öneri" ve sahibi; Bitenler not ve puanla); VF şartları metin olarak (durum hesabı yok: şartlar serbest metin) ve devam şartı satırı, "Değiştir" (**görüşün gerek**: karesi yok); Notlandırma türe göre. Tahmin kuralları Adım 3.
+- **Devam:** iki sayı (Sen, kalan devamsızlık), şartın cümlesi, yapılan dersler yeniden eskiye, her birinde Girdim / Girmedim / Yapılmadı. Kepler sütunu Adım 2.
+- **Sınav ayrıntısı:** başlık kutusu (tarih ve saat dokununca değişir, kaynağı), ilerleme çubuğu; "Dokümanlar" kutusunda yalnızca "Dokümanım hazır" anahtarı ("elle işaretlendi · gün" ya da doküman günü) (**görüşün gerek**); Not; Oturumlar (çekirdeğin oturum işleri: gün ya da "bu hafta", süre, durum; oturum yokken kalan yer tutucu süre "yaklaşık").
+- **İş ayrıntısı (ödev, proje):** `SorumlulukAyrinti`'den türetildi (**görüşün gerek**): tarih ve kaynağı, "Kaldığın yer", Teslim ("Yükledim"), Not; projede alt işler (dokununca düzenleme sayfası: ad, gün, sahibi, sil) ve takım toplantıları ("Toplantı ekle").
+- **Ayarlar:** yalnızca "Çalışma": Yöntemler (alttan sayfa), Pomodoro süreleri (alttan sayfa), akışta mola hatırlatması (sayaç).

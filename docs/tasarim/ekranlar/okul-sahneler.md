@@ -71,3 +71,13 @@ Onaylı karesi olmayanlar en yakın kareden türetilir ve "görüşün gerek" di
 - "Kaldığın yer"de yarıda bırakılan bölüm.
 - Duraklatılmış sayaç; bağlantısız ve hata halleri (çekirdeğin `bos-ve-hata.md` kuralları geçerli).
 - Web push çalışmazsa bildirimin yedeği: Bugün'ün üstünde tek satır (çekirdeğin karesi).
+
+## Adım 1'de kurulan hal (23 Kas 2026)
+
+Kod: `src/modules/okul/components/Scenes.tsx`, `LessonView.tsx`; onaylı görüntüler `tests/e2e/gorsel.spec.ts-snapshots/okul-*`.
+
+- **Hazırlık** ("Dokümanım hazır" işaretliyken): pomodoro (yöntem ayarındaki "Konu okuma"); başlık "… hazırlığı", alt başlık sınavın günü ve saati; "Bu oturumda", "Aç" ve "Kaldığın yer" yok; ilerleme kutusu ("Bu quizin hazırlığı 0 dk / yaklaşık 4 sa"). Çıkarken not sorulmaz. **Görüşün gerek** (karesi yok; `K1T2`'den bölüm kutusu olmadan türetildi).
+- **Ödev, alt iş:** kod akış, yazılı pomodoro (ayardan). Ödev metni kutusu çizilmez (dosyalar Adım 2). İlerleme kutusu telefonda da kutudur (karede `K3T2` satır). Son oturumda "Bitti" teslim listesini aynı oturumda açar (karar 5; şerit "… teslimi · n / 4").
+- **Teslim listesi:** dört adım ("Dosya hazır", "Dosya adı", "Ninova'ya yükle" ve "Ninova'yı aç", "Yüklendiği görülsün": Adım 2'de Ninova'dan doğrulanacak; kendiliğinden kapanmaz, bitirmeyi engellemez); sessiz "Yükledim" ve "Sonra yap". Adımlarda dosyanın adı ve yönergedeki ad yazmaz (Adım 2).
+- **Takım toplantısı:** projenin açık alt işleri; sahibine dokununca değişir (sen → başkası → sahibi yok), "Bitti"/"Aç"; tek cümleyle yeni alt iş; "Toplantıyı bitir", "Sonra yap". **Görüşün gerek** (karede sahibin seçimi ayrı; burada döngü).
+- **Derste:** "Bu hafta" dosya kutusu yok (Adım 2); "Derste değilim" yalnızca devam şartı olan derste, oturumu "girmedim" işaretler ve Bugün'e döner (**görüşün gerek**). **Ders bitti** telefonda pano karesinden türetildi (**görüşün gerek**); Kepler cümlesi yok.
