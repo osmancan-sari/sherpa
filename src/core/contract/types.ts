@@ -315,8 +315,19 @@ export type SceneProps = {
  * ("Sabah" for the whole morning); `since` counts the minutes from another moment (the waking)
  * and null shows none; `hidden` leaves the strip out (an opening or closing screen: it has no
  * "Çık" then, so only for a screen that goes by itself or has its own way on).
+ *
+ * Okul çekirdek A: the strip says "elapsed / allotted" ("26 dk / 2 sa"); the allotted minutes are
+ * the running work's planned minutes unless the scene gives its own (`allotted`; null: none, only
+ * the elapsed). The elapsed is wall-clock time, breaks included. `detail` puts a short text in
+ * the minutes' place ("2 / 4": a checklist's step).
  */
-export type SceneStrip = { title?: string; since?: Date | null; hidden?: boolean };
+export type SceneStrip = {
+  title?: string;
+  since?: Date | null;
+  hidden?: boolean;
+  allotted?: number | null;
+  detail?: string | null;
+};
 
 /** Ç3g: a key of the Today screen handed to a scene that takes them. */
 export type SceneKey = "space" | "enter" | "e" | "x" | "r";

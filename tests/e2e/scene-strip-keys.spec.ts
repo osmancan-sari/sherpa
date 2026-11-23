@@ -27,7 +27,8 @@ test("the strip: the scene's own name, minutes from the waking or none, and no s
   await startFromModule(page, "Akşam günlüğü");
   await expect(page.getByTestId("deneme-gece")).toBeVisible();
   await expect(page.getByTestId("strip-title")).toHaveText("Akşam günlüğü");
-  await expect(page.getByTestId("strip-minutes")).toHaveText("· 0 dk");
+  // Okul çekirdek A: "elapsed / allotted"; the record asked for 20 minutes.
+  await expect(page.getByTestId("strip-minutes")).toHaveText("· 0 dk / 20 dk");
   await page.getByRole("button", { name: "Şeridi gizle" }).click();
   await expect(page.locator(strip)).toHaveCount(0);
   await page.getByRole("button", { name: "Şeridi göster" }).click();

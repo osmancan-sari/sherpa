@@ -608,13 +608,24 @@ function Scene(props: SceneProps) {
   const stripSince = evening ? session.startedAt : (today.wokeAt ?? session.startedAt);
   const stripHidden = screen === "goodbye";
   const stripTime = greeting ? null : stripSince.getTime();
+  // Okul çekirdek A: "elapsed / allotted". The morning counts from the waking, so its allotted
+  // time is the whole morning's chain; the evening's is its running routine's (the core's).
+  const stripAllotted = evening
+    ? undefined
+    : chain
+      ? chain.items.reduce((sum, row) => sum + row.minutes, 0) || null
+      : undefined;
   useEffect(() => {
     strip(
       stripHidden
         ? { hidden: true }
-        : { title: stripTitle, since: stripTime === null ? null : new Date(stripTime) },
+        : {
+            title: stripTitle,
+            since: stripTime === null ? null : new Date(stripTime),
+            ...(stripAllotted === undefined ? {} : { allotted: stripAllotted }),
+          },
     );
-  }, [strip, stripHidden, stripTitle, stripTime]);
+  }, [strip, stripHidden, stripTitle, stripTime, stripAllotted]);
 
   function wake() {
     setGreeted(true);

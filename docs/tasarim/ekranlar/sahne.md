@@ -6,7 +6,7 @@ Kaynak: `docs/13-cam-dili.md` bölüm 4.7 ("Sahne kabuğu"; kareler `MS1`–`MS3
 
 - **Telefon:** sahne ekranı kaplar; alt menü ve "+" altında kalır. Şerit en üstte, kenardan kenara: yükseklik `spacing-strip`, `color-scene-strip-night` dolgu, `blur-strip`, altında `color-line` çizgi, yazı `text-sm`.
 - **Pano:** sahne sayfanın içindedir, yan menü görünür kalır (menü sahnenin üstündedir: kendi gökyüzünü çizen sahne onu ekranın tamamına çizer, `Landscape` `screen`; Rutin, `rutin.md`); şerit cam hap (`radius-rail`, `color-scene-strip`, kenar `color-edge-strip`, yazı `text-note`).
-- **Şeridin içeriği:** saat (orta kalın, hizalı rakam), işin renginde nokta, ad (yarı kalın; sığmazsa kesilir), "· n dk" (ikincil), sağda "Çık" (yarı kalın, en az `spacing-touch`). Sahne şeridi kendisi verebilir ya da gizleyebilir (`SceneProps.strip`, `docs/06`).
+- **Şeridin içeriği:** saat (orta kalın, hizalı rakam), işin renginde nokta, ad (yarı kalın; sığmazsa kesilir), "· geçen / ayrılan" (ikincil; "· 26 dk / 2 sa"; ayrılan süre yoksa yalnızca "· 26 dk"), sağda "Çık" (yarı kalın, en az `spacing-touch`). Geçen süre duvar saatiyle geçendir (mola dahil); ayrılan işin planlanan süresidir, sahne başka bir andan sayıyorsa kendi ayrılanını verir (Rutin'in sabahı: bütün sabahın dizisi). Sahne sürenin yerine kısa bir yazı da koyabilir ("· 2 / 4": kontrol listesinin adımı). Sahne şeridi kendisi verebilir ya da gizleyebilir (`SceneProps.strip`, `docs/06`). **Okul çekirdek A (23 Kas 2026):** "geçen / ayrılan" biçimi bütün modüllerde; kare Okul'un `K1T2`, `K3T2` şeridi. Rutin'in şeridi de bu biçime geçti (**görüşün gerek**: sabahın ayrılanı bütün dizinin toplamı, akşamın ayrılanı çalışan rutinin süresi).
 
 ## Zemin: tonlar
 

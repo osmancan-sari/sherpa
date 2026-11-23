@@ -229,6 +229,9 @@ export function SceneFrame({
   const stripSince = strip?.since === undefined ? startedAt : strip.since;
   const stripMinutes =
     stripSince === null ? null : Math.max(0, Math.floor((until - stripSince.getTime()) / 60_000));
+  // Okul çekirdek A: "elapsed / allotted": the work's planned minutes unless the scene says.
+  const plannedMinutes = state.task?.est_minutes ?? state.rhythm?.est_minutes ?? null;
+  const stripAllotted = strip?.allotted === undefined ? plannedMinutes : strip.allotted;
   // Ç3g: the Today keys, handed to the scene that takes them.
   const takesKeys = scene.keys === "scene";
   const keyListeners = useRef(new Set<(key: SceneKey) => void>());
@@ -347,6 +350,8 @@ export function SceneFrame({
           color={color}
           title={title}
           minutes={stripMinutes}
+          allotted={stripAllotted}
+          detail={strip?.detail ?? null}
           onExit={onExit}
         />
       )}
@@ -367,14 +372,18 @@ export function SceneFrame({
 
 /**
  * The core's strip over a scene (docs/tasarim/ekranlar/sahne.md): the time, the work's colour, its
- * name, the minutes, "Çık". On the phone across the top edge; on the board a glass pill.
+ * name, the minutes, "Çık". On the phone across the top edge; on the board a glass pill. Okul
+ * çekirdek A: the minutes are "elapsed / allotted" when there is an allotted time, or a short text
+ * of the scene's (`detail`) in their place.
  */
-function SceneStripBar({
+export function SceneStripBar({
   device,
   now,
   color,
   title,
   minutes,
+  allotted = null,
+  detail = null,
   onExit,
 }: {
   device: SceneProps["device"];
@@ -382,8 +391,17 @@ function SceneStripBar({
   color: string | null;
   title: string;
   minutes: number | null;
+  allotted?: number | null;
+  detail?: string | null;
   onExit: () => void;
 }) {
+  const after = detail
+    ? detail
+    : minutes === null
+      ? null
+      : allotted
+        ? `${formatMinutes(minutes)} / ${formatMinutes(allotted)}`
+        : formatMinutes(minutes);
   return (
     <header
       aria-label="Sahne şeridi"
@@ -410,9 +428,9 @@ function SceneStripBar({
         <span className="truncate font-semibold" data-testid="strip-title">
           {title}
         </span>
-        {minutes === null ? null : (
+        {after === null ? null : (
           <span className="text-ink-2 whitespace-nowrap tabular-nums" data-testid="strip-minutes">
-            · {formatMinutes(minutes)}
+            · {after}
           </span>
         )}
       </span>
@@ -478,7 +496,9 @@ function sameStrip(a: SceneStrip | null, b: SceneStrip | null): boolean {
   return (
     a.title === b.title &&
     Boolean(a.hidden) === Boolean(b.hidden) &&
-    time(a.since) === time(b.since)
+    time(a.since) === time(b.since) &&
+    a.allotted === b.allotted &&
+    (a.detail ?? null) === (b.detail ?? null)
   );
 }
 

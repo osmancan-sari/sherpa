@@ -286,7 +286,8 @@ test("the scene takes the keys: Space is Sonraki, it never ends the whole routin
   await expect(scene(page)).toHaveAttribute("data-part", "0");
   // The whole morning is "Sabah" on the strip, counted from the waking (07:00).
   await expect(page.getByTestId("strip-title")).toHaveText("Sabah");
-  await expect(page.getByTestId("strip-minutes")).toHaveText("· 20 dk");
+  // Okul çekirdek A: "elapsed / allotted"; the morning's allotted time is its whole chain.
+  await expect(page.getByTestId("strip-minutes")).toHaveText("· 20 dk / 45 dk");
   await scene(page).getByRole("heading", { name: "Diş bakımı" }).click();
   await page.keyboard.press(" ");
   await expect(scene(page)).toHaveAttribute("data-part", "1");
@@ -368,7 +369,7 @@ test("a waking told from outside shows Günaydın; Kalktım brings the teeth and
   await scene(page).getByRole("button", { name: "Kalktım" }).click();
   await expect(scene(page).getByRole("heading", { name: "Diş bakımı" })).toBeVisible();
   // From the waking (06:58), not from the session.
-  await expect(page.getByTestId("strip-minutes")).toHaveText("· 2 dk");
+  await expect(page.getByTestId("strip-minutes")).toHaveText("· 2 dk / 45 dk");
   await expect.poll(async () => (await spoken(page)).join(" ")).toContain("Günaydın.");
 });
 
@@ -452,7 +453,8 @@ test("Yatıyorum writes the bedtime, İyi geceler stays after a reload, Geri al 
   await expect(scene(page).getByRole("heading", { name: "Antiperspirant" })).toBeVisible();
   // Ç3g: the evening's strip is its routine's name, counted from its first step.
   await expect(page.getByTestId("strip-title")).toHaveText("Akşam kapanışı");
-  await expect(page.getByTestId("strip-minutes")).toHaveText("· 5 dk");
+  // Okul çekirdek A: the evening's allotted time is its running routine's.
+  await expect(page.getByTestId("strip-minutes")).toHaveText("· 5 dk / 13 dk");
   await expect(page.getByTestId("rutin-count")).toHaveText(/1 \/ 5$/);
   const run = await waitFor(
     () => runOf("aksam"),

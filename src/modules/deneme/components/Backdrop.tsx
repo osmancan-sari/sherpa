@@ -11,6 +11,7 @@ export function DenemeBackdrop({ color, device }: ModuleBackdropProps) {
   return (
     <div
       data-testid="deneme-backdrop"
+      data-color={color}
       className="bg-energy-base absolute inset-0"
       style={{
         background: `radial-gradient(circle at ${at}, color-mix(in oklab, ${color} 34%, var(--color-energy-base)) 0%, var(--color-energy-base) 62%)`,

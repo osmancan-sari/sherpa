@@ -241,7 +241,8 @@ Ekranlar cam dilinin zeminindedir (`docs/tasarim/ilkeler.md`, karar 2–4): Bug�
 ```ts
 type ModuleBackdropProps = {
   device: "pano" | "telefon"
-  color: string                  // modülün rengi (kullanıcınınki, yoksa varsayılan); sahnede işin rengi
+  color: string                  // modülün rengi (kullanıcınınki, yoksa varsayılan); sahnede işin rengi: bölümü varsa bölümün çözülmüş rengi
+                                 // (renk çözümleyiciden, `workColor`; Ayarlar'dan değişen renk anında yansır; Okul çekirdek A)
   sky: { phase: "night" | "dawn" | "day" | "dusk"; elevation: number }   // saatin gökyüzü, zemin saate bakacaksa
 }
 ```
@@ -308,15 +309,17 @@ type SceneProps = {
                                      // Ç3g: sahne tuşları devraldıysa (ModuleScene.keys) Bugün'ün tuşları buraya gelir; yoksa null
 }
 
-type SceneStrip = { title?: string; since?: Date | null; hidden?: boolean }
+type SceneStrip = { title?: string; since?: Date | null; hidden?: boolean; allotted?: number | null; detail?: string | null }
                                      // title: işin adı yerine; since: süre bu andan (null: süre yok); hidden: şerit yok
+                                     // Okul çekirdek A: allotted: ayrılan dakika (yoksa işin planlanan süresi; null: yalnızca geçen);
+                                     // detail: sürenin yerine kısa yazı ("2 / 4")
 type SceneKey = 'space' | 'enter' | 'e' | 'x' | 'r'
 ```
 
 Kurallar:
 
 1. **Ne zaman.** `plan.now` `running` ise, çalışan işin (iş ya da ritim; plansız oturumda sahne yoktur) modülü `scene` tanımlamışsa ve `when` doğru dönerse Bugün ekranı sahneyi çizer. Öneri durumunda standart kart kalır. İş bitince, durunca ya da ertelenince standart ekran döner. `when` hata verirse sahne yok sayılır.
-2. **Çekirdeğin şeridi.** Sahnenin üstünde ince bir şerit durur: saat, işin adı, geçen süre, "Çık". Şerit çekirdeğindir: "Çık" standart ekrana döner; oturum sürer, kartta "Sahneye dön" çıkar. Çıkış cihaza özgüdür (öbür cihaz sahnede kalır) ve o oturum için hatırlanır. **Ç3g:** sahne gösterdiği ekran için şeridin içeriğini verebilir (`strip`): işin adı yerine başka bir ad (bütün sabah "Sabah"), sürenin başka bir andan sayılması (uyanıştan) ya da hiç süre yazılmaması (`since: null`); açılış ve kapanış gibi kendiliğinden geçen ya da kendi çıkış yolu olan ekranlarda şeridi gizleyebilir (`hidden`: "Çık" da yoktur). Ekran değişince yeniden çağırır; `strip(null)` çekirdeğin haline döner, yeni oturum çekirdeğin haliyle başlar. Hiç çağırmayan sahnede şerit bugünkü gibidir.
+2. **Çekirdeğin şeridi.** Sahnenin üstünde ince bir şerit durur: saat, işin adı, geçen süre, "Çık". Şerit çekirdeğindir: "Çık" standart ekrana döner; oturum sürer, kartta "Sahneye dön" çıkar. Çıkış cihaza özgüdür (öbür cihaz sahnede kalır) ve o oturum için hatırlanır. **Ç3g:** sahne gösterdiği ekran için şeridin içeriğini verebilir (`strip`): işin adı yerine başka bir ad (bütün sabah "Sabah"), sürenin başka bir andan sayılması (uyanıştan) ya da hiç süre yazılmaması (`since: null`); açılış ve kapanış gibi kendiliğinden geçen ya da kendi çıkış yolu olan ekranlarda şeridi gizleyebilir (`hidden`: "Çık" da yoktur). Ekran değişince yeniden çağırır; `strip(null)` çekirdeğin haline döner, yeni oturum çekirdeğin haliyle başlar. Hiç çağırmayan sahnede şerit bugünkü gibidir. **Okul çekirdek A (23 Kas 2026):** şeridin süresi bütün modüllerde "geçen / ayrılan"dır ("26 dk / 2 sa"): geçen duvar saatiyle (mola dahil), ayrılan çalışan işin planlanan süresi (görevin ya da ritmin `est_minutes`'ı); ayrılan yoksa yalnızca geçen. `since` ile başka bir andan sayan sahne kendi ayrılanını verebilir (`allotted`; Rutin'in sabahı bütün sabah dizisinin dakikası), `detail` ile sürenin yerine kısa bir yazı koyabilir (kontrol listesinde "2 / 4").
 3a. **Tuşlar (Ç3g).** Sahne `keys: 'scene'` bildirirse sahne açıkken Bugün'ün tuşları (`Space`, `Enter`, `E`, `X`, `R`; `docs/05` "Klavye") çekirdeğin değil sahnenindir: çekirdek onları yalnızca `SceneProps.keys.listen` ile verdiği dinleyicilere iletir (yazarken, pencere açıkken, sahneden açılan kapanışta ve odakta bir düğme ya da bağlantı varken `Space`/`Enter` iletilmez). Adımlı sahne `Space`'i "Sonraki" yapar; işi bitirmek sahnenin `controls.finish()`'idir. Bildirmeyen sahnede tuşlar standart karttaki gibidir (`Space` "Bitti"). Sahne `window`'da kendi tuş yakalamasını kurmaz.
 3. **Oturum çekirdeğindir.** Başlatma, bitirme, ölçme, "Devam ediyor musun?" ve 30 dakika kuralı değişmez; sahne oturumu yalnızca `controls` ile etkiler.
 4. **Sahne serbesttir** ama çekirdeğin tasarım dilini ve temasını kullanır, hareket azaltma tercihine uyar. Pano ve telefon aynı sahneyi kendi yerleşimiyle çizer (`device`). Sahnenin kalıcı durumu (hangi adımdayım) modülün kendi tablosundadır; ekranda tutulan durum öbür cihaza taşınmaz.
