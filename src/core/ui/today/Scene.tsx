@@ -37,6 +37,8 @@ import { formatMinutes, formatTime } from "@/lib/date";
 import { cn } from "@/lib/utils";
 import { useModuleScope } from "../module/ModuleProvider";
 import { useAskBed } from "./BedAsk";
+import { asksOnExit, ExitNoteCard, ExitStepOverlay, useExitStep } from "./ExitStep";
+import { SceneCardContext } from "../kit/SceneLayouts";
 import { isTyping } from "./DayParts";
 
 // The scene (docs/06-modul-sozlesmesi.md, "Sahne"; docs/05-arayuz.md, "Sahne"): while a
@@ -277,24 +279,63 @@ export function SceneFrame({
   const backdrop = sceneBackdrop(mod, tone, color);
   useBackdrop(device === "pano" ? backdrop : null);
 
+  // Okul çekirdek A: the way out may wait for one line (`beforeExit`): "Çık", the scene's own
+  // ending and the keyboard pass through it; "Takıldım" and "Yatıyorum" do not.
+  const sessionDay = planningDay(startedAt, dayStart);
+  const exitStep = useExitStep({
+    scene,
+    subject,
+    session: { id: session.id, startedAt, day: sessionDay },
+    ctx,
+  });
+  const leave = exitStep.leave;
+  const exitHere = useCallback(() => void leave(onExit), [leave, onExit]);
+  const finishHere = useCallback(
+    async (counted?: number | null) => {
+      await leave(() => end.mutateAsync({ session, outcome: "done", next, counted }));
+    },
+    [leave, end, session, next],
+  );
+  const [claims, setClaims] = useState(0);
+  const claim = useCallback(() => {
+    setClaims((count) => count + 1);
+    return () => setClaims((count) => count - 1);
+  }, []);
+  const asks = asksOnExit(scene, subject);
+  // A scene that asks but does not take the keys: Space ("Bitti") passes through the step too.
+  useEffect(() => {
+    if (!asks || takesKeys || closing) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key !== " " || event.ctrlKey || event.metaKey || event.altKey) return;
+      if (isTyping(event.target)) return;
+      if (document.querySelector('[role="dialog"], [role="alertdialog"], [data-scene-closing]'))
+        return;
+      const target = event.target instanceof Element ? event.target : null;
+      if (target?.closest("button, a, [role='button']")) return;
+      if (session.id === "pending") return;
+      event.preventDefault();
+      void finishHere();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [asks, takesKeys, closing, finishHere, session.id]);
+
   const props: SceneProps = {
     subject,
     session: {
       id: session.id,
       startedAt,
       elapsedSeconds,
-      day: planningDay(startedAt, dayStart),
+      day: sessionDay,
     },
     device,
     controls: {
-      finish: async (counted) => {
-        await end.mutateAsync({ session, outcome: "done", next, counted });
-      },
+      finish: finishHere,
       stop: async (counted) => {
-        await end.mutateAsync({ session, outcome: "stopped", counted });
+        await leave(() => end.mutateAsync({ session, outcome: "stopped", counted }));
       },
       stuck: onStuck,
-      exit: onExit,
+      exit: exitHere,
       closing: openClosing,
       bed: async () => {
         // Ç3g: far before tonight's bedtime range it asks first; "Vazgeç" changes nothing.
@@ -328,6 +369,7 @@ export function SceneFrame({
       data-testid="scene"
       data-bedtime={bedtime ? "" : undefined}
       data-scene-keys={takesKeys ? "" : undefined}
+      data-scene-exit-step={asks && !takesKeys ? "" : undefined}
       data-tone={tone}
       data-facet={facet?.key}
       data-device={device}
@@ -352,7 +394,7 @@ export function SceneFrame({
           minutes={stripMinutes}
           allotted={stripAllotted}
           detail={strip?.detail ?? null}
-          onExit={onExit}
+          onExit={exitHere}
         />
       )}
       <section aria-label="Sahne" className="relative z-10 flex flex-1 flex-col p-5 md:p-10">
@@ -361,11 +403,22 @@ export function SceneFrame({
             <ClosingInScene onDone={endClosing} />
           </div>
         ) : (
-          <SceneBoundary onError={onFailed}>
-            <Scene {...props} />
-          </SceneBoundary>
+          <SceneCardContext.Provider
+            value={{
+              card:
+                exitStep.open && device === "pano" ? (
+                  <ExitNoteCard title={exitStep.title}>{exitStep.form("card")}</ExitNoteCard>
+                ) : null,
+              claim,
+            }}
+          >
+            <SceneBoundary onError={onFailed}>
+              <Scene {...props} />
+            </SceneBoundary>
+          </SceneCardContext.Provider>
         )}
       </section>
+      <ExitStepOverlay device={device} step={exitStep} claimed={claims > 0} />
     </div>
   );
 }
@@ -395,13 +448,7 @@ export function SceneStripBar({
   detail?: string | null;
   onExit: () => void;
 }) {
-  const after = detail
-    ? detail
-    : minutes === null
-      ? null
-      : allotted
-        ? `${formatMinutes(minutes)} / ${formatMinutes(allotted)}`
-        : formatMinutes(minutes);
+  const after = stripText(minutes, allotted, detail);
   return (
     <header
       aria-label="Sahne şeridi"
@@ -486,6 +533,22 @@ export function ClosingShell({ onDone }: { onDone: () => void }) {
       </section>
     </div>
   );
+}
+
+/**
+ * Okul çekirdek A: what the strip says after the name: the scene's few words, else "elapsed /
+ * allotted", else the elapsed alone; nothing without minutes.
+ */
+export function stripText(
+  minutes: number | null,
+  allotted: number | null,
+  detail: string | null,
+): string | null {
+  if (detail) return detail;
+  if (minutes === null) return null;
+  return allotted
+    ? `${formatMinutes(minutes)} / ${formatMinutes(allotted)}`
+    : formatMinutes(minutes);
 }
 
 /** Ç3g: whether two strips say the same (a scene sets its strip on every render it likes). */

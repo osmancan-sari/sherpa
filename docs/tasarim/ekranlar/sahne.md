@@ -36,6 +36,15 @@ Kaynak: `docs/moduller/ORTAK.md` bölüm 3 (Rutin oturumu, 13–14 Kas 2026). Mo
 - **Açılış ve kapanış tek yazıdır:** "Günaydın" → "Kalktım"; bitince "İyi günler"; akşam "İyi geceler". Sayı, süre, övgü yazılmaz; yazı solarken sonraki ekran belirir.
 - **Sahne her cihazda aynıdır;** pano ve telefon düzeni ayrı çizilir.
 
+## Yerleşimler (Okul çekirdek A, 23 Kas 2026)
+
+Oturumlu sahnelerin ortak yerleşimleri kit'tedir: pomodoro, akış, kontrol listesi ve ortak parçaları ("Süre doldu.", "Kaldığın yer", "Bu oturumda", "Oturum bitti."). Görünüş `parcalar.md`, "Sahne yerleşimleri"; Okul'daki düzen `okul-sahneler.md`. Sahnenin içindedir; çekirdeğin şeridi ve zemini değişmez.
+
+## Çıkarken not ve blok görünümü (Okul çekirdek A)
+
+- **Çıkarken not:** sahne isterse (`beforeExit`) "Çık", sahnenin bitirmesi ve Boşluk önce tek satır sorar; telefonda alttan sayfa (`okul/K3T6`), panoda sayacın yerinde kart (`K3P6`). Bağlantı yokken sorulmaz. `parcalar.md`, "Çıkarken not".
+- **Blok görünümü:** sahne kabuğunun yeri ve zemini, oturumsuz; şeritte süre yerine modülün kısa yazısı. `parcalar.md`, "Sabit blok görünümü"; kareler `okul/SahneDers`, `SahneSinav`, `PanoDersSahne`.
+
 ## Çizilmeyenler
 
 Sahnenin içi (modülündür). `deneme`'nin sahneleri `deneme`'nin kendi zemininde durur; tonların örneği galeridedir (`/tasarim`, "Sahne tonları").

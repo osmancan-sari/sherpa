@@ -35,6 +35,29 @@ function forbidReloads(page: Page): () => number {
   return () => navigations;
 }
 
+test("Okul çekirdek A: a facet's colour changed elsewhere reaches an open scene's backdrop, live", async ({
+  page,
+}) => {
+  await activateDeneme(page);
+  const [mod] = await rows("modules");
+  await update("modules", mod.id as string, { facet_colors: { sabah: "#0d9488" } });
+  await addRecord(page, "Sabah esnemesi", { minutes: "20", facet: "sabah" });
+  await page.goto("/m/deneme");
+  await page
+    .getByRole("region", { name: "Yaklaşanlar" })
+    .getByRole("button", { name: "Başla: Sabah esnemesi" })
+    .click();
+  await page.goto("/");
+  await expect(page.getByTestId("deneme-gunes")).toBeVisible();
+  const backdrop = page.getByTestId("deneme-backdrop").filter({ visible: true }).first();
+  await expect(backdrop).toHaveAttribute("data-color", "#0d9488");
+  const reloads = forbidReloads(page);
+  // Ayarlar on another device: the open scene's backdrop follows without a reload.
+  await update("modules", mod.id as string, { facet_colors: { sabah: "#db2777" } });
+  await expect(backdrop).toHaveAttribute("data-color", "#db2777");
+  expect(reloads()).toBe(0);
+});
+
 test("a task added on the phone appears on the desktop Today screen without a reload", async ({
   page: desktop,
   browser,

@@ -178,6 +178,7 @@ type ModuleUi = {
   scenes?: Record<string, ModuleScene>   // Ç3e: adı verilen sahneler; bölümler bunlara başvurur
   backdrop?: ComponentType<ModuleBackdropProps>   // Ç4b: modülün kendi zemini (aşağıda)
   areaViews?: ModuleAreaView[]       // Ç4c: alanının sayfasına verdiği görünümler (aşağıda "Alan sayfası")
+  blockView?: ModuleBlockView        // Okul çekirdek A: teklif ettiği sabit bloğun görünümü (aşağıda "Sabit blok görünümü")
   page?: ModulePage | ((module: ModuleRow) => ModulePage)  // Okul çekirdek A: sayfanın biçimi (aşağıda "Modül sayfası")
 }
 
@@ -216,6 +217,28 @@ Modül, sayfasının biçimini `ui.page` ile verir (sabit bir nesne ya da modül
 5. **Bölümün satırı.** `ModuleFacet.detail` (en çok 120 karakter) seçicide adın altında durur ("YZV303E · sıradaki: Midterm · 30 Kas"); bölüm listesi her veri değişiminde yeniden hesaplandığı için güncel kalır.
 
 Örnek: `deneme`'nin ayarlarında "Sayfa: ana sayfalı" açılınca ana sayfa (bütün açık kayıtlar tarih sırasıyla), her bölümün sayfası, kapalı durum şeridi ("Sınama dönemi"), kapalı "Yaklaşanlar", "Geçmiş" ve "Giriş ve ayarlar". Test: `tests/e2e/module-page.both.spec.ts`, `src/core/contract/registry.test.ts`.
+
+### Sabit blok görünümü (Okul çekirdek A)
+
+```ts
+type ModuleBlockView = {
+  when?: (block: Block) => boolean   // hangi blokları; yoksa modülün teklif ettiği her blok
+  label?: string                     // blok sürerken Şimdi kartındaki tek eylem; varsayılan "Aç"
+  component: ComponentType<BlockViewProps>
+}
+type BlockViewProps = {
+  block: Block
+  device: 'pano' | 'telefon'
+  phase: 'before' | 'during' | 'after'   // bloğun kendi saatlerine göre
+  now: Date                              // her saniye
+  ctx: ModuleUiContext
+  facet: { key: string; name: string; color: string } | null
+  strip: (strip: { title?: string; detail?: string | null } | null) => void   // şeridin adı ve kısa yazısı ("derste")
+  exit: () => void                       // Bugün'e döner
+}
+```
+
+Modülün teklif ettiği sabit bloğa (zarfı `when.fixed`, kaydında `key` olan blok) Bugün'de (Şimdi kartı, Sıradakiler, telefondaki "Bugünün sabit blokları"), günün akışında ve Takvim'in gün ayrıntısında dokununca modülün görünümü açılır. Adres Bugün'ün kendisidir (`/?blok=<kimlik>`): yan menüde Bugün seçili kalır, sayfa yenilenince görünüm durur. Görünüm sahnenin yerindedir (telefonda ekranın tamamı, panoda sayfada; modülün zemini, yoksa odak tonu) ama **oturum açmaz ve süre saymaz**: şeritte saat, bloğun rengi, adı ve sürenin yerinde modülün kısa yazısı (yoksa bloğun saatleri) ve "Çık" (Bugün'e döner). Blok o an sürüyorsa Şimdi kartı görünümü açan tek eylem taşır (`label`). Kullanıcının elle eklediği blokta (anahtarsız) ve modül etkin değilken hiçbir şey değişmez. Görünüm hata verirse Bugün döner ve tek satır çıkar ("Görünüm açılamadı."). İçinden modül kendi verisini yazabilir (bir not, bir devam cevabı); çekirdek saklamaz. Saf yardımcılar: `blockViewOf`, `blockPhase`, `blockViewHref` (`src/core/contract/blockView.ts`). Örnek: `deneme`'nin "etkinlik" bloğu ("Etkinliği aç"; not `deneme_items.block_note`'ta). Test: `src/core/contract/blockView.test.ts`, `tests/e2e/okul-cekirdek.spec.ts`.
 
 ### Alan sayfası (Ç4c)
 
@@ -262,6 +285,16 @@ type ModuleScene = {
   look?: { tone: 'calm' | 'focus' | 'energy' } // çekirdeğin geçiş ve arka plan tonu
   keys?: 'scene'                               // Ç3g: sahne açıkken Bugün'ün tuşları (Boşluk ve öbürleri) sahnenindir
   welcome?: ComponentType<SceneWelcomeProps>   // Sabah açılışı (16 Kas 2026): iş başlamadan önceki karşılama (kural 7)
+  beforeExit?: SceneExitNote                   // Okul çekirdek A: çıkarken tek satırlık not (kural 3c)
+}
+
+type SceneExitNote = {                         // Okul çekirdek A
+  when?: (subject: SceneSubject) => boolean    // hangi işlerde; yoksa sahnenin bütün işlerinde
+  title: string                                // "Nerede kaldın?"
+  hint?: string                                // alanın üstündeki tek satır ("Tek cümle; sonraki oturumun başında görürsün")
+  placeholder?: string
+  save: (text: string, at: { subject: SceneSubject; session: { id: string; startedAt: Date; day: string }; ctx: ModuleUiContext }) => Promise<void>
+                                               // notu modülün kendi tablosuna yazar; en çok 200 karakter, boş gelmez
 }
 
 type SceneWelcomeProps = {                     // Sabah açılışı: oturum yok; karşılama yalnızca başlatmayı ister
@@ -321,7 +354,8 @@ Kurallar:
 1. **Ne zaman.** `plan.now` `running` ise, çalışan işin (iş ya da ritim; plansız oturumda sahne yoktur) modülü `scene` tanımlamışsa ve `when` doğru dönerse Bugün ekranı sahneyi çizer. Öneri durumunda standart kart kalır. İş bitince, durunca ya da ertelenince standart ekran döner. `when` hata verirse sahne yok sayılır.
 2. **Çekirdeğin şeridi.** Sahnenin üstünde ince bir şerit durur: saat, işin adı, geçen süre, "Çık". Şerit çekirdeğindir: "Çık" standart ekrana döner; oturum sürer, kartta "Sahneye dön" çıkar. Çıkış cihaza özgüdür (öbür cihaz sahnede kalır) ve o oturum için hatırlanır. **Ç3g:** sahne gösterdiği ekran için şeridin içeriğini verebilir (`strip`): işin adı yerine başka bir ad (bütün sabah "Sabah"), sürenin başka bir andan sayılması (uyanıştan) ya da hiç süre yazılmaması (`since: null`); açılış ve kapanış gibi kendiliğinden geçen ya da kendi çıkış yolu olan ekranlarda şeridi gizleyebilir (`hidden`: "Çık" da yoktur). Ekran değişince yeniden çağırır; `strip(null)` çekirdeğin haline döner, yeni oturum çekirdeğin haliyle başlar. Hiç çağırmayan sahnede şerit bugünkü gibidir. **Okul çekirdek A (23 Kas 2026):** şeridin süresi bütün modüllerde "geçen / ayrılan"dır ("26 dk / 2 sa"): geçen duvar saatiyle (mola dahil), ayrılan çalışan işin planlanan süresi (görevin ya da ritmin `est_minutes`'ı); ayrılan yoksa yalnızca geçen. `since` ile başka bir andan sayan sahne kendi ayrılanını verebilir (`allotted`; Rutin'in sabahı bütün sabah dizisinin dakikası), `detail` ile sürenin yerine kısa bir yazı koyabilir (kontrol listesinde "2 / 4").
 3a. **Tuşlar (Ç3g).** Sahne `keys: 'scene'` bildirirse sahne açıkken Bugün'ün tuşları (`Space`, `Enter`, `E`, `X`, `R`; `docs/05` "Klavye") çekirdeğin değil sahnenindir: çekirdek onları yalnızca `SceneProps.keys.listen` ile verdiği dinleyicilere iletir (yazarken, pencere açıkken, sahneden açılan kapanışta ve odakta bir düğme ya da bağlantı varken `Space`/`Enter` iletilmez). Adımlı sahne `Space`'i "Sonraki" yapar; işi bitirmek sahnenin `controls.finish()`'idir. Bildirmeyen sahnede tuşlar standart karttaki gibidir (`Space` "Bitti"). Sahne `window`'da kendi tuş yakalamasını kurmaz.
-3b. **Sayılan dakika (Okul çekirdek A, 23 Kas 2026).** Sahne oturumu kapatırken çekirdeğe sayılan dakikayı bildirebilir: `controls.finish(counted)`, `controls.stop(counted)` (molasız odak; pomodoro ve akışın molaları dışarıda). Değer 0 ile geçen dakika arasında olmalıdır; dışındaysa yok sayılır ve geçen süre kullanılır; bildirilmezse bugünkü gibi. Kalan efor (`effort_done_minutes`), öğrenme (tahmin çarpanı), modülün sonucu (`onOutcome`'un `spentMinutes`'ı) ve yapay zekanın benzer işleri sayılan dakikayı kullanır; oturumun saat aralığı (başlangıç, bitiş), kapasite çarpanı ve şeritteki "geçen" duvar saatidir. `core.session_ended` yükünde `minutes` geçen dakika, `counted` sayılan dakika (yoksa `null`). Tur, mola ve duraklatma sahnenin iç işidir; çekirdek bilmez (durumu cihazlar arası tutarlı kalsın diye modülün tablosunda tutulur; kit'in yerleşimleri bunun için saf durum verir, aşağıda "Sahne yerleşimleri"). Test: `tests/db/counted-minutes.test.ts`, `src/core/planner/learn.test.ts`.
+3c. **Çıkarken not (Okul çekirdek A, 23 Kas 2026).** Sahne çıkışı bir adım bekletebilir (`ModuleScene.beforeExit`): tek metin alanı, başlığı modül verir ("Nerede kaldın?"), "Yazmadan çık" ile tek dokunuşla geçilir, "Kaydet ve çık" notu modülün `save`'ine verir. Kabuğun "Çık"ı, sahnenin `controls.exit`, `controls.finish` ve `controls.stop`'u ve klavye (sahne tuşları devralmıyorsa Boşluk; devralıyorsa sahne kendi tuşuyla `controls.finish`'i çağırır) aynı adımdan geçer; "Takıldım" (`stuck`) ve "Yatıyorum" (`bed`) geçmez. Telefonda alttan açılan sayfadır (kare `okul/K3T6`); panoda kit yerleşimini kullanan sahnede sayacın yerinde kart (`K3P6`; yerleşim `SceneCardContext` ile yeri alır), yerleşim kullanmayan sahnede küçük pencere. "Kapat" (telefon) ya da Escape adımı kapatır, çıkış olmaz (`finish` ve `stop` çözülür, oturum sürer). Bağlantı yokken not sorulmaz; `save` hata verirse ya da 10 saniyede bitmezse çıkış engellenmez, not kaydedilmeden çıkılır ve hata yalnızca günlüğe düşer. Notu modül kendi tablosunda tutar; çekirdek saklamaz. Örnek: `deneme`'nin "akis" türü (not `deneme_items.exit_note`'ta, sonraki oturumda "Kaldığın yer" kutusunda). Test: `tests/e2e/okul-cekirdek.spec.ts`.
+3b. **Sayılan dakika (Okul çekirdek A, 23 Kas 2026).** Sahne oturumu kapatırken çekirdeğe sayılan dakikayı bildirebilir: `controls.finish(counted)`, `controls.stop(counted)` (molasız odak; pomodoro ve akışın molaları dışarıda). Değer 0 ile geçen dakika arasında olmalıdır; dışındaysa yok sayılır ve geçen süre kullanılır; bildirilmezse bugünkü gibi. Kalan efor (`effort_done_minutes`), öğrenme (tahmin çarpanı), modülün sonucu (`onOutcome`'un `spentMinutes`'ı) ve yapay zekanın benzer işleri sayılan dakikayı kullanır; oturumun saat aralığı (başlangıç, bitiş), kapasite çarpanı, şeritteki "geçen" ve haftanın harcanan süreleri (modülün haftalık tabanına giden süre, modül sayfasının "Geçmiş"i, Takvim'in geçmiş günü, yapay zekanın haftalık bakışı) duvar saatidir: molalı oturum da günün o kadar vaktini almıştır (bilinçli karar, Okul çekirdek A). `core.session_ended` yükünde `minutes` geçen dakika, `counted` sayılan dakika (yoksa `null`). Tur, mola ve duraklatma sahnenin iç işidir; çekirdek bilmez (durumu cihazlar arası tutarlı kalsın diye modülün tablosunda tutulur; kit'in yerleşimleri bunun için saf durum verir, aşağıda "Sahne yerleşimleri"). Test: `tests/db/counted-minutes.test.ts`, `src/core/planner/learn.test.ts`.
 3. **Oturum çekirdeğindir.** Başlatma, bitirme, ölçme, "Devam ediyor musun?" ve 30 dakika kuralı değişmez; sahne oturumu yalnızca `controls` ile etkiler.
 4. **Sahne serbesttir** ama çekirdeğin tasarım dilini ve temasını kullanır, hareket azaltma tercihine uyar. Pano ve telefon aynı sahneyi kendi yerleşimiyle çizer (`device`). Sahnenin kalıcı durumu (hangi adımdayım) modülün kendi tablosundadır; ekranda tutulan durum öbür cihaza taşınmaz.
 5. **Hata.** Sahne bileşeni hata verirse çekirdek standart kartı gösterir ve tek satırla bildirir ("Sahne açılamadı; iş sürüyor."); oturum etkilenmez.
@@ -362,7 +396,11 @@ type SceneChain = {
 
 **Modül sayfasında dizi (Ç3g).** Modülün kendi ekranları bugünün uyanış ve yatış dizilerini `useModuleChains()` ile salt okunur alır: `{ wake: SceneChain | null; bed: SceneChain | null }`, sahnedeki `chain` ile aynı alanlar (kural 2: başka modülün satırında yalnızca ad, modül, bölüm, renk, süre, durum; `mine` bu modülün işidir). Dizi yoksa (çerçeve kapalı, çapaya bağlı iş yok) `null`. Modül başka modülün işini kendi listesinde gösterebilir ama düzenleyemez; satır o modülün sayfasına (`/m/<slug>`) götürür. Örnek: `deneme`'nin Kayıtlar sekmesi; Rutin'in Sabah sekmesinde başka modülün işi kendi grubu olarak, sıradaki yerinde.
 
-**Adım yürütücü (`StepRunner`, bileşen takımında).** Sıralı adımlı sahneler (rutin, pişirme, antrenman) için: adım listesi (ad, süre ya da tekrar sayısı, açıklama), geri sayım, "Sonraki", "Atla", her adım bitince ve liste bitince geri çağrı. Yalnızca arayüzdür; hangi adımda olunduğunu modül saklar (`step` ve `onStep` ile denetimli kullanılır).
+**Adım yürütücü (Okul çekirdek A'dan beri kontrol listesi, `Checklist`, bileşen takımında).** Sıralı adımlı sahneler (rutin, pişirme, antrenman, teslim) için: adım listesi (ad, açıklama, isteğe bağlı süre ya da tekrar sayısı), süreli adımın geri sayımı, ana düğme (adımın kendi düğmesi ya da "Sonraki"), sessiz eylemler (yoksa "Atla"), her adım bitince geri çağrı. Yalnızca arayüzdür; hangi adımda olunduğunu modül saklar (`current` ve `onStep` ile denetimli kullanılır). Eski `StepRunner` bu yerleşime katıldı (ikinci kopya yok); Rutin'in sahnesi onu hiç kullanmıyordu, görünüşü değişmedi.
+
+### Sahne yerleşimleri (Okul çekirdek A)
+
+Kit'te üç yerleşim ve ortak parçaları vardır (`@/core/ui/kit`; görünüş `docs/tasarim/parcalar.md`, kurallar `docs/moduller/ORTAK.md` 3b): `PomodoroLayout`, `FlowLayout`, `Checklist`; `TimeUpCard` ("Süre doldu."), `ResumeNote` ("Kaldığın yer"), `SessionSections` ("Bu oturumda"), `SessionFile`, `SessionEnd` ve `useSessionEnd` ("Oturum bitti."). Yerleşim bileşendir: modül sahnesinde seçer, metni ve eylemleri verir; yöntem ve süreler girdidir (`plan`). Sayaçlar oturumun saklanan başlangıcından (`session.startedAt`) ve modülün sakladığı durumdan hesaplanır (`state`, `onChange`; saf `pomodoroView`, `flowView`, `pomodoro.*`, `flow.*`): sayfa yenilenince ve öbür cihazda aynı yerde olur, arka plandaki sekmede zamanlayıcı kaysa da görünen süre doğrudur. `onFinish(countedMinutes)` molasız dakikayı verir; sahne bunu `controls.finish(counted)` ile çekirdeğe iletir. Paket A'da soru sayacı ve tek blok yoktur (paket C). Örnek: `deneme`'nin "pomodoro" ve "akis" türleri (`components/LayoutScenes.tsx`; durum `deneme_items.layout_state`'te), antrenmanı kontrol listesinde.
 
 ### Bölümler (Ç3e)
 

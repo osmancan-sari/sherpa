@@ -28,6 +28,7 @@ import type { Rhythm, Session, Task, WorkItem } from "@/core/types";
 import { useColors } from "@/core/app/facets";
 import { formatMinutes, formatTime } from "@/lib/date";
 import { effortText, effortWhy, isPlaceholder } from "@/core/today/effort";
+import { blockViewHref, blockViewOf } from "@/core/contract/blockView";
 import { aiNotesOf } from "../ai/AiMarks";
 import { cn } from "@/lib/utils";
 import { Tag } from "../kit/Choice";
@@ -224,6 +225,8 @@ function CardFor({
     );
   }
   if (state.kind === "block") {
+    // Okul çekirdek A: a block the module proposed has one action, its view.
+    const view = blockViewOf(state.block, modules);
     return (
       <CardFrame label="Sabit blok">
         <h2 className={TITLE}>{state.block.title}</h2>
@@ -231,6 +234,16 @@ function CardFor({
           {formatTime(new Date(state.block.ends_at))} bitiyor
           {state.block.location ? ` · ${state.block.location}` : ""}
         </p>
+        {view ? (
+          <CardActions>
+            <Link
+              href={blockViewHref(state.block.id)}
+              className={buttonVariants({ variant: "primary", size: "lg" })}
+            >
+              {view.label ?? "Aç"}
+            </Link>
+          </CardActions>
+        ) : null}
       </CardFrame>
     );
   }

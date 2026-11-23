@@ -228,7 +228,12 @@ test("a module page of its own shape: home, a page per facet, no state line, pic
   await page.goto("/m/deneme/bolum/yok");
   await expect(page.getByText("Bu modülde böyle bir sayfa yok.")).toBeVisible();
 
-  // The module's chip elsewhere is not touched: Modüller still says its state.
+  // The module's chip elsewhere is not touched: Modüller, Today's chip and the area page's panel
+  // still say its state.
   await page.goto("/m");
   await expect(page.getByRole("link", { name: /Deneme/ })).toContainText("açık kayıt");
+  await page.goto("/");
+  await expect(page.getByRole("link", { name: /Deneme/ }).first()).toContainText("açık kayıt");
+  await page.goto("/a/sinama");
+  await expect(page.getByRole("list", { name: "Üyeler" })).toContainText("açık kayıt");
 });

@@ -2,7 +2,7 @@
 
 import { Check, Info, Play } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   useCloseWorkItem,
@@ -34,6 +34,8 @@ import { blocksOfDay } from "@/core/today/select";
 import { type Welcome, welcomeOf } from "@/core/today/welcome";
 import type { Block, Task } from "@/core/types";
 import { dayKey, formatDue, formatMinutes, formatTime } from "@/lib/date";
+import { blockViewHref, blockViewOf } from "@/core/contract/blockView";
+import { BlockViewFrame, useBlockParam } from "./BlockView";
 import { effortText, isPlaceholder } from "@/core/today/effort";
 import { cn } from "@/lib/utils";
 import { AiBadge } from "../ai/AiMarks";
@@ -65,7 +67,10 @@ export function TodayScreen() {
       <ClientOnly
         fallback={<h1 className="text-title tracking-title px-1 font-bold md:text-3xl">Bugün</h1>}
       >
-        <TodayBody />
+        {/* Okul çekirdek A: the address may name a block whose view opens (`?blok=`). */}
+        <Suspense fallback={null}>
+          <TodayBody />
+        </Suspense>
       </ClientOnly>
     </div>
   );
@@ -85,6 +90,8 @@ function TodayBody() {
   const moduleMap = useMemo(() => new Map(modules.map((mod) => [mod.row.id, mod])), [modules]);
   // The scene (Ç3c): left on this device ("Çık"), or failed, per session.
   const [exitedScene, setExitedScene] = useSceneExit();
+  // Okul çekirdek A: a fixed block's view, named in the address.
+  const blockParam = useBlockParam();
   const [failedScene, setFailedScene] = useState<string | null>(null);
   const [stuck, setStuck] = useState<Task | null>(null);
   const stopForStuck = useStopForStuck();
@@ -160,6 +167,8 @@ function TodayBody() {
       if (document.querySelector("[data-scene-closing]")) return;
       // Ç3g: a scene that takes the keys has them (SceneProps.keys).
       if (document.querySelector("[data-scene-keys]")) return;
+      // Okul çekirdek A: a scene that asks on the way out finishes with Space through its step.
+      if (event.key === " " && document.querySelector("[data-scene-exit-step]")) return;
       // Sabah açılışı: the welcome is on the screen; its buttons take Space and Enter themselves.
       if (document.querySelector("[data-welcome]")) return;
       if (!state || !input) return;
@@ -209,6 +218,29 @@ function TodayBody() {
       <>
         <TopBar now={now} />
         <div className="glass-main rounded-panel min-h-56 md:min-h-72" />
+      </>
+    );
+  }
+
+  // Okul çekirdek A: a fixed block the module proposed, opened from Today, the day's flow or
+  // Takvim: its module's view in the scene's place; no session, no time counted.
+  const openBlock = blockParam.blockId
+    ? input.blocks.find((row) => row.id === blockParam.blockId)
+    : undefined;
+  const openView = openBlock ? blockViewOf(openBlock, moduleMap) : null;
+  const openMod = openBlock?.module_id ? moduleMap.get(openBlock.module_id) : undefined;
+  if (openBlock && openView && openMod) {
+    return (
+      <>
+        <h1 className="sr-only">Bugün</h1>
+        <BlockViewFrame
+          mod={openMod}
+          block={openBlock}
+          view={openView}
+          facets={colors.lists.get(openMod.row.id) ?? null}
+          now={now}
+          onExit={blockParam.close}
+        />
       </>
     );
   }
@@ -434,9 +466,15 @@ function TodayBody() {
 
       {quiet || empty ? null : (
         <>
-          <DayFlowPanel input={input} plan={plan} sessions={rows?.sessions ?? []} now={now} />
+          <DayFlowPanel
+            input={input}
+            plan={plan}
+            sessions={rows?.sessions ?? []}
+            now={now}
+            modules={moduleMap}
+          />
           <AlertBar warnings={plan.warnings} modules={moduleMap} />
-          <DayBlocks blocks={blocksOfDay(input.blocks, input.date)} now={now} />
+          <DayBlocks blocks={blocksOfDay(input.blocks, input.date)} now={now} modules={moduleMap} />
         </>
       )}
 
@@ -543,6 +581,8 @@ function UpNext({
               <li key={row.key}>
                 <ListRow
                   block
+                  // Okul çekirdek A: a block the module proposed opens its view.
+                  href={blockViewOf(row.block, modules) ? blockViewHref(row.block.id) : undefined}
                   title={row.block.title}
                   subtitle={`${formatTime(row.start)}–${formatTime(row.end)} · sabit`}
                 />
@@ -712,7 +752,15 @@ function DoneToday({
 }
 
 /** "Bugünün sabit blokları" on the phone (BT31); the board has them in the day's flow. */
-function DayBlocks({ blocks, now }: { blocks: Block[]; now: Date }) {
+function DayBlocks({
+  blocks,
+  now,
+  modules,
+}: {
+  blocks: Block[];
+  now: Date;
+  modules: Map<string, KnownModule>;
+}) {
   const shown = blocks.filter((block) => block.status !== "cancelled");
   const time = now.getTime();
   if (shown.length === 0) return null;
@@ -731,6 +779,8 @@ function DayBlocks({ blocks, now }: { blocks: Block[]; now: Date }) {
                   ? "time"
                   : undefined
               }
+              // Okul çekirdek A: a block the module proposed opens its view.
+              href={blockViewOf(block, modules) ? blockViewHref(block.id) : undefined}
               title={block.title}
               subtitle={
                 <span className="tabular-nums">

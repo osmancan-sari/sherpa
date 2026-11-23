@@ -1,6 +1,8 @@
 "use client";
 
 import type { Route } from "next";
+import { useRouter } from "next/navigation";
+import { blockViewHref, blockViewOf } from "@/core/contract/blockView";
 import { type FormEvent, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -47,15 +49,27 @@ export function DayFlowPanel({
   plan,
   sessions,
   now,
+  modules,
 }: {
   input: PlanInput;
   plan: Plan;
   sessions: Session[];
   now: Date;
+  /** Okul çekirdek A: a block the module proposed opens its view from its piece. */
+  modules?: Map<string, KnownModule>;
 }) {
   const colors = useColors();
+  const router = useRouter();
   const flow = dayFlowOf(input, plan, sessions);
+  const opens = (key: string) => {
+    if (!modules || !key.startsWith("block-")) return undefined;
+    const block = input.blocks.find((row) => `block-${row.id}` === key);
+    return block && blockViewOf(block, modules)
+      ? () => router.push(blockViewHref(block.id))
+      : undefined;
+  };
   const pieces: TimeStripPiece[] = flow.pieces.map((piece) => ({
+    onOpen: opens(piece.key),
     key: piece.key,
     kind: piece.kind,
     start: piece.start,

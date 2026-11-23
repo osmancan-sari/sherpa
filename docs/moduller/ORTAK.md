@@ -22,6 +22,15 @@ Taşındı (Ç4b, 15 Kas 2026): `docs/tasarim/ilkeler.md` (görsel dil ve kararl
 
 Taşındı (Ç4b): `docs/tasarim/ekranlar/sahne.md` ("Modül sahnesinin ortak düzeni"); Rutin'in sahnesi `docs/tasarim/ekranlar/rutin.md`.
 
+### 3b. Sahne yerleşimleri (Okul çekirdek A, 23 Kas 2026)
+
+Oturumlu sahnelerin üç ortak yerleşimi kit'tedir ve her modül onları kullanır, kendi kopyasını çizmez: **pomodoro** (turlar ve molalar; konu okuma, yazılı iş), **akış** (ileri sayan saat, mola kendin verirsin; kodlama, proje), **kontrol listesi** (sayaçsız adımlar; teslim, toplantı, ürettirme; süreli adımı olan adım listesi de budur: antrenman). Ortak parçaları: "Süre doldu." kartı (Bitti, +5 dk, isteğe bağlı üçüncü seçenek), "Kaldığın yer" kutusu, "Bu oturumda" bölümler kutusu, oturum sonu tek yazı ("Oturum bitti."). Kurallar:
+
+- Yerleşim bileşendir, sahne değil: modül sahnesinde yerleşimi seçer, başlığı, kutuları ve eylemleri verir. Yöntem ve süreler (25 / 5 dk, planlanan süre) modülün ayarındadır; sahnede değiştirilmez.
+- Tur, mola ve duraklatma sahnenin iç işidir; çekirdek bilmez. Durumu modül kendi tablosunda tutar (kit saf durum verir: `pomodoroView`, `flowView`); sayfa yenilense, öbür cihazda açılsa da aynı yerden sürer.
+- Oturum kapanırken sahne sayılan dakikayı (molasız odak) çekirdeğe bildirir: `controls.finish(counted)`; şeritte "geçen" duvar saatidir.
+- Görünüş, ölçüler ve kareler `docs/tasarim/parcalar.md`, "Sahne yerleşimleri". Soru sayacı ve tek blok paket C'de gelir.
+
 ## 4. Modül sayfası
 
 Taşındı (Ç4b): `docs/tasarim/ekranlar/moduller.md` ("Modül sayfasının kuralları"); Rutin'in sayfası `docs/tasarim/ekranlar/rutin.md`.

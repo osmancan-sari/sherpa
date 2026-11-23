@@ -87,7 +87,18 @@ export async function updateItem(
   patch: Partial<
     Pick<
       DenemeItem,
-      "title" | "due_on" | "minutes" | "done" | "spent_minutes" | "feedback" | "scene_step"
+      | "title"
+      | "due_on"
+      | "minutes"
+      | "done"
+      | "spent_minutes"
+      | "feedback"
+      | "scene_step"
+      // Okul çekirdek A: the layout's state, the way out's note, the block view's note.
+      | "layout_state"
+      | "exit_note"
+      | "exit_noted_at"
+      | "block_note"
     >
   >,
 ): Promise<DenemeItem> {

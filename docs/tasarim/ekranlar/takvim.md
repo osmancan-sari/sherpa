@@ -2,6 +2,11 @@
 
 Kaynak: `docs/13-cam-dili.md` bölüm 4.3 (15 Kas 2026, onaylı); kurulduğu faz Ç4c. Değerler `src/core/ui/tokens.css`'te, parçalar `parcalar.md`'de; bu dosya düzeni, durumları ve başvuru karelerini anlatır.
 
+## Okul çekirdek A (23 Kas 2026)
+
+- Haftanın işlerinde yer tutucu eforun payı "yaklaşık" ile yazar ("0 dk / yaklaşık 8 sa"; **görüşün gerek**).
+- Gün ayrıntısının "Sabit" satırlarında modülün teklif ettiği blok dokunulunca blok görünümünü açar (Bugün'ün adresiyle).
+
 ## Takvim (eski adı Hafta; "3 · Takvim" sayfası; onaylandı, 15 Kas 2026)
 
 Kullanıcı sayfanın baştan tasarlanmasını istedi (15 Kas 2026): menüdeki adı "Takvim", günler dokunulabilir, haftanın işleri teslim tarihine göre. Bu bölüm yalnızca görünüş değildir; içeriği ve davranışı da değiştirir (`docs/09-kararlar.md`). İlk Hafta çizimleri (`HT*`, `HP*`) tuvalden kaldırıldı. Sakin zemin, yoğun cam; örnek veriler uydurmadır.

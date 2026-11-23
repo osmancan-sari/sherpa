@@ -414,6 +414,32 @@ describe("the module page's own shape (Okul çekirdek A)", () => {
   });
 });
 
+describe("the way out's note (Okul çekirdek A)", () => {
+  const scene = { when: () => true, component: View };
+  it("needs a question and a way to keep it; when is a function", () => {
+    const save = async () => {};
+    expect(
+      definitionProblems(
+        definition({
+          ui: {
+            ...definition().ui,
+            scene: { ...scene, beforeExit: { title: "Nerede kaldın?", save } },
+            scenes: {
+              bos: { ...scene, beforeExit: { title: " ", save } },
+              hatali: { ...scene, beforeExit: { title: "Not", save, when: "akis" as never } },
+              yok: { ...scene, beforeExit: undefined },
+            },
+          },
+        }),
+      ),
+    ).toEqual([
+      'ornek: scene "bos": beforeExit needs a title and save',
+      'ornek: scene "hatali": beforeExit\'s when must be a function',
+      'ornek: scene "yok": beforeExit needs a title and save',
+    ]);
+  });
+});
+
 describe("the closing's host and the area page's views (Ç4c)", () => {
   const view = () => null;
 

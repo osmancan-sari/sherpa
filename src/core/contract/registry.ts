@@ -41,7 +41,8 @@ export function definitionProblems(def: ModuleDefinition): string[] {
   if (!/^#[0-9a-f]{6}$/i.test(def.color)) say("color must be a #rrggbb value");
 
   // Okul çekirdek A: a page with a home entry may have no tabs. A page that depends on the row
-  // (a function) is checked for its shape where it is used.
+  // (a function) cannot be checked here; what it returns is used as it is (a home without a
+  // component shows "Bu modülün kendi görünümü yok.", a function that throws gives the plain page).
   const page = typeof def.ui.page === "function" ? undefined : def.ui.page;
   if (def.ui.page !== undefined && typeof def.ui.page !== "function" && typeof page !== "object") {
     say("page must be an object or a function of the module's row");
@@ -73,6 +74,15 @@ export function definitionProblems(def: ModuleDefinition): string[] {
     if (scene && "welcome" in scene && !scene.welcome) {
       say(`${name}: welcome must be a component`);
     }
+    // Okul çekirdek A: the line on the way out needs its question and a way to keep it.
+    const note = scene?.beforeExit;
+    if (scene && "beforeExit" in scene) {
+      if (!note || typeof note.save !== "function" || !note.title?.trim()) {
+        say(`${name}: beforeExit needs a title and save`);
+      } else if (note.when !== undefined && typeof note.when !== "function") {
+        say(`${name}: beforeExit's when must be a function`);
+      }
+    }
   }
   // Ç3e: named scenes for the facets. The facet list itself is computed with the module's
   // context, so it is checked every time it is computed (src/core/contract/facets.ts).
@@ -80,6 +90,14 @@ export function definitionProblems(def: ModuleDefinition): string[] {
     if (!KEY.test(key)) say(`scene key "${key}" is not valid`);
     if (typeof scene?.when !== "function" || !scene.component) {
       say(`scene "${key}" needs \`when\` and a component`);
+    }
+  }
+  // Okul çekirdek A: a fixed block's view.
+  const blockView = def.ui.blockView;
+  if (blockView !== undefined) {
+    if (!blockView?.component) say("blockView needs a component");
+    if (blockView?.when !== undefined && typeof blockView.when !== "function") {
+      say("blockView's when must be a function");
     }
   }
   if (def.facets !== undefined && typeof def.facets !== "function") {

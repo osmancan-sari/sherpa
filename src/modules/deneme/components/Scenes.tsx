@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { useRefreshAll } from "@/core/app/actions";
 import { useModuleQuery } from "@/core/app/hooks";
 import type { SceneChain, SceneKey, SceneProps, SceneWelcomeProps } from "@/core/contract/types";
-import { type Step, StepRunner } from "@/core/ui/kit";
+import { type ChecklistStep, Checklist, token } from "@/core/ui/kit";
 import { useNotify } from "@/core/ui/Notices";
 import { SAVE_FAILED } from "@/core/ui/Notices";
 import { formatMinutes, formatTime } from "@/lib/date";
@@ -17,20 +17,21 @@ import { getItem, updateItem } from "../queries";
 // fallback is tried against it.
 
 import { kindOf, sourceOf } from "../subject";
+import { FlowScene, PomodoroScene } from "./LayoutScenes";
 
-export const WORKOUT_STEPS: Step[] = [
-  { key: "isinma", title: "Isınma", seconds: 300, note: "Hafif tempoda yürü ya da pedal çevir." },
+export const WORKOUT_STEPS: ChecklistStep[] = [
+  { key: "isinma", title: "Isınma", seconds: 300, detail: "Hafif tempoda yürü ya da pedal çevir." },
   { key: "squat", title: "Squat", reps: 10 },
   { key: "sinav", title: "Şınav", reps: 10 },
-  { key: "soguma", title: "Soğuma", seconds: 120, note: "Yavaşla, esne." },
+  { key: "soguma", title: "Soğuma", seconds: 120, detail: "Yavaşla, esne." },
 ];
 
 export function DenemeScene(props: SceneProps) {
-  return kindOf(props.subject) === "antrenman" ? (
-    <WorkoutScene {...props} />
-  ) : (
-    <FocusScene {...props} />
-  );
+  const kind = kindOf(props.subject);
+  // Okul çekirdek A: the kit's layouts (pomodoro, flow; the workout's checklist).
+  if (kind === "pomodoro") return <PomodoroScene {...props} />;
+  if (kind === "akis") return <FlowScene {...props} />;
+  return kind === "antrenman" ? <WorkoutScene {...props} /> : <FocusScene {...props} />;
 }
 
 /**
@@ -143,7 +144,7 @@ export function DenemeWelcome({ subject, woke, controls, device }: SceneWelcomeP
 }
 
 /** A step scene: the workout's steps; which one it is on lives in the module's row. */
-function WorkoutScene({ subject, controls, say, ctx, keys }: SceneProps) {
+function WorkoutScene({ subject, controls, say, ctx, keys, device, facet }: SceneProps) {
   const refreshAll = useRefreshAll();
   const notify = useNotify();
   const id = sourceOf(subject);
@@ -172,7 +173,15 @@ function WorkoutScene({ subject, controls, say, ctx, keys }: SceneProps) {
   });
   return (
     <div className="flex flex-1 flex-col justify-between gap-8" data-testid="deneme-workout">
-      <StepRunner steps={WORKOUT_STEPS} current={current} onStep={onStep} />
+      {/* Okul çekirdek A: the kit's checklist (the former StepRunner); the title is the step. */}
+      <Checklist
+        device={device}
+        title={WORKOUT_STEPS[current]?.title ?? "Antrenman"}
+        color={facet?.color ?? token("color-swatch-teal")}
+        steps={WORKOUT_STEPS}
+        current={current}
+        onStep={onStep}
+      />
       {done ? (
         <div>
           <Button

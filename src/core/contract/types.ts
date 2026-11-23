@@ -4,6 +4,7 @@ import type { Extractor } from "@/core/ai/calls/extract";
 import type { Timing } from "./timing";
 import type {
   AppEvent,
+  Block,
   Context,
   Db,
   Energy,
@@ -387,6 +388,34 @@ export type ModuleScene = {
    * From a "use client" file, like `component`.
    */
   welcome?: ComponentType<SceneWelcomeProps>;
+  /**
+   * Okul çekirdek A: one step on the way out of the scene, a single line ("Nerede kaldın?"),
+   * skipped with one tap (docs/06-modul-sozlesmesi.md, "Sahne", rule 3c). The shell's "Çık" and
+   * the scene's `controls.finish`, `controls.stop` and `controls.exit` pass through it; "Takıldım"
+   * and "Yatıyorum" do not. The note is the module's to keep (`save`); offline, a failing `save`
+   * or one that takes more than 10 seconds does not hold the way out.
+   */
+  beforeExit?: SceneExitNote;
+};
+
+/** Okul çekirdek A: the line a scene asks for on the way out (`ModuleScene.beforeExit`). */
+export type SceneExitNote = {
+  /** For which work (its kind, its source); without it, every work of the scene. */
+  when?: (subject: SceneSubject) => boolean;
+  /** The question ("Nerede kaldın?"). */
+  title: string;
+  /** One line over the field ("Tek cümle; sonraki oturumun başında görürsün"). */
+  hint?: string;
+  placeholder?: string;
+  /** Keeps the line in the module's own table; at most 200 characters, trimmed, never empty. */
+  save: (
+    text: string,
+    at: {
+      subject: SceneSubject;
+      session: { id: string; startedAt: Date; day: string };
+      ctx: ModuleUiContext;
+    },
+  ) => Promise<void>;
 };
 
 /**
@@ -629,6 +658,44 @@ export type ModuleUi = {
   backdrop?: ComponentType<ModuleBackdropProps>;
   /** Ç4c: views on its area's page (`/a/<area>`); read only, drawn with the module's context. */
   areaViews?: ModuleAreaView[];
+  /**
+   * Okul çekirdek A: what a fixed block the module proposed opens (a lesson, an exam day): a
+   * view in the scene's place, without a session, without a timer on the strip.
+   */
+  blockView?: ModuleBlockView;
+};
+
+/**
+ * Okul çekirdek A (docs/06-modul-sozlesmesi.md, "Sabit blok görünümü"): a fixed block the module
+ * proposed (a block with its key) opens this view from Today, the day's flow and Takvim. It opens
+ * no session and counts no time; "Çık" goes back to Today. Inside, the module may write its own
+ * data (a line said in class); the core keeps nothing of it.
+ */
+export type ModuleBlockView = {
+  /** Which of its blocks (by kind, title, source); without it, every block it proposed. */
+  when?: (block: Block) => boolean;
+  /** The Now card's one action while the block runs; default "Aç". */
+  label?: string;
+  component: ComponentType<BlockViewProps>;
+};
+
+export type BlockViewProps = {
+  block: Block;
+  device: "pano" | "telefon";
+  /** Before the block, while it runs, after it (the block's own hours). */
+  phase: "before" | "during" | "after";
+  /** The time now, each second ("Bitişe 1 sa 32 dk"). */
+  now: Date;
+  ctx: ModuleUiContext;
+  /** The block's facet, its colour resolved; null when it has none. */
+  facet: { key: string; name: string; color: string } | null;
+  /**
+   * The strip as the view wants it: another title, a short text after it ("derste", "ders
+   * bitti"); null puts back the core's (the block's title and its hours).
+   */
+  strip: (strip: { title?: string; detail?: string | null } | null) => void;
+  /** Back to Today. */
+  exit: () => void;
 };
 
 /** Ç4c: how the evening closing opened by a scene ended. */

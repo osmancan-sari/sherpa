@@ -82,7 +82,7 @@ Yerleşim (pano):
 └──────────────────────────────────────────────────────────────────────┘
 ```
 
-**Adım yürütücü (bileşen takımına eklenir).** Sıralı adımlı sahneler (rutin, pişirme, antrenman) ortak bir bileşen kullanır: `StepRunner`. Adım listesi (ad, süre ya da tekrar sayısı, açıklama), geri sayım, "sonraki", "atla", adım bitince geri çağrı. Yalnızca arayüzdür; adımların kaydını modül kendi tablosunda tutar. Modül isterse kullanmaz.
+**Adım yürütücü (bileşen takımına eklenir).** Sıralı adımlı sahneler (rutin, pişirme, antrenman) ortak bir bileşen kullanır: `StepRunner` (Okul çekirdek A, 23 Kas 2026: kit'in kontrol listesi yerleşimine katıldı, `Checklist`; `docs/06`, "Sahne yerleşimleri"). Adım listesi (ad, süre ya da tekrar sayısı, açıklama), geri sayım, "sonraki", "atla", adım bitince geri çağrı. Yalnızca arayüzdür; adımların kaydını modül kendi tablosunda tutar. Modül isterse kullanmaz.
 
 **Görüşün gerek:** sahnenin yalnızca çalışan işte gelmesi (öneride değil); şeridin içeriği; "Çık"tan sonra dönüş yolu.
 

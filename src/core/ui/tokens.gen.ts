@@ -208,6 +208,8 @@ export const TOKENS = {
   "text-8xl--line-height": "1",
   "text-counter-board": "168px",
   "text-counter-board--line-height": "1",
+  "text-timer-board": "124px",
+  "text-timer-board--line-height": "1",
   "text-clock": "104px",
   "text-clock--line-height": "1",
   "text-clock-board": "200px",

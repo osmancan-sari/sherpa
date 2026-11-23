@@ -40,6 +40,7 @@ import {
 import type { Block } from "@/core/types";
 import { formatMinutes, formatTime, inIstanbul, shiftDay, weekStart } from "@/lib/date";
 import { effortText, isPlaceholder } from "@/core/today/effort";
+import { blockViewHref, blockViewOf } from "@/core/contract/blockView";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { tr } from "date-fns/locale";
@@ -625,6 +626,8 @@ function DayDetail({
         <ListRow
           key={block.id}
           block
+          // Okul çekirdek A: a block the module proposed opens its view (Today's address).
+          href={blockViewOf(block, modules) ? blockViewHref(block.id) : undefined}
           title={block.title}
           subtitle={
             <span className="tabular-nums">

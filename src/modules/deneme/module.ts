@@ -2,6 +2,7 @@ import { token } from "@/core/ui/tokens";
 import type { ModuleDefinition, ModuleFacet } from "@/core/contract/types";
 import { dayKey, shiftDay } from "@/lib/date";
 import { RecordsView } from "./components/AreaView";
+import { DenemeBlockView } from "./components/BlockView";
 import { DenemeBackdrop } from "./components/Backdrop";
 import { ExtractPage } from "./components/ExtractPage";
 import { ItemsTab } from "./components/ItemsTab";
@@ -291,6 +292,12 @@ export const deneme: ModuleDefinition = {
         : {},
     // Ç4b: the module's own backdrop, on its page and its scenes (docs/06, "Modülün zemini").
     backdrop: DenemeBackdrop,
+    // Okul çekirdek A: an event's fixed block opens this view (no session, nothing counted).
+    blockView: {
+      when: (block) => block.source_type === SOURCE_TYPE,
+      label: "Etkinliği aç",
+      component: DenemeBlockView,
+    },
     // Ç4c: a view on its area's page ("Sınama"); it fails on purpose while a record named
     // "Görünümü boz" is open (the page's error boundary).
     areaViews: [{ key: "kayitlar", title: "Kayıtlar", component: RecordsView }],

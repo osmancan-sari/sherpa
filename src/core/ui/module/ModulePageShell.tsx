@@ -292,7 +292,7 @@ function StatusStrip({ mod, page }: { mod: KnownModule; page: ModulePage }) {
   const report = useModuleQuery<ModuleReport | null>(row, ["report", week.from], async (context) =>
     definition && status ? definition.weeklyReport(context, week) : null,
   );
-  const subtitle = useModuleQuery<string | null>(row, ["page-subtitle"], async (context) =>
+  const subtitle = useModuleQuery<string | null>(row, ["page-subtitle", status], async (context) =>
     !status && page.subtitle ? page.subtitle(context) : null,
   );
 

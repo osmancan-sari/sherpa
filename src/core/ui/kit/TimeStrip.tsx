@@ -26,6 +26,8 @@ export type TimeStripPiece = {
   /** The work's colour (work and travel). */
   color?: string;
   testId?: string;
+  /** Okul çekirdek A: a piece that opens something (a block's view) instead of its balloon. */
+  onOpen?: () => void;
 };
 
 /** A part of the day drawn one shade lighter: the wake-bound and the bed-bound work. */
@@ -195,7 +197,10 @@ export function TimeStrip({
                 aria-label={text}
                 aria-pressed={!board ? selected : undefined}
                 title={board ? undefined : text}
-                onClick={() => setChosen(selected && !board ? null : piece.key)}
+                onClick={() =>
+                  piece.onOpen ? piece.onOpen() : setChosen(selected && !board ? null : piece.key)
+                }
+                data-opens={piece.onOpen ? "" : undefined}
                 onPointerEnter={(event) => {
                   if (event.pointerType === "mouse") setHovered(piece.key);
                 }}

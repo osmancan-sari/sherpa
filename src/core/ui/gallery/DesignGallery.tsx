@@ -38,6 +38,7 @@ import {
 import { Picker, PickerHome } from "@/core/ui/kit/Picker";
 import { HistoryLink, TabBar, TabLink } from "@/core/ui/kit/Tabs";
 import { useLook } from "@/core/ui/look/useLook";
+import { LayoutPieces } from "./LayoutPieces";
 import { ModulePieces } from "./ModulePieces";
 import { Backdrop, type BackdropKind } from "@/core/ui/sky/Backdrop";
 import { type Sky, skyOf } from "@/core/ui/sky/sky";
@@ -432,6 +433,7 @@ export function DesignGallery() {
       </div>
 
       <ModulePieces />
+      <LayoutPieces />
     </div>
   );
 }

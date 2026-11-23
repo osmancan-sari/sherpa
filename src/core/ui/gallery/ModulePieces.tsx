@@ -12,7 +12,7 @@ import {
   HeatGrid,
   LineChart,
   Panel,
-  StepRunner,
+  Checklist,
   Timeline,
   Timer,
 } from "@/core/ui/kit";
@@ -97,7 +97,9 @@ export function ModulePieces() {
               { value: "aliskanlik", label: "Alışkanlık" },
             ]}
           />
-          <StepRunner
+          <Checklist
+            title="Antrenman"
+            color={token("color-swatch-teal")}
             steps={[
               { key: "isin", title: "Isınma", seconds: 60 },
               { key: "sinav", title: "Şınav", reps: 10 },
