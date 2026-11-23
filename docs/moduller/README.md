@@ -2,7 +2,7 @@
 
 Yeni bir modül tasarlanmadan önce `ORTAK.md` okunur: önceki oturumlarda alınan ve her modül için geçerli olan kararlar (sınırlar, görsel dil, sahne, modül sayfası, öğrenme, dil).
 
-Bir modül ancak tasarımı "onaylandı" olduktan sonra kodlanır. Tasarım, her modül için ayrı bir oturumda (`prompts/modul-tasarim-oturumu.md`), `docs/06-modul-sozlesmesi.md` içindeki 11 başlıklı şablonla bu klasörde yazılır. Şu an hiçbir modül onaylı değildir; çekirdek hattı modüllerden bağımsız ilerler.
+Bir modül ancak tasarımı "onaylandı" olduktan sonra kodlanır. Tasarım, her modül için ayrı bir oturumda (`prompts/modul-tasarim-oturumu.md`), `docs/06-modul-sozlesmesi.md` içindeki 10 başlıklı şablonla (Okul çekirdek A: "Mod davranışı" başlığı kalktı) bu klasörde yazılır. Şu an hiçbir modül onaylı değildir; çekirdek hattı modüllerden bağımsız ilerler.
 
 ## Katalog
 
@@ -19,7 +19,7 @@ Bir modül ancak tasarımı "onaylandı" olduktan sonra kodlanır. Tasarım, her
 
 Modül olmayanlar (çekirdekte çözülür): korunan zaman (bir sabit blok türü), fikir havuzu ve yan projeler (gelen kutusu + etiket), keyif işleri (takip edilmez).
 
-Aşağıdaki özetler tasarım değil, tasarıma girdidir. Her biri kendi dosyasında 11 başlıkla yazılıp onaylanacak.
+Aşağıdaki özetler tasarım değil, tasarıma girdidir. Her biri kendi dosyasında 10 başlıkla yazılıp onaylanacak.
 
 ## Beslenme (taslak)
 

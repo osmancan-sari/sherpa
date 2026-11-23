@@ -238,7 +238,7 @@ Ortak kurallar `ORTAK.md` bölüm 2'dedir. Rutin'e özel olanlar:
 
 ## 9. Mod davranışı
 
-Dört modda da aynı: ağırlık çarpanı 1, taban çarpanı 1 (rutinler her modda günde 1 kalır). Ayrı bir "kısa gün" düğmesi yoktur; dar sabahta tek tek "Atla" yeter.
+Çekirdekte hayat modu yoktur (Ç4a); başlık numaralar kaymasın diye duruyor (Okul çekirdek A, madde 3). Ayrı bir "kısa gün" düğmesi yoktur; dar sabahta tek tek "Atla" yeter.
 
 ## 10. Haftalık rapor ve öğrenme
 

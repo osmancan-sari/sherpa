@@ -576,7 +576,7 @@ type ModuleJob = {
 
 ## Modül tasarım şablonu
 
-Yeni bir modül önce `docs/moduller/<slug>.md` olarak tasarlanır ve onaylanır, sonra kodlanır. Doküman şu 11 başlığı doldurur; uymayan başlık boş bırakılmaz, "bu modülde yok" yazılır.
+Yeni bir modül önce `docs/moduller/<slug>.md` olarak tasarlanır ve onaylanır, sonra kodlanır. Doküman şu 10 başlığı doldurur; uymayan başlık boş bırakılmaz, "bu modülde yok" yazılır. (Okul çekirdek A, 23 Kas 2026: eski 9. başlık "Mod davranışı" kalktı; hayat modu Ç4a'da kalktı. Daha önce yazılmış modül dokümanlarında başlık numaraları kaymasın diye tek cümleyle durabilir.)
 
 1. Kimlik: ad, tür, tek cümlelik amaç, başarı ölçütü
 2. Yaşam döngüsü: başlangıç, bitiş koşulu, durumlar, dönem geçişi
@@ -586,6 +586,5 @@ Yeni bir modül önce `docs/moduller/<slug>.md` olarak tasarlanır ve onaylanır
 6. Teklif ettiği işler: her zarf türü için `key`, hangi alanları modülün doldurduğu, hangilerini yapay zekaya bıraktığı, `sizingHints`
 7. Veri girişi: `intake` türleri
 8. Arayüz: çip, şimdi kartı, sayfanın beş bölgesi, sekmeler, alt sayfalar, tam ekran görünümler, hızlı eylemler, ayarlar; her ekranın çizimi ve her veri girişinin adımları
-9. Mod davranışı
-10. Haftalık rapor ve öğrenme
-11. Açık sorular ve sonraki sürümler
+9. Haftalık rapor ve öğrenme
+10. Açık sorular ve sonraki sürümler

@@ -304,6 +304,28 @@ Tasarım: `docs/05-arayuz.md`, `docs/11-yayin-ve-cihazlar.md`. Eski Ç4'ün gör
 - [ ] Şimdi kartı masadan bir bakışta okunuyor (kullanıcı onayı)
 - [ ] `docs/11-yayin-ve-cihazlar.md` sonundaki eşitleme ve bağlantısız kullanım ölçütleri sağlanıyor
 
+### Okul çekirdek A: modül sayfası, sahne sayacı ve yerleşimleri
+
+Okul'un tasarımının çekirdekten istediklerinin ilk paketi (`docs/moduller/okul-cekirdek-notlari.md`, "Kararlar"; istem `prompts/okul-cekirdek-a.md`). Okul Adım 1'den hemen önce kurulur. Sıra (kullanıcının kararı, 23 Kas 2026: önce Okul): **Okul çekirdek A → Okul Adım 1 → Okul çekirdek B → Okul Adım 2 → Okul çekirdek C → Okul Adım 3**; Rutin 2 ve Ç4d'nin kalanları Okul Adım 1'den sonra araya alınır.
+
+**Kapsam** (hepsi genel yetenek; örnekleri `deneme`'de, çekirdekte Okul'a özel kod yok)
+- Modül sayfası: modülün ilk girişi ("Ana sayfa"), "Yaklaşanlar" ve "Geçmiş" modül başına kapatılabilir, bölüm seçimi panoda sekme, telefonda açılır seçici (madde 4)
+- Sayfa başı: durum şeridi (durum cümlesi, etiket, haftanın sayıları) modül başına kapatılabilir; kapatan modülde ad ve kısa alt başlık (madde 5)
+- Sahne: şerit "geçen / ayrılan"; oturum kapanırken sahnenin bildirdiği sayılan dakika (öğrenme ve kalan efor onu kullanır); zemin bölümün rengini alır (madde 7)
+- Yer tutucu süre ve gerekçesi (`effort_provisional`, `effort_basis`); "yaklaşık" işareti; `size` ipuçlarına önceki gerçekleşenler (madde 9)
+- Kit'e üç sahne yerleşimi (pomodoro, akış, kontrol listesi) ve ortak parçaları; sabit blok görünümü (`ui.blockView`) (madde 10; soru sayacı ve tek blok paket C'de)
+- Sahneden çıkarken not (`ModuleScene.beforeExit`) (madde 11)
+- Doküman temizliği: hayat modunun kalıntıları (madde 3)
+
+**Kabul ölçütleri**
+- [ ] Yeni alanları kullanmayan modül ve sahnede hiçbir şey değişmiyor; bilerek değişen tek görünüş şeridin "geçen / ayrılan" biçimi
+- [ ] Molalı oturumda öğrenme ve kalan efor sayılan dakikayı kullanıyor; aralık dışı değer yok sayılıyor
+- [ ] Yer tutucu süre saklanıyor, "yaklaşık" görünüyor, gerekçe "Neden?"de; modül güncelleyince işaret kalkıyor; kullanıcının süresi ezilmiyor; hafta yükü sayıyor
+- [ ] Üç yerleşim sayfa yenilenince ve ikinci cihazda aynı durumda; "Süre doldu" kartı, +5 dk, Turu atla, akışta mola süreye sayılmıyor
+- [ ] Çıkarken not yazılıyor, atlanıyor; bağlantısız ve hata verince çıkış engellenmiyor
+- [ ] Blok görünümü Bugün, günün akışı ve Takvim'den açılıyor; oturum açmıyor; elle eklenen blokta açılmıyor
+- [ ] Modül sayfasında ana sayfa girişi, kapalı durum şeridi, kapalı "Yaklaşanlar" ve "Geçmiş", telefonda 375 px'te taşmayan seçici
+
 ### Ç5: Claude köprüsü
 
 **Kapsam**

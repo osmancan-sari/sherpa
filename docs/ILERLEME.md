@@ -4,10 +4,27 @@ Bu dosyayı Claude Code günceller. Yeni bir oturum yalnızca bu dosyayı ve `pr
 
 ## Durum
 
-- Faz: **Ç4c. Bugün, Takvim, kapanış ve alan sayfası** (15 Kas 2026; istem `prompts/c4c-bugun-takvim-kapanis.md`). Ç4b (`c4b-tamam`) yayında
-- Adım: 7 (kapanış) bitti: üç adım denetimi ve iki tur faz denetimi (GEÇMEDİ, GEÇTİ); `check:full` yeşil (`c80f7ba`, 610 / 304 / 279); görüntüler `docs/ekran-goruntuleri/c4c/`; `c4c-tamam`. Yayında (16 Kas: migration `sherpa-dev` ve `sherpa-prod`, `git push`)
-- Son commit: faz denetimi tur 2'nin düzeltmeleri
-- **Ek: Sabah açılışı** (16 Kas 2026; istem `prompts/sabah-acilisi.md`; Ç4c sonrası küçük çekirdek eki, yeni faz değil): bitti ve yayında (16 Kas 2026: migration `sherpa-dev` ve `sherpa-prod`, `git push`); yayından önce senin üç düzeltmen yapıldı (6. adım)
+- Faz: **Okul çekirdek A** (23 Kas 2026; istem `prompts/okul-cekirdek-a.md`; etiket `okul-cekirdek-a-tamam`; görüntüler `docs/ekran-goruntuleri/okul-cekirdek-a/`). Okul Adım 1'in dayandığı altı yetenek (`docs/moduller/okul-cekirdek-notlari.md` maddeler 4, 5, 7, 9, 10, 11) ve doküman temizliği (madde 3). Okul modülü kurulmaz
+- Adım: 0 (plan) bitti; sıradaki 1
+- Son commit: Okul tasarım oturumunun çıktıları (`c017f7d`, içerikleri değişmeden)
+- Önceki: Ç4c (`c4c-tamam`) ve sabah açılışı yayında (16 Kas 2026)
+
+### Okul çekirdek A planı
+
+İstem `prompts/okul-cekirdek-a.md`; kararlar `docs/moduller/okul-cekirdek-notlari.md` ("Kararlar", 16 Kas 2026); kareler `docs/tasarim/kareler/okul/` (`DIZIN.md`). Sıra artık: Okul çekirdek A → Okul Adım 1 → Okul çekirdek B → Okul Adım 2 → Okul çekirdek C → Okul Adım 3; Rutin 2 ve Ç4d'nin kalanları Okul Adım 1'den sonra (kullanıcının 23 Kas kararı). Her adımda sözleşme (`docs/06`, gerekiyorsa `03`, `05`, `docs/tasarim/`) aynı commit'te, testi ve `deneme` örneği; `npm run check` ve commit. Denetçi: veri ve sözleşme adımlarından sonra adım kipinde, sonunda faz kipinde.
+
+| # | Adım | Durum |
+| --- | --- | --- |
+| 0 | Plan; ilk commit (tasarım oturumunun dosyaları, dokunulmadan) | bitti: `c017f7d` |
+| 1 | Doküman temizliği (madde 3): modül şablonu ve oturum yönteminde "Mod davranışı" ve moda dayanan hükümler | — |
+| 2 | Modül sayfası (madde 4, 5): modülün ilk girişi ("Ana sayfa"), bölüm sayfası, "Yaklaşanlar", "Geçmiş" ve durum şeridinin modül başına kapanması, kısa alt başlık; kit'e açılır seçici (galeri, `parcalar.md`); `deneme`'de ayarla açılan kip; testler | — |
+| 3 | Sahnenin şeridi ve zemini (madde 7a, 7c): "geçen / ayrılan", ayrılan yoksa yalnızca geçen; zemin bölümün çözülmüş rengini alır; Rutin'in onaylı görüntüleri bilerek yenilenir | — |
+| 4 | Sayılan dakika (madde 7b): `controls.finish` / `stop` için isteğe bağlı değer; migration (oturumda sayılan dakika), `end_session`, yatışın geri alınması, öğrenme, kalan efor, sonuç; veritabanı ve birim testleri; denetçi (adım) | — |
+| 5 | Yer tutucu süre (madde 9): zarfa `effort.provisional` ve `effort.basis`, migration, kaynak kuralı; "Neden?"de gerekçe; Bugün, Takvim ve modül sayfasında "yaklaşık"; `size` istemine modülün önceki gerçekleşenleri (sürüm artar, `ai:eval` örneği); yük testi (önce test); denetçi (adım) | — |
+| 6 | Sahne yerleşimleri (madde 10a): pomodoro, akış, kontrol listesi (`StepRunner` ile birleşme), "Süre doldu.", "Kaldığın yer", "Bu oturumda", "Oturum bitti."; saf sayaç durumu (oturumun başlangıcından ve modülün sakladığı durumdan); galeri, `parcalar.md`, `ORTAK.md`; `deneme`'de üç sahne | — |
+| 7 | Sahneden çıkarken not (madde 11): `ModuleScene.beforeExit`; "Çık", sahnenin bitirmesi ve klavye aynı adımdan; bağlantısız, hata ve 10 sn'de çıkış engellenmez; denetçi (adım) | — |
+| 8 | Sabit blok görünümü (madde 10b): `ui.blockView`; Bugün, günün akışı ve Takvim'den açılır, oturum açmaz; Şimdi kartında tek eylem; denetçi (adım) | — |
+| 9 | Uçtan uca ve görsel testler, ekran görüntüleri ve karelerle karşılaştırma, `check:full`, faz denetimi, rapor ve "Okul Adım 1 için sözleşme özeti", `okul-cekirdek-notlari.md` işaretleri, etiket; yayın senin izninle | — |
 
 ### Sabah açılışı planı
 

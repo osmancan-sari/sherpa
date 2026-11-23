@@ -118,7 +118,7 @@ kind enum(lifelong, term, until_goal)
 status enum(active, paused, archived)
 area_id uuid null -> areas
 weight numeric default 1      -- planlayıcıdaki önem çarpanı
-weekly_floor_minutes int default 0   -- haftalık taban; Yoğun modda küçülür ama sıfırlanmaz
+weekly_floor_minutes int default 0   -- haftalık taban; korunur (Ç4a: hayat modu yok)
 color text                    -- #rrggbb. Kurulumda tanımdan kopyalanır; sonra kullanıcınındır (Ayarlar → Modüller, Ç3e)
 facet_colors jsonb default '{}'   -- Ç3e: kullanıcının bölüm renkleri { "sabah": "#d97706" }; anahtarı olmayan bölüm kendi varsayılanıyla
 starts_on date null, ends_on date null, end_condition text null
@@ -197,7 +197,7 @@ key text null                 -- modül teklifinin kimliği; (module_id, key) te
 title text
 target_count int              -- dönem başına hedef
 period enum(day, week, month)
-floor_count int default 0     -- Yoğun modda bile korunan en az sayı
+floor_count int default 0     -- korunan en az sayı (Ç4a: hayat modu yok)
 est_minutes int
 energy enum(deep, light, physical)
 context enum(any, desk, home, campus, office, out, commute)
@@ -364,7 +364,7 @@ occurred_at timestamptz default now()
 ### weekly_reviews
 ```
 week_start date unique per user
-summary jsonb                 -- yapay zekanın haftalık bakışı: özet, en çok 3 öneri, gerekirse mod önerisi (`review`; modüllerin raporlarından)
+summary jsonb                 -- yapay zekanın haftalık bakışı: özet, en çok 3 öneri (`review`; modüllerin raporlarından; Ç4a: mod önerisi yok)
 ```
 
 ### planner_stats

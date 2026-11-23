@@ -24,7 +24,7 @@ Sherpa adlı kişisel planlama uygulamam için **<modül adı>** modülünü tas
 
 Şu sırayla ilerle ve her adımda benden onay al:
 
-1. **Taslak ve sorular.** Bildiklerinden modülün 11 başlıklı taslağını çıkar; emin olmadığın her şeyi soru olarak sor. Tahmin yürütüp boşluk doldurma.
+1. **Taslak ve sorular.** Bildiklerinden modülün 10 başlıklı taslağını (`docs/06-modul-sozlesmesi.md`, "Modül tasarım şablonu"; mod davranışı başlığı yoktur) çıkar; emin olmadığın her şeyi soru olarak sor. Tahmin yürütüp boşluk doldurma.
 2. **Veri bağlantıları.** Modülün her verisi için kaynağı ve otomasyon seviyesini belirle. Bir dış kaynağa erişilip erişilemediğini varsayma; deneyebiliyorsan dene, deneyemiyorsan "denenmedi" yaz.
 3. **İş teklifleri.** Modülün çekirdeğe göndereceği her iş zarfını yaz: `key`, hangi alanları modül doldurur, hangilerini yapay zekaya bırakır, `sizingHints`.
 4. **Ekranlar ve girişler.** Çipi, şimdi kartını, sayfanın beş bölgesini ve sekmelerini, her veri girişini tek tek tasarla; ekranları çizerek göster. Her giriş en fazla 2 dokunuş ya da tek cümle olmalı.
