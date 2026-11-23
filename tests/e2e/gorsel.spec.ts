@@ -2,6 +2,9 @@ import type { Page } from "@playwright/test";
 import { insert, rows, seedModule, update, waitFor } from "./data";
 import { expect, quietTest, test } from "./fixtures";
 import { openQuickAdd } from "./helpers";
+import { okulContext, sampleTerm } from "./okul-helpers";
+import { insertSession } from "@/modules/okul/queries";
+import { syncSession } from "@/modules/okul/rules";
 
 // The visual check (docs/tasarim/README.md, "Görsel denetim"): the gallery and the main screens,
 // at one fixed moment, with fixed data, on the phone and on the board, against approved images
@@ -340,6 +343,145 @@ for (const device of DEVICES) {
       await page.goto(`/?blok=${block.id}`);
       await expect(page.getByTestId("deneme-block-view")).toHaveAttribute("data-phase", "during");
       await shot(page, `blok-gorunumu-${device.name}`);
+    });
+
+    // Okul 1: the module's pages and scenes with the sample term (scripts/demo-okul.ts, made up).
+    test(`Okul's pages (${device.name})`, async ({ page }) => {
+      await sampleTerm(MOMENT);
+      await page.goto("/m/okul");
+      await expect(page.getByTestId("okul-home").filter({ visible: true })).toBeVisible();
+      await shot(page, `okul-ana-sayfa-${device.name}`, { fullPage: true });
+      await page.goto("/m/okul/bolum/dlr303e");
+      await expect(page.getByTestId("okul-course").filter({ visible: true })).toBeVisible();
+      await shot(page, `okul-ders-${device.name}`, { fullPage: true });
+      await page.goto("/m/okul/devam/dlr303e");
+      await expect(page.getByTestId("okul-attendance").filter({ visible: true })).toBeVisible();
+      await shot(page, `okul-devam-${device.name}`, { fullPage: true });
+      const all = await rows("okul_assessments");
+      const midterm = (await rows("okul_prep_docs"))[0].assessment_id as string;
+      await page.goto(`/m/okul/is/${midterm}`);
+      await expect(page.getByTestId("okul-exam").filter({ visible: true })).toBeVisible();
+      await shot(page, `okul-sinav-${device.name}`, { fullPage: true });
+      const homework = all.find((row) => row.title === "Assignment 2")!;
+      await page.goto(`/m/okul/is/${homework.id}`);
+      await expect(page.getByTestId("okul-work").filter({ visible: true })).toBeVisible();
+      await shot(page, `okul-is-${device.name}`, { fullPage: true });
+      await page.goto("/ayarlar/moduller/okul");
+      await expect(page.getByTestId("okul-settings")).toBeVisible();
+      await shot(page, `okul-ayarlar-${device.name}`);
+    });
+
+    test(`Okul's scenes: the flow with Kaldığın yer, the preparation's pomodoro, the hand-in (${device.name})`, async ({
+      page,
+    }) => {
+      await sampleTerm(MOMENT);
+      const all = await rows("okul_assessments");
+      const items = await rows("work_items");
+      const [mod] = (await rows("modules")).filter((row) => row.slug === "okul");
+      const homework = all.find((row) => row.title === "Assignment 2")!;
+      await update("okul_assessments", homework.id as string, {
+        resume_note: "Kenar durumları kaldı; testler yazılacak",
+        resume_noted_at: "2026-11-12T13:05:00Z",
+      });
+      const run = async (key: string, minutes: number, since: string) => {
+        const item = items.find((row) => row.key === key)!;
+        const [task] = await insert("tasks", {
+          module_id: mod.id,
+          work_item_id: item.id,
+          title: item.title,
+          est_minutes: minutes,
+          status: "doing",
+          source_type: item.source_type,
+          source_id: item.source_id,
+        });
+        const [session] = await insert("sessions", {
+          task_id: task.id,
+          module_id: mod.id,
+          started_at: since,
+        });
+        return { task, session };
+      };
+      const flow = await run(`hw:${homework.id}`, 90, "2026-11-13T10:22:00Z");
+      await page.goto("/");
+      await expect(page.getByTestId("okul-scene")).toHaveAttribute("data-method", "flow");
+      await shot(page, `okul-akis-sahne-${device.name}`);
+      await update("sessions", flow.session.id as string, { ended_at: "2026-11-13T10:40:00Z" });
+      await update("tasks", flow.task.id as string, { status: "todo" });
+
+      const midterm = (await rows("okul_prep_docs"))[0].assessment_id as string;
+      await run(`prep:${midterm}`, 90, "2026-11-13T10:58:00Z");
+      await page.goto("/");
+      await expect(page.getByTestId("okul-scene")).toHaveAttribute("data-method", "pomodoro");
+      await shot(page, `okul-hazirlik-sahne-${device.name}`);
+    });
+
+    test(`Okul's hand-in list (${device.name})`, async ({ page }) => {
+      await sampleTerm(MOMENT);
+      const homework = (await rows("okul_assessments")).find(
+        (row) => row.title === "Assignment 2",
+      )!;
+      const item = (await rows("work_items")).find((row) => row.key === `submit:${homework.id}`)!;
+      const [mod] = (await rows("modules")).filter((row) => row.slug === "okul");
+      const [task] = await insert("tasks", {
+        module_id: mod.id,
+        work_item_id: item.id,
+        title: item.title,
+        est_minutes: 10,
+        status: "doing",
+        source_type: item.source_type,
+        source_id: item.source_id,
+      });
+      const [session] = await insert("sessions", {
+        task_id: task.id,
+        module_id: mod.id,
+        started_at: "2026-11-13T11:06:00Z",
+      });
+      await update("okul_assessments", homework.id as string, {
+        checklist_state: { session: session.id, step: 2, since: "2026-11-13T11:08:00Z" },
+      });
+      await page.goto("/");
+      await expect(page.getByTestId("okul-hand-in")).toBeVisible();
+      await shot(page, `okul-teslim-${device.name}`);
+    });
+
+    test(`Okul's lesson view, during and after (${device.name})`, async ({ page }) => {
+      await sampleTerm(MOMENT);
+      const ctx = await okulContext(() => MOMENT);
+      const course = (await rows("okul_courses")).find((row) => row.code === "DLR303E")!;
+      const during = await insertSession(ctx, {
+        course_id: course.id as string,
+        date: "2026-11-13",
+        course_week: 7,
+        start_time: "13:30",
+        end_time: "16:20",
+      });
+      const after = await insertSession(ctx, {
+        course_id: course.id as string,
+        date: "2026-11-13",
+        course_week: 7,
+        start_time: "09:00",
+        end_time: "11:50",
+      });
+      await syncSession(ctx, during.id);
+      const morning = await okulContext(() => new Date("2026-11-13T08:00:00+03:00"));
+      await syncSession(morning, after.id);
+      await insert("okul_class_notes", {
+        session_id: during.id,
+        text: "Quiz 2 bir hafta erkene gelebilir",
+        created_at: "2026-11-13T10:50:00Z",
+      });
+      const blocks = await rows("blocks");
+      const open = async (sessionId: string) =>
+        page.goto(`/?blok=${blocks.find((row) => row.source_id === sessionId)!.id}`);
+      await open(during.id);
+      await expect(page.getByTestId("okul-lesson").filter({ visible: true })).toHaveAttribute(
+        "data-phase",
+        "during",
+      );
+      await shot(page, `okul-derste-${device.name}`);
+      await open(after.id);
+      await expect(page.getByTestId("okul-attendance-question")).toBeVisible();
+      await shot(page, `okul-ders-bitti-${device.name}`);
     });
   });
 }

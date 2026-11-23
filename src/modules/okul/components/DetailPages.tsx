@@ -18,7 +18,7 @@ import {
   SwitchRow,
   Tag,
 } from "@/core/ui/kit";
-import { dayKey, formatMinutes, weekStart } from "@/lib/date";
+import { dayKey, formatMinutes } from "@/lib/date";
 import type { Assessment, ClassSession, Course } from "../queries";
 import { syncAssessment } from "../rules";
 import { markSubmitted, setAttendance, setDocsReady, setGrade } from "../server/entries";
@@ -51,14 +51,14 @@ function whenLine(a: Assessment): string {
   return [weekdayDayMonth(a.date), a.time?.slice(0, 5), a.room].filter(Boolean).join(" · ");
 }
 
-/** A sitting's day: its planned day this week, else its week ("7 Ara haftası"). */
-function sittingWhen(task: Task, now: Date): string {
+/**
+ * A sitting's day: the day it was done, its planned day, else "bu hafta" (the core opens sittings
+ * for this week only; a day-by-day forecast comes with package C).
+ */
+function sittingWhen(task: Task): string {
   if (task.status === "done" && task.done_at) return dayMonth(dayKey(new Date(task.done_at)));
   if (task.planned_date) return weekdayDayMonth(task.planned_date);
-  const week = weekStart(dayKey(now));
-  return task.created_at && weekStart(dayKey(new Date(task.created_at))) === week
-    ? "bu hafta"
-    : `${dayMonth(week)} haftası`;
+  return "bu hafta";
 }
 
 const STATE: Record<string, string> = {
@@ -69,7 +69,7 @@ const STATE: Record<string, string> = {
   dropped: "geri çekildi",
 };
 
-function Sittings({ tasks, now, rest }: { tasks: Task[]; now: Date; rest: string | null }) {
+function Sittings({ tasks, rest }: { tasks: Task[]; rest: string | null }) {
   const shown = tasks.filter((task) => task.status !== "dropped");
   return (
     <Panel variant="dense" label="Oturumlar" className="pb-1.5" data-testid="okul-sittings">
@@ -85,7 +85,7 @@ function Sittings({ tasks, now, rest }: { tasks: Task[]; now: Date; rest: string
           pending={task.status === "done"}
           className="border-line border-t border-b-0"
           title={`Oturum ${index + 1}`}
-          subtitle={`${sittingWhen(task, now)} · ${formatMinutes(task.est_minutes)}`}
+          subtitle={`${sittingWhen(task)} · ${formatMinutes(task.est_minutes)}`}
           trailing={<span className="text-ink-2 text-sm">{STATE[task.status] ?? task.status}</span>}
         />
       ))}
@@ -180,7 +180,6 @@ function Header({
 
 function AssessmentPageInner({ params }: ModuleViewProps) {
   const term = useTerm();
-  const now = useNow();
   const write = useWrite();
   const [dating, setDating] = useState(false);
   const [stepOpen, setStepOpen] = useState<Assessment | "new" | null>(null);
@@ -256,7 +255,7 @@ function AssessmentPageInner({ params }: ModuleViewProps) {
           </Panel>
           <GradeBox a={a} />
         </div>
-        <Sittings tasks={sittings} now={now} rest={rest} />
+        <Sittings tasks={sittings} rest={rest} />
         {dateSheet}
       </div>
     );
@@ -364,7 +363,6 @@ function AssessmentPageInner({ params }: ModuleViewProps) {
         ) : (
           <Sittings
             tasks={sittings}
-            now={now}
             rest={
               left !== null && left > 0 && !row.done
                 ? `Kalan ${item?.effort_provisional ? "yaklaşık " : ""}${formatMinutes(left)}`
