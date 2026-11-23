@@ -27,6 +27,7 @@
     "db:push": "supabase db push --remote",
     "db:user": "node --env-file=.env.local scripts/create-user.mjs",
     "db:seed": "tsx scripts/seed-demo.ts",
+    "import:notion": "tsx scripts/import-notion.ts",
     "ai:eval": "tsx --conditions=react-server scripts/ai-eval/run.ts",
     "icons": "node scripts/generate-icons.mjs",
     "tokens": "node scripts/tokens.mjs"

@@ -1,0 +1,101 @@
+[
+  {
+    "url": "https://www.notion.so/t1",
+    "Name": "Quiz 2 dokümanı",
+    "Ders Kodu": "SNM101E",
+    "Tür": "Hazırlık",
+    "date:Son Tarih:start": "2026-12-08",
+    "Status": "Planned",
+    "Priority": "High",
+    "Arşiv": "__NO__",
+    "Teslim": []
+  },
+  {
+    "url": "https://www.notion.so/t2",
+    "Name": "Ödev 1 yükle",
+    "Ders Kodu": "SNM101E",
+    "Tür": "Teslim",
+    "date:Son Tarih:start": "2026-12-20",
+    "Status": "Planned",
+    "Priority": "Critical",
+    "Arşiv": "__NO__",
+    "Teslim": ["https://www.notion.so/a5"]
+  },
+  {
+    "url": "https://www.notion.so/t3",
+    "Name": "Quiz 2",
+    "Ders Kodu": "SNM101E",
+    "Tür": "Sınav",
+    "date:Son Tarih:start": "2026-12-15",
+    "Status": "Planned",
+    "Priority": "High",
+    "Arşiv": "__NO__",
+    "Teslim": []
+  },
+  {
+    "url": "https://www.notion.so/t4",
+    "Name": "Notları gir",
+    "Ders Kodu": "Genel",
+    "Tür": "Veri Girişi",
+    "date:Son Tarih:start": null,
+    "Status": "Backlog",
+    "Priority": "Low",
+    "Arşiv": "__NO__",
+    "Teslim": []
+  },
+  {
+    "url": "https://www.notion.so/t5",
+    "Name": "Okul dışı iş",
+    "Ders Kodu": null,
+    "Tür": null,
+    "date:Son Tarih:start": null,
+    "Status": "Backlog",
+    "Priority": "Medium",
+    "Arşiv": "__NO__",
+    "Teslim": []
+  },
+  {
+    "url": "https://www.notion.so/t6",
+    "Name": "Hocaya proje konusunu sor",
+    "Ders Kodu": "SNM202E",
+    "Tür": "Takip",
+    "date:Son Tarih:start": "2026-12-01",
+    "Status": "In progress",
+    "Priority": "Medium",
+    "Arşiv": "__NO__",
+    "Teslim": []
+  },
+  {
+    "url": "https://www.notion.so/t7",
+    "Name": "Eski takip",
+    "Ders Kodu": "SNM101E",
+    "Tür": "Takip",
+    "date:Son Tarih:start": "2026-10-01",
+    "Status": "Planned",
+    "Priority": "Low",
+    "Arşiv": "__YES__",
+    "Teslim": []
+  },
+  {
+    "url": "https://www.notion.so/t8",
+    "Name": "Slaytları indir",
+    "Ders Kodu": "SNM101E",
+    "Tür": "Materyal",
+    "date:Son Tarih:start": "2026-11-02",
+    "Status": "Done",
+    "Priority": "Low",
+    "Arşiv": "__NO__",
+    "Teslim": []
+  },
+  {
+    "url": "https://www.notion.so/t9",
+    "Name": "Kitap bölümü bul",
+    "Ders Kodu": "Genel",
+    "Tür": "Materyal",
+    "date:Son Tarih:start": null,
+    "Status": "Backlog",
+    "Priority": "High",
+    "Arşiv": "__NO__",
+    "Teslim": []
+  }
+]

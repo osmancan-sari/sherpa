@@ -1,0 +1,52 @@
+[
+  {
+    "url": "https://www.notion.so/s1",
+    "Konu": "Giriş",
+    "Ders Kodu": "SNM101E",
+    "date:Tarih:start": "2026-09-29",
+    "Ders Haftası": "W1",
+    "Tür": "Ders",
+    "Devam": "Katıldım",
+    "Notlar": null
+  },
+  {
+    "url": "https://www.notion.so/s2",
+    "Konu": "İkinci konu",
+    "Ders Kodu": "SNM101E",
+    "date:Tarih:start": "2026-10-06",
+    "Ders Haftası": "W2",
+    "Tür": "Ders",
+    "Devam": "Katılmadım",
+    "Notlar": null
+  },
+  {
+    "url": "https://www.notion.so/s3",
+    "Konu": "Ara tatil",
+    "Ders Kodu": "SNM101E",
+    "date:Tarih:start": "2026-11-17",
+    "Ders Haftası": "W8",
+    "Tür": "Tatil",
+    "Devam": null,
+    "Notlar": null
+  },
+  {
+    "url": "https://www.notion.so/s4",
+    "Konu": "Son konu",
+    "Ders Kodu": "SNM101E",
+    "date:Tarih:start": "2026-12-29",
+    "Ders Haftası": "W14",
+    "Tür": "Ders",
+    "Devam": null,
+    "Notlar": null
+  },
+  {
+    "url": "https://www.notion.so/s5",
+    "Konu": "Sunumlar",
+    "Ders Kodu": "SNM202E",
+    "date:Tarih:start": "2026-12-24",
+    "Ders Haftası": "W13",
+    "Tür": "Sunum",
+    "Devam": null,
+    "Notlar": null
+  }
+]

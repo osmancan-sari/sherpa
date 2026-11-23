@@ -1,0 +1,26 @@
+[
+  {
+    "url": "https://www.notion.so/uydurma-ders-1",
+    "Kod": "SNM101E",
+    "Ders Adı": "Sınama Dersi",
+    "Ders Günü": "Salı",
+    "Saat": "09:30",
+    "VF Şartları": "Quiz ortalaması ≥ 10/100",
+    "Notlandırma Notu": "Uydurma notlandırma",
+    "Claude Projesi": null,
+    "Ders Sayfası": "https://www.notion.so/uydurma-sayfa-1",
+    "Lokal Klasör": null
+  },
+  {
+    "url": "https://www.notion.so/uydurma-ders-2",
+    "Kod": "SNM 202E",
+    "Ders Adı": "Deneme Dersi",
+    "Ders Günü": "Perşembe",
+    "Saat": "öğleden sonra",
+    "VF Şartları": "",
+    "Notlandırma Notu": null,
+    "Claude Projesi": null,
+    "Ders Sayfası": null,
+    "Lokal Klasör": null
+  }
+]

@@ -10,6 +10,7 @@
 import { seedChains } from "./demo-chains";
 import { seedFacets } from "./demo-facets";
 import { seedDemo } from "./demo-data";
+import { seedOkul } from "./demo-okul";
 import { adminClient, localSetup, localUserId, signInAs } from "./local-user";
 
 /** Children before parents, so rows can be removed in this order. Module tables first. */
@@ -74,6 +75,14 @@ async function main() {
   const db = await signInAs(url, email);
   const now = new Date();
   const summary: Record<string, number> = await seedDemo(db, now);
+  // Okul step 1: the sample term (made up), through the module's own rules. The older sample
+  // row without code is named "Okul" too; it gives the real module its name.
+  const renamed = await db
+    .from("modules")
+    .update({ name: "Okul (eski örnek)" })
+    .eq("slug", "okul-ornek");
+  if (renamed.error) throw new Error(renamed.error.message);
+  Object.assign(summary, await seedOkul(db, now));
   // Ç3e: work in facets, through the test module, where it is switched on.
   if (process.env.NEXT_PUBLIC_SHERPA_DEMO_MODULE === "1") {
     Object.assign(summary, await seedFacets(db, now));
