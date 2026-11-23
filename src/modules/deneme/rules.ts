@@ -23,6 +23,8 @@ export const FEEDBACK_PROMPT = "zorluk";
 
 type Settings = {
   default_minutes?: number;
+  /** Okul çekirdek A: "home": the module page with its own home entry and no state line. */
+  page?: "home" | null;
   added_count?: number;
   archived_on?: string;
   /** Ç3c: days the module heard begin, and the last of its sessions that ended. */

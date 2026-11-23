@@ -66,6 +66,19 @@ describe("a facet list", () => {
     expect(() => checkedFacets(def, [SABAH, SABAH])).toThrow(FacetError);
     expect(facetProblems(def, "sabah")).toEqual(["rutin: facets must return a list"]);
   });
+
+  it("Okul çekirdek A: a line for the page's picker, short text only", () => {
+    expect(facetProblems(def, [{ ...SABAH, detail: "YZV303E · sıradaki: Midterm" }])).toEqual([]);
+    expect(
+      facetProblems(def, [
+        { ...SABAH, detail: "x".repeat(121) },
+        { ...AKSAM, detail: 3 as never },
+      ]),
+    ).toEqual([
+      'rutin: facet "sabah": detail must be text of at most 120 characters',
+      'rutin: facet "aksam": detail must be text of at most 120 characters',
+    ]);
+  });
 });
 
 describe("the envelope's facet", () => {

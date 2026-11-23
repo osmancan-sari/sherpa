@@ -35,6 +35,7 @@ import {
   Toast,
   Window,
 } from "@/core/ui/kit";
+import { Picker, PickerHome } from "@/core/ui/kit/Picker";
 import { HistoryLink, TabBar, TabLink } from "@/core/ui/kit/Tabs";
 import { useLook } from "@/core/ui/look/useLook";
 import { ModulePieces } from "./ModulePieces";
@@ -278,6 +279,43 @@ export function DesignGallery() {
                 Geçmiş
               </HistoryLink>
             </Row>
+          </Section>
+
+          <Section title="Açılır seçici">
+            {/* Okul çekirdek A: the phone's facet picker beside the home entry. */}
+            <div className="flex max-w-sm items-center gap-2.5" data-testid="gallery-picker">
+              <PickerHome href="/tasarim" selected>
+                Ana sayfa
+              </PickerHome>
+              <Picker
+                label="Bölümler"
+                placeholder="Ders seç"
+                className="flex-1"
+                items={[
+                  {
+                    key: "dl",
+                    label: "Deep Learning",
+                    href: "/tasarim",
+                    dot: token("color-swatch-violet"),
+                    detail: "YZV303E · sıradaki: Midterm · 30 Kas",
+                  },
+                  {
+                    key: "rob",
+                    label: "Robotics",
+                    href: "/tasarim",
+                    dot: token("color-swatch-teal"),
+                    detail: "YZV406E · sıradaki: Midterm · 24 Kas",
+                  },
+                  {
+                    key: "alg",
+                    label: "Algoritma",
+                    href: "/tasarim",
+                    dot: token("color-swatch-blue"),
+                    detail: "BBF301E · sıradaki: Assignment 2 · 26 Kas",
+                  },
+                ]}
+              />
+            </div>
           </Section>
 
           <Section title="Saatli şerit">

@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { useRefreshAll } from "@/core/app/actions";
 import { useModuleQuery } from "@/core/app/hooks";
 import type { ModuleViewProps } from "@/core/contract/types";
-import { BarChart, EmptyState, Stepper, Timer } from "@/core/ui/kit";
+import { BarChart, EmptyState, Stepper, SwitchRow, Timer } from "@/core/ui/kit";
 import { useModule } from "@/core/ui/module/ModuleProvider";
 import { SAVE_FAILED, useNotify } from "@/core/ui/Notices";
 import { dayKey, formatMinutes, shiftDay } from "@/lib/date";
@@ -145,10 +145,12 @@ export function SettingsForm() {
   const refreshAll = useRefreshAll();
   const settings = settingsOf(ctx);
   const [minutes, setMinutes] = useState(settings.default_minutes ?? 15);
+  // Okul çekirdek A: the module page with a home entry and without the state line.
+  const [home, setHome] = useState(settings.page === "home");
 
   const save = async () => {
     try {
-      await ctx.saveSettings({ ...settings, default_minutes: minutes });
+      await ctx.saveSettings({ ...settings, default_minutes: minutes, page: home ? "home" : null });
       await refreshAll();
       notify("Kaydedildi.");
     } catch {
@@ -170,6 +172,7 @@ export function SettingsForm() {
         step={5}
         unit="dk"
       />
+      <SwitchRow label="Sayfa: ana sayfalı" checked={home} onChange={setHome} />
       <div>
         <Button onClick={() => void save()}>Kaydet</Button>
       </div>

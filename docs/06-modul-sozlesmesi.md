@@ -178,9 +178,23 @@ type ModuleUi = {
   scenes?: Record<string, ModuleScene>   // Ç3e: adı verilen sahneler; bölümler bunlara başvurur
   backdrop?: ComponentType<ModuleBackdropProps>   // Ç4b: modülün kendi zemini (aşağıda)
   areaViews?: ModuleAreaView[]       // Ç4c: alanının sayfasına verdiği görünümler (aşağıda "Alan sayfası")
+  page?: ModulePage | ((module: ModuleRow) => ModulePage)  // Okul çekirdek A: sayfanın biçimi (aşağıda "Modül sayfası")
 }
 
 type ModuleViewProps = { params: Record<string, string> }   // alt sayfalarda ':id' gibi parçalar
+
+// Okul çekirdek A (23 Kas 2026): modül sayfasının biçimi; her alan isteğe bağlı, vermeyen modülde sayfa eskisi gibi
+type ModulePage = {
+  home?: { label: string; component: ComponentType<ModuleViewProps> }  // ilk giriş, bölüm değil ("Ana sayfa"); /m/<slug>
+  facetView?: ComponentType<ModuleFacetViewProps>   // bölüm sayfası: listedeki her bölüm bir giriş; /m/<slug>/bolum/<anahtar>
+  pickLabel?: string                 // telefondaki seçicinin, bölüm seçili değilken yazısı ("Ders seç"); varsayılan "Bölüm seç"
+  status?: boolean                   // 1. bölgenin durumu: çip metni, "dikkat / geride", haftanın sayıları ve önerileri; varsayılan true
+  subtitle?: (ctx: ModuleContext) => Promise<string | null>   // status kapalıyken adın altındaki kısa satır ("2026 Güz")
+  upcoming?: boolean                 // 2. bölge "Yaklaşanlar"; varsayılan true
+  history?: boolean                  // 4. bölge "Geçmiş" ve düğmesi; varsayılan true
+  entries?: boolean                  // 5. bölge "Giriş ve ayarlar"; varsayılan true
+}
+type ModuleFacetViewProps = { facet: { key: string; name: string; color: string }; params: Record<string, string> }
 
 // Ç4c: alan sayfasına bir görünüm; yoğun camlı panelde, başlığı ve sağında modülün adıyla çizilir
 type ModuleAreaView = {
@@ -190,6 +204,18 @@ type ModuleAreaView = {
   wide?: boolean                     // panoda geniş sütun
 }
 ```
+
+### Modül sayfası (Okul çekirdek A)
+
+Modül, sayfasının biçimini `ui.page` ile verir (sabit bir nesne ya da modülün satırının fonksiyonu: ayara bağlıysa; fonksiyon hata verirse sayfa düz haliyle açılır). Vermeyen modülün sayfası olduğu gibidir. Gerekçe: Okul'un ana sayfası ve ders seçimi (`docs/moduller/okul-cekirdek-notlari.md`, madde 4 ve 5; kareler `AnaSayfa`, `DersSecici`, `PanoAna`).
+
+1. **Girişler.** Sırayla: ilk giriş (`home`, bölüm olmayan "Ana sayfa"; varsa `/m/<slug>` onu açar), sekmeler (`tabs`; `home` varsa boş olabilir), bölüm sayfaları (`facetView` varsa modülün bölüm listesindeki her bölüm bir giriş; adres `/m/<slug>/bolum/<anahtar>`; bileşen bölümü çözülmüş rengiyle alır). `bolum` ve `tam` çekirdeğe ayrılmıştır. Listede olmayan bölümün sayfası "Bu modülde böyle bir sayfa yok." der.
+2. **Seçim.** Panoda girişlerin hepsi sekmedir (bölümün renk noktasıyla; sığmazsa yana kayar). Telefonda `home` ya da `facetView` veren modülde ilk giriş ayrı bir hap, kalanlar kit'in açılır seçicisindedir (`Picker`; seçili değilken `pickLabel`; her satırda renk noktası, ad ve bölümün `detail` satırı). Vermeyen modülde telefonda da sekmeler (eskisi gibi).
+3. **Sayfa başı.** `status: false` durum şeridinin tamamını kapatır: çip metni, "dikkat / geride" etiketi, haftalık raporun sayıları ve önerileri. Sayfa başı o zaman ad, varsa alanın adı (bağlantı) ve modülün kısa alt başlığıdır (`subtitle`; ucuz ve salt okuyan; örneğin dönem). Çekirdeğin yedek "İş ekle"si de çıkmaz; modülün kendi `actions`'ı ve tam ekran bağlantıları durur (her girişte aynı; yalnızca bir girişte istenen düğmeyi modül o girişin gövdesine koyar). Bugün'deki modül hapı, Modüller listesindeki satır ve alan sayfasındaki panel bu ayardan etkilenmez.
+4. **Bölgeler.** `upcoming: false` "Yaklaşanlar"ı, `history: false` "Geçmiş"i ve düğmesini, `entries: false` "Giriş ve ayarlar"ı kaldırır (modül ayarlarına Ayarlar → Modüller'den gidilir). Panoda sağ sütun (Yaklaşanlar, Geçmiş) yoksa gövde genişliğin tamamını alır.
+5. **Bölümün satırı.** `ModuleFacet.detail` (en çok 120 karakter) seçicide adın altında durur ("YZV303E · sıradaki: Midterm · 30 Kas"); bölüm listesi her veri değişiminde yeniden hesaplandığı için güncel kalır.
+
+Örnek: `deneme`'nin ayarlarında "Sayfa: ana sayfalı" açılınca ana sayfa (bütün açık kayıtlar tarih sırasıyla), her bölümün sayfası, kapalı durum şeridi ("Sınama dönemi"), kapalı "Yaklaşanlar", "Geçmiş" ve "Giriş ve ayarlar". Test: `tests/e2e/module-page.both.spec.ts`, `src/core/contract/registry.test.ts`.
 
 ### Alan sayfası (Ç4c)
 
@@ -345,6 +371,7 @@ type ModuleFacet = {
   color: string                // #rrggbb; bölümün varsayılan rengi, kullanıcı değiştirebilir
   scene?: string               // ui.scenes içindeki sahnenin anahtarı
   tone?: 'calm' | 'focus' | 'energy'   // sahne çerçevesinin tonu; yoksa sahnenin look.tone'u
+  detail?: string              // Okul çekirdek A: modül sayfasının seçicisinde adın altındaki tek satır; en çok 120
 }
 ```
 
@@ -390,7 +417,7 @@ type TodayBrief = {
 
 Sınama modülü `deneme` her bağlantı noktasının çalışan örneğidir (`alerts` tanımlıdır ama çekirdek modül uyarılarını Ç3'te, `AlertBar` ile göstermeye başlar); yalnızca `NEXT_PUBLIC_SHERPA_DEMO_MODULE=1` verilen ortamlarda (yerel geliştirme, testler) kaydolur, üretimde kaydolmaz.
 
-Adresler: `/m/<slug>` ilk sekmeyi, `/m/<slug>/<sekme>` adı verilen sekmeyi açar; öbür yollar `routes` ile eşlenir. `tam` parçası çekirdeğe ayrılmıştır: sekme ya da alt sayfa bu adı alamaz.
+Adresler: `/m/<slug>` ilk girişi (`ui.page.home` varsa onu, yoksa ilk sekmeyi), `/m/<slug>/<sekme>` adı verilen sekmeyi, `/m/<slug>/bolum/<anahtar>` bölümün sayfasını (`ui.page.facetView`) açar; öbür yollar `routes` ile eşlenir. `tam` ve `bolum` parçaları çekirdeğe ayrılmıştır: sekme ya da alt sayfa bu adları alamaz.
 
 Sayfalar arası geçişte çıkılan sayfa bir süre belgede gizli olarak kalır (Next.js gezinme durumunu korur); modül bileşeni yan etkilerini `useEffect` temizliğine bağlamalı, belgede tekil olduğunu varsaymamalıdır.
 

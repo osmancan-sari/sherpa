@@ -270,6 +270,8 @@ Her modül sayfası aynı 5 bölgeyi kullanır; çekirdek `ModulePageShell` bile
 
 Kodu olmayan modül satırının (örnek veri, kodu kaldırılmış modül) sayfası da aynı iskeletle açılır; gövdesi boştur.
 
+**Okul çekirdek A (23 Kas 2026).** Modül iskeleti kendi biçimine göre daraltabilir (`ui.page`; `docs/06-modul-sozlesmesi.md`, "Modül sayfası"): bölüm olmayan bir ilk giriş ("Ana sayfa"), her bölümün kendi sayfası (panoda sekme, telefonda ana sayfa hapının yanında açılır seçici), durum şeridinin tamamı (durum cümlesi, etiket, haftanın sayıları) kapalı ve yerine kısa alt başlık, "Yaklaşanlar", "Geçmiş" ve "Giriş ve ayarlar" kapalı. Varsayılan bugünkü gibidir; Bugün'deki modül hapı ve alan sayfasındaki panel etkilenmez.
+
 Alan sayfası (`/a/[slug]`) aynı iskeleti kullanır ve üye modüllerin durum şeritlerini ve seçilmiş görünümlerini birleştirir.
 
 ## Akşam kapanışı

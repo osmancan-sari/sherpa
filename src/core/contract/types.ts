@@ -336,6 +336,11 @@ export type ModuleFacet = {
   scene?: string;
   /** The scene frame's tone; without it, the scene's own. */
   tone?: "calm" | "focus" | "energy";
+  /**
+   * Okul çekirdek A: one short line under the name in the module page's facet picker ("YZV303E ·
+   * sıradaki: Midterm · 30 Kas"); at most 120 characters.
+   */
+  detail?: string;
 };
 
 export type ModuleScene = {
@@ -520,6 +525,46 @@ export type ModuleFullscreen = {
   component: ComponentType<ModuleViewProps>;
 };
 
+/**
+ * Okul çekirdek A (docs/06-modul-sozlesmesi.md, "Modül sayfası"): what the module page looks like
+ * for this module. Every field is optional; a module without `ui.page` keeps the page as it was.
+ */
+export type ModulePage = {
+  /**
+   * The page's first entry, which is no facet ("Ana sayfa"): its label and its body, at
+   * /m/<slug>. It comes before the tabs; with it `ui.tabs` may be empty.
+   */
+  home?: { label: string; component: ComponentType<ModuleViewProps> };
+  /**
+   * A facet's page, one entry per facet of the module's list (a course), at
+   * /m/<slug>/bolum/<key>. The facets come after the tabs.
+   */
+  facetView?: ComponentType<ModuleFacetViewProps>;
+  /** The phone's picker while no facet is chosen ("Ders seç"); default "Bölüm seç". */
+  pickLabel?: string;
+  /**
+   * Region 1's state: the chip's line, its "dikkat" / "geride", the weekly report's numbers and
+   * suggestions. Default true. Off: the head is the name and `subtitle` only (and the module's
+   * own actions, if it has any); the chip on Today and the area page's panel are not touched.
+   */
+  status?: boolean;
+  /** With `status` off: a short line under the name ("2026 Güz"). Cheap and read only. */
+  subtitle?: (ctx: ModuleContext) => Promise<string | null>;
+  /** Region 2, "Yaklaşanlar". Default true. */
+  upcoming?: boolean;
+  /** Region 4, "Geçmiş" and its button. Default true. */
+  history?: boolean;
+  /** Region 5, "Giriş ve ayarlar". Default true. */
+  entries?: boolean;
+};
+
+/** Okul çekirdek A: what a facet's page gets. */
+export type ModuleFacetViewProps = {
+  /** The facet, its colour resolved (the user's, else its own). */
+  facet: { key: string; name: string; color: string };
+  params: Record<string, string>;
+};
+
 export type ModuleAction = {
   key: string;
   label: string;
@@ -527,8 +572,16 @@ export type ModuleAction = {
 };
 
 export type ModuleUi = {
-  /** Body of the module page; the first tab is the default. At least one. */
+  /**
+   * Body of the module page; the first tab is the default. At least one, unless the page has a
+   * home entry (`page.home`, Okul çekirdek A).
+   */
   tabs: ModuleTab[];
+  /**
+   * Okul çekirdek A: the page's shape (its first entry, facet pages, which regions it has); a
+   * function of the module's row when it depends on the module's settings.
+   */
+  page?: ModulePage | ((module: ModuleRow) => ModulePage);
   /** Sub pages under /m/<slug>/. */
   routes?: ModuleRoute[];
   /** Views that hide the app shell: /m/<slug>/tam/<key>. */

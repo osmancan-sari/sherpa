@@ -5,6 +5,7 @@ import { RecordsView } from "./components/AreaView";
 import { DenemeBackdrop } from "./components/Backdrop";
 import { ExtractPage } from "./components/ExtractPage";
 import { ItemsTab } from "./components/ItemsTab";
+import { DenemeFacetView, DenemeHome } from "./components/PageViews";
 import { KitTab } from "./components/KitTab";
 import { denemeScene, nightScene, sunScene } from "./scene";
 import { FocusView, HistoryView, ItemPage, SettingsForm } from "./components/Views";
@@ -66,6 +67,8 @@ export const deneme: ModuleDefinition = {
         key: topicFacet(item.id),
         name: item.title,
         color: TOPIC_COLORS[index % TOPIC_COLORS.length],
+        // Okul çekirdek A: the line under the name in the module page's picker.
+        detail: item.due_on ? `konu · ${item.due_on}` : "konu · tarih yok",
       })),
     ];
   },
@@ -255,6 +258,22 @@ export const deneme: ModuleDefinition = {
 
   // Interface
   ui: {
+    // Okul çekirdek A: the page's own shape, while the setting "Sayfa: ana sayfalı" is on (the
+    // default page stays as it was): a home entry, a page per facet, no state line (a short line
+    // of its own instead), no "Yaklaşanlar", "Geçmiş" and "Giriş ve ayarlar".
+    page: (row) =>
+      (row.settings as { page?: string } | null)?.page === "home"
+        ? {
+            home: { label: "Ana sayfa", component: DenemeHome },
+            facetView: DenemeFacetView,
+            pickLabel: "Bölüm seç",
+            status: false,
+            subtitle: async () => "Sınama dönemi",
+            upcoming: false,
+            history: false,
+            entries: false,
+          }
+        : {},
     // Ç4b: the module's own backdrop, on its page and its scenes (docs/06, "Modülün zemini").
     backdrop: DenemeBackdrop,
     // Ç4c: a view on its area's page ("Sınama"); it fails on purpose while a record named

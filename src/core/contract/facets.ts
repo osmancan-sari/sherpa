@@ -11,6 +11,9 @@ export const HEX_COLOR = /^#[0-9a-f]{6}$/i;
 
 const TONES = ["calm", "focus", "energy"] as const;
 
+/** Okul çekirdek A: the longest line a facet shows under its name in the page's picker. */
+export const FACET_DETAIL_MAX = 120;
+
 /** Everything wrong with a computed facet list, as plain sentences. Empty when it is fine. */
 export function facetProblems(def: Pick<ModuleDefinition, "slug" | "ui">, list: unknown): string[] {
   const problems: string[] = [];
@@ -34,6 +37,13 @@ export function facetProblems(def: Pick<ModuleDefinition, "slug" | "ui">, list: 
     }
     if (facet?.tone !== undefined && !(TONES as readonly string[]).includes(facet.tone)) {
       say(`facet "${key}": tone must be calm, focus or energy`);
+    }
+    // Okul çekirdek A: the line under the name in the module page's picker.
+    if (
+      facet?.detail !== undefined &&
+      (typeof facet.detail !== "string" || facet.detail.length > FACET_DETAIL_MAX)
+    ) {
+      say(`facet "${key}": detail must be text of at most ${FACET_DETAIL_MAX} characters`);
     }
   }
   return problems;

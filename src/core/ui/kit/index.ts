@@ -62,4 +62,5 @@ export { OverlayClose, Sheet, SheetBody, SheetFooter, Window } from "./Overlay";
 export { Panel, PanelLabel, type PanelVariant } from "./Panel";
 export { Stepper, type StepperStep } from "./Stepper";
 export { Switch, SwitchRow } from "./Switch";
+export { Picker, PickerHome, type PickerItem } from "./Picker";
 export { HistoryLink, TabBar, TabLink } from "./Tabs";

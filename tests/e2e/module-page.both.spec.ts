@@ -129,3 +129,106 @@ test("work is edited by hand on both layouts", async ({ page, viewport }) => {
   await expect(rhythm).toBeHidden();
   await expect(page.getByRole("region", { name: "Yaklaşanlar" })).toContainText("0/1");
 });
+
+// Okul çekirdek A (docs/06-modul-sozlesmesi.md, "Modül sayfası"): a module may give its page a
+// home entry, a page per facet, and leave out the state line and regions 2, 4 and 5. `deneme`
+// does while its setting "Sayfa: ana sayfalı" is on; the default page is the test above.
+test("a module page of its own shape: home, a page per facet, no state line, picker at 375 px", async ({
+  page,
+  viewport,
+}) => {
+  const phone = viewport!.width < 768;
+  if (phone) await page.setViewportSize({ width: 375, height: 812 });
+  await insert("modules", {
+    slug: "deneme",
+    name: "Deneme",
+    color: "#2563eb",
+    status: "active",
+    settings: { page: "home" },
+  });
+  // Many facets with long names: the picker and the tabs must not overflow.
+  const topics = await insert("deneme_items", [
+    { title: "Derin öğrenme ve sinir ağlarının temelleri", kind: "konu" },
+    { title: "Robotik: hız kinematiği", kind: "konu", due_on: "2031-01-10" },
+    { title: "Büyük veri sistemleri", kind: "konu" },
+    { title: "Makine öğrenmesi işlemleri", kind: "konu" },
+    { title: "Veri görselleştirme", kind: "konu" },
+    { title: "Algoritmalar ve veri yapıları", kind: "konu" },
+  ]);
+  await insert("deneme_items", [
+    { title: "Rapor taslağı", due_on: "2031-01-15" },
+    { title: "Sabah esnemesi", facet: "sabah", kind: "aliskanlik" },
+  ]);
+
+  await page.goto("/m/deneme");
+  await expect(page.getByRole("heading", { level: 1, name: "Deneme" })).toBeVisible();
+  // The head: the name and the module's short line; no state, no numbers, no core "İş ekle".
+  const head = page.getByRole("region", { name: "Durum" });
+  await expect(head).toContainText("Sınama dönemi");
+  await expect(head).not.toContainText("açık kayıt");
+  await expect(page.getByRole("list", { name: "Bu hafta" })).toHaveCount(0);
+  await expect(page.getByLabel("Bu hafta")).toHaveCount(0);
+  await expect(head.getByRole("button", { name: "İş ekle" })).toHaveCount(0);
+  // Regions 2, 4 and 5 are left out; the home is the body.
+  await expect(page.getByRole("region", { name: "Yaklaşanlar" })).toHaveCount(0);
+  await expect(page.getByRole("region", { name: "Geçmiş ve gidişat" })).toHaveCount(0);
+  await expect(page.getByRole("link", { name: "Geçmiş" })).toHaveCount(0);
+  await expect(page.getByRole("region", { name: "Giriş ve ayarlar" })).toHaveCount(0);
+  const home = page.getByTestId("deneme-home").filter({ visible: true });
+  await expect(home).toContainText("Rapor taslağı");
+  await expect(home).toContainText("Sabah esnemesi");
+  expect(await sidewaysOverflow(page)).toBe(0);
+
+  const nav = page.getByRole("navigation", { name: "Sekmeler" });
+  await expect(nav.getByRole("link", { name: "Ana sayfa" })).toHaveAttribute(
+    "aria-current",
+    "page",
+  );
+  const robotics = topics[1].id as string;
+  const roboticsKey = `konu-${robotics.slice(0, 8)}`;
+  if (phone) {
+    // The phone: the home as a pill, every other entry in the picker.
+    const picker = nav.getByRole("button", { name: "Bölümler" });
+    await expect(picker).toHaveText("Bölüm seç");
+    const box = (await picker.boundingBox())!;
+    expect(box.x + box.width).toBeLessThanOrEqual(375);
+    await picker.click();
+    const list = page.getByRole("list", { name: "Bölümler" });
+    await expect(list.getByRole("link")).toHaveCount(2 + 2 + topics.length);
+    await expect(list.getByRole("link", { name: /Robotik: hız kinematiği/ })).toContainText(
+      "konu · 2031-01-10",
+    );
+    expect(await sidewaysOverflow(page)).toBe(0);
+    await page.keyboard.press("Escape");
+    await expect(list).toHaveCount(0);
+    await picker.click();
+    await list.getByRole("link", { name: /Robotik: hız kinematiği/ }).click();
+    await expect(page).toHaveURL(new RegExp(`/m/deneme/bolum/${roboticsKey}$`));
+    await expect(nav.getByRole("button", { name: "Bölümler" })).toHaveText(
+      "Robotik: hız kinematiği",
+    );
+  } else {
+    // The board: every entry a tab, the facets with their dots.
+    await expect(nav.getByRole("link")).toHaveCount(1 + 2 + 2 + topics.length);
+    await nav.getByRole("link", { name: "Robotik: hız kinematiği" }).click();
+    await expect(page).toHaveURL(new RegExp(`/m/deneme/bolum/${roboticsKey}$`));
+    await expect(nav.getByRole("link", { name: "Robotik: hız kinematiği" })).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
+  }
+  const view = page.getByTestId("deneme-facet-view").filter({ visible: true });
+  await expect(view).toHaveAttribute("data-facet", roboticsKey);
+  await expect(view).toContainText("Robotik: hız kinematiği");
+  expect(await sidewaysOverflow(page)).toBe(0);
+
+  // A tab still opens at its key; a facet that is not in the list is no page.
+  await page.goto("/m/deneme/bilesenler");
+  await expect(page.getByRole("list", { name: "Tarihli kayıtlar" })).toBeVisible();
+  await page.goto("/m/deneme/bolum/yok");
+  await expect(page.getByText("Bu modülde böyle bir sayfa yok.")).toBeVisible();
+
+  // The module's chip elsewhere is not touched: Modüller still says its state.
+  await page.goto("/m");
+  await expect(page.getByRole("link", { name: /Deneme/ })).toContainText("açık kayıt");
+});

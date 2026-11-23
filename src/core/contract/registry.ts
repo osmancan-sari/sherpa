@@ -1,8 +1,31 @@
 import { PART } from "./ingest";
-import type { ModuleDefinition, ModuleRegistry, ModuleScene } from "./types";
+import type { ModuleRow } from "@/core/types";
+import type { ModuleDefinition, ModulePage, ModuleRegistry, ModuleScene } from "./types";
 
-/** Path segments under /m/<slug>/ the core keeps for itself. */
-export const RESERVED_SEGMENTS = ["tam"] as const;
+/**
+ * Path segments under /m/<slug>/ the core keeps for itself: "tam" (full-screen views) and, Okul
+ * çekirdek A, "bolum" (a facet's page).
+ */
+export const RESERVED_SEGMENTS = ["tam", "bolum"] as const;
+
+/**
+ * Okul çekirdek A: the module page's shape for this row (`ui.page`, an object or a function of
+ * the row). A function that throws gives the plain page: the page must open.
+ */
+export function modulePageOf(
+  def: Pick<ModuleDefinition, "ui"> | undefined,
+  row: ModuleRow | null,
+): ModulePage {
+  const page = def?.ui.page;
+  if (!page) return {};
+  if (typeof page !== "function") return page;
+  if (!row) return {};
+  try {
+    return page(row) ?? {};
+  } catch {
+    return {};
+  }
+}
 
 const SLUG = /^[a-z][a-z0-9-]*$/;
 const KEY = /^[a-z][a-z0-9_-]*$/;
@@ -17,7 +40,21 @@ export function definitionProblems(def: ModuleDefinition): string[] {
   if (!def.name.trim()) say("name is empty");
   if (!/^#[0-9a-f]{6}$/i.test(def.color)) say("color must be a #rrggbb value");
 
-  if (def.ui.tabs.length === 0) say("at least one tab is needed");
+  // Okul çekirdek A: a page with a home entry may have no tabs. A page that depends on the row
+  // (a function) is checked for its shape where it is used.
+  const page = typeof def.ui.page === "function" ? undefined : def.ui.page;
+  if (def.ui.page !== undefined && typeof def.ui.page !== "function" && typeof page !== "object") {
+    say("page must be an object or a function of the module's row");
+  }
+  if (page?.home && (!page.home.component || !page.home.label?.trim())) {
+    say("the page's home needs a label and a component");
+  }
+  if (page && "facetView" in page && !page.facetView)
+    say("the page's facetView must be a component");
+  if (page?.subtitle !== undefined && typeof page.subtitle !== "function") {
+    say("the page's subtitle must be a function of the module's context");
+  }
+  if (def.ui.tabs.length === 0 && !page?.home) say("at least one tab is needed");
   if (def.ui.scene && (typeof def.ui.scene.when !== "function" || !def.ui.scene.component)) {
     say("a scene needs `when` and a component");
   }
@@ -156,13 +193,27 @@ export function matchRoute(pattern: string, segments: string[]): Record<string, 
 }
 
 export type ResolvedModulePath =
+  /** Okul çekirdek A: the page's first entry (`page.home`). */
+  | { kind: "home" }
   | { kind: "tab"; tabKey: string }
+  /** Okul çekirdek A: a facet's page (`page.facetView`); the key is checked against the list. */
+  | { kind: "facet"; facetKey: string }
   | { kind: "route"; index: number; params: Record<string, string> }
   | { kind: "missing" };
 
-/** What /m/<slug>/<...segments> shows: a tab, a sub page, or nothing. */
-export function resolveModulePath(def: ModuleDefinition, segments: string[]): ResolvedModulePath {
-  if (segments.length === 0) return { kind: "tab", tabKey: def.ui.tabs[0].key };
+/** What /m/<slug>/<...segments> shows: the home, a tab, a facet's page, a sub page, or nothing. */
+export function resolveModulePath(
+  def: ModuleDefinition,
+  segments: string[],
+  page: ModulePage = typeof def.ui.page === "function" ? {} : (def.ui.page ?? {}),
+): ResolvedModulePath {
+  if (segments.length === 0) {
+    if (page.home) return { kind: "home" };
+    return def.ui.tabs[0] ? { kind: "tab", tabKey: def.ui.tabs[0].key } : { kind: "missing" };
+  }
+  if (segments.length === 2 && segments[0] === "bolum") {
+    return page.facetView ? { kind: "facet", facetKey: segments[1] } : { kind: "missing" };
+  }
   if (segments.length === 1 && def.ui.tabs.some((tab) => tab.key === segments[0])) {
     return { kind: "tab", tabKey: segments[0] };
   }

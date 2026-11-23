@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { z } from "zod";
-import { createRegistry, definitionProblems, matchRoute, resolveModulePath } from "./registry";
+import {
+  createRegistry,
+  definitionProblems,
+  matchRoute,
+  modulePageOf,
+  resolveModulePath,
+} from "./registry";
+import type { ModuleRow } from "@/core/types";
 import type { ModuleDefinition } from "./types";
 
 const View = () => null;
@@ -324,6 +331,86 @@ describe("module paths", () => {
     expect(resolveModulePath(def, ["yok"])).toEqual({ kind: "missing" });
     expect(resolveModulePath(def, ["kayit", "42", "fazla"])).toEqual({ kind: "missing" });
     expect(resolveModulePath(def, ["liste", "fazla"])).toEqual({ kind: "missing" });
+  });
+});
+
+describe("the module page's own shape (Okul çekirdek A)", () => {
+  const row = (settings: Record<string, unknown>) => ({ settings }) as unknown as ModuleRow;
+
+  it("without a page: the first tab at the root, as before; bolum is nothing", () => {
+    const def = definition();
+    expect(modulePageOf(def, row({}))).toEqual({});
+    expect(resolveModulePath(def, [])).toEqual({ kind: "tab", tabKey: "genel" });
+    expect(resolveModulePath(def, ["bolum", "sabah"])).toEqual({ kind: "missing" });
+  });
+
+  it("a home entry at the root; tabs still at their keys; facet pages under bolum", () => {
+    const page = { home: { label: "Ana sayfa", component: View }, facetView: View };
+    const def = definition({ ui: { ...definition().ui, page } });
+    expect(definitionProblems(def)).toEqual([]);
+    expect(resolveModulePath(def, [])).toEqual({ kind: "home" });
+    expect(resolveModulePath(def, ["liste"])).toEqual({ kind: "tab", tabKey: "liste" });
+    expect(resolveModulePath(def, ["bolum", "yzv406e"])).toEqual({
+      kind: "facet",
+      facetKey: "yzv406e",
+    });
+    expect(resolveModulePath(def, ["bolum"])).toEqual({ kind: "missing" });
+  });
+
+  it("with a home, no tab is needed; without one, a tab still is", () => {
+    const home = { label: "Ana sayfa", component: View };
+    expect(definitionProblems(definition({ ui: { tabs: [], page: { home } } }))).toEqual([]);
+    expect(definitionProblems(definition({ ui: { tabs: [], page: {} } }))).toEqual([
+      "ornek: at least one tab is needed",
+    ]);
+  });
+
+  it("a page of the row: read with the row, the plain page when it throws", () => {
+    const page = (module: ModuleRow) =>
+      (module.settings as { page?: string }).page === "home"
+        ? { home: { label: "Ana sayfa", component: View }, status: false }
+        : {};
+    const def = definition({ ui: { ...definition().ui, page } });
+    expect(definitionProblems(def)).toEqual([]);
+    expect(modulePageOf(def, row({ page: "home" })).status).toBe(false);
+    expect(modulePageOf(def, row({}))).toEqual({});
+    expect(modulePageOf(def, null)).toEqual({});
+    const broken = definition({
+      ui: {
+        ...definition().ui,
+        page: () => {
+          throw new Error("x");
+        },
+      },
+    });
+    expect(modulePageOf(broken, row({}))).toEqual({});
+    expect(resolveModulePath(def, [], modulePageOf(def, row({ page: "home" })))).toEqual({
+      kind: "home",
+    });
+  });
+
+  it("names a page that breaks the contract, and keeps bolum for the core", () => {
+    const problems = definitionProblems(
+      definition({
+        ui: {
+          ...definition().ui,
+          tabs: [{ key: "bolum", label: "Bölüm", component: View }],
+          routes: [{ path: "bolum/:id", component: View }],
+          page: {
+            home: { label: " ", component: View },
+            facetView: undefined,
+            subtitle: "2026 Güz" as never,
+          },
+        },
+      }),
+    );
+    expect(problems).toEqual([
+      "ornek: the page's home needs a label and a component",
+      "ornek: the page's facetView must be a component",
+      "ornek: the page's subtitle must be a function of the module's context",
+      'ornek: tab key "bolum" is reserved',
+      'ornek: route "bolum/:id" starts with a reserved segment',
+    ]);
   });
 });
 

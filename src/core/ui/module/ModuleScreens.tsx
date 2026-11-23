@@ -12,7 +12,8 @@ import type { ChipData } from "@/core/contract/types";
 import { buttonVariants } from "@/core/ui/kit/Button";
 import { ListRow } from "@/core/ui/kit/ListRow";
 import { Panel } from "@/core/ui/kit/Panel";
-import { resolveModulePath } from "@/core/contract/registry";
+import { modulePageOf, resolveModulePath } from "@/core/contract/registry";
+import { useColors } from "@/core/app/facets";
 import { ClientOnly } from "../ClientOnly";
 import { EmptyState, PageShell } from "../PageShell";
 import { useBackdrop } from "@/core/ui/sky/Backdrop";
@@ -222,6 +223,7 @@ function ModuleRoute() {
   const params = useParams<{ slug: string; path?: string[] }>();
   const segments = (params.path ?? []).map(decodeURIComponent);
   const { mod, fallback } = useNamedModule(params.slug);
+  const facetList = useColors().lists.get(mod?.row.id ?? "");
   // Ç4b: a module with a backdrop of its own stands on it on its page (decision 4).
   useBackdrop(mod ? modulePageBackdrop(mod) : null);
   if (!mod) return fallback;
@@ -230,20 +232,43 @@ function ModuleRoute() {
   if (!mod.definition) {
     return segments.length === 0 ? (
       <ModuleProvider mod={mod}>
-        <ModulePageShell mod={mod} tabKey={null} />
+        <ModulePageShell mod={mod} entry={null} />
       </ModuleProvider>
     ) : (
       <NotFound mod={mod} />
     );
   }
 
-  const resolved = resolveModulePath(mod.definition, segments);
+  // Okul çekirdek A: the page's shape for this row (its home, its facet pages).
+  const resolved = resolveModulePath(
+    mod.definition,
+    segments,
+    modulePageOf(mod.definition, mod.row),
+  );
   if (resolved.kind === "missing") return <NotFound mod={mod} />;
 
-  if (resolved.kind === "tab") {
+  if (resolved.kind === "home" || resolved.kind === "tab") {
     return (
       <ModuleProvider mod={mod}>
-        <ModulePageShell mod={mod} tabKey={resolved.tabKey} />
+        <ModulePageShell
+          mod={mod}
+          entry={
+            resolved.kind === "home" ? { kind: "home" } : { kind: "tab", key: resolved.tabKey }
+          }
+        />
+      </ModuleProvider>
+    );
+  }
+
+  if (resolved.kind === "facet") {
+    // The list is computed with the module's context; until it is there the page waits, and a
+    // key that is not in it (a course that ended) is a page the module does not have.
+    if (!facetList) return <Message />;
+    const facet = facetList.find((entry) => entry.key === resolved.facetKey);
+    if (!facet) return <NotFound mod={mod} />;
+    return (
+      <ModuleProvider mod={mod}>
+        <ModulePageShell mod={mod} entry={{ kind: "facet", facet }} />
       </ModuleProvider>
     );
   }
