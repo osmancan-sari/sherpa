@@ -63,16 +63,20 @@ function Frame({
   children: React.ReactNode;
 }) {
   return (
-    <figure className="flex flex-col gap-2">
+    <figure className="flex max-w-full min-w-0 flex-col gap-2">
       <figcaption className="text-ink-2 text-sm">{label}</figcaption>
-      <div
-        className={
-          device === "telefon"
-            ? "bg-focus-tone rounded-panel flex min-h-200 w-97.5 flex-col p-5"
-            : "bg-focus-tone rounded-panel flex min-h-150 flex-col p-10"
-        }
-      >
-        {children}
+      {/* A phone frame shrinks with a narrow screen; a board frame keeps its width and scrolls
+          in its own box (the gallery on a phone must not widen the page). */}
+      <div className={device === "pano" ? "max-w-full overflow-x-auto" : "max-w-full"}>
+        <div
+          className={
+            device === "telefon"
+              ? "bg-focus-tone rounded-panel flex min-h-200 w-97.5 max-w-full flex-col p-5"
+              : "bg-focus-tone rounded-panel flex min-h-150 min-w-275 flex-col p-10"
+          }
+        >
+          {children}
+        </div>
       </div>
     </figure>
   );

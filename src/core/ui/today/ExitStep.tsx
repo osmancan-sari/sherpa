@@ -1,6 +1,7 @@
 "use client";
 
 import { type ReactNode, useCallback, useRef, useState } from "react";
+import { useRefreshAll } from "@/core/app/actions";
 import type { ModuleScene, ModuleUiContext, SceneSubject } from "@/core/contract/types";
 import { Button } from "../kit/Button";
 import { Field, Input } from "../kit/Field";
@@ -62,6 +63,7 @@ export function useExitStep({
   const [text, setText] = useState("");
   const [saving, setSaving] = useState(false);
   const busy = useRef(false);
+  const refreshAll = useRefreshAll();
 
   // Each step ends once: a skip while the note is being kept, or a late save, does not run the
   // way out a second time.
@@ -116,8 +118,11 @@ export function useExitStep({
     } finally {
       clearTimeout(timer);
     }
+    // What the module kept shows at once (its next sitting's "Kaldığın yer"), without waiting
+    // for the live update.
+    void refreshAll().catch(() => undefined);
     await finish(pending, true);
-  }, [pending, note, text, subject, session, ctx, finish]);
+  }, [pending, note, text, subject, session, ctx, finish, refreshAll]);
 
   const title = note?.title ?? "";
   const form = useCallback(
