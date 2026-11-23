@@ -10,6 +10,7 @@ import { insert, rows, update, waitFor } from "./data";
 import { expect, quietTest as base, test } from "./fixtures";
 import { ALLOWED_EMAIL, openQuickAdd, requestCode, roomInTheDay } from "./helpers";
 import { type Cookie, PUBLISHABLE_KEY, readSession, SUPABASE_URL } from "./supabase";
+import { activateDeneme, addRecord, startFromModule } from "./scene-helpers";
 
 // Phase screenshots. Runs only when SHERPA_SHOTS names the phase folder, for example:
 //   $env:SHERPA_SHOTS = "c1"; npm run test:e2e
@@ -1109,4 +1110,107 @@ test("morning welcome screens", async ({ page }, testInfo) => {
   await own.getByRole("button", { name: "Başla" }).click();
   await expect(page.getByTestId("rutin-scene")).toHaveAttribute("data-screen", "adim");
   await shot("basla-ilk-adim");
+});
+
+// Okul çekirdek A: the phase's new looks in the real screens (the gallery has the parts): the
+// module page of its own shape and a facet's page, the placeholder effort's "yaklaşık" (module
+// page, Bugün with "Neden?", Takvim), the three layouts in their scenes (pomodoro, its break,
+// the flow's "Süre doldu", the checklist), and a fixed block's action and view. The page's clock
+// is the real one: sessions are stamped by the database.
+test("okul çekirdek A screens", async ({ page }, testInfo) => {
+  test.setTimeout(240_000);
+  await page.clock.install();
+  const phone = testInfo.project.use.isMobile === true;
+  const shot = async (name: string) => {
+    await page.mouse.move(0, 0);
+    await page.waitForTimeout(400);
+    await page.screenshot({
+      path: path.join(folder, `${testInfo.project.name}-${name}.png`),
+      fullPage: !phone,
+      animations: "disabled",
+    });
+  };
+  await activateDeneme(page);
+  const [mod] = await rows("modules");
+  await addRecord(page, "Sabah esnemesi", { minutes: "20", facet: "sabah" });
+
+  // The module page of its own shape, and a facet's page.
+  await update("modules", mod.id as string, { settings: { page: "home" } });
+  await page.goto("/m/deneme");
+  await expect(page.getByTestId("deneme-home").filter({ visible: true })).toBeVisible();
+  await shot("modul-ana-sayfa");
+  await page.goto("/m/deneme/bolum/sabah");
+  await expect(page.getByTestId("deneme-facet-view").filter({ visible: true })).toBeVisible();
+  await shot("modul-bolum-sayfasi");
+  await update("modules", mod.id as string, { settings: {} });
+
+  // A placeholder effort: "yaklaşık" on the module page, Bugün and Takvim.
+  await page.goto("/m/deneme");
+  await page
+    .getByRole("toolbar", { name: "Hızlı eylemler" })
+    .getByRole("button", { name: "Yer tutucu örnek" })
+    .click();
+  await expect(page.getByRole("region", { name: "Yaklaşanlar" })).toContainText("yaklaşık");
+  await shot("modul-yaklasik");
+  await page.goto("/");
+  const now = page.getByRole("region", { name: "Şimdi" });
+  const why = now.getByRole("button", { name: "Neden?" });
+  if (await why.isVisible()) await why.click();
+  await shot("bugun-yaklasik");
+  await page.goto("/takvim");
+  await page.getByRole("button", { name: "Sonraki hafta" }).click();
+  await expect(
+    page.getByTestId("week-work-minutes").filter({ visible: true }).first(),
+  ).toContainText("yaklaşık");
+  await shot("takvim-yaklasik");
+
+  // The layouts in their scenes.
+  const startRunningFor = async (title: string, minutes: number) => {
+    await startFromModule(page, title);
+    const [session] = await waitFor(
+      () => rows("sessions"),
+      (list) => list.some((row) => row.ended_at === null),
+    );
+    const open = (await rows("sessions")).find((row) => row.ended_at === null) ?? session;
+    await update("sessions", open.id as string, {
+      started_at: new Date(Date.now() - minutes * 60_000).toISOString(),
+    });
+    await page.reload();
+  };
+  await addRecord(page, "Konu okuma", { kind: "pomodoro", minutes: "120" });
+  await startRunningFor("Konu okuma", 12);
+  await expect(page.getByTestId("pomodoro-ring")).toHaveAttribute("data-phase", "focus");
+  await shot("sahne-pomodoro");
+  await startRunningFor("Konu okuma", 27);
+  await expect(page.getByTestId("pomodoro-ring")).toHaveAttribute("data-phase", "break");
+  await shot("sahne-pomodoro-mola");
+  await addRecord(page, "Ödev kodu", { kind: "akis", minutes: "30" });
+  await startRunningFor("Ödev kodu", 46);
+  await expect(page.getByTestId("time-up")).toBeVisible();
+  await shot("sahne-akis-sure-doldu");
+  await addRecord(page, "Salon", { kind: "antrenman", minutes: "45" });
+  await startFromModule(page, "Salon");
+  await expect(page.getByTestId("checklist")).toBeVisible();
+  await shot("sahne-kontrol-listesi");
+  await page.getByLabel("Sahne şeridi").getByRole("button", { name: "Çık" }).click();
+
+  // A fixed block the module proposed: the Now card's action while it runs, and its view.
+  await addRecord(page, "Seminer", { kind: "etkinlik", minutes: "60" });
+  const [block] = await waitFor(
+    () => rows("blocks"),
+    (list) => list.length === 1,
+  );
+  await update("blocks", block.id as string, {
+    starts_at: new Date(Date.now() - 20 * 60_000).toISOString(),
+    ends_at: new Date(Date.now() + 70 * 60_000).toISOString(),
+  });
+  const running = (await rows("sessions")).find((row) => row.ended_at === null);
+  if (running)
+    await update("sessions", running.id as string, { ended_at: new Date().toISOString() });
+  await page.goto("/");
+  await expect(page.getByRole("link", { name: "Etkinliği aç" })).toBeVisible();
+  await shot("bugun-blok-eylemi");
+  await page.getByRole("link", { name: "Etkinliği aç" }).click();
+  await expect(page.getByTestId("deneme-block-view")).toBeVisible();
+  await shot("blok-gorunumu");
 });

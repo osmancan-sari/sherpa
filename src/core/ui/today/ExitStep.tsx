@@ -33,6 +33,8 @@ export function asksOnExit(scene: ModuleScene, subject: SceneSubject): boolean {
 type Pending = {
   action: () => Promise<unknown> | void;
   resolve: (left: boolean) => void;
+  /** The way out's own failure (the session could not be ended) reaches the scene as before. */
+  reject: (error: unknown) => void;
 };
 
 /**
@@ -75,23 +77,30 @@ export function useExitStep({
     setText("");
     setSaving(false);
     busy.current = false;
-    if (left) await step.action();
-    step.resolve(left);
+    if (!left) {
+      step.resolve(false);
+      return;
+    }
+    try {
+      await step.action();
+      step.resolve(true);
+    } catch (error) {
+      step.reject(error);
+    }
   }, []);
 
   const leave = useCallback(
     (action: () => Promise<unknown> | void) =>
-      new Promise<boolean>((resolve) => {
+      new Promise<boolean>((resolve, reject) => {
         const offline = typeof navigator !== "undefined" && navigator.onLine === false;
         if (!note || offline || !asksOnExit(scene, subject) || busy.current) {
-          void Promise.resolve(action()).then(
-            () => resolve(true),
-            () => resolve(true),
-          );
+          // No step: the action as it was, its failure included (a scene that asks nothing sees
+          // no change).
+          Promise.resolve(action()).then(() => resolve(true), reject);
           return;
         }
         busy.current = true;
-        setPending({ action, resolve });
+        setPending({ action, resolve, reject });
       }),
     [note, scene, subject],
   );

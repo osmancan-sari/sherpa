@@ -32,7 +32,7 @@ Modül yalnızca kendi klasörünü, dış paketleri (`react`, `next/link`, `luc
 | `@/core/app/hooks` | `useModuleQuery(row, anahtar, fn)`: modülün bağlamıyla hesaplanan ve her veri değişiminde tazelenen sorgu; `useNow()`: ortak saat |
 | `@/core/app/actions` | `useRefreshAll()`: modül kendi bağlamıyla bir şey yazdıktan sonra ekranı hemen tazeler |
 | `@/core/ui/Notices` | `useNotify()`, `SAVE_FAILED`: ekranın altındaki tek satırlık bildirim |
-| `@/core/ui/kit` | Bileşen takımı: cam dilinin ortak parçaları (`docs/tasarim/parcalar.md`; `StepRunner` dahil), `useReducedMotion()`, `useReducedTransparency()` (Ç4b) |
+| `@/core/ui/kit` | Bileşen takımı: cam dilinin ortak parçaları (`docs/tasarim/parcalar.md`; sahne yerleşimleri `PomodoroLayout`, `FlowLayout`, `Checklist` ve ortak parçaları dahil, Okul çekirdek A), `useReducedMotion()`, `useReducedTransparency()` (Ç4b) |
 | `@/core/ui/tokens` | Tasarım değerleri veri olarak: `token(ad)`, `TOKENS` (Ç4b; renk ya da ölçü yazılmaz, buradan alınır: `CLAUDE.md` "Tasarım") |
 | `@/components/ui/*`, `@/lib/date`, `@/lib/utils` | Düğme ve giriş alanı, tarih yardımcıları |
 | `@/lib/supabase/database.types` | Modülün kendi tablolarının satır tipleri (`Tables<"<slug>_…">`) |
@@ -162,7 +162,7 @@ Her modülün kendine özel bir arayüzü vardır; modüller birbirine benzemek 
 | Şimdi kartı | Kartın çerçevesi ve eylem düğmeleri | Kendi işleri için kart içeriği ve ek eylemler verir |
 | Hızlı eylemler | Sayfa başında eylem çubuğu | Modüle özel eylemleri ekler ("not gir", "tartı gir") |
 | Ayarlar | `/ayarlar/moduller/<slug>` | Kendi ayar formunu verir |
-| Bileşen takımı | Tablo (satır içi düzenleme, süzgeç), zaman çizelgesi, ızgara, çizgi ve çubuk grafik, sayı adımlayıcı, seçim çipleri, zamanlayıcı, adım yürütücü (`StepRunner`), boş ve hata durumları | Bunları kullanır; yetmediği yerde kendi bileşenini yazar |
+| Bileşen takımı | Tablo (satır içi düzenleme, süzgeç), zaman çizelgesi, ızgara, çizgi ve çubuk grafik, sayı adımlayıcı, seçim çipleri, zamanlayıcı, kontrol listesi (`Checklist`; Okul çekirdek A'dan önce `StepRunner`), sahne yerleşimleri (pomodoro, akış), boş ve hata durumları | Bunları kullanır; yetmediği yerde kendi bileşenini yazar |
 | Sahne (Ç3c) | İş çalışırken Bugün ekranını sahneye bırakma, üstte çekirdeğin şeridi, çıkış ve dönüş, hata sınırı | Kendi işleri için sahne bileşenini ve ne zaman geleceğini verir (aşağıda "Sahne") |
 | Sesli anlatım (Ç3c) | `say`: cihazın sesiyle, sıralı, kesilebilir anlatım; cihaz başına ayar | Ne söyleneceğine karar verir |
 

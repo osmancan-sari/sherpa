@@ -782,7 +782,7 @@ export type ChecklistStep = {
  * ticked, the current one lit; the main button is the current step's own ("Ninova'yı aç") or
  * "Sonraki"; quiet actions under it ("Yükledim", "Sonra yap"; by default "Atla"). A step with
  * seconds counts down in its row and is done at zero. Interface only: which step it is on is the
- * module's to keep (`current`, `onStep`). Rutin's former StepRunner is this layout.
+ * module's to keep (`current`, `onStep`). The kit's former StepRunner is this layout.
  */
 export function Checklist({
   device = "telefon",

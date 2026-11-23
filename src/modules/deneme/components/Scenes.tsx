@@ -12,7 +12,7 @@ import { formatMinutes, formatTime } from "@/lib/date";
 import { getItem, updateItem } from "../queries";
 
 // The module's scenes (docs/06-modul-sozlesmesi.md, "Sahne"): while a focused sitting ("odak")
-// runs, a free scene; while a workout runs, a step scene on the kit's StepRunner, its step kept in
+// runs, a free scene; while a workout runs, a step scene on the kit's checklist (Checklist), its step kept in
 // the module's own row so both screens follow it. A record named with "[hata]" throws: the core's
 // fallback is tried against it.
 

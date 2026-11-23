@@ -44,13 +44,13 @@ const ON_BREAK: FlowState = {
 const SECTIONS = [
   {
     key: "1",
-    title: "Oku: Jacobian'ın tanımı",
+    title: "Oku: birinci bölüm",
     measure: "2 tur",
     state: "current" as const,
     open: { label: "Aç", href: "/tasarim" },
   },
-  { key: "2", title: "Oku: hız kinematiği", measure: "1 tur", state: "next" as const },
-  { key: "3", title: "Çöz: Jacobian soruları 1–4", measure: "4 soru", state: "next" as const },
+  { key: "2", title: "Oku: ikinci bölüm", measure: "1 tur", state: "next" as const },
+  { key: "3", title: "Çöz: sorular 1–4", measure: "4 soru", state: "next" as const },
 ];
 
 function Frame({
@@ -104,8 +104,8 @@ export function LayoutPieces() {
             onChange={noop}
             onFinish={noop}
             color={TEAL}
-            title="Jacobian'ın tanımı"
-            subtitle="Robotics · quiz Salı 8 Ara 09:30"
+            title="Konu okuma"
+            subtitle="Ders · sınav Salı 8 Ara 09:30"
             boxes={<SessionSections sections={SECTIONS} color={TEAL} />}
           />
         </Frame>
@@ -121,7 +121,7 @@ export function LayoutPieces() {
             onFinish={noop}
             color={TEAL}
             title="Kısa mola"
-            subtitle="Robotics · quiz Salı 8 Ara 09:30"
+            subtitle="Ders · sınav Salı 8 Ara 09:30"
           />
         </Frame>
         <Frame label="Akış, kaldığın yerle (telefon)" device="telefon">
@@ -135,14 +135,14 @@ export function LayoutPieces() {
             onChange={noop}
             onFinish={noop}
             color={BLUE}
-            title="Assignment 2"
-            subtitle="Algoritma · teslim Per 26 Kas 23:59"
+            title="Ödev 2"
+            subtitle="Ders · teslim Per 26 Kas 23:59"
             boxes={
               <>
-                <ResumeNote text="Merge yazıldı; test 3 geçmiyor, indise bak" />
+                <ResumeNote text="İkinci bölüm yazıldı; sonuç kısmı eksik" />
                 <Panel variant="dense" className="py-1">
                   <SessionFile
-                    title="Assignment 2.pdf"
+                    title="Ödev 2.pdf"
                     detail="Ödev metni"
                     open={{ label: "Aç", href: "/tasarim" }}
                   />
@@ -162,15 +162,15 @@ export function LayoutPieces() {
             onChange={noop}
             onFinish={noop}
             color={BLUE}
-            title="Assignment 2"
-            subtitle="Algoritma · teslim Per 26 Kas 23:59"
+            title="Ödev 2"
+            subtitle="Ders · teslim Per 26 Kas 23:59"
           />
         </Frame>
         <Frame label="Kontrol listesi (telefon)" device="telefon">
           <Checklist
             device="telefon"
-            title="Proposal teslimi"
-            subtitle="Robotics projesi · teslim Cum 4 Ara 23:59"
+            title="Rapor teslimi"
+            subtitle="Proje · teslim Cum 4 Ara 23:59"
             color={TEAL}
             current={step}
             onStep={(index) => setStep(index + 1)}
@@ -178,15 +178,15 @@ export function LayoutPieces() {
               {
                 key: "hazir",
                 title: "Dosya hazır",
-                detail: "proposal.pdf",
+                detail: "rapor.pdf",
                 rowAction: { label: "Değiştir", onClick: noop },
               },
-              { key: "ad", title: "Dosya adı", detail: "ogrenciNo_proposal.pdf" },
+              { key: "ad", title: "Dosya adı", detail: "ogrenciNo_rapor.pdf" },
               {
                 key: "yukle",
-                title: "Ninova'ya yükle",
+                title: "Sisteme yükle",
                 detail: "Ödev sayfası açılır, dosyayı sen yüklersin",
-                action: { label: "Ninova'yı aç", onClick: noop },
+                action: { label: "Sayfayı aç", onClick: noop },
               },
               { key: "gor", title: "Yüklendiği görülsün", detail: "Sonraki okumada kapanır" },
             ]}
@@ -220,8 +220,8 @@ export function LayoutPieces() {
           onChange={noop}
           onFinish={noop}
           color={TEAL}
-          title="Jacobian'ın tanımı"
-          subtitle="Robotics · quiz Salı 8 Ara 09:30"
+          title="Konu okuma"
+          subtitle="Ders · sınav Salı 8 Ara 09:30"
           boxes={<SessionSections sections={SECTIONS} color={TEAL} />}
         />
       </Frame>
@@ -236,18 +236,18 @@ export function LayoutPieces() {
           onChange={noop}
           onFinish={noop}
           color={BLUE}
-          title="Assignment 2"
-          subtitle="Algoritma · teslim Per 26 Kas 23:59"
+          title="Ödev 2"
+          subtitle="Ders · teslim Per 26 Kas 23:59"
           third={{ label: "Bugünlük yeter", onClick: noop }}
           boxes={
             <>
               <ResumeNote
-                text="Merge yazıldı; test 3 geçmiyor, indise bak"
+                text="İkinci bölüm yazıldı; sonuç kısmı eksik"
                 detail="geçen oturumdan çıkarken yazdın"
               />
               <Panel variant="dense" className="py-1">
                 <SessionFile
-                  title="Assignment 2.pdf"
+                  title="Ödev 2.pdf"
                   detail="Ödev metni"
                   open={{ label: "Aç", href: "/tasarim" }}
                 />

@@ -295,24 +295,24 @@ export function DesignGallery() {
                 items={[
                   {
                     key: "dl",
-                    label: "Deep Learning",
+                    label: "Matematik",
                     href: "/tasarim",
                     dot: token("color-swatch-violet"),
-                    detail: "YZV303E · sıradaki: Midterm · 30 Kas",
+                    detail: "sıradaki: ara sınav · 30 Kas",
                   },
                   {
                     key: "rob",
-                    label: "Robotics",
+                    label: "Fizik",
                     href: "/tasarim",
                     dot: token("color-swatch-teal"),
-                    detail: "YZV406E · sıradaki: Midterm · 24 Kas",
+                    detail: "sıradaki: ara sınav · 24 Kas",
                   },
                   {
                     key: "alg",
-                    label: "Algoritma",
+                    label: "Kimya",
                     href: "/tasarim",
                     dot: token("color-swatch-blue"),
-                    detail: "BBF301E · sıradaki: Assignment 2 · 26 Kas",
+                    detail: "sıradaki: ödev · 26 Kas",
                   },
                 ]}
               />
