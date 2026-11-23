@@ -641,3 +641,37 @@ describe("what the module shows the core", () => {
     });
   });
 });
+
+describe("phase audit", () => {
+  it("taking 'Dokümanım hazır' back stops a running sitting; its minutes stay", async () => {
+    const { ctx, course } = await setup();
+    const quiz = await insertAssessment(ctx, {
+      course_id: course.id,
+      title: "Quiz 8",
+      kind: "quiz",
+      date: day(5),
+      time: "10:00",
+      date_status: "exact",
+    });
+    await syncAll(ctx);
+    const prep = (await itemByKey(`prep:${quiz.id}`))!;
+    await sized(prep.id, 240);
+    await setDocsReady(ctx, quiz.id, true);
+    await keepWeek(db, new Date(), { force: true });
+    const [first] = await sittingsOf(prep.id);
+    const told = { db, registry };
+    const session = await startSessionTold(told, { taskId: first.id });
+    ok(
+      await admin
+        .from("sessions")
+        .update({ started_at: new Date(Date.now() - 20 * 60_000).toISOString() })
+        .eq("id", session.id)
+        .select(),
+    );
+    await setDocsReady(ctx, quiz.id, false);
+    const stopped = ok(await db.from("sessions").select("*").eq("id", session.id).single());
+    expect(stopped.ended_at).not.toBeNull();
+    expect((await itemByKey(`prep:${quiz.id}`))!.effort_done_minutes).toBeGreaterThanOrEqual(19);
+    expect((await sittingsOf(prep.id)).every((task) => task.status === "dropped")).toBe(true);
+  });
+});

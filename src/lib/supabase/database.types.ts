@@ -1273,6 +1273,13 @@ export type Database = {
             referencedRelation: "okul_assessments";
             referencedColumns: ["id", "user_id"];
           },
+          {
+            foreignKeyName: "okul_session_log_session_fk";
+            columns: ["session_id", "user_id"];
+            isOneToOne: false;
+            referencedRelation: "sessions";
+            referencedColumns: ["id", "user_id"];
+          },
         ];
       };
       okul_sessions: {

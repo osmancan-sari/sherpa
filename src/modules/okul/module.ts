@@ -374,7 +374,7 @@ export const okul: ModuleDefinition = {
       entries: false,
     },
     routes: [
-      { path: "is/:id", title: "İş", component: AssessmentPage },
+      { path: "is/:id", title: "Ayrıntı", component: AssessmentPage },
       { path: "devam/:course", title: "Devam", component: AttendancePage },
     ],
     settings: OkulSettingsForm,

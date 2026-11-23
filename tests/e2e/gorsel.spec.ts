@@ -409,10 +409,21 @@ for (const device of DEVICES) {
       await update("tasks", flow.task.id as string, { status: "todo" });
 
       const midterm = (await rows("okul_prep_docs"))[0].assessment_id as string;
-      await run(`prep:${midterm}`, 90, "2026-11-13T10:58:00Z");
+      const prep = await run(`prep:${midterm}`, 90, "2026-11-13T10:58:00Z");
       await page.goto("/");
       await expect(page.getByTestId("okul-scene")).toHaveAttribute("data-method", "pomodoro");
       await shot(page, `okul-hazirlik-sahne-${device.name}`);
+      await update("sessions", prep.session.id as string, { ended_at: "2026-11-13T11:00:00Z" });
+      await update("tasks", prep.task.id as string, { status: "todo" });
+
+      // A project step on the pomodoro: no steps inside it (K4T2).
+      const step = all.find(
+        (row) => row.title === "Proposal" && row.kind === "project_step" && row.status !== "done",
+      )!;
+      await run(`step:${step.id}`, 60, "2026-11-13T11:06:00Z");
+      await page.goto("/");
+      await expect(page.getByTestId("okul-scene")).toHaveAttribute("data-type", "okul.step");
+      await shot(page, `okul-alt-is-sahne-${device.name}`);
     });
 
     test(`Okul's hand-in list (${device.name})`, async ({ page }) => {

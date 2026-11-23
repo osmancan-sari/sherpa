@@ -194,10 +194,10 @@ test("'Derse girdin mi?' only in a course with an attendance condition; the view
     module: ctx.module,
     now: () => new Date(runAt(-300)),
   });
-  for (const id of [first.id, other.id]) await syncSession(morning, id);
+  for (const id of [first.id, other.id, second.id]) await syncSession(morning, id);
   await waitFor(
     () => rows("blocks"),
-    (list) => list.length === 2,
+    (list) => list.length === 3,
   );
   const blocks = await rows("blocks");
   const ruledBlock = blocks.find((row) => row.source_id === first.id)!;
@@ -233,4 +233,9 @@ test("'Derse girdin mi?' only in a course with an attendance condition; the view
     () => rows("okul_sessions"),
     (list) => list.find((row) => row.id === second.id)?.attendance === "attended",
   );
+  // Answered on Today: the view asks no more, it says the answer.
+  const secondBlock = (await rows("blocks")).find((row) => row.source_id === second.id)!;
+  await page.goto(`/?blok=${secondBlock.id}`);
+  await expect(view.getByTestId("okul-attendance-question")).toContainText("Girdin.");
+  await expect(view.getByRole("button", { name: "Girdim" })).toHaveCount(0);
 });

@@ -149,7 +149,12 @@ export async function seedOkul(db: Db, now: Date): Promise<Record<string, number
   if (lastLesson) await insertClassNote(ctx, lastLesson, "Quiz 2 gelecek ay, kapsam 5–9. hafta");
 
   const add = (code: string, row: Omit<Parameters<typeof insertAssessment>[1], "course_id">) =>
-    insertAssessment(ctx, { course_id: ids[code], date_status: "exact", ...row });
+    insertAssessment(ctx, {
+      course_id: ids[code],
+      date_status: "exact",
+      date_source: row.date ? "syllabus" : null,
+      ...row,
+    });
 
   // Robotics: the midterm with its documents marked ready, a quiz, an assignment, a project.
   const robMidterm = await add("ROB301E", {

@@ -25,8 +25,8 @@ export function ListRow({
   ...props
 }: {
   /**
-   * Okul 1: something in the dot's place, the row's own column before its text (a date's day
-   * and month, "24" over "Kas Sal"; frame okul/AnaSayfa). Takes the place of the dot and the block.
+   * Something in the dot's place: the row's own column before its text (a date's day and month,
+   * "24" over "Kas Sal"). Takes the place of the dot and the block.
    */
   lead?: ReactNode;
   /** A fixed block: a small grey square instead of the colour dot ("18:30–19:15 · sabit"). */

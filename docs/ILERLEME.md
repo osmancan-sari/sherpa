@@ -4,9 +4,9 @@ Bu dosyayı Claude Code günceller. Yeni bir oturum yalnızca bu dosyayı ve `pr
 
 ## Durum
 
-- Faz: **Okul 1. adım sürüyor** (23 Kas 2026; istem `prompts/okul-adim-1.md`; etiket `okul-1-tamam`; görüntüler `docs/ekran-goruntuleri/okul-1/`). Okul modülünün temeli: tablolar, Notion aktarımı, sayfalar, ders blokları ve Derste görünümü, sınav hazırlığı (yer tutucu ve "Dokümanım hazır"), ödev ve proje sahneleri, teslim ve toplantı listesi. Oturum gözetimsiz: `sherpa-prod`'a ve `git push`'a dokunulmaz
-- Adım: 4–7 (girişler, sayfalar, sahneler, Derste görünümü) yazıldı, uçtan uca testleri ve görüntüleri sürüyor; 0–3 bitti, adım denetimi 1 düzeltildi
-- Son commit: adım denetimi 1 düzeltmeleri; sayfalar, sahneler ve Derste görünümünün ilk hali
+- Faz: **Okul 1 bitti** (23 Kas 2026; istem `prompts/okul-adim-1.md`; etiket `okul-1-tamam`; görüntüler `docs/ekran-goruntuleri/okul-1/`). Okul modülünün temeli: tablolar, Notion aktarımı, sayfalar, ders blokları ve Derste görünümü, sınav hazırlığı (yer tutucu ve "Dokümanım hazır"), ödev ve proje sahneleri, teslim ve toplantı listesi. Oturum gözetimsiz: `sherpa-prod`'a ve `git push`'a dokunulmaz
+- Adım: 0–8 bitti; adım denetimi 1 GEÇMEDİ (düzeltildi), faz denetimi GEÇTİ; `check:full` yeşil (671 / 338 / 342); etiket `okul-1-tamam`. Yayın ve gerçek aktarım senin izninle ("Senden bekleyenler")
+- Son commit: faz denetiminin düzeltmeleri ve rapor
 - Önceki: Okul çekirdek A (`okul-cekirdek-a-tamam`, 23 Kas 2026, yayında)
 
 ### Okul 1 planı
@@ -20,11 +20,11 @@ Bu dosyayı Claude Code günceller. Yeni bir oturum yalnızca bu dosyayı ve `pr
 | 2 | Teklifler (`rules.ts`: hazırlık, sınav bloğu, ders blokları, ödev, alt iş, teslim, toplantı, aktarılan iş), günlük iş, "Dokümanım hazır", `facets`, `chip`, `sizingHints`, `sizingActuals`, `onOutcome`, haftalık rapor; veritabanı testleri; denetçi (adım) | bitti (denetçi 3. adımdan sonra, veri ve tekliflerin tamamı için): `rules.ts`, `server/proposals.ts`, `jobs.ts` (`gunluk` 00:30, `devam` saatte bir), `module.ts` (çip, bölümler tek sorguyla, haftalık rapor, girişler); `tests/db/okul.test.ts` (11) |
 | 3 | Notion aktarımı (`import:notion`, `--dry-run`), uydurma dışa aktarımla testler; örnek veri (`scripts/demo-okul.ts`); `docs/08` | bitti: `server/notion.ts`, `server/importer.ts`, `scripts/import-notion.ts` (`npm run import:notion`), `tests/db/okul-import.test.ts` (4, uydurma dışa aktarım `tests/fixtures/notion-export/`); gerçek dışa aktarım yerelde kuru çalıştırıldı ve bir kez aktarılıp silindi (sayılar tutuyor, kopya yok); örnek dönem `scripts/demo-okul.ts` (`db:seed`'e bağlı; kodsuz eski "Okul" örnek satırı "Okul (eski örnek)" adını alır); `docs/08` yeniden yazıldı |
 | — | **Adım denetimi 1** (`af61f4b..8645097`) | GEÇMEDİ: engelleyici (1) dışa aktarım testi Okul'un 9 tablosunu beklemiyordu (`check:full` kırmızı); önemliler (2) işaretsiz hazırlığı haftanın taahhüdü bölüyor, sınanmıyordu, (3) sınav geçince hazırlık açık kalıyordu, (4) hızlı girişte "Yükledim" ödevin kalemini gece işine bırakıyordu, (5) çip yüklenmemiş ama bitmiş teslimi kaçırıyordu, çip, bölümler ve rapor sınanmıyordu, (6) tek cümle "10.12"yi saat, "proje adımı"nı proje okuyordu, (7) `--dry-run` PowerShell'de düşüyordu, (8) çekirdek notları yazılmamıştı, (9) `okul.md` çekirdeğe bağlantı tablosu koda uymuyordu, (10) gece işi sınav bloğunu geri çekmiyordu; notlar 11–14. Hepsi düzeltildi: (1) beklenti, (2) `keepWeek` ile test (oturum işleri açılsa da Bugün'e gelmez; çekirdek notu A5), (3) sınav başlayınca geri çekme ve test, (4) `syncAssessment` ve test, (5) çip ve üç test, (6) okuyucu ve iki test, (7) betik bayraksız hep kuru çalışır, yazmak `--write` ister, (8) "Adım 1'de çıkanlar" (A1–A7), (9) tablo, (10) `known`'a sınav anahtarları ve test, (11) migration `20261123182410_okul_session_log_fk.sql`, (12) sayaçlar, (13) `ctx.now()` ve tür denetimi, (14) toplantının 90 dk sınırı `okul.md`'de |
-| 4 | Girişler (bölüm 7) | bekliyor |
-| 5 | Modül sayfaları (ana sayfa, ders, devam, iş ve sınav ayrıntısı, ayarlar), zemin ve token'lar, galeri | bekliyor |
-| 6 | Bugün kartı ve sahneler (akış, pomodoro, hazırlık, süre doldu, çıkarken not, teslim ve toplantı listesi); denetçi (adım) | bekliyor |
-| 7 | Derste görünümü ve devam sorusu | bekliyor |
-| 8 | Uçtan uca ve görsel testler, ekran görüntüleri ve karelerle karşılaştırma, `check:full`, faz denetimi, rapor, etiket | bekliyor |
+| 4 | Girişler (bölüm 7) | bitti: `server/entries.ts`, `intake` (sekiz tür); sayfalardaki formlar (`Sheets.tsx`) |
+| 5 | Modül sayfaları (ana sayfa, ders, devam, iş ve sınav ayrıntısı, ayarlar), zemin ve token'lar, galeri | bitti: `Home`, `CoursePage`, `DetailPages`, `Settings`, `Backdrop`; kit `ListRow.lead` |
+| 6 | Bugün kartı ve sahneler (akış, pomodoro, hazırlık, süre doldu, çıkarken not, teslim ve toplantı listesi); denetçi (adım) | bitti: `Scenes.tsx` (akış, pomodoro, teslim listesi, toplantı), `beforeExit`; adım denetimi yapılmadı (bkz. Denetim) |
+| 7 | Derste görünümü ve devam sorusu | bitti: `LessonView.tsx`, saatlik `devam` işi |
+| 8 | Uçtan uca ve görsel testler, ekran görüntüleri ve karelerle karşılaştırma, `check:full`, faz denetimi, rapor, etiket | bitti: `okul.both.spec.ts`, `okul.spec.ts`, `sync.spec.ts` (+2), `gorsel.spec.ts` (+24 görüntü), görüntüler `docs/ekran-goruntuleri/okul-1/`; faz denetimi GEÇTİ; etiket `okul-1-tamam` |
 
 ### Okul çekirdek A planı
 
@@ -264,6 +264,64 @@ Her adımın sonunda `npm run check` ve commit; şema, geçit ve zarf adımları
 | 7 | `check:full`, faz denetimi, düzeltmeler, faz raporu, etiket | bitti: faz denetimi 1. turda GEÇTİ (ayrıntı "Biten fazlar" → Ç2) |
 
 ## Biten fazlar
+
+### Okul 1: Temel (23 Kas 2026)
+
+İstem `prompts/okul-adim-1.md`; tasarım `docs/moduller/okul.md` (onaylı). Okul modülü kayıtta (her ortamda; üretimde kullanıcı etkinleştirince açılır). Commit'ler `af61f4b`…; migration'lar `20261123174511_okul_tables.sql`, `20261123182410_okul_session_log_fk.sql` (yalnızca ekleme). Çekirdekte değişen tek şey kit'in `ListRow`'una `lead` yuvası (galeri ve `parcalar.md`) ve `tokens.css`'e Okul zemininin üç rengi; `src/core/` modül içe aktarmaz.
+
+#### Kabul ölçütleri
+
+| # | Ölçüt | Durum | Kanıt |
+| --- | --- | --- | --- |
+| 1 | Notion'daki 6 ders, 59 değerlendirme, 86 oturum aktarılmış; sayılar tutuyor; tarihsiz 21'i "Tahmin edilemeyen"de | yerelde sağlandı; üretimde aktarım senin izninle | Gerçek dışa aktarımın kuru çalıştırması ve yerel aktarımı: 6 / 59 (21 tarihsiz) / 86; ikinci çalıştırma kopya üretmedi (yerel veri sonra silindi). Uydurma dışa aktarımla `tests/db/okul-import.test.ts` (4); tarihsizlerin teklif edilmediği aynı testte |
+| 2 | Ana sayfa ve altı dersin sayfası karelerle aynı; sayfa başında durum cümlesi yok | sağlandı (farklar aşağıda) | `okul.both.spec.ts` (iki cihaz, 375 px: altı dersin sayfası, seçici, kapalı durum şeridi, "Sınav ya da teslim ekle" yalnızca ders sayfasında); görsel `okul-ana-sayfa-*`, `okul-ders-*` |
+| 3 | Ödev Bugün'de üç öğeli kartla; Başla akış sahnesini açıyor; şeritte "geçen / ayrılan"; çıkarken not sorulup sonraki oturumda görünüyor | sağlandı | `okul.spec.ts` (ödevin kartı: başlık, ders, süre; arayüzden "Başla" akışı açar; ödevin iki oturumu: not, "Kaldığın yer"); şeridin biçimi görsel `okul-akis-sahne-*` ("48 dk / 1 sa 30 dk") |
+| 4 | Proje alt işi pomodoroyla açılıyor, kutuda adım yok; son oturumda "Bugünlük yeter" | sağlandı | `okul.spec.ts` (alt işin son oturumu: "Bugünlük yeter" kalemin eforunu bir oturum artırır, sayılan 50 dk molasız; "Bitti" teslim listesini açar) |
+| 5 | Devam sorusu yalnızca devam şartı olan derste; görünümden ve Bugün'den cevap aynı kaydı yazar, öbürü kapanır | sağlandı, bir yönü kısmen | `okul.both.spec.ts` (yalnızca şartlı derste; görünümün cevabı kaydı yazar; Bugün'ün cevabından sonra görünüm soru sormaz). Kısmen: Bugün'de soru sorulduktan sonra görünüm açılıp cevaplanırsa Bugün'deki soru kalır (çekirdek notu A2: soru geri alınamıyor); görünüm açıldıysa saatlik iş hiç sormaz |
+| 6 | Sınavlar plana yer tutucu süreyle giriyor, "Neden?"de gerekçe; işaretsizde çalışma oturumu açılmıyor | kısmen | Yer tutucu, `earliest`, gece işi, "Neden?" sağlandı (`okul.test.ts`, `okul.spec.ts`). Sapma: haftanın taahhüdü `earliest`'i bu hafta içindeki işaretsiz hazırlığı da oturum işlerine bölüyor; bu işler hiçbir zaman Bugün'e gelmiyor (`okul.test.ts` "never reaches the day"), ama vardırlar ve ileriki günlerin tahmininde görünebilirler. İstemin "oturum işi açılmaz"ı tam karşılanmadı; çekirdek notu A5, Okul çekirdek B'de karar |
+| 7 | "Dokümanım hazır" işaretlenince bölümsüz pomodoro; kaldırılınca açık oturumlar geri çekiliyor, biten oturumlar ve ilerleme duruyor | sağlandı | `okul.test.ts` (aç, 30 dk çalış, kapat, yeniden aç: aynı kayıt, 30 dk duruyor; kapatınca çalışan oturum durur), `okul.spec.ts` (işaretli quizin hazırlık oturumu, sayılan 75 dk, sınav sayfasında ilerleme) |
+| 8 | Dersler günün akışında ve Takvim'de blok; telefonda ve panoda dokununca Derste görünümü; derste yazılan cümle "Tarihe çevir" ile değerlendirmeye | sağlandı | `okul.both.spec.ts` (iki cihaz: akıştan ve Takvim'den, oturum açılmaz, "Çık" Bugün'e; "Tarihe çevir" değerlendirme açar, not çevrilmiş sayılır); görsel `okul-derste-*`, `okul-ders-bitti-*` |
+| 9 | Teslim listesi iki cihazda aynı adımda; "Yükledim"den sonra iş ana sayfada ve ders sayfasında teslim edilmiş | sağlandı | `sync.spec.ts` (yenilemeden ikinci cihaz; süreli adımda iki cihaz aynı süre), `okul.spec.ts` (yenileyerek ikinci cihaz; "Yükledim" sonrası iki sayfada "teslim edildi") |
+| 10 | Sınavın kendisi planda sabit blok; hazırlığın süresi her ekranda "yaklaşık"; "Dokümanım hazır" tek dokunuşla açılır ve kapanır | sağlandı | `okul.test.ts` (sınav bloğu, saat silinince geri çekilir), sınav sayfasında anahtar (görsel `okul-sinav-*`), Bugün kartında ve sayfalarda "yaklaşık" |
+| 11 | Gerçek aktarım: 6 ders, 59 değerlendirme (21 tarihsiz), 86 oturum; 47 görevden karar 7'ye uyanlar; anlık toplamlar sıfır; saat "Zaman Notu"ndan | yerelde sağlandı | 47 görevden 1'i aktarılır (46'sı türüne göre: Hazırlık 5, Teslim 6, Sınav 8, Veri Girişi 8, türsüz 2, arşivli Takip 9, arşivli Materyal 8); 13 zaman notunda saat yok (metin olarak kalır); 4'ünde saat okundu; 9 proje adımından 7'si dersin tek projesine bağlandı; bir değerlendirme "Belirsiz" ama tarihli: "tahmini" sayıldı (tarihsiz 21 tutar) |
+
+
+**Bilinçli sapma (karar 9):** modülün "gerçekleşen"i sahnenin bildirdiği sayılan dakika, yoksa duvar saati. Ortadaki basamak (sahne dışından kapanan oturumda saklı yerleşim durumundan odak dakikası) kurulmadı: kit'in saf sayacı sunucu koduna kapalı (çekirdek notu A4). Sahnenin kendi kapanışlarında ("Bitti", "Bugünlük yeter", "Oturumu bitir") sayılan dakika her zaman gider.
+
+#### Karelerle karşılaştırma
+
+| Ekran | Kare | Sonuç |
+| --- | --- | --- |
+| Ana sayfa (telefon) | `AnaSayfa` | aynı düzen (hafta başlıkları, gün sütunu, "tahmini", ilerleme ve doküman satırı, Tahmin edilemeyen, Haftanın ağırlığı, Dersler); fark: ders rengi satırın sağında nokta (karede yazıda), "Geçenler" satır (karede katlı başlık), haftanın ağırlığı tek tonlu çubuk; Adım 2: değişiklik satırı, "duyurudan" |
+| Ana sayfa (pano) | `PanoAna` | dört özet kutusu aynı; fark: liste tablo değil satır, sağ sütunda ağırlık ve dersler; Adım 2: değişiklik satırı, tahminin dayanağı |
+| Seçici | `DersSecici` | aynı (ders seç, altı ders, renk noktası, "kod · sıradaki: iş · gün") |
+| Ders sayfası | `Ders`, `PanoDers` | aynı düzen; fark: VF şartlarında durum yok (şartlar serbest metin), devam şartı satırı ve "Değiştir" eklendi; Adım 2: Dosyalar, "Not ve yoklama Kepler'den"; Adım 3: Tahmin kuralları |
+| Devam | `Devam` | aynı (sayılar, cümle, satırlar); fark: her satırda üç seçenekli seçim; Adım 2: Kepler sütunu, "ayrışıyor" |
+| Sınav ayrıntısı | `SinavAyrinti`, `PanoSinavAyrinti` | başlık, ilerleme, oturumlar aynı; Dokümanlar kutusunda yalnızca "Dokümanım hazır" (görüşün gerek); Adım 3: dosyalar, sürüm, bölümler |
+| İş ayrıntısı | `SorumlulukAyrinti` | sayfa olarak (karede alttan sayfa), tarih değiştirme ve "kaldır" alttan sayfada; görüşün gerek |
+| Ayarlar | `OkulAyarlar`, `SahneYontem`, `SahneSureler` | yalnızca "Çalışma" (karar 8); yöntem ve süre sayfaları aynı |
+| Akış | `K3T2`, `SahneKaldiginYerOdev` | aynı; fark: ödev metni kutusu yok (Adım 2), ilerleme telefonda kutu |
+| Pomodoro (hazırlık) | `K1T2` | bölüm kutusu olmadan türetildi (görüşün gerek) |
+| Süre doldu | `K3T5`, `K4T5` | aynı (kit) |
+| Teslim listesi | `K4T6`, `K4P6` | aynı; fark: adımlarda dosya adı yok (Adım 2) |
+| Toplantı | `SahneToplanti` | sahibi döngüyle değişir (görüşün gerek) |
+| Derste, ders bitti | `SahneDers`, `PanoDersSahne` | aynı; Adım 2: "Bu hafta"; telefonda "ders bitti" türetildi (görüşün gerek) |
+
+#### Denetim
+
+- **Adım denetimi 1** (`af61f4b..8645097`, veri, teklifler, aktarım): GEÇMEDİ; bir engelleyici ve dokuz önemli bulgunun hepsi düzeltildi (yukarıdaki plan tablosu).
+- **Sahnelerden sonraki adım denetimi yapılmadı.** Sahneler, sayfalar ve Derste görünümü uçtan uca testleriyle birlikte yazılıp doğrudan faz denetimine girdi (`9dffa38..fdfc751` faz denetiminin kapsamındaydı). İstemin "sahnelerden sonra adım kipinde" maddesinden sapma; faz denetimi o aralığı ayrıca taradı.
+- **`check:full`**: 1. koşu (`7130b7d`) kırmızı: yalnızca galerinin iki onaylı görüntüsü (galeriye bilerek eklenen `ListRow` `lead` örneği); bilerek yenilendi (`fdfc751`). Yenileme koşusunda bir test bir kez düştü (`toBeVisible`), ikinci koşu tamamen yeşil (bkz. "Bilinen sorunlar").
+- **Faz denetimi tur 1** (`af61f4b..fdfc751`; denetçinin kendi `check:full`'u yeşil: 671 / 337 / 341) **GEÇTİ**, önemli bulgular: (1) FK migration dosyası boştu (ilk komut yarıda kesilmiş, boş dosya uygulanmış sayılmıştı): dosya dolduruldu, yerelde uygulandı, `db:reset` ile baştan doğrulandı; (2) etiketsiz "kuruldu" yazılmıştı: durum etiketle aynı commit'te; (3) sahnelerden sonraki adım denetimi: yukarıda gerekçesiyle; (4) karar 9'un orta basamağı: kabul tablosunda sapma olarak; (5) ölçüt 6: "kısmen"; (6) devam sorusunun öbür yönü: test eklendi (Bugün'ün cevabından sonra görünüm soru sormaz), öbür yön "kısmen" (A2); (7) ödevin kartı ve arayüzden "Başla": test eklendi; (8) alt işin pomodorosu görsel teste eklendi (`okul-alt-is-sahne-*`; toplantı listesi görsel testte yok). Notlar: (9) çalışan oturumun durması: veritabanı testi eklendi; (10) akış görüntüsündeki "oturum 1 / 3" görsel testin kendi eklediği oturumdan; derste notun saati düzeltildi; (11) ayrıntı sayfasının başlığı "Ayrıntı", örnek veride tarih kaynağı "syllabus"; (12) pano tam sayfa görüntüsünde zeminin bir ekran boyundan sonra düzleşmesi görüntü yakalamadandır (zemin `fixed`), gerçek tarayıcıda bakılacak; (13) ILERLEME'deki çift başlık ve geçici dosya temizlendi; (14) kit yorumu genel yazıldı. Düzeltmelerden sonra `db:reset` (migration'lar baştan temiz) ve `check:full` yeşil: 671 birim / 338 veritabanı / 342 uçtan uca. Okul'un onaylı görüntüleri bilerek yenilendi (başlık "Ayrıntı", örnek veride tarih kaynağı) ve alt işin pomodorosu eklendi; ara bir yenileme koşusunda dört test bir kez kararsız düştü, sonraki iki koşu (biri `check:full`) yeşil.
+
+#### Okul çekirdek B için notlar
+
+- **Ninova ve Kepler alanları (Adım 2'nin yazacağı yerler):** `okul_courses.ninova_path`, `kepler_ref`, `start_time`/`end_time`/`room` (Notion'da bitiş yok: ders bloğu bitişi bilinmeyince 3 saat, `LESSON_DEFAULT_MINUTES`); `okul_assessments.ninova_id`, `opens_on` (ödevin açıldığı gün → `when.earliest`), `submitted_at` + `submit_source = 'ninova'` (teslim listesinin 4. adımı "Yüklendiği görülsün" bunu bekliyor; şimdi kendiliğinden kapanmaz), `score_source = 'kepler'` (elle girilen not ezilmez), `date_source` (`announcement`, `ninova`, `kepler`; kullanıcının `user` tarihi ezilmez: aktarım ve teklifler bunu koruyor), `output_kind` (Notion'da yok, hepsi `written`; kod olduğu dosyalardan anlaşılmalı); `okul_sessions.kepler_attendance` (devam hesabı Kepler'i önce sayar: `attendanceOf`).
+- **Dosya kutularının yeri:** sahnede `boxes` içinde ilerleme kutusunun üstü (`SessionFile`, kare `K3T2`), Derste görünümünde "Bu hafta" (sağ sütunun başı), ders sayfasında "Sorumluluklar"/"Devam" sekmelerinin yanında "Dosyalar".
+- **Bildirim olaylarının doğduğu yerler:** tarih değişince `changeAssessment` ve aktarımın tarih yazdığı yer; yeni ödev `insertAssessment` (aktarım, toplayıcı); not `setGrade`'in Kepler karşılığı; teslime 3 saat kala: çipin `attention` hesabı (`module.ts` `chip`) aynı sorguyu kullanabilir.
+- **`due_estimated`:** `planAssessment` (`server/proposals.ts`) hazırlık, ödev, alt iş ve teslim tekliflerinde `date_status === 'estimated'` iken yazılmalı; şimdi tahmini tarih kesin gibi teklif ediliyor (sayfalarda "tahmini" etiketi var).
+- **Adım 1'de çıkan çekirdek notları:** `okul-cekirdek-notlari.md` "Adım 1'de çıkanlar" A1–A7.
+
 
 ### Okul çekirdek A: modül sayfası, sahne sayacı ve yerleşimleri (23 Kas 2026)
 
@@ -1164,9 +1222,23 @@ Testler: 413 birim, 207 veritabanı, 166 uçtan uca (`npm run check:full` yeşil
 
 ## Sıradaki adım
 
-Okul Adım 1 (`prompts/okul-adim-1.md`; istemi Okul tasarım sohbeti, yukarıdaki "Okul Adım 1 için sözleşme özeti"nden yazacak). Okul çekirdek A yayında (23 Kas 2026).
+Okul çekirdek B (`prompts/okul-cekirdek-b.md`; istemi ilerleme sohbeti yazacak). Okul 1 yerelde bitti; yayını ve gerçek aktarımı senin iznini bekliyor.
 
 ## Senden bekleyenler
+
+### Okul 1 yayını ve gerçek aktarım
+
+Oturum gözetimsizdi: hiçbir şey yayınlanmadı, `git push` yapılmadı.
+
+1. **Migration'lar:** `npm run db:push` (`sherpa-dev`; deneme çalıştırması yalnızca `20261123174511_okul_tables.sql` ve `20261123182410_okul_session_log_fk.sql`'i göstermeli), sonra `npx supabase db push --remote=<prod ref>` (`sherpa-prod`). Kod migration'sız açılmaz (Okul her ortamda kayıtlı; dışa aktarım tablolarını okur).
+2. `git push origin main` ve etiket (`okul-1-tamam`).
+3. **Okul'u etkinleştir:** Ayarlar → Modüller → Okul.
+4. **Gerçek aktarım (üretim, ayrı adım, senin iznin):** üretimin değerlerini taşıyan bir env dosyasıyla (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY`, `ALLOWED_EMAIL`) önce `npm run import:notion -- --remote --env <dosya>` (kuru; beklenen: 6 ders, 59 değerlendirme (21 tarihsiz), 86 oturum, 1 görev; 46 görev aktarılmaz), sayılar tutunca `npm run import:notion -- --write --remote --env <dosya>`. Benim yapmamı istersen bir sonraki oturumda söyle.
+5. **Devam şartı:** Notion'da yok; devam şartı olan derslerde ders sayfası → VF şartları → "Devam · Değiştir" (devamsızlık hakkı ya da oran). Şart girilmeyen derste "Derse girdin mi?" sorulmaz.
+6. **Gerçek telefonda:** bir dersin bloğuna dokunup Derste görünümü ("Not al", "Tarihe çevir", "Derste değilim"); bir ödev oturumu (akış, "Süre doldu", "Nerede kaldın?", ertesi oturumda "Kaldığın yer", teslim listesi).
+
+**Görüşün gerek** (karesi yok ya da kareden türetildi): "Dokümanım hazır" anahtarı ve satırı; bölümsüz hazırlık sahnesi (`K1T2`'den); ödev ve proje ayrıntı sayfası (`SorumlulukAyrinti`'den, sayfa olarak); alt işi düzenleme sayfası; devam şartı satırı ve sayfası; "Derste değilim"; telefonda "ders bitti"; toplantıda sahibin döngüyle değişmesi; çip metni ("Midterm · Sal") ve 24 saat eşiği; bitişi bilinmeyen dersin 3 saat sayılması; ana sayfada dersin renginin satır sonunda nokta olması; haftanın ağırlığının tek tonlu çubuk olması; panoda ana sayfanın tablo değil satır olması.
+
 
 ### Okul çekirdek A yayını (yapıldı, 23 Kas 2026)
 
@@ -1512,6 +1584,18 @@ Süre sapmasındaki artış çoğunlukla `enrich`'in kendi tahminlerinin çalı�
 - Ekran görüntüleri: `docs/ekran-goruntuleri/c1/`.
 
 ## Verdiğim kararlar
+
+**Okul 1 (23 Kas 2026)** (istemin kararları ve tabloları `docs/09-kararlar.md`, "Okul 1" satırları)
+
+- **Kaynak türleri ve anahtarlar:** her iş türünün kendi `source_type`'ı (`okul.lesson`, `okul.exam`, `okul.prep`, `okul.homework`, `okul.step`, `okul.submit`, `okul.meeting`, `okul.task`) ve anahtarı (`lesson:<id>`, `prep:<id>`…); sahne ve blok görünümü türü buradan tanır. Teklifler saf bir kurucudan (`server/proposals.ts`) çıkar, `rules.ts` gönderir.
+- **Sınavın saati bilinmeyince** hazırlığın son tarihi sınav günü 08:00; sınav başlayınca hazırlık geri çekilir. **Teslim tarihi saati yoksa** günün sonu.
+- **Son tarihi geçmiş iş yeniden teklif edilmez** (çekirdek elindekini tutar); Notion'dan gelen eski "Yapılacak" işler Bugün'ü doldurmaz.
+- **Alt işin sahibi** Notion'da yok: aktarım `me` yazar; tek projesi olan derste alt işler o projeye bağlanır.
+- **Tek oturum yolu:** son oturumdaki "Bitti" teslim listesini aynı oturumda açar; liste durumu (`checklist_state`) oturuma bağlıdır, iki cihazda aynıdır. Modül işini ve teslimini bitince geri çekerek kapatır (çekirdek notu A1).
+- **"Bugünlük yeter"**: oturum `stop` ile kapanır, modül kalemin eforunu "yapılan + bir oturum" yapar (kaynağı `module`; sonraki teklifler eforsuz olduğundan ezmez).
+- **Aktarım bayraksız kuru çalışır**; yazmak `--write` ister (adım denetimi 1, bulgu 7).
+- **Formlar bağlamı** modül sayfasında `useModule()`'den, sahnede ve blok görünümünde props'tan bir React bağlamıyla (`OkulContext`) alır (çekirdek notu A7).
+- **Görsel test** örnek dönemi sabit anla (13 Kas 14:10) kurar; oturumları doğrudan yazar (sahne, gerçek "Başla"dan bağımsız).
 
 **Okul çekirdek A (23 Kas 2026)**
 
@@ -1864,6 +1948,11 @@ Süre sapmasındaki artış çoğunlukla `enrich`'in kendi tahminlerinin çalı�
 
 ## Bilinen sorunlar
 
+- **Okul 1, yer tutucu hazırlığın oturum işleri:** haftanın taahhüdü işaretsiz hazırlığı oturum işlerine böler; işler Bugün'e gelmez ama vardır ve ileriki günlerin tahmininde görünebilir (çekirdek notu A5).
+- **Okul 1, Bugün'deki devam sorusu:** sorulduktan sonra görünüm açılıp cevaplanırsa Bugün'deki soru kalır (A2); cevaplanırsa modül ilk cevabı korur.
+- **Okul 1, sahne dışından kapanan oturum** duvar saatini sayar (A4; karar 9'un orta basamağı yok).
+- **Okul 1, sınanmayanlar:** toplantı listesinin uçtan uca ve görsel testi; "Dokümanım hazır" anahtarına arayüzden dokunma (veritabanı yolu sınanıyor); kaydırılmış tam sayfa pano görüntüsünde zeminin düzleşmesi (görüntü yakalama); karşıtlık ve dokunma alanları ölçülmedi.
+- **Okul 1, `check:full`'da bir kez görülen kararsızlık:** galeri yenileme koşusunda bir `toBeVisible` bir kez düştü, yeniden koşuda geçti; hangi test olduğu çıktıda kaldı, tekrar görülürse bakılacak.
 - **Okul çekirdek A, sahne dışından kapanan molalı oturum:** Şimdi kartındaki "Bitti", öbür cihazın "Bitti"si ya da "Devam ediyor musun?" sorusunun kapatması sayılan dakikayı bilmez; oturumun duvar saati (mola dahil) sayılır (sözleşme gereği: "bildirilmezse bugünkü gibi"). Okul Adım 1 bunu bilmeli.
 - **Okul çekirdek A, sınanmayan yollar:** çıkarken notun 10 sn zaman aşımı; "Takıldım" ve "Yatıyorum"un adımı atlaması (kodda ayrı yol: `stuck` ve `bed` `leave`'den geçmez); tuşları devralmayan ve not soran sahnede Bugün'ün Boşluk yolu (`deneme` tuşları devralıyor); blok görünümünün hata sınırı; blok görünümünün telefonda akıştan ve Takvim'den açılması (`okul-cekirdek.spec.ts` yalnızca pano projesinde koşar; telefondaki görünüm görsel testte); `ChecklistStep.action` ve `rowAction` yalnızca galeride; kontrol listesinin ikinci cihazda aynı süreyi göstermesi (adımın başlangıcı saklanıyor, ayrıca sınanmadı).
 - **Okul çekirdek A, karşıtlık:** yeni parçalarda (seçici, "Süre doldu" kartı, yerleşimlerin ikincil yazıları) 4,5:1 ölçülmedi; değerler mevcut token'lar.

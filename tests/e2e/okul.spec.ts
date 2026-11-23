@@ -66,7 +66,7 @@ async function ended(id: string) {
 
 const scene = (page: Page) => page.getByTestId("okul-scene");
 
-test("Today's card for a homework and a marked preparation: its title and one line", async ({
+test("Today's card for a marked preparation: its title and one line, 'yaklaşık', Neden?", async ({
   page,
 }) => {
   await roomInTheDay(page);
@@ -92,6 +92,36 @@ test("Today's card for a homework and a marked preparation: its title and one li
   await expect(now.getByRole("button", { name: "Başla" })).toBeVisible();
   await now.getByRole("button", { name: "Neden?" }).click();
   await expect(now.getByRole("note", { name: "Neden bu iş" })).toContainText("ağırlığı %10");
+});
+
+test("Today's card for a homework: its title, its course and length; Başla opens the flow", async ({
+  page,
+}) => {
+  await roomInTheDay(page);
+  const ctx = await okulContext();
+  const [course] = await smallTerm(ctx, [{ code: "ALG305E", name: "Algoritma", color: "#5fd6c6" }]);
+  const homework = await insertAssessment(ctx, {
+    course_id: course.id,
+    title: "Assignment 2",
+    kind: "homework",
+    output_kind: "code",
+    date: runDay(3),
+    time: "23:59",
+    date_status: "exact",
+  });
+  await syncAssessment(ctx, homework.id);
+  await sized(`hw:${homework.id}`, 180, 90);
+  await page.goto("/");
+  const now = page.getByRole("region", { name: "Şimdi" });
+  await expect(now.getByRole("heading", { name: "Assignment 2" })).toBeVisible();
+  await expect(now).toContainText("Algoritma");
+  await expect(now).toContainText("1 sa 30 dk");
+  await now.getByRole("button", { name: "Başla" }).click();
+  await expect(scene(page)).toHaveAttribute("data-method", "flow");
+  await waitFor(
+    () => rows("sessions"),
+    (list) => list.length === 1 && list[0].ended_at === null,
+  );
 });
 
 test("a homework's two sittings: the flow, Süre doldu, the note on the way out, Kaldığın yer, the hand-in on two screens, Yükledim", async ({
