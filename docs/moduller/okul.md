@@ -131,6 +131,7 @@ parts jsonb null              -- [{ title, kind: read|practice, minutes, questio
 missing jsonb null            -- dosyası olmadığı için yazılmayan konular: [{ week, topic }]
 unique (assessment_id, output)
 ```
+`produced_by = manual` ve `file_path` boşsa kayıt "Dokümanım hazır" işaretidir (kural 7): dosya ve `parts` yoktur, oturumlar bölümsüz açılır.
 
 ### school_rules
 Dersin tahmin kuralları.
@@ -168,7 +169,7 @@ source enum(ninova, kepler, calendar), started_at, finished_at, ok boolean, chan
 
 | Veri | Kaynak | Seviye | Denenme durumu |
 | --- | --- | --- | --- |
-| Mevcut dönemin verisi | Notion'dan tek seferlik aktarım; sonra Notion salt arşiv | Otomatik (betik) | Notion 16 Kas'ta okundu: 6 ders, 59 değerlendirme (21'i tarihsiz), 86 oturum, 46 görev (26'sı arşivli). Veri 10 Kas'tan beri güncel değil; aktarımdan önce Ninova ile bir kez doğrulanır |
+| Mevcut dönemin verisi | Notion'dan tek seferlik aktarım; sonra Notion salt arşiv | Otomatik (betik) | Notion 23 Kas'ta dışa aktarıldı (`data/notion-export/`, depoya girmez): 6 ders, 59 değerlendirme (21'i tarihsiz), 86 oturum, 47 görev (27'si arşivli); hiç not girilmemiş. Veri 10 Kas'tan beri güncel değil; eksik not, tarih ve devamı Adım 2'de Ninova ve Kepler tamamlar |
 | Ders programı, derslik, dönem tarihleri | Ninova "Sınıf bilgileri"; aynısı Kepler'in kayıtlı sınıflar ucunda | Otomatik | Okundu (17 Kas): gün, **başlangıç ve bitiş saati**, derslik, dönem tarihleri. Derslik üç derste Ninova ile Kepler arasında farklı (açık soru) |
 | Ödevler, teslim saati, teslim durumu | Ninova: bütün dersler tek sayfada (`/Kampus?1/Odevler`); ayrıntı ödevin sayfasında | Otomatik | Okundu (17 Kas): liste, ayrıntı (kaynak ve istenen dosyalar), yüklenen dosya sayısı |
 | Duyurular (tarih, saat, yer, kapsam) | Ninova: bütün dersler tek sayfada (`/Kampus?1/Duyurular`); metni yapay zeka okur (`extract`) | Otomatik, hemen uygulanır | Okundu (10 ve 17 Kas) |
@@ -253,6 +254,7 @@ Syllabus kapsamı belirlemez; konuların sırasını ve hangi haftada işlendiğ
 - **Elle (yedek):** kendiliğinden yol kapalıysa ya da doküman günü üzerinden bir gün geçtiği halde doküman yoksa Bugün'e "Dokümanları ürettir" işi düşer: komutu kopyala, dersin Claude projesini aç, iki PDF'i klasöre koy.
 - İki yolda da çalışma planını Sherpa dokümanın kendisinden çıkarır: bölümler, bölüm başına dakika, soru sayısı, sayfa numarası. Dokümanın sonuna plan bloğu koymak isteğe bağlıdır.
 - Sınav ayrıntısında "Yeniden ürettir" vardır.
+- **"Dokümanım hazır" (elle yolun ilk hali; Adım 1'de kurulur).** Sınav ayrıntısında tek dokunuş: kullanıcı dokümanını kendisi hazırladığını söyler. İki doküman da "hazır, elle" olur (dosyası ve bölümleri yok); hazırlık o andan itibaren **bölümsüz pomodoro oturumlarıyla** açılır, süresi yer tutucu kalır. İşaret kaldırılınca açık oturumlar geri çekilir, biten oturumlar ve ilerleme durur, hazırlık yeniden yalnızca yük olur. Adım 3'te aynı kayıt dosyayla dolar: PDF'ler klasöre konunca Sherpa planı dokümandan çıkarır ve kalan süre bölümlere geçer. Ayrı, geçici bir yol değildir. (23 Kas 2026)
 
 **8. Güncelleme.** Doküman güncellenince önceki sürüm `eski/` klasörüne alınır. Çalışılmış bölümler çalışılmış kalır; yalnızca yeni ve değişen bölümler plana eklenir ve "değişti" diye işaretlenir.
 
@@ -263,7 +265,7 @@ Syllabus kapsamı belirlemez; konuların sırasını ve hangi haftada işlendiğ
 - Henüz Ninova'da açılmamış ama syllabus'ta görünen ödev de yer tutucu süreyle plandadır.
 
 **10. Oturum.**
-- **Doküman olmadan çalışma oturumu açılmaz.** Yer tutucu süre planda yer tutar ama en erken doküman gününde başlar; doküman gecikirse oturumun yerinde "doküman bekleniyor" görünür.
+- **Doküman olmadan çalışma oturumu açılmaz.** Yer tutucu süre planda yer tutar ama en erken doküman gününde başlar; doküman gecikirse oturumun yerinde "doküman bekleniyor" görünür. "Dokümanım hazır" işareti (kural 7) dokümanı hazır sayar: oturumlar işaretlendiği andan itibaren açılır, bölümleri olmadığı için "Bu oturumda" kutusu ve "Aç" çizilmez.
 - Bir oturum, dokümanın sıradaki bölümlerinden kurulur ve adımları farklı türde olabilir: okuma bölümleri pomodoro, soru bölümleri soru sayacı, sınavdan önceki son bölüm tek blok tekrar.
 - "Takıldım" denen sorular hazırlığın son oturumuna taşınır.
 - **Kaldığın yer:** hazırlık oturumu açılınca, bu hazırlıkta en son bitirilen yer görünür (bölümün adı ve dokümandaki sayfası). Kendiliğinden gelir; kullanıcı bir şey yazmaz. Bir bölüm yarıda bırakıldıysa ("Oturumu bitir", "Bugünlük yeter") o bölüm "yarıda" diye görünür ve oturum ondan başlar.
@@ -324,6 +326,7 @@ Her giriş en fazla iki dokunuş ya da tek cümledir. Olağan akışta kullanıc
 | `rule` | Dersin sayfası: Tahmin kuralları | Tek cümle; öneriyi tek dokunuşla onayla ya da reddet | `school_rules` |
 | `resume_note` | Ödev ve proje sahnesinden çıkarken | Tek cümle (atlanabilir) | Sonraki oturumun başında gösterilir |
 | `submitted` | Teslim sahnesi | "Yükledim" | `submitted_at`, kaynak `user` |
+| `docs_ready` | Sınav ayrıntısı | Tek dokunuş: "Dokümanım hazır" (yeniden dokununca kalkar) | `school_prep_docs`: iki çıktı `ready`, `manual`; kalkınca `waiting` |
 | `step_edit` | Proje ayrıntısı | Alt işi ekle, sil, adını ve sahibini değiştir | `school_assessments` (`project_step`) |
 
 ## 8. Arayüz
@@ -402,7 +405,7 @@ Kareler: 2, 10 (quiz); 18, 25 (midterm); 32, 39 (ödev); 46, 53 (proje).
 
 ### 8.5 Ayrıntı sayfaları
 
-- **Sınav ayrıntısı (76, 83):** tarih, saat, yer (kaynağıyla); kapsam (kaynağıyla: kural, duyuru ya da kullanıcı); iki doküman (durum, sürüm, Aç, Yeniden ürettir); "dosyası bekleniyor" konuları; **bütün oturumlar**: her birinin bölümleri, dakikası ve durumu; planlanmış oturumda gün ("Oturum 2 · Çar 2 Ara · bölüm 2–4 · 2 sa"), ötekilerde hafta ("Oturum 4 · 7 Ara haftası"); ilerleme ("4 sa / 8 sa"); not gelince not. Kareler buna göre düzeltildi (17 Kas).
+- **Sınav ayrıntısı (76, 83):** tarih, saat, yer (kaynağıyla); kapsam (kaynağıyla: kural, duyuru ya da kullanıcı); iki doküman (durum, sürüm, Aç, Yeniden ürettir); "dosyası bekleniyor" konuları; **bütün oturumlar**: her birinin bölümleri, dakikası ve durumu; planlanmış oturumda gün ("Oturum 2 · Çar 2 Ara · bölüm 2–4 · 2 sa"), ötekilerde hafta ("Oturum 4 · 7 Ara haftası"); ilerleme ("4 sa / 8 sa"); not gelince not. Kareler buna göre düzeltildi (17 Kas). Dokümanlar kutusunda "Dokümanım hazır" anahtarı durur (kural 7); açıkken altında "elle işaretlendi" ve günü yazar. Anahtarın karesi çizilmedi (**görüşün gerek**).
 - **Sorumluluk ayrıntısı (75):** tarihin kaynağı (ör. duyurunun cümlesi); ödevde metin dosyası, teslim saati, oturumlar, "kaldığın yer" notu, teslim durumu. Projede alt işler sahibiyle; önerilen alt işler "öneri" işaretli ve düzenlenebilir.
 - **Dosyalar (73) ve dosya ayrıntısı (74):** dersin klasör ağacı; her dosyada tür ve hafta etiketi, "emin değil" ve "sen ekledin" işaretleri, bulutta olup olmadığı; ayrıntıda Ninova'daki yeri ve özgün adı.
 - **Devam (72):** oturum listesi; kullanıcının işareti ve Kepler'in kaydı yan yana; ayrışan oturum işaretli; kalan devamsızlık hakkı.
@@ -547,6 +550,8 @@ Yerleşimlerden yalnızca onaylı karesi olan kurulur (karar 10). Bu yüzden pak
 
 **Dayandığı çekirdek paketi: A.**
 
+İstem: `prompts/okul-adim-1.md` (23 Kas 2026). Kapsamın ayrıntısı ve bu adım için verilen teknik kararlar oradadır: tablo adları `okul_` önekiyle; sınav hazırlığı "Dokümanım hazır" işaretlenene kadar yalnızca yer tutucu yüktür, işaretlenince bölümsüz pomodoro oturumlarıyla açılır; sınavın kendisi ve dersler sabit bloktur; teslim ayrı küçük kalemdir; takım toplantısı bu adımdadır.
+
 Tablolar; Notion aktarımı; ana sayfa, ders sayfası, ayrıntı sayfaları, devam; elle giriş (bölüm 7); ders blokları ve devam sorusu; Derste görünümü; sınav, ödev ve proje iş kalemleri (sınav hazırlığı yer tutucu süreyle); ödev ve proje sahneleri (akış, pomodoro), "kaldığın yer" notu, süre dolunca kartı; teslim kontrol listesi ("Yükledim" elle); Bugün kartı; ayarlar (yöntemler, süreler).
 
 Kabul:
@@ -555,7 +560,8 @@ Kabul:
 - Bir ödev Bugün'de üç öğeli kartla görünüyor; Başla akış sahnesini açıyor; şeritte "geçen / ayrılan" yazıyor; çıkarken not soruluyor ve sonraki oturumda görünüyor.
 - Bir proje alt işi pomodoroyla açılıyor, kutuda adım yok; son oturumda "Bugünlük yeter" var.
 - Devam sorusu yalnızca devam şartı olan derste çıkıyor.
-- Sınavlar plana yer tutucu süreyle giriyor ve "Neden?"de gerekçe yazıyor; çalışma oturumu açılmıyor.
+- Sınavlar plana yer tutucu süreyle giriyor ve "Neden?"de gerekçe yazıyor; işaretlenmemiş sınavda çalışma oturumu açılmıyor.
+- "Dokümanım hazır" işaretlenince hazırlık bölümsüz pomodoro oturumlarıyla açılıyor; işaret kaldırılınca açık oturumlar geri çekiliyor, biten oturumlar ve ilerleme duruyor.
 
 ### Adım 2 · Veri bağlantıları
 
@@ -582,6 +588,7 @@ Kabul:
 - Bir quiz için doküman günü geldiğinde iki PDF `Hazırlık/<sınav>/` içinde; yer tutucunun yerini dokümanın planı almış; sınav ayrıntısında bütün oturumlar bölümleri ve dakikasıyla görünüyor; planlanmış oturumda gün, ötekilerde hafta yazıyor.
 - Sınav oturumu 2 saat olarak tek parça yerleşiyor; ödev oturumu 90 dakikayı aşmıyor.
 - Kendiliğinden yol kapalıyken Bugün'e "Dokümanları ürettir" düşüyor; PDF'ler klasöre konunca iş kendiliğinden kapanıyor.
+- Adım 1'de "Dokümanım hazır" diye işaretlenmiş sınavda PDF'ler klasöre konunca kalan süre bölümlere geçiyor; biten oturumlar ve ilerleme korunuyor.
 - Bir oturumda okuma bölümünden soru bölümüne geçince ortadaki sayaç değişiyor; "Takıldım" denen soru son oturumda.
 - Kapsamı değişen midtermin dokümanı güncelleniyor; eski sürüm `eski/` içinde; çalışılmış bölümler çalışılmış.
 - Dosyası olmayan konu dokümanda yok, ayrıntıda "dosyası bekleniyor"; iki gün kala süresi düşüyor.

@@ -4,10 +4,26 @@ Bu dosyayı Claude Code günceller. Yeni bir oturum yalnızca bu dosyayı ve `pr
 
 ## Durum
 
-- Faz: **Okul çekirdek A** (23 Kas 2026; istem `prompts/okul-cekirdek-a.md`; etiket `okul-cekirdek-a-tamam`; görüntüler `docs/ekran-goruntuleri/okul-cekirdek-a/`). Okul Adım 1'in dayandığı altı yetenek (`docs/moduller/okul-cekirdek-notlari.md` maddeler 4, 5, 7, 9, 10, 11) ve doküman temizliği (madde 3). Okul modülü kurulmaz
-- Adım: 0–9 bitti. Adım denetimleri iki tur (ikisi GEÇMEDİ, düzeltildi); faz denetimi üç tur (üçü GEÇTİ, önemliler düzeltildi ya da "Bilinen sorunlar"da); `check:full` yeşil (`1c24137`: 652 / 315 / 321); görüntüler `docs/ekran-goruntuleri/okul-cekirdek-a/`; etiket `okul-cekirdek-a-tamam` (`db7fe05`: kullanıcının iki kararı dahil). Yayında (23 Kas 2026): migration'lar `sherpa-dev` ve `sherpa-prod`'da, `main` ve etiket GitHub'da
-- Son commit: faz denetimi tur 3'ün notları
-- Önceki: Ç4c (`c4c-tamam`) ve sabah açılışı yayında (16 Kas 2026)
+- Faz: **Okul 1. adım sürüyor** (23 Kas 2026; istem `prompts/okul-adim-1.md`; etiket `okul-1-tamam`; görüntüler `docs/ekran-goruntuleri/okul-1/`). Okul modülünün temeli: tablolar, Notion aktarımı, sayfalar, ders blokları ve Derste görünümü, sınav hazırlığı (yer tutucu ve "Dokümanım hazır"), ödev ve proje sahneleri, teslim ve toplantı listesi. Oturum gözetimsiz: `sherpa-prod`'a ve `git push`'a dokunulmaz
+- Adım: 0 (plan ve ilk commit)
+- Son commit: Okul 1 planı ve tasarım sohbetlerinin dosyaları
+- Önceki: Okul çekirdek A (`okul-cekirdek-a-tamam`, 23 Kas 2026, yayında)
+
+### Okul 1 planı
+
+İstem `prompts/okul-adim-1.md`; tasarım `docs/moduller/okul.md` (onaylı); kareler `docs/tasarim/kareler/okul/`. Her adımda testi aynı adımda, `npm run check` ve commit; denetçi veri ve tekliflerden sonra, sahnelerden sonra adım kipinde, sonunda faz kipinde.
+
+| # | Adım | Durum |
+| --- | --- | --- |
+| 0 | Plan; ilk commit (tasarım sohbetlerinin dosyaları, dokunulmadan) | sürüyor |
+| 1 | Modül iskeleti (`_sablon`'dan, `slug: okul`, `kind: term`), kayıt; tablolar (`okul_`), RLS, Realtime, tipler, dışa aktarım listesi; türetilenler (saf) ve birim testleri; istemin kararları `docs/09`'a | bekliyor |
+| 2 | Teklifler (`rules.ts`: hazırlık, sınav bloğu, ders blokları, ödev, alt iş, teslim, toplantı, aktarılan iş), günlük iş, "Dokümanım hazır", `facets`, `chip`, `sizingHints`, `sizingActuals`, `onOutcome`, haftalık rapor; veritabanı testleri; denetçi (adım) | bekliyor |
+| 3 | Notion aktarımı (`import:notion`, `--dry-run`), uydurma dışa aktarımla testler; örnek veri (`scripts/demo-okul.ts`); `docs/08` | bekliyor |
+| 4 | Girişler (bölüm 7) | bekliyor |
+| 5 | Modül sayfaları (ana sayfa, ders, devam, iş ve sınav ayrıntısı, ayarlar), zemin ve token'lar, galeri | bekliyor |
+| 6 | Bugün kartı ve sahneler (akış, pomodoro, hazırlık, süre doldu, çıkarken not, teslim ve toplantı listesi); denetçi (adım) | bekliyor |
+| 7 | Derste görünümü ve devam sorusu | bekliyor |
+| 8 | Uçtan uca ve görsel testler, ekran görüntüleri ve karelerle karşılaştırma, `check:full`, faz denetimi, rapor, etiket | bekliyor |
 
 ### Okul çekirdek A planı
 
