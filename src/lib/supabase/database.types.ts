@@ -820,6 +820,633 @@ export type Database = {
           },
         ];
       };
+      okul_assessments: {
+        Row: {
+          checklist_state: Json | null;
+          course_id: string;
+          created_at: string;
+          date: string | null;
+          date_basis: string | null;
+          date_source: string | null;
+          date_status: string;
+          duration_min: number | null;
+          excluded: boolean;
+          external_id: string | null;
+          id: string;
+          kind: string;
+          layout_state: Json | null;
+          ninova_id: string | null;
+          notes: string | null;
+          opens_on: string | null;
+          output_kind: string | null;
+          owner: string | null;
+          owner_name: string | null;
+          parent_id: string | null;
+          position: number;
+          proposed: boolean;
+          resume_note: string | null;
+          resume_noted_at: string | null;
+          room: string | null;
+          scope_from_week: number | null;
+          scope_source: string;
+          scope_text: string | null;
+          scope_to_week: number | null;
+          score: number | null;
+          score_source: string | null;
+          source_text: string | null;
+          status: string;
+          submit_source: string | null;
+          submits: boolean;
+          submitted_at: string | null;
+          time: string | null;
+          time_note: string | null;
+          title: string;
+          updated_at: string;
+          user_id: string;
+          vf_condition: string | null;
+          weight: number | null;
+        };
+        ComputedFields: never;
+        Insert: {
+          checklist_state?: Json | null;
+          course_id: string;
+          created_at?: string;
+          date?: string | null;
+          date_basis?: string | null;
+          date_source?: string | null;
+          date_status?: string;
+          duration_min?: number | null;
+          excluded?: boolean;
+          external_id?: string | null;
+          id?: string;
+          kind: string;
+          layout_state?: Json | null;
+          ninova_id?: string | null;
+          notes?: string | null;
+          opens_on?: string | null;
+          output_kind?: string | null;
+          owner?: string | null;
+          owner_name?: string | null;
+          parent_id?: string | null;
+          position?: number;
+          proposed?: boolean;
+          resume_note?: string | null;
+          resume_noted_at?: string | null;
+          room?: string | null;
+          scope_from_week?: number | null;
+          scope_source?: string;
+          scope_text?: string | null;
+          scope_to_week?: number | null;
+          score?: number | null;
+          score_source?: string | null;
+          source_text?: string | null;
+          status?: string;
+          submit_source?: string | null;
+          submits?: boolean;
+          submitted_at?: string | null;
+          time?: string | null;
+          time_note?: string | null;
+          title: string;
+          updated_at?: string;
+          user_id?: string;
+          vf_condition?: string | null;
+          weight?: number | null;
+        };
+        Update: {
+          checklist_state?: Json | null;
+          course_id?: string;
+          created_at?: string;
+          date?: string | null;
+          date_basis?: string | null;
+          date_source?: string | null;
+          date_status?: string;
+          duration_min?: number | null;
+          excluded?: boolean;
+          external_id?: string | null;
+          id?: string;
+          kind?: string;
+          layout_state?: Json | null;
+          ninova_id?: string | null;
+          notes?: string | null;
+          opens_on?: string | null;
+          output_kind?: string | null;
+          owner?: string | null;
+          owner_name?: string | null;
+          parent_id?: string | null;
+          position?: number;
+          proposed?: boolean;
+          resume_note?: string | null;
+          resume_noted_at?: string | null;
+          room?: string | null;
+          scope_from_week?: number | null;
+          scope_source?: string;
+          scope_text?: string | null;
+          scope_to_week?: number | null;
+          score?: number | null;
+          score_source?: string | null;
+          source_text?: string | null;
+          status?: string;
+          submit_source?: string | null;
+          submits?: boolean;
+          submitted_at?: string | null;
+          time?: string | null;
+          time_note?: string | null;
+          title?: string;
+          updated_at?: string;
+          user_id?: string;
+          vf_condition?: string | null;
+          weight?: number | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "okul_assessments_course_id_user_id_fkey";
+            columns: ["course_id", "user_id"];
+            isOneToOne: false;
+            referencedRelation: "okul_courses";
+            referencedColumns: ["id", "user_id"];
+          },
+          {
+            foreignKeyName: "okul_assessments_parent_id_user_id_fkey";
+            columns: ["parent_id", "user_id"];
+            isOneToOne: false;
+            referencedRelation: "okul_assessments";
+            referencedColumns: ["id", "user_id"];
+          },
+        ];
+      };
+      okul_class_notes: {
+        Row: {
+          converted_to: string | null;
+          created_at: string;
+          id: string;
+          session_id: string;
+          text: string;
+          updated_at: string;
+          user_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          converted_to?: string | null;
+          created_at?: string;
+          id?: string;
+          session_id: string;
+          text: string;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Update: {
+          converted_to?: string | null;
+          created_at?: string;
+          id?: string;
+          session_id?: string;
+          text?: string;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "okul_class_notes_converted_to_user_id_fkey";
+            columns: ["converted_to", "user_id"];
+            isOneToOne: false;
+            referencedRelation: "okul_assessments";
+            referencedColumns: ["id", "user_id"];
+          },
+          {
+            foreignKeyName: "okul_class_notes_session_id_user_id_fkey";
+            columns: ["session_id", "user_id"];
+            isOneToOne: false;
+            referencedRelation: "okul_sessions";
+            referencedColumns: ["id", "user_id"];
+          },
+        ];
+      };
+      okul_courses: {
+        Row: {
+          absence_limit: number | null;
+          attendance_min_pct: number | null;
+          claude_project_url: string | null;
+          code: string;
+          color: string;
+          created_at: string;
+          end_time: string | null;
+          external_id: string | null;
+          folder: string | null;
+          grading_note: string | null;
+          id: string;
+          kepler_ref: string | null;
+          local_folder: string | null;
+          location: string;
+          name: string;
+          ninova_path: string | null;
+          notion_page_url: string | null;
+          position: number;
+          room: string | null;
+          schedule_text: string | null;
+          start_time: string | null;
+          syllabus_weeks: Json | null;
+          term_id: string;
+          updated_at: string;
+          user_id: string;
+          vf_conditions: NonNullable<Json>;
+          weekday: number | null;
+        };
+        ComputedFields: never;
+        Insert: {
+          absence_limit?: number | null;
+          attendance_min_pct?: number | null;
+          claude_project_url?: string | null;
+          code: string;
+          color: string;
+          created_at?: string;
+          end_time?: string | null;
+          external_id?: string | null;
+          folder?: string | null;
+          grading_note?: string | null;
+          id?: string;
+          kepler_ref?: string | null;
+          local_folder?: string | null;
+          location?: string;
+          name: string;
+          ninova_path?: string | null;
+          notion_page_url?: string | null;
+          position?: number;
+          room?: string | null;
+          schedule_text?: string | null;
+          start_time?: string | null;
+          syllabus_weeks?: Json | null;
+          term_id: string;
+          updated_at?: string;
+          user_id?: string;
+          vf_conditions?: NonNullable<Json>;
+          weekday?: number | null;
+        };
+        Update: {
+          absence_limit?: number | null;
+          attendance_min_pct?: number | null;
+          claude_project_url?: string | null;
+          code?: string;
+          color?: string;
+          created_at?: string;
+          end_time?: string | null;
+          external_id?: string | null;
+          folder?: string | null;
+          grading_note?: string | null;
+          id?: string;
+          kepler_ref?: string | null;
+          local_folder?: string | null;
+          location?: string;
+          name?: string;
+          ninova_path?: string | null;
+          notion_page_url?: string | null;
+          position?: number;
+          room?: string | null;
+          schedule_text?: string | null;
+          start_time?: string | null;
+          syllabus_weeks?: Json | null;
+          term_id?: string;
+          updated_at?: string;
+          user_id?: string;
+          vf_conditions?: NonNullable<Json>;
+          weekday?: number | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "okul_courses_term_id_user_id_fkey";
+            columns: ["term_id", "user_id"];
+            isOneToOne: false;
+            referencedRelation: "okul_terms";
+            referencedColumns: ["id", "user_id"];
+          },
+        ];
+      };
+      okul_meetings: {
+        Row: {
+          checklist_state: Json | null;
+          created_at: string;
+          done: boolean;
+          ends_at: string;
+          id: string;
+          project_id: string;
+          starts_at: string;
+          title: string;
+          updated_at: string;
+          user_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          checklist_state?: Json | null;
+          created_at?: string;
+          done?: boolean;
+          ends_at: string;
+          id?: string;
+          project_id: string;
+          starts_at: string;
+          title: string;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Update: {
+          checklist_state?: Json | null;
+          created_at?: string;
+          done?: boolean;
+          ends_at?: string;
+          id?: string;
+          project_id?: string;
+          starts_at?: string;
+          title?: string;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "okul_meetings_project_id_user_id_fkey";
+            columns: ["project_id", "user_id"];
+            isOneToOne: false;
+            referencedRelation: "okul_assessments";
+            referencedColumns: ["id", "user_id"];
+          },
+        ];
+      };
+      okul_prep_docs: {
+        Row: {
+          assessment_id: string;
+          created_at: string;
+          due_on: string | null;
+          file_path: string | null;
+          id: string;
+          missing: Json | null;
+          output: string;
+          parts: Json | null;
+          produced_at: string | null;
+          produced_by: string | null;
+          status: string;
+          updated_at: string;
+          user_id: string;
+          version: number;
+        };
+        ComputedFields: never;
+        Insert: {
+          assessment_id: string;
+          created_at?: string;
+          due_on?: string | null;
+          file_path?: string | null;
+          id?: string;
+          missing?: Json | null;
+          output: string;
+          parts?: Json | null;
+          produced_at?: string | null;
+          produced_by?: string | null;
+          status?: string;
+          updated_at?: string;
+          user_id?: string;
+          version?: number;
+        };
+        Update: {
+          assessment_id?: string;
+          created_at?: string;
+          due_on?: string | null;
+          file_path?: string | null;
+          id?: string;
+          missing?: Json | null;
+          output?: string;
+          parts?: Json | null;
+          produced_at?: string | null;
+          produced_by?: string | null;
+          status?: string;
+          updated_at?: string;
+          user_id?: string;
+          version?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "okul_prep_docs_assessment_id_user_id_fkey";
+            columns: ["assessment_id", "user_id"];
+            isOneToOne: false;
+            referencedRelation: "okul_assessments";
+            referencedColumns: ["id", "user_id"];
+          },
+        ];
+      };
+      okul_session_log: {
+        Row: {
+          assessment_id: string | null;
+          created_at: string;
+          ended_at: string;
+          id: string;
+          minutes: number;
+          result: string | null;
+          role: string;
+          session_id: string;
+          updated_at: string;
+          user_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          assessment_id?: string | null;
+          created_at?: string;
+          ended_at: string;
+          id?: string;
+          minutes: number;
+          result?: string | null;
+          role: string;
+          session_id: string;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Update: {
+          assessment_id?: string | null;
+          created_at?: string;
+          ended_at?: string;
+          id?: string;
+          minutes?: number;
+          result?: string | null;
+          role?: string;
+          session_id?: string;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "okul_session_log_assessment_id_user_id_fkey";
+            columns: ["assessment_id", "user_id"];
+            isOneToOne: false;
+            referencedRelation: "okul_assessments";
+            referencedColumns: ["id", "user_id"];
+          },
+        ];
+      };
+      okul_sessions: {
+        Row: {
+          asked_at: string | null;
+          attendance: string | null;
+          attendance_at: string | null;
+          course_id: string;
+          course_week: number | null;
+          created_at: string;
+          date: string;
+          end_time: string | null;
+          external_id: string | null;
+          id: string;
+          kepler_attendance: string | null;
+          kind: string;
+          notes: string | null;
+          room: string | null;
+          start_time: string | null;
+          topic: string | null;
+          updated_at: string;
+          user_id: string;
+          viewed_at: string | null;
+        };
+        ComputedFields: never;
+        Insert: {
+          asked_at?: string | null;
+          attendance?: string | null;
+          attendance_at?: string | null;
+          course_id: string;
+          course_week?: number | null;
+          created_at?: string;
+          date: string;
+          end_time?: string | null;
+          external_id?: string | null;
+          id?: string;
+          kepler_attendance?: string | null;
+          kind?: string;
+          notes?: string | null;
+          room?: string | null;
+          start_time?: string | null;
+          topic?: string | null;
+          updated_at?: string;
+          user_id?: string;
+          viewed_at?: string | null;
+        };
+        Update: {
+          asked_at?: string | null;
+          attendance?: string | null;
+          attendance_at?: string | null;
+          course_id?: string;
+          course_week?: number | null;
+          created_at?: string;
+          date?: string;
+          end_time?: string | null;
+          external_id?: string | null;
+          id?: string;
+          kepler_attendance?: string | null;
+          kind?: string;
+          notes?: string | null;
+          room?: string | null;
+          start_time?: string | null;
+          topic?: string | null;
+          updated_at?: string;
+          user_id?: string;
+          viewed_at?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "okul_sessions_course_id_user_id_fkey";
+            columns: ["course_id", "user_id"];
+            isOneToOne: false;
+            referencedRelation: "okul_courses";
+            referencedColumns: ["id", "user_id"];
+          },
+        ];
+      };
+      okul_tasks: {
+        Row: {
+          course_id: string | null;
+          created_at: string;
+          due_on: string | null;
+          external_id: string | null;
+          id: string;
+          importance: number | null;
+          kind: string;
+          status: string;
+          title: string;
+          updated_at: string;
+          user_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          course_id?: string | null;
+          created_at?: string;
+          due_on?: string | null;
+          external_id?: string | null;
+          id?: string;
+          importance?: number | null;
+          kind: string;
+          status?: string;
+          title: string;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Update: {
+          course_id?: string | null;
+          created_at?: string;
+          due_on?: string | null;
+          external_id?: string | null;
+          id?: string;
+          importance?: number | null;
+          kind?: string;
+          status?: string;
+          title?: string;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "okul_tasks_course_id_user_id_fkey";
+            columns: ["course_id", "user_id"];
+            isOneToOne: false;
+            referencedRelation: "okul_courses";
+            referencedColumns: ["id", "user_id"];
+          },
+        ];
+      };
+      okul_terms: {
+        Row: {
+          break_weeks: number[];
+          created_at: string;
+          ends_on: string;
+          finals_from: string | null;
+          finals_to: string | null;
+          folder_root: string | null;
+          id: string;
+          name: string;
+          starts_on: string;
+          status: string;
+          updated_at: string;
+          user_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          break_weeks?: number[];
+          created_at?: string;
+          ends_on: string;
+          finals_from?: string | null;
+          finals_to?: string | null;
+          folder_root?: string | null;
+          id?: string;
+          name: string;
+          starts_on: string;
+          status?: string;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Update: {
+          break_weeks?: number[];
+          created_at?: string;
+          ends_on?: string;
+          finals_from?: string | null;
+          finals_to?: string | null;
+          folder_root?: string | null;
+          id?: string;
+          name?: string;
+          starts_on?: string;
+          status?: string;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
       planner_stats: {
         Row: {
           created_at: string;

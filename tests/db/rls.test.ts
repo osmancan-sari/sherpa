@@ -75,6 +75,32 @@ const SAMPLES: Record<string, (ids: Record<string, string>) => Row> = {
     step_id: ids.rutin_steps,
     result: "done",
   }),
+  // Okul (step 1): every table of the module.
+  okul_terms: () => ({ name: "26-27 Güz", starts_on: "2026-09-28", ends_on: "2026-12-31" }),
+  okul_courses: (ids) => ({
+    term_id: ids.okul_terms,
+    code: "SNM101E",
+    name: "Sınama",
+    color: "#5fd6c6",
+  }),
+  okul_assessments: (ids) => ({ course_id: ids.okul_courses, title: "Quiz 1", kind: "quiz" }),
+  okul_sessions: (ids) => ({ course_id: ids.okul_courses, date: "2026-11-23" }),
+  okul_class_notes: (ids) => ({ session_id: ids.okul_sessions, text: "Quiz gelecek hafta" }),
+  okul_prep_docs: (ids) => ({ assessment_id: ids.okul_assessments, output: "topic" }),
+  okul_meetings: (ids) => ({
+    project_id: ids.okul_assessments,
+    title: "Takım toplantısı",
+    starts_at: "2026-11-24T10:00:00+03:00",
+    ends_at: "2026-11-24T10:45:00+03:00",
+  }),
+  okul_tasks: (ids) => ({ course_id: ids.okul_courses, title: "Hocaya yaz", kind: "follow_up" }),
+  okul_session_log: (ids) => ({
+    session_id: ids.sessions,
+    assessment_id: ids.okul_assessments,
+    role: "prep",
+    minutes: 25,
+    ended_at: "2026-11-23T10:00:00+03:00",
+  }),
   // Ç3d. Each account its own digest: the column is unique across accounts.
   device_tokens: () => ({
     name: "Kestirmeler",
@@ -109,6 +135,10 @@ const ORDER = [
   "rutin_steps",
   "rutin_runs",
   "rutin_run_steps",
+  "okul_terms",
+  "okul_courses",
+  "okul_assessments",
+  "okul_sessions",
 ];
 
 /** Tables whose rows are never changed or removed by design; the grants say so too. */

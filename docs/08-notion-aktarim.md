@@ -27,7 +27,7 @@ Sabit değerlerle oluşturulur: ad `26-27 Güz`, `starts_on = 2026-09-28` (W1'in
 
 ## Eşleme
 
-### Dersler → `school_courses`
+### Dersler → `okul_courses`
 
 | Notion | Sherpa | Not |
 | --- | --- | --- |
@@ -45,7 +45,7 @@ Sabit değerlerle oluşturulur: ad `26-27 Güz`, `starts_on = 2026-09-28` (W1'in
 
 Aktarımdan sonra her ders için bir `block_series` üretilir (gün ve saat varsa).
 
-### Teslimler & Sınavlar → `school_assessments`
+### Teslimler & Sınavlar → `okul_assessments`
 
 | Notion | Sherpa | Not |
 | --- | --- | --- |
@@ -68,7 +68,7 @@ Aktarımdan sonra her ders için bir `block_series` üretilir (gün ve saat vars
 
 Proje adımlarının hangi projeye ait olduğu Notion'da tutulmuyor; `parent_id` boş gelir ve Projeler sekmesinde elle bağlanır.
 
-### Ders Oturumları → `school_sessions`
+### Ders Oturumları → `okul_sessions`
 
 | Notion | Sherpa | Not |
 | --- | --- | --- |

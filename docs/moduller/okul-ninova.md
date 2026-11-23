@@ -108,7 +108,7 @@ Kullanıcının kendi bilgisayarında çalışan küçük bir betik (`scripts/ni
 
 ```
 ninova_classes
-  course_id -> school_courses
+  course_id -> okul_courses
   ninova_path text              -- '/Sinif/31387.123526'
   label text                    -- Ninova'daki ad
 
@@ -131,12 +131,12 @@ ninova_sync_runs
 
 | Ninova | Sherpa | Nasıl |
 | --- | --- | --- |
-| Ödev | `school_assessments` | Otomatik upsert: başlık, teslim bitişi (`date_status = exact`), kaynak "Ninova". Tür varsayılan `homework`; başlıkta "project" geçiyorsa `project_step` önerilir |
+| Ödev | `okul_assessments` | Otomatik upsert: başlık, teslim bitişi (`date_status = exact`), kaynak "Ninova". Tür varsayılan `homework`; başlıkta "project" geçiyorsa `project_step` önerilir |
 | Ödevde yüklenen dosya sayısı | Teslim durumu | İstenen sayıya ulaştıysa `done`; teslim sorusu sorulmaz |
 | Duyuru | Öneri kartı | Serbest metinden tarih, saat, derslik, kapsam ayıklanır ve kullanıcıya tek dokunuşluk onay olarak sunulur. "Yarın" gibi göreli ifadeler duyurunun tarihinden çözülür. Yapay zeka kapalıysa duyuru Okul sayfasında "Yeni duyurular" listesinde durur |
-| Sınıf bilgileri | `school_courses` gün, saat, derslik; `school_terms` tarihleri | Dönem başında otomatik |
+| Sınıf bilgileri | `okul_courses` gün, saat, derslik; `okul_terms` tarihleri | Dönem başında otomatik |
 | Yeni dosya | Dersin yerel klasörü | İndirilir (`local_folder` altına, Ninova'daki klasör yapısıyla); `okul.material_added` olayı yayınlanır. Claude ders projesi bu klasöre bağlı olduğu için güncel kalır |
-| Not | `school_assessments.score` | Tablo doluysa önerilir; kullanıcı onaylar |
+| Not | `okul_assessments.score` | Tablo doluysa önerilir; kullanıcı onaylar |
 | Yoklama | — | Kullanılmaz; devam elle işaretlenir |
 
 ### Ders eşlemesi

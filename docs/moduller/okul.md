@@ -30,9 +30,11 @@ Durum: **onaylandı (23 Kasım 2026).** Tasarım oturumu 16 Kasım 2026'da yapı
 
 ## 3. Veri modeli
 
-Notion'daki dört veritabanının karşılığı ve dosya, doküman, kural tabloları. Sütun adları öneridir; Claude Code çekirdeğin kurallarına göre kesinleştirir.
+Notion'daki dört veritabanının karşılığı ve dosya, doküman, kural tabloları. Tablo adları `okul_` ile başlar (sözleşme: `<slug>_`; 23 Kas 2026, Adım 1). Aşağıdaki sütunlar tasarımın önerisidir; kesin hali `supabase/migrations/20261123174511_okul_tables.sql`.
 
-### school_terms
+**Adım 1'de kurulanlar (23 Kas 2026):** `okul_terms`, `okul_courses`, `okul_assessments`, `okul_sessions`, `okul_class_notes`, `okul_prep_docs` ve üç küçük tablo: `okul_meetings` (projenin takım toplantısı: başlangıç, bitiş, kontrol listesinin durumu), `okul_tasks` (Notion'dan gelen takip ve materyal işleri; teklifin kaynağı modülün kendi kaydıdır), `okul_session_log` (modülün her oturumda saydığı dakika, oturum başına bir satır). Değerlendirmeye eklenenler: `layout_state` (pomodoro ya da akışın durumu, oturuma bağlı), `checklist_state` (teslim listesinin adımı ve başlangıcı, oturuma bağlı), `resume_note` ve `resume_noted_at` ("Nerede kaldın?"), `opens_on` (ödevin açıldığı gün), `submits` (iş teslimle biter), `time_note`, `source_text`, `vf_condition`, `position` (alt işin sırası). Derse eklenenler: `absence_limit` ya da `attendance_min_pct` (devam şartı; biri varsa devam sorusu sorulur), `schedule_text`, `notion_page_url`, `local_folder`, `position`. Ders oturumuna: `attendance` üçüncü değeri `not_held` ("Yapılmadı": tatil değildir, devam hesabında paydadan düşer), `start_time`, `end_time`, `room` (dersinkinden farklıysa), `viewed_at` (Derste görünümü açıldı), `asked_at` (Bugün'de soruldu). Dosya, kural ve okuma tabloları (`okul_files`, `okul_rules`, `okul_sync_runs`) Adım 2 ve 3'te.
+
+### okul_terms
 ```
 name text                     -- '26-27 Güz'
 starts_on date, ends_on date  -- derslerin ilk ve son günü
@@ -42,9 +44,9 @@ folder_root text null         -- bilgisayardaki kök: '<...>/Ders/26-27 Güz'
 status enum(active, archived)
 ```
 
-### school_courses
+### okul_courses
 ```
-term_id -> school_terms
+term_id -> okul_terms
 code text, name text, color text
 weekday smallint null, start_time time null, end_time time null, room text null
 location enum(campus, online) default campus
@@ -57,11 +59,11 @@ vf_conditions jsonb null      -- [{ text, kind, threshold }]; devam şartı vars
 syllabus_weeks jsonb null     -- [{ week, topic }]; syllabus'tan bir kez okunur, kullanıcı düzeltebilir
 ```
 
-### school_assessments
+### okul_assessments
 Her quiz, ödev, sınav, sunum, proje ve proje alt işi. Tarih, ağırlık ve kapsamın tek kaynağıdır.
 ```
-course_id -> school_courses
-parent_id uuid null -> school_assessments   -- proje alt işi → proje
+course_id -> okul_courses
+parent_id uuid null -> okul_assessments   -- proje alt işi → proje
 title text
 kind enum(quiz, midterm, final, homework, project, project_step, presentation)
 output_kind enum(code, written, report, slides) null   -- ödev ve alt işte: sahnenin yöntemini belirler
@@ -81,10 +83,10 @@ status enum(todo, preparing, done, cancelled) default todo
 notes text null, external_id text null unique   -- Notion sayfası (aktarım)
 ```
 
-### school_sessions
+### okul_sessions
 Her ders oturumu.
 ```
-course_id -> school_courses
+course_id -> okul_courses
 date date, course_week int null, topic text null
 kind enum(lecture, recitation, exam, presentation, holiday)
 attendance enum(attended, missed) null          -- kullanıcının işareti
@@ -92,18 +94,18 @@ kepler_attendance enum(present, absent) null    -- Kepler'in kaydı
 external_id text null unique
 ```
 
-### school_class_notes
+### okul_class_notes
 Derste tek cümleyle yazılan not; sonradan tarihe ya da işe çevrilir.
 ```
-session_id -> school_sessions
+session_id -> okul_sessions
 text text, created_at timestamptz
-converted_to uuid null -> school_assessments
+converted_to uuid null -> okul_assessments
 ```
 
-### school_files
+### okul_files
 Toplayıcının gördüğü ve kullanıcının klasöre koyduğu her dosya. Dosya bir kez saklanır; düzenli yol bu kaydın alanıdır.
 ```
-course_id -> school_courses
+course_id -> okul_courses
 origin enum(ninova, user)
 ninova_id text null unique, ninova_path text null, original_name text
 folder text, tidy_name text   -- ders klasörünün altındaki yer ve ad
@@ -114,13 +116,13 @@ old_year boolean default false
 user_moved boolean default false -- true: yeri ve adı bir daha değişmez
 size_bytes bigint, posted_at timestamptz null
 in_cloud boolean                 -- güncel dönem malzemesi: telefonda açılır
-replaces uuid null -> school_files   -- Ninova'da değişen dosyanın eskisi
+replaces uuid null -> okul_files   -- Ninova'da değişen dosyanın eskisi
 ```
 
-### school_prep_docs
+### okul_prep_docs
 Sınav başına iki doküman: konu anlatımı ve örnek sorular.
 ```
-assessment_id -> school_assessments
+assessment_id -> okul_assessments
 output enum(topic, practice)
 status enum(waiting, queued, generating, ready, failed)
 file_path text null           -- 'Hazırlık/Quiz 3/Konu anlatımı.pdf'
@@ -133,16 +135,16 @@ unique (assessment_id, output)
 ```
 `produced_by = manual` ve `file_path` boşsa kayıt "Dokümanım hazır" işaretidir (kural 7): dosya ve `parts` yoktur, oturumlar bölümsüz açılır.
 
-### school_rules
+### okul_rules
 Dersin tahmin kuralları.
 ```
-course_id -> school_courses
+course_id -> okul_courses
 text text                     -- 'Örnek sorulu ödev açılınca ertesi hafta quiz olur'
 origin enum(user, sherpa), status enum(active, proposed, rejected)
 hits int default 0
 ```
 
-### school_sync_runs
+### okul_sync_runs
 ```
 source enum(ninova, kepler, calendar), started_at, finished_at, ok boolean, changes jsonb, error text null
 ```
@@ -318,16 +320,16 @@ Her giriş en fazla iki dokunuş ya da tek cümledir. Olağan akışta kullanıc
 
 | Anahtar | Nerede | Nasıl | Ne olur |
 | --- | --- | --- | --- |
-| `attendance` | Ders bitince Bugün'de; Devam sayfasında | Tek dokunuş: Girdim, Girmedim, Yapılmadı | `school_sessions.attendance` |
-| `class_note` | Derste görünümü | Tek cümle | `school_class_notes`; sonra tarihe ya da işe çevrilir |
-| `assessment` | Dersin sayfası: "Sınav ya da teslim ekle" | Tek cümle ("Quiz 4 3 Aralık") ya da kısa form | `school_assessments`, kaynak `user` |
+| `attendance` | Ders bitince Bugün'de; Devam sayfasında | Tek dokunuş: Girdim, Girmedim, Yapılmadı | `okul_sessions.attendance` |
+| `class_note` | Derste görünümü | Tek cümle | `okul_class_notes`; sonra tarihe ya da işe çevrilir |
+| `assessment` | Dersin sayfası: "Sınav ya da teslim ekle" | Tek cümle ("Quiz 4 3 Aralık") ya da kısa form | `okul_assessments`, kaynak `user` |
 | `date_update` | Sınav ya da teslim ayrıntısı | Tarihe dokun, yeni tarihi seç | Tarih `user` olur; bir daha ezilmez |
 | `grade` | Sınav ayrıntısı | Sayı | `score`, kaynak `user` |
-| `rule` | Dersin sayfası: Tahmin kuralları | Tek cümle; öneriyi tek dokunuşla onayla ya da reddet | `school_rules` |
+| `rule` | Dersin sayfası: Tahmin kuralları | Tek cümle; öneriyi tek dokunuşla onayla ya da reddet | `okul_rules` |
 | `resume_note` | Ödev ve proje sahnesinden çıkarken | Tek cümle (atlanabilir) | Sonraki oturumun başında gösterilir |
 | `submitted` | Teslim sahnesi | "Yükledim" | `submitted_at`, kaynak `user` |
-| `docs_ready` | Sınav ayrıntısı | Tek dokunuş: "Dokümanım hazır" (yeniden dokununca kalkar) | `school_prep_docs`: iki çıktı `ready`, `manual`; kalkınca `waiting` |
-| `step_edit` | Proje ayrıntısı | Alt işi ekle, sil, adını ve sahibini değiştir | `school_assessments` (`project_step`) |
+| `docs_ready` | Sınav ayrıntısı | Tek dokunuş: "Dokümanım hazır" (yeniden dokununca kalkar) | `okul_prep_docs`: iki çıktı `ready`, `manual`; kalkınca `waiting` |
+| `step_edit` | Proje ayrıntısı | Alt işi ekle, sil, adını ve sahibini değiştir | `okul_assessments` (`project_step`) |
 
 ## 8. Arayüz
 
@@ -570,7 +572,7 @@ Kabul:
 Toplayıcı (Ninova, Kepler); dosyaların indirilmesi, etiketlenmesi, klasöre konması, bulut kopyası; duyurulardan tarih ve kapsam; syllabus; akademik takvim; tahmini tarihler; notlar ve yoklama; teslimin kendiliğinden doğrulanması; bildirimler (ya da yedeği); okuma kaçınca uyarı ve kalkan.
 
 Kabul:
-- Toplayıcı bir gün içinde dört kez okumuş; `school_sync_runs` kayıtları var; gece okuma yok.
+- Toplayıcı bir gün içinde dört kez okumuş; `okul_sync_runs` kayıtları var; gece okuma yok.
 - Ninova'ya yeni konan dosya bir sonraki okumada doğru derste, etiketli olarak klasörde; telefonda açılıyor.
 - Kullanıcının taşıdığı dosya sonraki okumada yerinde kalıyor.
 - Tarih içeren bir duyuru tarihi değiştiriyor, kayıtta cümlesi duruyor, bildirim gidiyor (web push çalışmıyorsa Bugün'ün üstünde tek satır çıkıyor); kullanıcının girdiği tarih ezilmiyor.

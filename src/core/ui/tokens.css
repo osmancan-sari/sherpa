@@ -49,6 +49,10 @@
   --color-solid: #141b38; /* every glass with "Saydamlığı azalt" */
   --color-focus-tone: #0a0d1e; /* the focus tone of a scene: dark and flat */
   --color-energy-base: #070a16; /* the energy tone: the module's colour fading into this */
+  /* Okul's backdrop (frames okul/AnaSayfa, K3T2): dark navy to petrol, top to bottom */
+  --color-okul-top: #050d16;
+  --color-okul-mid: #08161f;
+  --color-okul-low: #0c222c;
 
   /* --- Light fills on glass --------------------------------------------------------------- */
   --color-light: rgba(

@@ -14,6 +14,15 @@ import { adminClient, localSetup, localUserId, signInAs } from "./local-user";
 
 /** Children before parents, so rows can be removed in this order. Module tables first. */
 const TABLES = [
+  "okul_session_log",
+  "okul_class_notes",
+  "okul_prep_docs",
+  "okul_meetings",
+  "okul_tasks",
+  "okul_sessions",
+  "okul_assessments",
+  "okul_courses",
+  "okul_terms",
   "deneme_items",
   "rhythm_logs",
   "sessions",

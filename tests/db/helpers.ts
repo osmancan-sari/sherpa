@@ -82,6 +82,15 @@ export const CORE_TABLES = [
 
 /** Module tables (not part of the core) that also hold test rows. */
 export const MODULE_TABLES: readonly string[] = [
+  "okul_session_log",
+  "okul_class_notes",
+  "okul_prep_docs",
+  "okul_meetings",
+  "okul_tasks",
+  "okul_sessions",
+  "okul_assessments",
+  "okul_courses",
+  "okul_terms",
   "rutin_run_steps",
   "rutin_runs",
   "rutin_steps",

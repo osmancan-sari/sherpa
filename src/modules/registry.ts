@@ -2,6 +2,7 @@ import { createRegistry } from "@/core/contract/registry";
 import type { ModuleDefinition } from "@/core/contract/types";
 import { sablon } from "./_sablon/module";
 import { deneme } from "./deneme/module";
+import { okul } from "./okul/module";
 import { rutin } from "./rutin/module";
 
 // Registered modules. The core reaches modules only through this registry and the module
@@ -28,9 +29,11 @@ export const TEMPLATE_COPY: ModuleDefinition = {
   name: "Şablon kopyası",
 };
 
-// Rutin is the first real module (docs/moduller/rutin.md): registered everywhere, production too.
+// Rutin is the first real module (docs/moduller/rutin.md), Okul the second (docs/moduller/okul.md):
+// registered everywhere, production too; each is used once the user switches it on.
 const definitions: ModuleDefinition[] = [
   rutin,
+  okul,
   ...(DEMO_MODULE_ENABLED ? [deneme, TEMPLATE_COPY] : []),
 ];
 

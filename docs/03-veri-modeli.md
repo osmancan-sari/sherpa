@@ -9,7 +9,7 @@ Bu doküman çekirdek tabloları tanımlar. Modüllerin kendi tabloları kendi d
 - Zamanlar `timestamptz`; yalnızca gün gereken yerde `date`. Uygulama saat dilimi `Europe/Istanbul`.
 - Enum'lar Postgres enum tipi olarak tanımlanır.
 - Silme yerine durum: işler `dropped`, modüller `archived` olur. Kalıcı silme yalnızca ayarlardan.
-- `source_type` + `source_id`: bir kaydı üreten modül kaydına geri bağlantı (örneğin bir hazırlık işi → `school_assessment`). Çekirdek bu alanları yorumlamaz, yalnızca taşır.
+- `source_type` + `source_id`: bir kaydı üreten modül kaydına geri bağlantı (örneğin bir hazırlık işi → `okul_assessment`). Çekirdek bu alanları yorumlamaz, yalnızca taşır.
 - Tablolar arası başvurular `(id, user_id)` çiftiyle kurulur: bir satır yalnızca aynı hesabın satırına bağlanabilir (düz yabancı anahtar RLS'siz denetlenir).
 - `events`, `ai_calls` ve `ai_feedback` yalnızca eklenir ve okunur; `inbox_entries` silinemez (izinler de böyle verilir). Öbür tablolarda dört işlem de açıktır.
 - Aşağıda `null` yazmayan ama değeri sonradan dolan sütunlar (gün planı, haftalık taahhüt gibi planlayıcının yazdıkları) veritabanında boş geçilebilir; kayıt, değeri üreten faz gelmeden de açılabilmelidir.
