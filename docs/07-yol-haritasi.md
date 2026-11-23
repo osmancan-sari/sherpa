@@ -318,13 +318,13 @@ Okul'un tasarımının çekirdekten istediklerinin ilk paketi (`docs/moduller/ok
 - Doküman temizliği: hayat modunun kalıntıları (madde 3)
 
 **Kabul ölçütleri**
-- [ ] Yeni alanları kullanmayan modül ve sahnede hiçbir şey değişmiyor; bilerek değişen tek görünüş şeridin "geçen / ayrılan" biçimi
-- [ ] Molalı oturumda öğrenme ve kalan efor sayılan dakikayı kullanıyor; aralık dışı değer yok sayılıyor
-- [ ] Yer tutucu süre saklanıyor, "yaklaşık" görünüyor, gerekçe "Neden?"de; modül güncelleyince işaret kalkıyor; kullanıcının süresi ezilmiyor; hafta yükü sayıyor
-- [ ] Üç yerleşim sayfa yenilenince ve ikinci cihazda aynı durumda; "Süre doldu" kartı, +5 dk, Turu atla, akışta mola süreye sayılmıyor
-- [ ] Çıkarken not yazılıyor, atlanıyor; bağlantısız ve hata verince çıkış engellenmiyor
-- [ ] Blok görünümü Bugün, günün akışı ve Takvim'den açılıyor; oturum açmıyor; elle eklenen blokta açılmıyor
-- [ ] Modül sayfasında ana sayfa girişi, kapalı durum şeridi, kapalı "Yaklaşanlar" ve "Geçmiş", telefonda 375 px'te taşmayan seçici
+- [x] Yeni alanları kullanmayan modül ve sahnede hiçbir şey değişmiyor; bilerek değişen tek görünüş şeridin "geçen / ayrılan" biçimi
+- [x] Molalı oturumda öğrenme ve kalan efor sayılan dakikayı kullanıyor; aralık dışı değer yok sayılıyor
+- [x] Yer tutucu süre saklanıyor, "yaklaşık" görünüyor, gerekçe "Neden?"de; modül güncelleyince işaret kalkıyor; kullanıcının süresi ezilmiyor; hafta yükü sayıyor
+- [x] Üç yerleşim sayfa yenilenince ve ikinci cihazda aynı durumda (kontrol listesinin ikinci cihaz testi yok, `docs/ILERLEME.md` "Bilinen sorunlar"); "Süre doldu" kartı, +5 dk, Turu atla, akışta mola süreye sayılmıyor
+- [x] Çıkarken not yazılıyor, atlanıyor; bağlantısız ve hata verince çıkış engellenmiyor
+- [x] Blok görünümü Bugün, günün akışı ve Takvim'den açılıyor; oturum açmıyor; elle eklenen blokta açılmıyor
+- [x] Modül sayfasında ana sayfa girişi, kapalı durum şeridi, kapalı "Yaklaşanlar" ve "Geçmiş", telefonda 375 px'te taşmayan seçici
 
 ### Ç5: Claude köprüsü
 
