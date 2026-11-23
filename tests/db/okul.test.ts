@@ -1,13 +1,14 @@
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import { createRegistry } from "@/core/contract/registry";
 import { createModuleContext } from "@/core/data/context";
-import { keepWeek } from "@/core/data/keep";
+import { keepWeek, loadPlanRows } from "@/core/data/keep";
 import { endSessionClosing, startSessionTold } from "@/core/data/session-events";
 import { updateWorkItem } from "@/core/data/work";
 import type { ModuleRow } from "@/core/types";
 import { dayKey, istanbulInstant, shiftDay } from "@/lib/date";
 import { jobs } from "@/modules/okul/jobs";
-import { okul } from "@/modules/okul/module";
+import { buildPlan, planInput } from "@/core/planner";
+import { chip, facets, okul, weeklyReport } from "@/modules/okul/module";
 import {
   insertAssessment,
   insertCourse,
@@ -463,5 +464,180 @@ describe("what the module counted", () => {
     await updateAssessment(ctx, done.id, { status: "done" });
     const other = (await itemByKey(`hw:${next.id}`))!;
     expect(await sizingActuals(other, ctx)).toEqual([{ title: "Ödev 1", minutes: 55 }]);
+  });
+});
+
+describe("step audit 1", () => {
+  it("an unmarked preparation the week splits never reaches the day; taken back, it stays out", async () => {
+    const { ctx, course } = await setup();
+    const quiz = await insertAssessment(ctx, {
+      course_id: course.id,
+      title: "Quiz 5",
+      kind: "quiz",
+      date: day(4),
+      time: "10:00",
+      weight: 10,
+      date_status: "exact",
+    });
+    await syncAll(ctx);
+    const prep = (await itemByKey(`prep:${quiz.id}`))!;
+    await sized(prep.id, 360);
+    const now = new Date();
+    await keepWeek(db, now, { force: true });
+    const offered = async () => {
+      const rows = await loadPlanRows(db, now);
+      const plan = buildPlan(planInput(rows, { date: dayKey(now), now, context: "home" }));
+      return plan.slots.flatMap((slot) => (slot.assignment ? [slot.assignment.candidate.id] : []));
+    };
+    const ids = [prep.id, ...(await sittingsOf(prep.id)).map((task) => task.id)];
+    expect((await offered()).some((id) => ids.includes(id))).toBe(false);
+
+    // Marked and taken back again: the week's repair opens sittings, still none reaches the day.
+    await setDocsReady(ctx, quiz.id, true);
+    await setDocsReady(ctx, quiz.id, false);
+    await keepWeek(db, now);
+    const after = [prep.id, ...(await sittingsOf(prep.id)).map((task) => task.id)];
+    expect((await offered()).some((id) => after.includes(id))).toBe(false);
+  });
+
+  it("a preparation is taken back once its exam has begun", async () => {
+    const { ctx, row, course } = await setup();
+    const quiz = await insertAssessment(ctx, {
+      course_id: course.id,
+      title: "Quiz 6",
+      kind: "quiz",
+      date: day(2),
+      time: "09:00",
+      date_status: "exact",
+    });
+    await syncAll(ctx);
+    expect((await itemByKey(`prep:${quiz.id}`))!.status).toBe("active");
+    const later = createModuleContext({
+      db,
+      registry,
+      module: row,
+      now: () => istanbulInstant(day(2), "09:30"),
+    });
+    await syncAll(later);
+    expect((await itemByKey(`prep:${quiz.id}`))!.status).toBe("dropped");
+  });
+
+  it("'Yükledim' from quick add takes the work and its hand-in out at once", async () => {
+    const { ctx, course } = await setup();
+    const homework = await insertAssessment(ctx, {
+      course_id: course.id,
+      title: "Ödev 4",
+      kind: "homework",
+      date: day(5),
+      date_status: "exact",
+    });
+    await syncAll(ctx);
+    const intake = okul.intake.find((entry) => entry.key === "submitted")!;
+    await intake.handle({ title: "Ödev 4" }, ctx);
+    expect((await itemByKey(`hw:${homework.id}`))!.status).toBe("dropped");
+    expect((await itemByKey(`submit:${homework.id}`))!.status).toBe("dropped");
+    const row = ok(await db.from("okul_assessments").select("*").eq("id", homework.id).single());
+    expect(row).toMatchObject({ status: "done", submit_source: "user" });
+    expect(row.submitted_at).not.toBeNull();
+  });
+
+  it("the night's job takes back an exam's block when its hour is gone", async () => {
+    const { ctx, course } = await setup();
+    const midterm = await insertAssessment(ctx, {
+      course_id: course.id,
+      title: "Midterm",
+      kind: "midterm",
+      date: day(6),
+      time: "13:00",
+      duration_min: 90,
+      date_status: "exact",
+    });
+    await syncAll(ctx);
+    expect((await blockByKey(`exam:${midterm.id}`))!.status).toBe("planned");
+    await updateAssessment(ctx, midterm.id, { time: null });
+    await syncAll(ctx);
+    expect((await blockByKey(`exam:${midterm.id}`))!.status).toBe("cancelled");
+  });
+});
+
+describe("what the module shows the core", () => {
+  it("the chip: the next exam or hand-in; attention while a hand-in not uploaded is due within a day", async () => {
+    const { ctx, course } = await setup(() => istanbulInstant(today(), "10:00"));
+    expect(await chip(ctx)).toEqual({ text: "sırada sınav ya da teslim yok", health: "ok" });
+    await insertAssessment(ctx, {
+      course_id: course.id,
+      title: "Midterm",
+      kind: "midterm",
+      date: day(1),
+      time: "09:00",
+      date_status: "exact",
+    });
+    expect(await chip(ctx)).toEqual({ text: "Midterm · yarın", health: "ok" });
+    // Done but not uploaded ("Sonra yap"): still a hand-in ahead.
+    await insertAssessment(ctx, {
+      course_id: course.id,
+      title: "Ödev 5",
+      kind: "homework",
+      date: today(),
+      time: "23:59",
+      date_status: "exact",
+      status: "done",
+    });
+    expect(await chip(ctx)).toEqual({ text: "Ödev 5 · bugün", health: "attention" });
+  });
+
+  it("the facets: the active term's courses with their colour and next work", async () => {
+    const { ctx, course } = await setup(() => istanbulInstant(today(), "10:00"));
+    await insertAssessment(ctx, {
+      course_id: course.id,
+      title: "Quiz 7",
+      kind: "quiz",
+      date: day(1),
+      date_status: "exact",
+    });
+    const list = await facets(ctx);
+    expect(list).toEqual([
+      {
+        key: "snm101e",
+        name: "Sınama",
+        color: "#5fd6c6",
+        detail: "SNM101E · sıradaki: Quiz 7 · yarın",
+      },
+      { key: "snm202e", name: "Serbest", color: "#c3a9ff", detail: "SNM202E" },
+    ]);
+    ok(await db.from("okul_terms").update({ status: "archived" }).eq("name", "26-27 Güz").select());
+    expect(await facets(ctx)).toEqual([]);
+  });
+
+  it("the weekly report: the next 14 days' exams and hand-ins, and a course nearly out of absences", async () => {
+    const { ctx, course } = await setup();
+    await insertAssessment(ctx, {
+      course_id: course.id,
+      title: "Quiz",
+      kind: "quiz",
+      date: day(3),
+      date_status: "exact",
+    });
+    await insertAssessment(ctx, {
+      course_id: course.id,
+      title: "Ödev",
+      kind: "homework",
+      date: day(10),
+      date_status: "estimated",
+    });
+    await insertAssessment(ctx, {
+      course_id: course.id,
+      title: "Final",
+      kind: "final",
+      date: day(30),
+      date_status: "exact",
+    });
+    for (const n of [-21, -14, -7]) {
+      await insertSession(ctx, { course_id: course.id, date: day(n), attendance: "missed" });
+    }
+    expect(await weeklyReport(ctx)).toEqual({
+      metrics: [{ label: "Önümüzdeki 14 gün", value: "1 sınav · 1 teslim" }],
+      suggestions: ["Sınama: devamsızlık hakkın kalmadı."],
+    });
   });
 });

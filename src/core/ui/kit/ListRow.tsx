@@ -21,8 +21,14 @@ export function ListRow({
   titleProps,
   dotTestId = "color-dot",
   block,
+  lead,
   ...props
 }: {
+  /**
+   * Okul 1: something in the dot's place, the row's own column before its text (a date's day
+   * and month, "24" over "Kas Sal"; frame okul/AnaSayfa). Takes the place of the dot and the block.
+   */
+  lead?: ReactNode;
   /** A fixed block: a small grey square instead of the colour dot ("18:30–19:15 · sabit"). */
   block?: boolean;
   /** The work's or the module's colour: a 9 px dot before the text. */
@@ -43,7 +49,9 @@ export function ListRow({
 } & Omit<ComponentProps<"div">, "title" | "onClick">) {
   const body = (
     <>
-      {block ? (
+      {lead ? (
+        <span className="flex w-11 shrink-0 flex-col items-center text-center">{lead}</span>
+      ) : block ? (
         <span aria-hidden className="bg-ink-off size-2.25 shrink-0 rounded-xs" />
       ) : dot ? (
         <span

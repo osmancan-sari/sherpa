@@ -8,7 +8,14 @@ import { AssessmentPage, AttendancePage } from "./components/DetailPages";
 import { LessonView } from "./components/LessonView";
 import { OkulSettingsForm } from "./components/Settings";
 import { loadTerm, unwrap } from "./queries";
-import { listeners, onOutcome, SIZING_HINTS, sizingActuals, syncAll } from "./rules";
+import {
+  listeners,
+  onOutcome,
+  SIZING_HINTS,
+  sizingActuals,
+  syncAll,
+  syncAssessment,
+} from "./rules";
 import { okulScene } from "./scene";
 import { remainingAbsences } from "./server/derive";
 import {
@@ -23,7 +30,7 @@ import {
   setGrade,
   updateDate,
 } from "./server/entries";
-import { deadlineOf, facetOf, SOURCE } from "./server/proposals";
+import { deadlineOf, examStartOf, facetOf, SOURCE } from "./server/proposals";
 import { readSentence } from "./server/sentence";
 import { KIND_LABEL, nearDay } from "./server/text";
 import { jobs } from "./jobs";
@@ -64,7 +71,7 @@ type FacetRow = {
  * The courses of the active term, each a facet with its colour; the line under its name says its
  * code and what comes next (`detail`). One query: the courses with their term and assessments.
  */
-async function facets(ctx: ModuleContext): Promise<ModuleFacet[]> {
+export async function facets(ctx: ModuleContext): Promise<ModuleFacet[]> {
   const rows = unwrap(
     await ctx.db
       .from("okul_courses")
@@ -100,24 +107,28 @@ async function facets(ctx: ModuleContext): Promise<ModuleFacet[]> {
   });
 }
 
-/** The next exam or hand-in ahead ("Midterm · Sal"); attention while one is due within a day. */
-async function chip(ctx: ModuleContext) {
+/**
+ * The next exam or hand-in ahead ("Midterm · Sal"; decision 10, **görüşün gerek**); attention
+ * while a hand-in not yet uploaded is due within a day. A work done but not uploaded ("Sonra yap")
+ * is still a hand-in ahead.
+ */
+export async function chip(ctx: ModuleContext) {
   const data = await loadTerm(ctx);
   const now = ctx.now();
+  const exams = ["quiz", "midterm", "final"];
   const ahead = data.assessments
-    .filter(
-      (a) => a.status !== "cancelled" && !a.submitted_at && a.date && a.date_status !== "unknown",
+    .filter((a) => a.status !== "cancelled" && a.date && a.date_status !== "unknown")
+    .filter((a) =>
+      exams.includes(a.kind)
+        ? a.status !== "done"
+        : ["homework", "project", "project_step"].includes(a.kind) && a.submits && !a.submitted_at,
     )
-    .map((a) => ({ a, at: deadlineOf(a)! }))
-    .filter(({ a, at }) => at.getTime() > now.getTime() && a.status !== "done")
-    .filter(({ a }) =>
-      ["quiz", "midterm", "final", "homework", "project", "project_step"].includes(a.kind),
-    )
+    .map((a) => ({ a, at: exams.includes(a.kind) ? examStartOf(a)! : deadlineOf(a)! }))
+    .filter(({ at }) => at.getTime() > now.getTime())
     .sort((x, y) => x.at.getTime() - y.at.getTime());
-  const handIns = ahead.filter(
-    ({ a }) => a.submits && a.kind !== "quiz" && a.kind !== "midterm" && a.kind !== "final",
+  const urgent = ahead.some(
+    ({ a, at }) => !exams.includes(a.kind) && at.getTime() - now.getTime() < 24 * 3_600_000,
   );
-  const urgent = handIns.some(({ at }) => at.getTime() - now.getTime() < 24 * 3_600_000);
   if (ahead.length === 0) return { text: "sırada sınav ya da teslim yok", health: "ok" as const };
   const first = ahead[0];
   return {
@@ -131,7 +142,7 @@ async function chip(ctx: ModuleContext) {
  * next 14 days, estimated dates included) and the attendance suggestion; the rest come with the
  * data they need (steps 2 and 3).
  */
-async function weeklyReport(ctx: ModuleContext) {
+export async function weeklyReport(ctx: ModuleContext) {
   const data = await loadTerm(ctx);
   const today = dayKey(ctx.now());
   const until = shiftDay(today, 14);
@@ -253,7 +264,7 @@ export const okul: ModuleDefinition = {
       examples: ["quiz 3 tarihi 10 aralık oldu"],
       async handle(values, ctx) {
         const data = await loadTerm(ctx);
-        const row = findAssessment(data, values.title);
+        const row = findAssessment(data, values.title, ctx.now());
         if (!row) throw new Error("Sınav ya da teslim bulunamadı.");
         await updateDate(ctx, row.id, text(values.date) || null);
       },
@@ -275,7 +286,7 @@ export const okul: ModuleDefinition = {
       examples: ["midterm notum 72"],
       async handle(values, ctx) {
         const data = await loadTerm(ctx);
-        const row = findAssessment(data, values.title);
+        const row = findAssessment(data, values.title, ctx.now());
         if (!row) throw new Error("Sınav ya da teslim bulunamadı.");
         await setGrade(ctx, row.id, typeof values.score === "number" ? values.score : null);
       },
@@ -287,10 +298,11 @@ export const okul: ModuleDefinition = {
       examples: ["ödev 2'yi yükledim"],
       async handle(values, ctx) {
         const data = await loadTerm(ctx);
-        const row = findAssessment(data, values.title);
-        if (!row) throw new Error("Ödev bulunamadı.");
+        const row = findAssessment(data, values.title, ctx.now());
+        if (!row || !row.submits) throw new Error("Teslimi olan bir iş bulunamadı.");
         await markSubmitted(ctx, row.id);
-        await ctx.withdraw(`submit:${row.id}`);
+        // The work and its hand-in leave the plan now, not at the night's job.
+        await syncAssessment(ctx, row.id);
       },
     },
     {
@@ -300,7 +312,7 @@ export const okul: ModuleDefinition = {
       examples: ["quiz 3 dokümanım hazır"],
       async handle(values, ctx) {
         const data = await loadTerm(ctx);
-        const row = findAssessment(data, values.title);
+        const row = findAssessment(data, values.title, ctx.now());
         if (!row) throw new Error("Sınav bulunamadı.");
         await setDocsReady(ctx, row.id, true);
       },
@@ -317,7 +329,9 @@ export const okul: ModuleDefinition = {
       async handle(values, ctx) {
         const data = await loadTerm(ctx);
         const project = data.assessments.find(
-          (row) => row.kind === "project" && row.id === findAssessment(data, values.project)?.id,
+          (row) =>
+            row.kind === "project" &&
+            row.id === findAssessment(data, values.project, ctx.now())?.id,
         );
         if (!project) throw new Error("Proje bulunamadı.");
         const read = readSentence(text(values.title), ctx.now());

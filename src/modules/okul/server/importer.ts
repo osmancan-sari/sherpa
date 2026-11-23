@@ -175,8 +175,11 @@ export async function importExport(
         unwrap(await ctx.db.from("okul_assessments").update(patch).eq("id", found.id).select());
       }
     } else {
-      insertedAssessments += 1;
       const courseId = courseIds.get(a.course_code);
+      // Counted only when it can be written (its course is there, or will be on a real run).
+      if (courseId || (dryRun && read.courses.some((c) => c.code === a.course_code))) {
+        insertedAssessments += 1;
+      }
       if (!dryRun && courseId) {
         const row = unwrap(
           await ctx.db
@@ -198,7 +201,7 @@ export async function importExport(
       }
     }
   }
-  count("okul_assessments", insertedAssessments, read.assessments.length - insertedAssessments);
+  count("okul_assessments", insertedAssessments, assessmentRows.length);
 
   // A project's steps: Notion does not say whose they are. In a course with a single project the
   // steps are that project's; elsewhere they stay unlinked (docs/08).
@@ -248,8 +251,10 @@ export async function importExport(
         unwrap(await ctx.db.from("okul_sessions").update(patch).eq("id", found.id).select());
       }
     } else {
-      insertedSessions += 1;
       const courseId = courseIds.get(s.course_code);
+      if (courseId || (dryRun && read.courses.some((c) => c.code === s.course_code))) {
+        insertedSessions += 1;
+      }
       if (!dryRun && courseId) {
         unwrap(
           await ctx.db
@@ -265,7 +270,7 @@ export async function importExport(
       }
     }
   }
-  count("okul_sessions", insertedSessions, read.sessions.length - insertedSessions);
+  count("okul_sessions", insertedSessions, sessionRows.length);
 
   // Follow-up and material tasks.
   const taskRows = (await existing(

@@ -41,13 +41,13 @@ export function findCourse(data: TermData, text: unknown): Course | null {
 }
 
 /** An assessment named by its title, the nearest ahead first when two share it. */
-export function findAssessment(data: TermData, text: unknown, course?: Course | null) {
+export function findAssessment(data: TermData, text: unknown, now: Date, course?: Course | null) {
   if (typeof text !== "string" || !text.trim()) return null;
   const wanted = fold(text);
   const rows = data.assessments
     .filter((row) => !course || row.course_id === course.id)
     .filter((row) => fold(row.title) === wanted || fold(row.title).includes(wanted));
-  const today = dayKey(new Date());
+  const today = dayKey(now);
   return (
     rows.find((row) => fold(row.title) === wanted && (row.date ?? "9999") >= today) ??
     rows.find((row) => fold(row.title) === wanted) ??

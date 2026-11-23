@@ -1,8 +1,11 @@
 // The one-time import of Okul's data from Notion (docs/08-notion-aktarim.md).
 //
-//   npm run import:notion -- --dry-run      reads data/notion-export/, prints the counts, writes nothing
-//   npm run import:notion                   imports into the account of ALLOWED_EMAIL
+//   npm run import:notion                   a dry run: reads data/notion-export/, prints the counts, writes nothing
+//   npm run import:notion -- --write        imports into the account of ALLOWED_EMAIL
 //
+// Writing needs the explicit --write: a flag that does not arrive (PowerShell swallows "--" and npm
+// then takes the flags as its own) leaves a dry run, never a write. The flags are also read from
+// npm's environment (npm_config_write, npm_config_remote, npm_config_env, npm_config_dir).
 // Options: --dir <folder> (default data/notion-export), --env <file> (default .env.local).
 // Local Supabase only unless --remote is given with an --env file that names another project:
 // the production run is a step of its own, with the user's leave (dry run first, then the real one).
@@ -25,12 +28,18 @@ export const COURSE_PALETTE = (["violet", "orange", "teal", "sky", "pink", "gree
 
 function option(name: string): string | null {
   const at = process.argv.indexOf(name);
-  return at >= 0 ? (process.argv[at + 1] ?? null) : null;
+  if (at >= 0) return process.argv[at + 1] ?? null;
+  const npm = process.env[`npm_config_${name.slice(2)}`];
+  return npm && npm !== "true" ? npm : null;
+}
+
+function flag(name: string): boolean {
+  return process.argv.includes(name) || process.env[`npm_config_${name.slice(2)}`] === "true";
 }
 
 async function main() {
-  const dryRun = process.argv.includes("--dry-run");
-  const remote = process.argv.includes("--remote");
+  const dryRun = !flag("--write");
+  const remote = flag("--remote");
   const envFile = option("--env") ?? ".env.local";
   const dir = option("--dir") ?? join("data", "notion-export");
   process.loadEnvFile(envFile);

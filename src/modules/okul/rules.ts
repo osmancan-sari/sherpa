@@ -105,9 +105,12 @@ export async function syncAll(ctx: ModuleContext): Promise<{ proposed: number }>
   const plan = planTerm(data, now);
   const known = await openKeys(ctx);
   const today = dayKey(now);
+  // Fixed blocks are not among the work items: the lessons ahead and the exams of the term are
+  // taken back when their record no longer proposes them (a holiday, an exam without its hour).
   for (const session of data.sessions) {
     if (session.date >= today) known.add(key.lesson(session.id));
   }
+  for (const a of data.assessments) known.add(key.exam(a.id));
   await apply(ctx, plan, known);
   return { proposed: plan.proposals.length };
 }
@@ -433,3 +436,28 @@ export async function askAttendance(ctx: ModuleContext, data?: TermData): Promis
 /** The proposal's kind as the module wrote it in `meta` (the scenes and cards read it). */
 export const kindOfProposal = (proposal: WorkProposal) =>
   (proposal.meta as { kind?: string } | undefined)?.kind ?? null;
+
+// --- From the scene ----------------------------------------------------------------------------
+
+/**
+ * "Bugünlük yeter" on a work's last sitting (rule 11): what is left comes back as a new sitting.
+ * The module gives the work's effort as worked so far plus one more sitting of the same length
+ * (its own estimate from now on; a later proposal without an effort leaves it).
+ */
+export async function extendWork(
+  ctx: ModuleContext,
+  workKey: string,
+  totalMinutes: number,
+): Promise<void> {
+  const data = await loadTerm(ctx);
+  const id = workKey.slice(workKey.indexOf(":") + 1);
+  const row = data.assessments.find((a) => a.id === id);
+  if (!row) return;
+  const proposal = planAssessment(row, data, ctx.now()).proposals.find((p) => p.key === workKey);
+  if (!proposal) return;
+  const effort = (proposal.effort ?? {}) as NonNullable<WorkProposal["effort"]>;
+  await ctx.propose({
+    ...proposal,
+    effort: { ...effort, total_minutes: Math.max(5, Math.round(totalMinutes)) },
+  });
+}

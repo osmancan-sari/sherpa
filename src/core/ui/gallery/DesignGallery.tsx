@@ -165,6 +165,16 @@ export function DesignGallery() {
               />
               <ListRow dot={VIOLET} pending title="Bekleyen iş" subtitle="İş · bekliyor · soluk" />
               <ListRow
+                lead={
+                  <>
+                    <span className="text-xl font-bold tabular-nums">24</span>
+                    <span className="text-ink-2 text-xs">Kas Sal</span>
+                  </>
+                }
+                title="Tarih sütunlu satır"
+                subtitle="Noktanın yerinde günün sütunu · lead"
+              />
+              <ListRow
                 title="Noktasız satır"
                 subtitle="Ayar ve form satırı"
                 trailing={<Switch label="Örnek" checked onChange={() => undefined} />}

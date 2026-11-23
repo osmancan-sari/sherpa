@@ -220,3 +220,17 @@ Maddeler **3, 4, 5, 7, 9, 10 (pomodoro, akış, kontrol listesi ve `ui.blockView
 | 9 | kuruldu |
 | 10 | pomodoro, akış, kontrol listesi, sabit blok görünümü kuruldu; soru sayacı ve tek blok paket C |
 | 11 | kuruldu |
+
+## Adım 1'de çıkanlar (Okul 1, 23 Kas 2026)
+
+Okul Adım 1 kurulurken sözleşmede bulunmayan ya da yetmeyen yerler. Hiçbiri çekirdekte çözülmedi (istemin "Çekirdek sınırı"); her biri modülde çalışan en küçük haliyle duruyor. Okul çekirdek B ya da sonraki bir çekirdek işinde karar verilir.
+
+| # | Ne eksik | Okul'da bugün ne yapılıyor | Önerilen en küçük hal |
+| --- | --- | --- | --- |
+| A1 | Modül kendi kalemini "bitti" olarak kapatamıyor (`ctx.withdraw` `dropped` yapar; son oturum bitince kalem "Bitti mi?" diye sorar) | Teslim edilen ödevin ve teslim kaleminin işi, "Yükledim" ya da "Sonra yap"tan sonra modülün geri çekmesiyle kapanır (`dropped`); modül kendi kaydında `done` tutar | `ctx.complete(key)`: kalemi `done` yapar, açık oturum işlerini bırakır, `onOutcome` çağırmaz |
+| A2 | Olay sorusu geri alınamıyor (`ctx.ask` var, geri çekmesi yok) | "Derse girdin mi?" Bugün'e yalnızca Derste görünümü açılmadıysa sorulur (saatlik iş, ders bittikten sonra). Görünüm soru sorulduktan sonra açılıp cevaplanırsa Bugün'deki soru kalır; cevaplanınca modül ilk cevabı korur | `ctx.unask({ kind, subject })`: bekleyen soruyu `expired` yapar |
+| A3 | Sahne başka bir işi başlatamıyor | Ödevin ya da alt işin son oturumunda "Bitti" teslim listesini aynı oturumda açar; şerit `strip({ title: "… teslimi", detail: "n / 4" })` ile değişir; ayrı teslim kalemi açık kalırsa Bugün'den de başlatılır (aynı liste) | Gerek kalmayabilir: aynı oturum yolu iki cihazda doğru çalışıyor. Sözleşmeye "sahne aynı oturumda başka bir işin görünümünü gösterebilir" diye yazılabilir |
+| A4 | Kit'in saf sayacı (`sessionTimers`) `@/core/ui` altında; modülün sunucu kodu okuyamıyor | Karar 9'un ikinci basamağı (yerleşim durumundan odak dakikası) yalnızca sahnede: sahne sayılan dakikayı `controls.finish/stop(counted)` ile verir; sahne dışından kapanan oturumda modül duvar saatini sayar | `sessionTimers.ts`'i `src/core/contract/` altına taşımak (saf, React'siz) |
+| A5 | Haftanın taahhüdü `earliest`'i bu hafta içinde kalan yer tutucu kalemi de oturum işlerine böler | "Dokümanım hazır" işaretlenmemiş hazırlığın `earliest`'i her gece ertesi güne itilir: oturum işleri açılsa da hiçbiri Bugün'e gelmez; gelecek günlerin tahmini onları "yarın" gösterebilir | Kalemde "yalnızca yük" işareti (`work_items.load_only`): haftanın yükünü sayar, oturum işi açmaz |
+| A6 | `ModuleScene` bir işin iki alt işini aynı oturumda tanımıyor (`SahneAkisProje`) | Her alt iş kendi kalemi ve kendi oturumu; aynı oturuma iki alt iş düşmez | Paket C'nin modülün böldüğü oturum listesiyle (madde 14) birlikte düşünülür |
+| A7 | Modül sayfasının bileşenleri (sayfa, sahne, blok görünümü) bağlamı farklı yollardan alıyor (`useModule()` yalnızca modül sayfasında) | Okul kendi bağlamını bir React bağlamıyla (`OkulContext`) sahne ve blok görünümündeki formlara taşır | `useModule()`'ün sahne ve blok görünümünde de sağlanması |

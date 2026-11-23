@@ -7,12 +7,12 @@ Kuruldu: Okul Adım 1 (23 Kas 2026). Kod: `src/modules/okul/server/notion.ts` (o
 ## Akış
 
 1. **Dışa aktarım.** Notion verisi JSON dosyaları olarak `data/notion-export/` altına konur (bunu Claude sohbeti Notion bağlayıcısıyla üretir; uygulamada Notion API anahtarı gerekmez). Klasör depoya girmez; içeriği kişisel veridir.
-2. **Kuru çalıştırma.** `npm run import:notion -- --dry-run` tablo başına yeni ve var olan kayıt sayısını, tarihsiz değerlendirme sayısını, aktarılmayan görevleri türüne göre, okunamayan satırları (eşleşmeyen ders kodu, okunamayan saat, bilinmeyen tür) ve saatsiz zaman notlarının sayısını yazar; veritabanına yazmaz. Okul etkin değilken de çalışır.
-3. **Aktarım.** `npm run import:notion` Okul etkin olan hesaba (`ALLOWED_EMAIL`) yazar: önce dönem, sonra dersler, değerlendirmeler, oturumlar ve görevler; her biri `external_id` (Notion sayfa adresi) üzerinden upsert. İkinci çalıştırma kopya üretmez. Sonunda modülün bütün teklifleri gönderilir (`syncAll`).
+2. **Kuru çalıştırma.** `npm run import:notion` tablo başına yeni ve var olan kayıt sayısını, tarihsiz değerlendirme sayısını, aktarılmayan görevleri türüne göre, okunamayan satırları (eşleşmeyen ders kodu, okunamayan saat, bilinmeyen tür) ve saatsiz zaman notlarının sayısını yazar; veritabanına yazmaz. Okul etkin değilken de çalışır. Komut bayraksız hep kuru çalışır; yazmak açık bir `--write` ister (PowerShell `--`'yu yutup bayrağı npm'e bırakırsa da betik `npm_config_write`'ı okur; bayrak hiç ulaşmazsa yine kuru çalışır, yazmaz).
+3. **Aktarım.** `npm run import:notion -- --write` Okul etkin olan hesaba (`ALLOWED_EMAIL`) yazar: önce dönem, sonra dersler, değerlendirmeler, oturumlar ve görevler; her biri `external_id` (Notion sayfa adresi) üzerinden upsert. İkinci çalıştırma kopya üretmez. Sonunda modülün bütün teklifleri gönderilir (`syncAll`).
 4. **Doğrulama.** Betik sonunda tablo başına sayı ve ders başına anlık toplam yazar; bunlar Notion'daki değerlerle karşılaştırılır. Çıktıda içerik yoktur, yalnızca sayı ve ders kodu.
 5. **Geçiş.** İki hafta boyunca Notion yedek olarak durur ama güncellenmez.
 
-Betik yalnızca yerel Supabase'e yazar; başka bir projeye yalnızca `--remote --env <dosya>` ile (üretimde aktarım ayrı bir adımdır ve kullanıcının izniyle yapılır: önce kuru çalıştırma, sayılar onaylanınca aktarım). Seçenekler: `--dir <klasör>` (varsayılan `data/notion-export`), `--env <dosya>` (varsayılan `.env.local`).
+Betik yalnızca yerel Supabase'e yazar; başka bir projeye yalnızca `--write --remote --env <dosya>` ile (üretimde aktarım ayrı bir adımdır ve kullanıcının izniyle yapılır: önce kuru çalıştırma, sayılar onaylanınca aktarım). Seçenekler: `--dir <klasör>` (varsayılan `data/notion-export`), `--env <dosya>` (varsayılan `.env.local`).
 
 **Kullanıcının sonradan değiştirdiği korunur:** elle verilen tarih (`date_source = user`), elle girilen not, işaretlenen devam (`attendance_at` dolu), dersin rengi ve devam şartı, "Yapılacak"tan ilerlemiş durum. Aktarım bunların üzerine yazmaz.
 

@@ -49,13 +49,14 @@ const WEEKDAYS: Record<string, number> = {
 };
 
 const KINDS: [RegExp, string][] = [
-  [/^(quiz|kısa sınav)\b/i, "quiz"],
-  [/^(midterm|vize|ara sınav)\b/i, "midterm"],
-  [/^final\b/i, "final"],
-  [/^(ödev|odev|homework|assignment|hw)\b/i, "homework"],
-  [/^(proje adımı|proposal|ara rapor)\b/i, "project_step"],
-  [/^(proje|project)\b/i, "project"],
-  [/^(sunum|presentation)\b/i, "presentation"],
+  // A word ends at a space or the end, not at `\b` (which sees "ı" and "ö" as no letters).
+  [/^(quiz|kısa sınav)(?=\s|$)/i, "quiz"],
+  [/^(midterm|vize|ara sınav)(?=\s|$)/i, "midterm"],
+  [/^final(?=\s|$)/i, "final"],
+  [/^(ödev|odev|homework|assignment|hw)(?=\s|$)/i, "homework"],
+  [/^(proje adımı|proposal|ara rapor)(?=\s|$)/i, "project_step"],
+  [/^(proje|project)(?=\s|$)/i, "project"],
+  [/^(sunum|presentation)(?=\s|$)/i, "presentation"],
 ];
 
 export type ReadSentence = {
@@ -81,7 +82,10 @@ export function readSentence(sentence: string, now: Date): ReadSentence {
   let date: string | null = null;
   let time: string | null = null;
 
-  const timeMatch = rest.match(/\s(?:saat\s+)?([01]?\d|2[0-3])[:.]([0-5]\d)(?=\s)/i);
+  // An hour is written with a colon ("10:30"), or after "saat" with a dot; "10.12" is a day.
+  const timeMatch =
+    rest.match(/\s(?:saat\s+)?([01]?\d|2[0-3]):([0-5]\d)(?=\s)/i) ??
+    rest.match(/\ssaat\s+([01]?\d|2[0-3])\.([0-5]\d)(?=\s)/i);
   if (timeMatch) {
     time = `${timeMatch[1].padStart(2, "0")}:${timeMatch[2]}`;
     rest = rest.replace(timeMatch[0], " ");

@@ -151,14 +151,19 @@ source enum(ninova, kepler, calendar), started_at, finished_at, ok boolean, chan
 
 ### Çekirdeğe bağlantı
 
-| Okul kaydı | Çekirdek kaydı |
-| --- | --- |
-| Dersin haftalık saati | `block_series` (kind `class`), `source_type = 'okul.course'` |
-| Ders oturumu, sınavın kendisi | `blocks` içinde sabit blok |
-| Sınav (quiz, midterm, final) | Hazırlık iş kalemi; oturumları dokümanın bölümlerinden |
-| Ödev | Tek iş kalemi; adımı yok |
-| Proje | Üst iş kalemi; alt işleri alt kalemler |
-| Teslim yükleme, doküman ürettirme, bekleyen | İş (`tasks`) |
+Adım 1'de kurulan hali (23 Kas 2026; anahtarlar `src/modules/okul/server/proposals.ts`). Dersin haftalık saati blok serisi değil, her ders oturumu ayrı bloktur: tatil ve "Yapılmadı" tek tek düşer.
+
+| Okul kaydı | Çekirdek kaydı | `key` · `source_type` |
+| --- | --- | --- |
+| Ders oturumu (ders, recitation, sunum; dönemin kalanı) | Sabit blok; tatil, sınav günü ve "Yapılmadı" teklif edilmez | `lesson:<oturum>` · `okul.lesson` |
+| Sınavın kendisi (günü, saati ve süresi biliniyorsa) | Sabit blok | `exam:<değerlendirme>` · `okul.exam` |
+| Sınav (quiz, midterm, final) | Hazırlık iş kalemi; yer tutucu efor; sınav başlayınca geri çekilir. Oturumları Adım 1'de çekirdek böler (en çok 90 dk), Adım 3'te dokümanın bölümlerinden | `prep:<değerlendirme>` · `okul.prep` |
+| Ödev; alt işi olmayan proje | Tek iş kalemi; adımı yok | `hw:<değerlendirme>` · `okul.homework` |
+| Proje alt işi (yalnızca kullanıcınınki) | Kendi iş kalemi; bir önceki alt işe bağlı (`depends_on`). Alt işi olan projenin kendisi teklif edilmez | `step:<değerlendirme>` · `okul.step` |
+| Teslim | Ayrı 10 dakikalık iş kalemi, işin kalemine bağlı | `submit:<değerlendirme>` · `okul.submit` |
+| Takım toplantısı | İş kalemi; o saatte başlar ve biter (en çok 90 dk: oturum sınırı) | `meeting:<toplantı>` · `okul.meeting` |
+| Notion'dan gelen takip ve materyal işi | Bağımsız iş kalemi | `task:<iş>` · `okul.task` |
+| Doküman ürettirme, bekleyen | Adım 2 ve 3 | — |
 
 ### Türetilen değerler
 

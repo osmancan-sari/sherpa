@@ -35,6 +35,22 @@ describe("one sentence to an assessment", () => {
     expect(readSentence("Final pazartesi", now).date).toBe("2026-11-30");
   });
 
+  it("reads a day written with a dot as a day, an hour only with a colon or after 'saat'", () => {
+    expect(readSentence("Midterm 10.12", now)).toMatchObject({ date: "2026-12-10", time: null });
+    expect(readSentence("Quiz 4 saat 9.30 yarın", now)).toMatchObject({
+      date: "2026-11-24",
+      time: "09:30",
+    });
+  });
+
+  it("reads kinds that end in a Turkish letter", () => {
+    expect(readSentence("proje adımı ara rapor 12 aralık", now)).toMatchObject({
+      kind: "project_step",
+      date: "2026-12-12",
+    });
+    expect(readSentence("ödev 3 5 aralık", now).kind).toBe("homework");
+  });
+
   it("leaves what it cannot read empty", () => {
     expect(readSentence("Hocaya mail at", now)).toEqual({
       title: "Hocaya mail at",

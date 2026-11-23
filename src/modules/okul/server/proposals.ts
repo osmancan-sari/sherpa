@@ -251,7 +251,12 @@ export function planAssessment(a: Assessment, data: TermData, now: Date): Planne
     if (keep.has(k)) return false;
     if (k === key.submit(a.id)) return Boolean(a.submitted_at) || !a.submits || !isMine(a);
     if (k === key.exam(a.id)) return !a.time || !a.duration_min;
-    if (k === key.prep(a.id)) return a.status === "done";
+    // A preparation ends with its exam: once the exam has begun it is taken back (never offered
+    // after the exam), and when the exam is done.
+    if (k === key.prep(a.id)) {
+      const start = examStartOf(a);
+      return a.status === "done" || (start !== null && start.getTime() <= now.getTime());
+    }
     return a.status === "done" || Boolean(a.submitted_at) || !isMine(a) || hasSteps;
   });
   return { proposals, withdraw };
