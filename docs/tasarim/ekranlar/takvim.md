@@ -4,7 +4,7 @@ Kaynak: `docs/13-cam-dili.md` bölüm 4.3 (15 Kas 2026, onaylı); kurulduğu faz
 
 ## Okul çekirdek A (23 Kas 2026)
 
-- Haftanın işlerinde yer tutucu eforun payı "yaklaşık" ile yazar ("0 dk / yaklaşık 8 sa"; **görüşün gerek**).
+- Haftanın işlerinde yer tutucu eforun payı "yaklaşık" ile yazar ("0 dk / yaklaşık 8 sa"; kullanıcının kararı, 23 Kas 2026: biçim kalır).
 - Gün ayrıntısının "Sabit" satırlarında modülün teklif ettiği blok dokunulunca blok görünümünü açar (Bugün'ün adresiyle).
 
 ## Takvim (eski adı Hafta; "3 · Takvim" sayfası; onaylandı, 15 Kas 2026)

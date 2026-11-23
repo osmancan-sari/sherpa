@@ -4,7 +4,7 @@ Kaynak: `docs/13-cam-dili.md` bölüm 4.1 (15 Kas 2026, onaylı); kurulduğu faz
 
 ## Okul çekirdek A (23 Kas 2026)
 
-- Yer tutucu sürenin dakikası kartta ve Sıradakiler'de "yaklaşık" ile yazar; "Neden?" altında "Süre yaklaşık: <gerekçe>" (**görüşün gerek**; `parcalar.md`, "Yaklaşık süre").
+- Yer tutucu sürenin dakikası kartta ve Sıradakiler'de "yaklaşık" ile yazar; "Neden?" altında "Süre yaklaşık: <gerekçe>" (kullanıcının kararı, 23 Kas 2026: biçim kalır; `parcalar.md`, "Yaklaşık süre").
 - Modülün teklif ettiği sabit blok (Sıradakiler, "Bugünün sabit blokları", günün akışındaki parçası) dokunulunca modülün blok görünümünü açar; blok sürerken Şimdi kartında tek eylem (modülün adı, yoksa "Aç"). Elle eklenen blok eskisi gibi.
 
 ## Bugün'ün durumları ("1 · Bugün" sayfası; onaylandı, 15 Kas 2026)

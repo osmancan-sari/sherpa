@@ -332,6 +332,13 @@ function StatusStrip({ mod, page }: { mod: KnownModule; page: ModulePage }) {
       </>
     ) : null;
 
+  // On the phone the line sits right under the name (the user's decision, 23 Nov 2026): one main
+  // button stays on the name's row (`MT2`); a row of several comes after the line.
+  const buttons =
+    (definition?.ui.actions?.length ?? 0) + (definition?.ui.fullscreen?.length ?? 0) ||
+    (status ? 1 : 0);
+  const after = buttons > 1 ? "order-2 md:order-none" : undefined;
+
   return (
     <section aria-label="Durum" className="flex flex-col gap-3.5 md:gap-4">
       <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
@@ -360,7 +367,7 @@ function StatusStrip({ mod, page }: { mod: KnownModule; page: ModulePage }) {
           <div
             role="toolbar"
             aria-label="Hızlı eylemler"
-            className="flex flex-wrap justify-end gap-2"
+            className={cn("flex flex-wrap gap-2 md:justify-end", after)}
           >
             {(definition.ui.actions ?? []).map((action) => (
               <Button key={action.key} size="sm" onClick={() => void run(action)}>
@@ -382,8 +389,10 @@ function StatusStrip({ mod, page }: { mod: KnownModule; page: ModulePage }) {
             İş ekle
           </Button>
         ) : null}
+        {line ? (
+          <p className="text-ink-2 order-1 -mt-0.5 basis-full text-sm md:hidden">{line}</p>
+        ) : null}
       </div>
-      {line ? <p className="text-ink-2 -mt-2 text-sm md:hidden">{line}</p> : null}
 
       {status && report.data && report.data.metrics.length > 0 ? (
         <Panel variant="dense" className="px-4 py-3.5 md:px-6">
