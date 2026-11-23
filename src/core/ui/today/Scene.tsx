@@ -287,11 +287,11 @@ export function SceneFrame({
     },
     device,
     controls: {
-      finish: async () => {
-        await end.mutateAsync({ session, outcome: "done", next });
+      finish: async (counted) => {
+        await end.mutateAsync({ session, outcome: "done", next, counted });
       },
-      stop: async () => {
-        await end.mutateAsync({ session, outcome: "stopped" });
+      stop: async (counted) => {
+        await end.mutateAsync({ session, outcome: "stopped", counted });
       },
       stuck: onStuck,
       exit: onExit,

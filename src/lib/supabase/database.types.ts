@@ -1258,6 +1258,7 @@ export type Database = {
       sessions: {
         Row: {
           confirmed_at: string | null;
+          counted_minutes: number | null;
           created_at: string;
           ended_at: string | null;
           id: string;
@@ -1273,6 +1274,7 @@ export type Database = {
         ComputedFields: never;
         Insert: {
           confirmed_at?: string | null;
+          counted_minutes?: number | null;
           created_at?: string;
           ended_at?: string | null;
           id?: string;
@@ -1287,6 +1289,7 @@ export type Database = {
         };
         Update: {
           confirmed_at?: string | null;
+          counted_minutes?: number | null;
           created_at?: string;
           ended_at?: string | null;
           id?: string;
@@ -1731,6 +1734,7 @@ export type Database = {
         Args: { p_session_id: string };
         Returns: {
           confirmed_at: string | null;
+          counted_minutes: number | null;
           created_at: string;
           ended_at: string | null;
           id: string;
@@ -1797,9 +1801,10 @@ export type Database = {
       };
       device_token_scopes_valid: { Args: { p_scopes: string[] }; Returns: boolean };
       end_session: {
-        Args: { p_outcome?: string; p_session_id: string };
+        Args: { p_counted?: number; p_outcome?: string; p_session_id: string };
         Returns: {
           confirmed_at: string | null;
+          counted_minutes: number | null;
           created_at: string;
           ended_at: string | null;
           id: string;
@@ -1836,6 +1841,7 @@ export type Database = {
         };
         Returns: {
           confirmed_at: string | null;
+          counted_minutes: number | null;
           created_at: string;
           ended_at: string | null;
           id: string;
@@ -1864,6 +1870,7 @@ export type Database = {
         };
         Returns: {
           confirmed_at: string | null;
+          counted_minutes: number | null;
           created_at: string;
           ended_at: string | null;
           id: string;

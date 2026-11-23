@@ -259,8 +259,14 @@ export type SceneProps = {
   device: "pano" | "telefon";
   /** The core's session, the only way a scene acts on it. */
   controls: {
-    finish: () => Promise<void>;
-    stop: () => Promise<void>;
+    /**
+     * The core's "Bitti". Okul çekirdek A: `counted`, the minutes the scene counted for the work
+     * (focus without breaks); kept only between 0 and the elapsed minutes, else the elapsed time
+     * counts. The remaining effort and the learning use it; the session's range does not change.
+     */
+    finish: (counted?: number | null) => Promise<void>;
+    /** "Durdur"; `counted` as with `finish`. */
+    stop: (counted?: number | null) => Promise<void>;
     /** Opens "Takıldım" on the standard card (leaves the scene). */
     stuck: () => void;
     /** Leaves the scene; the session goes on. */

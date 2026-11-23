@@ -93,11 +93,26 @@ export async function closeUnanswered(db: Db, sessionId: string): Promise<Sessio
   return unwrap(await db.rpc("close_unanswered_session", { p_session_id: sessionId }));
 }
 
-/** Bitti ("done") or stop without finishing ("stopped"). */
+/**
+ * Bitti ("done") or stop without finishing ("stopped"). Okul çekirdek A: `counted`, the minutes
+ * the scene counted; the database keeps it only between 0 and the elapsed minutes.
+ */
 export async function endSession(
   db: Db,
   sessionId: string,
   outcome: "done" | "stopped" = "done",
+  counted?: number | null,
 ): Promise<Session> {
-  return unwrap(await db.rpc("end_session", { p_session_id: sessionId, p_outcome: outcome }));
+  return unwrap(
+    await db.rpc("end_session", {
+      p_session_id: sessionId,
+      p_outcome: outcome,
+      ...(countable(counted) ? { p_counted: Math.round(counted) } : {}),
+    }),
+  );
+}
+
+/** A counted value worth sending: a finite number (the database checks the range). */
+function countable(value: number | null | undefined): value is number {
+  return typeof value === "number" && Number.isFinite(value);
 }

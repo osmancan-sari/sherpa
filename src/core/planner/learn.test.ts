@@ -35,6 +35,32 @@ describe("estimate multipliers", () => {
     expect(stats).toEqual([{ key: "est_multiplier:okul:prep", value: 1.5, sample_size: 5 }]);
   });
 
+  it("Okul çekirdek A: a session the scene counted learns from its counted minutes", () => {
+    // An hour on the clock each, 45 minutes of it focus (breaks out): 45 ÷ 30.
+    const counted = sittings([60, 60, 60, 60, 60]).map(({ work, run }) => ({
+      work,
+      run: { ...run, counted_minutes: 45 },
+    }));
+    expect(
+      estimateMultipliers(
+        counted.map((row) => row.run),
+        counted.map((row) => row.work),
+        [mod],
+      ),
+    ).toEqual([{ key: "est_multiplier:okul:prep", value: 1.5, sample_size: 5 }]);
+    // The capacity is the day's time: the clock's hour, not the counted minutes.
+    const days: PlannedDay[] = counted.map((_, index) => ({
+      date: shiftDay(DAY, index),
+      dayType: "campus",
+      slotMinutes: 120,
+    }));
+    const [factor] = capacityFactors(
+      days,
+      counted.map((row) => row.run),
+    );
+    expect(factor.value).toBe(0.5);
+  });
+
   it("needs five samples, and stays between 0.5 and 3", () => {
     const few = sittings([60, 60, 60, 60]);
     expect(

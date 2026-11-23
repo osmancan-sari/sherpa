@@ -61,6 +61,20 @@ export const TASK_DEFAULT_MINUTES = 30;
 /** Length of a sitting when a work item does not say (settings.slot.deep_min). */
 export const SESSION_DEFAULT_MINUTES = 45;
 
+/**
+ * Okul çekirdek A: the minutes a closed session counts for the work: the ones its scene counted
+ * (`counted_minutes`, breaks left out), else its wall-clock time. Unrounded; 0 while it runs.
+ */
+export function workedMinutes(
+  session: Pick<Session, "started_at" | "ended_at"> & { counted_minutes?: number | null },
+): number {
+  if (session.ended_at === null) return 0;
+  if (session.counted_minutes !== null && session.counted_minutes !== undefined) {
+    return session.counted_minutes;
+  }
+  return Math.max(0, (Date.parse(session.ended_at) - Date.parse(session.started_at)) / 60_000);
+}
+
 export class DataError extends Error {
   constructor(
     message: string,

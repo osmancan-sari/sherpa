@@ -224,6 +224,7 @@ export function session(overrides: Partial<Session> = {}): Session {
     started_at: "2026-11-12T07:00:00+00:00",
     ended_at: null,
     measured: true,
+    counted_minutes: null,
     confirmed_at: null,
     created_at: STAMP,
     updated_at: STAMP,

@@ -1,6 +1,14 @@
 import type { ModuleRegistry, Outcome } from "@/core/contract/types";
 import { CORE_EVENTS, emitEvent } from "@/core/events/bus";
-import { check, type Db, type Prompt, type Provenance, unwrap, type WorkItem } from "@/core/types";
+import {
+  check,
+  type Db,
+  type Prompt,
+  type Provenance,
+  unwrap,
+  type WorkItem,
+  workedMinutes,
+} from "@/core/types";
 import { markUserEdited } from "@/core/contract/envelope";
 import { createModuleContext } from "./context";
 import { answerPrompt } from "./inbox";
@@ -22,7 +30,7 @@ export async function measureOutcome(
     const sessions = unwrap(
       await db
         .from("sessions")
-        .select("started_at, ended_at, measured")
+        .select("started_at, ended_at, measured, counted_minutes")
         .in(
           "task_id",
           tasks.map((task) => task.id),
@@ -32,9 +40,8 @@ export async function measureOutcome(
     for (const session of sessions) {
       if (!session.measured) continue;
       sessionCount += 1;
-      spentMinutes += Math.round(
-        (Date.parse(session.ended_at!) - Date.parse(session.started_at)) / 60_000,
-      );
+      // Okul çekirdek A: the minutes the scene counted, when it told them.
+      spentMinutes += Math.round(workedMinutes(session));
     }
   }
   return {

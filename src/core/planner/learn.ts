@@ -1,4 +1,4 @@
-import type { DayType, ModuleRow, Session, Task } from "@/core/types";
+import { type DayType, type ModuleRow, type Session, type Task, workedMinutes } from "@/core/types";
 import { dayKey } from "@/lib/date";
 import { MIN_SAMPLES } from "./slots";
 import type { PlannerStat } from "./types";
@@ -19,6 +19,7 @@ export const CAPACITY_ALPHA = 0.3;
 export const CAPACITY_MIN = 0.2;
 export const CAPACITY_MAX = 1;
 
+/** The session's wall-clock minutes: the time it took from the day (the capacity's measure). */
 const minutesOf = (session: Session) =>
   session.ended_at === null
     ? 0
@@ -51,7 +52,11 @@ export function estimateMultipliers(
     if (!slug) continue;
     const key = `est_multiplier:${slug}:${task.kind}`;
     const list = byPair.get(key) ?? [];
-    list.push({ at: Date.parse(session.started_at), ratio: minutesOf(session) / task.est_minutes });
+    // Okul çekirdek A: the estimate learns from the minutes the scene counted (breaks out).
+    list.push({
+      at: Date.parse(session.started_at),
+      ratio: workedMinutes(session) / task.est_minutes,
+    });
     byPair.set(key, list);
   }
   const stats: PlannerStat[] = [];

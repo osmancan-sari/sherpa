@@ -1,5 +1,5 @@
 import type { ModuleRegistry } from "@/core/contract/types";
-import { type Db, type ModuleRow, unwrap } from "@/core/types";
+import { type Db, type ModuleRow, unwrap, workedMinutes } from "@/core/types";
 import type { AiKind } from "../types";
 
 // What the calls are told besides their own input: the modules, finished work that looks
@@ -28,13 +28,14 @@ async function spentByTask(db: Db, taskIds: string[]): Promise<Map<string, numbe
   const sessions = unwrap(
     await db
       .from("sessions")
-      .select("task_id, started_at, ended_at")
+      .select("task_id, started_at, ended_at, counted_minutes")
       .in("task_id", taskIds)
       .not("ended_at", "is", null),
   );
   for (const session of sessions) {
     if (!session.task_id || !session.ended_at) continue;
-    const minutes = (Date.parse(session.ended_at) - Date.parse(session.started_at)) / 60_000;
+    // Okul çekirdek A: the minutes the scene counted, when it told them.
+    const minutes = workedMinutes(session);
     spent.set(session.task_id, (spent.get(session.task_id) ?? 0) + minutes);
   }
   return spent;

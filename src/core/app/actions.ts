@@ -176,6 +176,7 @@ export function startedDraft(target: SessionTarget, queryClient: QueryClient): O
     started_at: now,
     ended_at: null,
     measured: true,
+    counted_minutes: null,
     confirmed_at: null,
     created_at: now,
     updated_at: now,
@@ -235,10 +236,22 @@ export function useEndSession() {
   return useCoreMutation({
     mutate: async (
       db,
-      args: { session: Session; outcome: "done" | "stopped"; next?: PlannedTarget | null },
+      args: {
+        session: Session;
+        outcome: "done" | "stopped";
+        next?: PlannedTarget | null;
+        /** Okul çekirdek A: the minutes the scene counted (`controls.finish(counted)`). */
+        counted?: number | null;
+      },
     ) => {
       const told = { db, registry };
-      const ended = await endSessionClosing(told, args.session.id, args.outcome);
+      const ended = await endSessionClosing(
+        told,
+        args.session.id,
+        args.outcome,
+        args.outcome,
+        args.counted,
+      );
       // Only a Bitti that closed the session goes on (one ended elsewhere was not this one's).
       if (args.outcome === "done") await goOnInChain(told, ended, args.next);
       return ended.session;

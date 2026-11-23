@@ -267,8 +267,8 @@ Plan şu olaylarda yeniden kurulur (istemcide, anında): iş eklendi, değişti,
 
 Haftada bir, yalnızca `measured = true` oturumlardan:
 
-- **Tahmin çarpanı.** `(modül, iş türü)` başına son 20 oturumun `gerçek ÷ tahmin` ortancası; 0,5–3 arasına sıkıştırılır; en az 5 örnek yoksa 1.
-- **Kapasite çarpanı.** Gün tipi başına `çalışılan süre ÷ yuva süresi`, üstel hareketli ortalama; en az 5 gün yoksa ayarlardaki değer.
+- **Tahmin çarpanı.** `(modül, iş türü)` başına son 20 oturumun `gerçek ÷ tahmin` ortancası; 0,5–3 arasına sıkıştırılır; en az 5 örnek yoksa 1. Okul çekirdek A: "gerçek", sahnenin bildirdiği sayılan dakikadır (`sessions.counted_minutes`; molalar dışarıda), yoksa oturumun süresi. Modülün `onOutcome`'daki harcanan süresi ve yapay zekanın `size` için gördüğü benzer işlerin süresi de böyledir.
+- **Kapasite çarpanı.** Gün tipi başına `çalışılan süre ÷ yuva süresi`, üstel hareketli ortalama; en az 5 gün yoksa ayarlardaki değer. Burada süre duvar saatidir (molalı oturum da günün o kadar vaktini almıştır).
 
 Değerler `planner_stats`'a yazılır. Öğrenme planlayıcının kendisini değiştirmez, yalnızca girdilerini.
 

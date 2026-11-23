@@ -126,6 +126,8 @@ export async function tellEnded(
       result,
       minutes,
       measured: session.measured,
+      // Okul çekirdek A: the minutes the scene counted, or null (then `minutes` counted).
+      counted: session.counted_minutes ?? null,
     },
     owner.slug,
   );
@@ -185,9 +187,10 @@ export async function endSessionClosing(
   sessionId: string,
   outcome: "done" | "stopped",
   result: SessionResult = outcome,
+  counted?: number | null,
 ): Promise<{ session: Session; closed: boolean }> {
   const before = await sessionRow(told.db, sessionId);
-  const ended = await endSession(told.db, sessionId, outcome);
+  const ended = await endSession(told.db, sessionId, outcome, counted);
   const closed = Boolean(before && !before.ended_at);
   if (closed) await tellEnded(told, ended, result);
   return { session: ended, closed };
