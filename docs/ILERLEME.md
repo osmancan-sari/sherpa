@@ -262,7 +262,7 @@ Her adımın sonunda `npm run check` ve commit; şema, geçit ve zarf adımları
 | 3b. Sayılan dakika; aralık dışı yok sayılır; bildirmeyen sahne eskisi gibi; öğrenme ve kalan efor kullanır | sağlandı | `tests/db/counted-minutes.test.ts` (6), `learn.test.ts`; uçtan uca pomodoro (veritabanında 25 dk, duvar saati 26) |
 | 3c. Arka plan bölümün çözülmüş rengini alır, değişen renk anında | sağlandı | `okul-cekirdek.spec.ts` (yenileme), `sync.spec.ts` (canlı, iki cihaz yerine dışarıdan yazma) |
 | 4. Yer tutucu süre ve gerekçesi; "yaklaşık"; modül güncelleyince kalkar; kullanıcının süresi ezilmez; yük sayar; `size` önceki gerçekleşenler | sağlandı | `provisional-effort.test.ts` (4), `envelope.test.ts`, `week.test.ts` (önce test; planlayıcıda değişiklik gerekmedi), `ai-flows.test.ts`, `effort.test.ts`, `okul-cekirdek.spec.ts`; `size-3`, `size-cases.json` |
-| 5. Yerleşimler: pomodoro, akış, kontrol listesi, "Süre doldu", "Kaldığın yer", "Bu oturumda", "Oturum bitti"; yenileme ve ikinci cihaz; `StepRunner` birleşmesi | sağlandı | `sessionTimers.test.ts` (7), `okul-cekirdek.spec.ts` (pomodoro, akış), `scene.spec.ts` (kontrol listesinde antrenman); galeri; görsel `galeri-*`, `akis-sahne-*` |
+| 5. Yerleşimler: pomodoro, akış, kontrol listesi, "Süre doldu", "Kaldığın yer", "Bu oturumda", "Oturum bitti"; yenileme ve ikinci cihaz; `StepRunner` birleşmesi | sağlandı (kontrol listesinde ikinci cihaz testi yok) | `sessionTimers.test.ts` (8), `okul-cekirdek.spec.ts` (pomodoro ve akış: yenileme ve ikinci cihaz; kontrol listesi: süreli adım yenilemede kaldığı yerden), `scene.spec.ts` (kontrol listesinde antrenman); galeri (telefon ve pano); görsel `galeri-*`, `akis-sahne-*` |
 | 6. Sabit blok görünümü: Bugün, akış, Takvim; oturum yok; elle eklenen blokta yok; Şimdi kartında tek eylem | sağlandı | `blockView.test.ts` (4), `okul-cekirdek.spec.ts`; görsel `blok-gorunumu-*` |
 | 7. Çıkarken not: Çık, sahnenin bitirmesi, klavye; bağlantısız ve hata verince çıkış | sağlandı | `okul-cekirdek.spec.ts`; görsel `cikarken-not-*`; 10 sn sınırı kodda, ayrıca sınanmadı |
 | 8. Doküman temizliği | sağlandı | `d13a6ee`; kodda moda dayanan hüküm bulunmadı |
@@ -296,13 +296,15 @@ Adım denetimi 2 (`feb51f7..9c844d4`, adım 6–8) **GEÇMEDİ**: engelleyici (1
 
 `check:full` 1 (`91cda86`) kırmızı: `safe-area.spec.ts` (galerinin yeni bölümü telefonda 427 px'e taşıyordu) ve çıkış notunun "Kaldığın yer"i (Realtime yük altında gecikti; çekirdek artık notu tutunca ekranı tazeler): `fca004d`. 2 (`fca004d`) kırmızı: eski canlı test ("Başla on one screen…") yeni canlı testin yükünden sonra düştü; yeni test dosyanın sonuna alındı, dosya tek başına üç kez yeşil: `b9d5abe`. 3 (`b9d5abe`) yeşil.
 
-Faz denetimi: aşağıda.
+Faz denetimi tur 1 (`c017f7d..939fea9`; denetçinin kendi `check:full`'u yeşil) **GEÇTİ**, üç önemli: (1) `leave` bitirme hatasını bütün sahnelerde yutuyordu (soru sormayan yol artık eylemin sözünü olduğu gibi verir, adımda hata reddeder), (2) `docs/06` hâlâ `StepRunner` diyordu, (3) faz görüntüleri eksikti (gerçek sahnelerde pomodoro, mola, akışın "Süre doldu"su, kontrol listesi, "yaklaşık" üç ekranda, Şimdi kartındaki blok eylemi, bölüm sayfası; `SHERPA_SHOTS=okul-cekirdek-a`, yeni `screenshots.spec.ts` testi); notlardan ILERLEME'deki kayıp commit kimliği, galerideki derse özgü örnek metinler (nötr yapıldı) ve eski yorumlar düzeltildi: `5cb2c1e`; `check:full` yeşil (652 / 315 / 320).
+
+Faz denetimi tur 2 (`c017f7d..5cb2c1e`) **GEÇTİ**, üç önemli: (1) kontrol listesinin süreli adımı yenilemede baştan sayıyordu: `Checklist` artık `stepSince` alır, `deneme` adımın başlangıcını oturumuyla saklar (yeni e2e: yenilemeden sonra 01:2x), (2) kontrol listesinin pano hali onaylı görüntüde yoktu: galeriye "Kontrol listesi (pano)", `galeri-*` bilerek yenilendi, (3) yayın adımları "Senden bekleyenler"de yoktu: eklendi. Notlar: denetim turları buraya yazıldı; çıkarken not beklerken ikinci çıkış bekleyeni kapatıp ilerler (`waiting`); sahne dışından kapanan molalı oturum duvar saatini sayar ("Bilinen sorunlar"); `AnaSayfa` karşılaştırmasına `deneme`'nin eylem satırı yazıldı; 10 sn zaman aşımı, "Takıldım"/"Yatıyorum"un adımı atlaması ve `ChecklistStep.action`'ın `deneme`'de kullanılmaması sınanmıyor (açık, aşağıda). Tur 3 aşağıda.
 
 **Karelerle karşılaştırma** (Okul'un kareleri `docs/tasarim/kareler/okul/`; `deneme` örnekleri Okul'un içeriğini taşımaz, karşılaştırma yerleşim ve parça düzeyindedir):
 
 | Ekran | Kare | Sonuç |
 | --- | --- | --- |
-| Modül sayfası, ana sayfa ve seçici (telefon) | `AnaSayfa`, `DersSecici` | aynı düzen (ad, hap ve seçici, açılan panel, satırda nokta ve ikinci satır); fark: seçicinin yüksekliği `spacing-control` (karede 48), alt başlık karede yok (görüşün gerek) |
+| Modül sayfası, ana sayfa ve seçici (telefon) | `AnaSayfa`, `DersSecici` | aynı düzen (ad, hap ve seçici, açılan panel, satırda nokta ve ikinci satır); fark: seçicinin yüksekliği `spacing-control` (karede 48), alt başlık karede yok (görüşün gerek); `deneme`'nin görüntüsünde başlığın altında modülün hızlı eylem satırı var (iki satır): Okul eylem vermezse satır çıkmaz |
 | Modül sayfası, pano | `PanoAna` | aynı (tek sekme çubuğu, bölümler noktalı); fark: gövde modülün |
 | Pomodoro, odak ve mola | `K1T2`, `K1T3`, `K1P2` | aynı düzen ve renkler; fark: sayaç `text-6xl` (karede 60, aynı), panoda `text-timer-board` (124, aynı); tur noktaları kit'in dairesi |
 | Akış, mola, kaldığın yer | `K3T2`, `K3T4`, `SahneKaldiginYerOdev`, `PanoKaldiginYerOdev` | aynı; fark: sayaç `text-7xl` (karede 68) |
@@ -1149,6 +1151,12 @@ Okul Adım 1 (`prompts/okul-adim-1.md`; istemi Okul tasarım sohbeti, yukarıdak
 
 ## Senden bekleyenler
 
+### Okul çekirdek A yayını
+
+Üç migration, hepsi yalnızca ekleme (iki çekirdek fonksiyonu yeniden kurulur: `end_session` yeni isteğe bağlı değerle, `undo_scene_bed`): `20261123115150_counted_minutes.sql`, `20261123115720_provisional_effort.sql`, `20261123120814_deneme_okul_core.sql` (`deneme_items`; üretimde `deneme` kaydolmaz ama tablo açılır). Sıra (senin iznini bekler): 1) `npm run db:push` (`sherpa-dev`; önce deneme çalıştırması yalnızca bu üçünü göstermeli); 2) `npx supabase db push --remote=<prod ref>` (`sherpa-prod`); 3) `git push origin main` ve `git push origin okul-cekirdek-a-tamam`. Kod migration'sız açılmaz (yeni sütunları okur), bu yüzden yayın migration'dan sonra. `size` istemi `size-3` oldu: yapay zeka açıkken modül teklifleri yeni istemle tahmin edilir (önceki yanıtlar istem değişince yeniden kullanılmaz).
+
+Görüşün gerek (bakıp karar vereceksin): "yaklaşık" işaretinin biçimi (Bugün kartında oturumun dakikasına da yazar); modül sayfasında alt başlığın yeri; şeridin Rutin'deki yeni hali (sabahın ayrılanı bütün dizi, akşamın çalışan rutin); çıkarken notun panoda yerleşimsiz sahnede pencere olması; blok görünümü hata verince "Görünüm açılamadı."; "Neden?"in efor satırı. Telefonda bakılacak: Rutin'in şeridi ("5 dk / 45 dk"), kontrol listesinin galeride telefon ve pano hali.
+
 ### Sabah açılışı: yayın ve telefonda bakılacaklar
 
 Yayın (16 Kas 2026, senin izninle; `check:full` yeşil, 4. denetim turu engelsiz): 1) ~~`sherpa-dev`~~ **yapıldı**; 2) ~~`sherpa-prod`~~ **yapıldı** (ikisinde de deneme çalıştırması yalnızca `20261116160307_welcome_later.sql`, ardından "up to date"); 3) ~~`git push origin main`~~ **yapıldı**.
@@ -1836,6 +1844,10 @@ Süre sapmasındaki artış çoğunlukla `enrich`'in kendi tahminlerinin çalı�
 | 11 Kas 2026 | D1: giriş kodu bulutta Resend SMTP ile gider (gönderen `onboarding@resend.dev`, ad "Sherpa"); SMTP yalnızca `[remotes.*]` bloklarında, yerel Mailpit'te kalır; bulutta saatte en çok 10 kod e-postası. Alan adı doğrulanmadığı için Resend yalnızca hesabın kendi adresine gönderir; `ALLOWED_EMAIL` o adres olmalı | Ücretsiz katman hazır göndericiyle şablon değiştirmeye izin vermiyordu; hazır sınır (saatte 2) iki cihazda giriş için dar | `supabase/config.toml`, `docs/11-yayin-ve-cihazlar.md` |
 
 ## Bilinen sorunlar
+
+- **Okul çekirdek A, sahne dışından kapanan molalı oturum:** Şimdi kartındaki "Bitti", öbür cihazın "Bitti"si ya da "Devam ediyor musun?" sorusunun kapatması sayılan dakikayı bilmez; oturumun duvar saati (mola dahil) sayılır (sözleşme gereği: "bildirilmezse bugünkü gibi"). Okul Adım 1 bunu bilmeli.
+- **Okul çekirdek A, sınanmayan yollar:** çıkarken notun 10 sn zaman aşımı; "Takıldım" ve "Yatıyorum"un adımı atlaması (kodda ayrı yol: `stuck` ve `bed` `leave`'den geçmez); tuşları devralmayan ve not soran sahnede Bugün'ün Boşluk yolu (`deneme` tuşları devralıyor); blok görünümünün hata sınırı; blok görünümünün telefonda akıştan ve Takvim'den açılması (`okul-cekirdek.spec.ts` yalnızca pano projesinde koşar; telefondaki görünüm görsel testte); `ChecklistStep.action` ve `rowAction` yalnızca galeride; kontrol listesinin ikinci cihazda aynı süreyi göstermesi (adımın başlangıcı saklanıyor, ayrıca sınanmadı).
+- **Okul çekirdek A, karşıtlık:** yeni parçalarda (seçici, "Süre doldu" kartı, yerleşimlerin ikincil yazıları) 4,5:1 ölçülmedi; değerler mevcut token'lar.
 
 - **Sabah açılışı, karşılamanın yazı karşıtlığı:** Rutin'in sessiz düğmeleri ("Biraz önce uyandım", "Şimdi değil") sahnenin "Hepsini yaptım"ıyla aynı renk ve yerde; ayrıca ölçülmedi.
 

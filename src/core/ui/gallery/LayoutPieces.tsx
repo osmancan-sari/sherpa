@@ -225,6 +225,40 @@ export function LayoutPieces() {
           boxes={<SessionSections sections={SECTIONS} color={TEAL} />}
         />
       </Frame>
+      <Frame label="Kontrol listesi (pano)" device="pano">
+        <Checklist
+          device="pano"
+          title="Rapor teslimi"
+          subtitle="Proje · teslim Cum 4 Ara 23:59"
+          color={TEAL}
+          current={2}
+          onStep={noop}
+          steps={[
+            { key: "hazir", title: "Dosya hazır", detail: "rapor.pdf" },
+            { key: "ad", title: "Dosya adı", detail: "ad_soyad_rapor.pdf" },
+            {
+              key: "yukle",
+              title: "Sisteme yükle",
+              detail: "Ödev sayfası açılır, dosyayı sen yüklersin",
+              action: { label: "Sayfayı aç", onClick: noop },
+            },
+            { key: "gor", title: "Yüklendiği görülsün", detail: "Sonraki okumada kapanır" },
+          ]}
+          quiet={[
+            { label: "Yükledim", onClick: noop },
+            { label: "Sonra yap", onClick: noop },
+          ]}
+          boxes={
+            <Panel variant="dense" className="py-1">
+              <SessionFile
+                title="Proje yönergesi.pdf"
+                detail="Proje"
+                open={{ label: "Aç", href: "/tasarim" }}
+              />
+            </Panel>
+          }
+        />
+      </Frame>
       <Frame label="Akış, süre doldu (pano)" device="pano">
         <FlowLayout
           device="pano"

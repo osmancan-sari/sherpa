@@ -796,6 +796,7 @@ export function Checklist({
   quiet,
   label = "Adımlar",
   doneText = "Adımlar tamam.",
+  stepSince = null,
 }: {
   device?: Device;
   steps: ChecklistStep[];
@@ -810,6 +811,11 @@ export function Checklist({
   quiet?: Action[];
   label?: string;
   doneText?: string;
+  /**
+   * When the current step began, as the module keeps it: a timed step counts down from it, so a
+   * reload and the other device show the same time. Without it, from when the step is first shown.
+   */
+  stepSince?: Date | null;
 }) {
   const step = steps[current];
   const list = (
@@ -858,7 +864,8 @@ export function Checklist({
                 ) : null}
                 {now && row.seconds ? (
                   <Countdown
-                    key={`${current}-${row.key}`}
+                    key={`${current}-${row.key}-${stepSince?.getTime() ?? "shown"}`}
+                    since={stepSince}
                     seconds={row.seconds}
                     onZero={() => onStep(current, "done")}
                   />
@@ -907,9 +914,18 @@ export function Checklist({
   );
 }
 
-/** Counts a step down from when it was first shown; tells once at zero. */
-function Countdown({ seconds, onZero }: { seconds: number; onZero: () => void }) {
-  const [startedAt] = useState(() => Date.now());
+/** Counts a step down from its start (else from when it was first shown); tells once at zero. */
+function Countdown({
+  seconds,
+  onZero,
+  since,
+}: {
+  seconds: number;
+  onZero: () => void;
+  since: Date | null;
+}) {
+  const [shownAt] = useState(() => Date.now());
+  const startedAt = since ? since.getTime() : shownAt;
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
     const timer = setInterval(() => setNow(Date.now()), 250);

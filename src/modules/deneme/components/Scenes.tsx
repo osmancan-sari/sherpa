@@ -144,7 +144,7 @@ export function DenemeWelcome({ subject, woke, controls, device }: SceneWelcomeP
 }
 
 /** A step scene: the workout's steps; which one it is on lives in the module's row. */
-function WorkoutScene({ subject, controls, say, ctx, keys, device, facet }: SceneProps) {
+function WorkoutScene({ subject, session, controls, say, ctx, keys, device, facet }: SceneProps) {
   const refreshAll = useRefreshAll();
   const notify = useNotify();
   const id = sourceOf(subject);
@@ -153,16 +153,38 @@ function WorkoutScene({ subject, controls, say, ctx, keys, device, facet }: Scen
   );
   const [local, setLocal] = useState<number | null>(null);
   const current = local ?? item.data?.scene_step ?? 0;
-  const save = (step: number | null) => {
+  // Okul çekirdek A: when the step began, kept with the step (the countdown is the same after a
+  // reload and on the other device). The first step, never moved to, counts from when it shows.
+  const kept = item.data?.layout_state as {
+    session?: string;
+    step?: number;
+    since?: string;
+  } | null;
+  const [localSince, setLocalSince] = useState<{ step: number; since: string } | null>(null);
+  const stepSince =
+    localSince?.step === current
+      ? new Date(localSince.since)
+      : kept?.session === session.id && kept.step === current && kept.since
+        ? new Date(kept.since)
+        : null;
+  const save = (step: number | null, since: string | null = null) => {
     if (!id) return;
-    updateItem(ctx, id, { scene_step: step })
+    updateItem(ctx, id, {
+      scene_step: step,
+      layout_state:
+        step === null || since === null
+          ? null
+          : ({ session: session.id, step, since } as unknown as typeof kept),
+    })
       .then(() => refreshAll())
       .catch(() => notify(SAVE_FAILED));
   };
   const onStep = (index: number) => {
     const next = index + 1;
+    const since = new Date().toISOString();
     setLocal(next);
-    save(next);
+    setLocalSince({ step: next, since });
+    save(next, since);
     const step = WORKOUT_STEPS[next];
     say(step ? `Sıradaki: ${step.title}.` : "Antrenman tamam.", { interrupt: true });
   };
@@ -181,6 +203,7 @@ function WorkoutScene({ subject, controls, say, ctx, keys, device, facet }: Scen
         steps={WORKOUT_STEPS}
         current={current}
         onStep={onStep}
+        stepSince={stepSince}
       />
       {done ? (
         <div>

@@ -65,6 +65,7 @@ export function useExitStep({
   const [text, setText] = useState("");
   const [saving, setSaving] = useState(false);
   const busy = useRef(false);
+  const waiting = useRef<Pending | null>(null);
   const refreshAll = useRefreshAll();
 
   // Each step ends once: a skip while the note is being kept, or a late save, does not run the
@@ -73,6 +74,7 @@ export function useExitStep({
   const finish = useCallback(async (step: Pending, left: boolean) => {
     if (ended.current.has(step)) return;
     ended.current.add(step);
+    if (waiting.current === step) waiting.current = null;
     setPending(null);
     setText("");
     setSaving(false);
@@ -93,6 +95,9 @@ export function useExitStep({
     (action: () => Promise<unknown> | void) =>
       new Promise<boolean>((resolve, reject) => {
         const offline = typeof navigator !== "undefined" && navigator.onLine === false;
+        // Another way out while the step waits (the board's "Çık" over its card): the waiting one
+        // is closed without leaving, then this one goes as asked.
+        if (busy.current && waiting.current) void finish(waiting.current, false);
         if (!note || offline || !asksOnExit(scene, subject) || busy.current) {
           // No step: the action as it was, its failure included (a scene that asks nothing sees
           // no change).
@@ -100,9 +105,11 @@ export function useExitStep({
           return;
         }
         busy.current = true;
-        setPending({ action, resolve, reject });
+        const step = { action, resolve, reject };
+        waiting.current = step;
+        setPending(step);
       }),
-    [note, scene, subject],
+    [note, scene, subject, finish],
   );
 
   const save = useCallback(async () => {

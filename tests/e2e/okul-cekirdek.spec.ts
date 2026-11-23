@@ -381,3 +381,26 @@ test("the flow layout's break holds after a reload and on another device; Bitir 
   await expect(clock).toContainText("mola vermeden");
   await expect(clock.getByRole("timer", { name: "Akış" })).toHaveText(/^00:0\d$/);
 });
+
+test("the checklist's timed step counts from its kept start: the same time after a reload", async ({
+  page,
+}) => {
+  await page.clock.install();
+  await activateDeneme(page);
+  await addRecord(page, "Salon", { kind: "antrenman", minutes: "45" });
+  await startFromModule(page, "Salon");
+  const scene = page.getByTestId("deneme-workout");
+  for (let step = 0; step < 3; step++) {
+    await scene.getByRole("button", { name: "Sonraki" }).click();
+  }
+  await expect(scene.getByRole("heading", { name: "Soğuma" })).toBeVisible();
+  await waitFor(
+    () => rows("deneme_items"),
+    (list) => (list[0]?.layout_state as { step?: number } | null)?.step === 3,
+  );
+  await page.clock.fastForward("00:30");
+  await page.reload();
+  const timer = page.getByTestId("deneme-workout").getByRole("timer", { name: "Kalan süre" });
+  // Two minutes, half a minute gone before the reload: not back to 02:00.
+  await expect(timer).toHaveText(/^01:(2\d|30)$/);
+});
