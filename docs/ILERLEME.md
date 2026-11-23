@@ -5,8 +5,8 @@ Bu dosyayı Claude Code günceller. Yeni bir oturum yalnızca bu dosyayı ve `pr
 ## Durum
 
 - Faz: **Okul çekirdek A** (23 Kas 2026; istem `prompts/okul-cekirdek-a.md`; etiket `okul-cekirdek-a-tamam`; görüntüler `docs/ekran-goruntuleri/okul-cekirdek-a/`). Okul Adım 1'in dayandığı altı yetenek (`docs/moduller/okul-cekirdek-notlari.md` maddeler 4, 5, 7, 9, 10, 11) ve doküman temizliği (madde 3). Okul modülü kurulmaz
-- Adım: 1–8 bitti; adım denetimi (2–5) GEÇMEDİ, bulguları 6–8'in commit'inde düzeltildi; sıradaki 9 (denetim 6–8, görüntüler, `check:full`, faz denetimi, rapor)
-- Son commit: sahne yerleşimleri, çıkarken not, blok görünümü ve denetim düzeltmeleri
+- Adım: 1–8 bitti; 9: iki adım denetimi (ikisi de GEÇMEDİ, düzeltildi), `check:full` yeşil (`b9d5abe`: 652 / 315 / 320), görüntüler `docs/ekran-goruntuleri/okul-cekirdek-a/`; faz denetimi sürüyor
+- Son commit: rapor
 - Önceki: Ç4c (`c4c-tamam`) ve sabah açılışı yayında (16 Kas 2026)
 
 ### Okul çekirdek A planı
@@ -24,7 +24,7 @@ Bu dosyayı Claude Code günceller. Yeni bir oturum yalnızca bu dosyayı ve `pr
 | 6 | Sahne yerleşimleri (madde 10a): pomodoro, akış, kontrol listesi (`StepRunner` ile birleşme), "Süre doldu.", "Kaldığın yer", "Bu oturumda", "Oturum bitti."; saf sayaç durumu (oturumun başlangıcından ve modülün sakladığı durumdan); galeri, `parcalar.md`, `ORTAK.md`; `deneme`'de üç sahne | bitti: `src/core/ui/kit/SceneLayouts.tsx`, `sessionTimers.ts` (+7 birim testi); `StepRunner` silindi, `Checklist`'e katıldı (Rutin onu kullanmıyordu); token `text-timer-board`; galeri "Sahne yerleşimleri"; `deneme` "pomodoro", "akis" (`LayoutScenes.tsx`), antrenman kontrol listesinde; e2e: pomodoro (mola, +5 dk, yenileme ve ikinci cihaz, Turu atla, Süre doldu, sayılan dakika 25 veritabanında), akış (mola süreye sayılmaz, Süre doldu) |
 | 7 | Sahneden çıkarken not (madde 11): `ModuleScene.beforeExit`; "Çık", sahnenin bitirmesi ve klavye aynı adımdan; bağlantısız, hata ve 10 sn'de çıkış engellenmez; denetçi (adım) | bitti: `SceneExitNote`, `src/core/ui/today/ExitStep.tsx`, `SceneCardContext`; `deneme` akış notu (`exit_note`); e2e: yazılır, bağlantısız, hata, Boşluk ve "Yazmadan çık"; kayıt denetimi +1 |
 | 8 | Sabit blok görünümü (madde 10b): `ui.blockView`; Bugün, günün akışı ve Takvim'den açılır, oturum açmaz; Şimdi kartında tek eylem; denetçi (adım) | bitti: `ModuleBlockView`, `BlockViewProps`, `src/core/contract/blockView.ts` (+4 birim testi), `src/core/ui/today/BlockView.tsx`, adres `/?blok=<id>`; `TimeStripPiece.onOpen`; `deneme` etkinlik bloğu; e2e: Şimdi kartı, akış, Takvim, oturum yok, elle eklenen blok açılmaz |
-| 9 | Uçtan uca ve görsel testler, ekran görüntüleri ve karelerle karşılaştırma, `check:full`, faz denetimi, rapor ve "Okul Adım 1 için sözleşme özeti", `okul-cekirdek-notlari.md` işaretleri, etiket; yayın senin izninle | — |
+| 9 | Uçtan uca ve görsel testler, ekran görüntüleri ve karelerle karşılaştırma, `check:full`, faz denetimi, rapor ve "Okul Adım 1 için sözleşme özeti", `okul-cekirdek-notlari.md` işaretleri, etiket; yayın senin izninle | sürüyor: adım denetimi 6–8 GEÇMEDİ (engelleyici: yerleşim durumu oturuma bağlı değildi), düzeltildi (`91cda86`); `check:full` iki kez kırmızı (galeri telefonda taşıyordu, çıkış notu Realtime'ı bekliyordu; yeni canlı test eski canlı testi yüküyle düşürdü), düzeltildi (`fca004d`, `b9d5abe`), üçüncüsü yeşil; faz denetimi sürüyor |
 
 ### Sabah açılışı planı
 
@@ -247,6 +247,71 @@ Her adımın sonunda `npm run check` ve commit; şema, geçit ve zarf adımları
 | 7 | `check:full`, faz denetimi, düzeltmeler, faz raporu, etiket | bitti: faz denetimi 1. turda GEÇTİ (ayrıntı "Biten fazlar" → Ç2) |
 
 ## Biten fazlar
+
+### Okul çekirdek A: modül sayfası, sahne sayacı ve yerleşimleri (23 Kas 2026)
+
+İstem `prompts/okul-cekirdek-a.md`; kararlar `docs/moduller/okul-cekirdek-notlari.md` ("Kararlar", maddeler 3, 4, 5, 7, 9, 10a/10b, 11). Okul'un 1. kurulum adımının dayandığı genel yetenekler; örnekleri `deneme`'de, çekirdekte Okul'a özel kod yok (`src/core/` hiçbir modülü içe aktarmaz; "okul" yalnızca yorumlarda). Commit'ler: `c017f7d` (tasarım oturumunun dosyaları), `d13a6ee`, `55d751e`, `7fb5ea4`, `41600e5`, `feb51f7`, `1d56f5e` ve kapanış commit'leri. Migration'lar: `20261123115150_counted_minutes.sql`, `20261123115720_provisional_effort.sql`, `20261123120814_deneme_okul_core.sql` (yalnızca ekleme; `end_session` ve `undo_scene_bed` yeniden kuruldu).
+
+#### İstemin maddeleri
+
+| Madde | Durum | Kanıt |
+| --- | --- | --- |
+| 1. Modül sayfasının iskeleti: ilk giriş, "Yaklaşanlar" ve "Geçmiş" kapanır, panoda sekme, telefonda seçici (375 px) | sağlandı | `ui.page`; `module-page.both.spec.ts` (iki cihaz, 375 px, altı uzun bölüm); `registry.test.ts`; görsel `modul-ana-sayfa-*`, `modul-secici-telefon` |
+| 2. Sayfa başı: durum şeridi (cümle, etiket, haftanın sayıları) modül başına kapanır; ad ve alt başlık; hap ve alan paneli etkilenmez | sağlandı | aynı test (Modüller, Bugün'ün hapı, `/a/sinama` paneli durum metnini gösterir) |
+| 3a. Şerit "geçen / ayrılan" bütün modüllerde; Rutin dahil | sağlandı | `strip.test.ts`; `rutin.spec.ts`, `scene-strip-keys.spec.ts`; Rutin'in onaylı görüntüleri bilerek yenilendi |
+| 3b. Sayılan dakika; aralık dışı yok sayılır; bildirmeyen sahne eskisi gibi; öğrenme ve kalan efor kullanır | sağlandı | `tests/db/counted-minutes.test.ts` (6), `learn.test.ts`; uçtan uca pomodoro (veritabanında 25 dk, duvar saati 26) |
+| 3c. Arka plan bölümün çözülmüş rengini alır, değişen renk anında | sağlandı | `okul-cekirdek.spec.ts` (yenileme), `sync.spec.ts` (canlı, iki cihaz yerine dışarıdan yazma) |
+| 4. Yer tutucu süre ve gerekçesi; "yaklaşık"; modül güncelleyince kalkar; kullanıcının süresi ezilmez; yük sayar; `size` önceki gerçekleşenler | sağlandı | `provisional-effort.test.ts` (4), `envelope.test.ts`, `week.test.ts` (önce test; planlayıcıda değişiklik gerekmedi), `ai-flows.test.ts`, `effort.test.ts`, `okul-cekirdek.spec.ts`; `size-3`, `size-cases.json` |
+| 5. Yerleşimler: pomodoro, akış, kontrol listesi, "Süre doldu", "Kaldığın yer", "Bu oturumda", "Oturum bitti"; yenileme ve ikinci cihaz; `StepRunner` birleşmesi | sağlandı | `sessionTimers.test.ts` (7), `okul-cekirdek.spec.ts` (pomodoro, akış), `scene.spec.ts` (kontrol listesinde antrenman); galeri; görsel `galeri-*`, `akis-sahne-*` |
+| 6. Sabit blok görünümü: Bugün, akış, Takvim; oturum yok; elle eklenen blokta yok; Şimdi kartında tek eylem | sağlandı | `blockView.test.ts` (4), `okul-cekirdek.spec.ts`; görsel `blok-gorunumu-*` |
+| 7. Çıkarken not: Çık, sahnenin bitirmesi, klavye; bağlantısız ve hata verince çıkış | sağlandı | `okul-cekirdek.spec.ts`; görsel `cikarken-not-*`; 10 sn sınırı kodda, ayrıca sınanmadı |
+| 8. Doküman temizliği | sağlandı | `d13a6ee`; kodda moda dayanan hüküm bulunmadı |
+| Görsel test ve galeri | sağlandı | 33 → 42 onaylı görüntü (yenilenenler: `galeri-*`, `rutin-sahne-*`; yeni: `modul-ana-sayfa-*`, `modul-secici-telefon`, `akis-sahne-*`, `cikarken-not-*`, `blok-gorunumu-*`); görüntüler `docs/ekran-goruntuleri/okul-cekirdek-a/` |
+
+**Okul Adım 1 için sözleşme özeti** (kesin adlar; ayrıntı `docs/06-modul-sozlesmesi.md`):
+
+| Ad | Ne | Kullanım örneği |
+| --- | --- | --- |
+| `ui.page: ModulePage \| ((row) => ModulePage)` | Modül sayfasının biçimi | `page: { home: { label: "Ana sayfa", component: OkulHome }, facetView: CourseView, pickLabel: "Ders seç", status: false, subtitle: async (ctx) => termName(ctx), upcoming: false, history: false, entries: false }` |
+| `ModulePage.facetView` → `/m/<slug>/bolum/<anahtar>` | Bölüm (ders) sayfası; `ModuleFacetViewProps { facet: { key, name, color }, params }` | `function CourseView({ facet }: ModuleFacetViewProps) { … }` |
+| `ModuleFacet.detail` | Seçicide adın altındaki satır (≤120) | `{ key: "yzv406e", name: "Robotics", color, detail: "YZV406E · sıradaki: Midterm · 24 Kas" }` |
+| `SceneStrip.allotted`, `SceneStrip.detail` | Şeridin ayrılanı ve süre yerine yazı | `strip({ detail: "2 / 4" })`; varsayılan "26 dk / 2 sa" |
+| `controls.finish(counted?)`, `controls.stop(counted?)` | Sayılan (molasız) dakika | `onFinish={(counted) => controls.finish(counted)}` |
+| `core.session_ended` yükünde `counted` | Sahnenin bildirdiği dakika ya da null | `event.payload.counted ?? event.payload.minutes` |
+| `WorkProposal.effort.provisional`, `effort.basis` | Yer tutucu efor ve tek cümle (≤200) | `effort: { bounds: { min: 240, max: 960 }, provisional: true, basis: "Önceki iki midterm 7 ve 9 saat sürdü." }` |
+| `ModuleDefinition.sizingActuals(item, ctx)` | `size`'a önceki gerçekleşenler (≤10) | `sizingActuals: async (item, ctx) => pastExams(ctx, item).map((e) => ({ title: e.title, minutes: e.spent }))` |
+| `PomodoroLayout` (`plan`, `state`, `startedAt`, `onChange`, `onFinish`, `color`, `title`, `subtitle`, `boxes`, `breakBox`, `third`) | Pomodoro yerleşimi; durumu modül saklar | `<PomodoroLayout device={device} plan={{ focusMinutes: 25, breakMinutes: 5, rounds: 3 }} state={row.layout_state} startedAt={session.startedAt} onChange={save} onFinish={(c) => controls.finish(c)} … />` |
+| `FlowLayout` (`plan: { plannedMinutes }`, aynı girdiler) | Akış yerleşimi | `<FlowLayout plan={{ plannedMinutes: 90 }} … boxes={<ResumeNote text={note} />} />` |
+| `Checklist` (`steps: ChecklistStep[]`, `current`, `onStep`, `title`, `color`, `quiet`) | Kontrol listesi | `steps: [{ key: "yukle", title: "Ninova'ya yükle", action: { label: "Ninova'yı aç", onClick: openNinova } }]`, `quiet: [{ label: "Yükledim", … }]` |
+| `TimeUpCard`, `ResumeNote`, `SessionSections`, `SessionFile`, `SessionEnd`, `useSessionEnd` | Ortak parçalar | `third={{ label: "Bugünlük yeter", onClick }}`; `const [ended, end] = useSessionEnd(); end(() => controls.finish(c))` |
+| `pomodoroView`, `pomodoro.*`, `flowView`, `flow.*`, `clockText`, `PomodoroState`, `FlowState` | Saf sayaç durumu | `flowView(plan, state, session.startedAt, new Date()).countedMinutes` |
+| `ModuleScene.beforeExit: SceneExitNote` (`when`, `title`, `hint`, `placeholder`, `save(text, { subject, session, ctx })`) | Çıkarken not | `beforeExit: { when: isHomework, title: "Nerede kaldın?", hint: "Tek cümle; sonraki oturumun başında görürsün", save: (text, { subject, ctx }) => saveResume(ctx, subject, text) }` |
+| `ui.blockView: ModuleBlockView` (`when`, `label`, `component`) ve `BlockViewProps` (`block`, `device`, `phase`, `now`, `ctx`, `facet`, `strip`, `exit`) | Sabit blok görünümü (`/?blok=<id>`) | `blockView: { when: (b) => b.source_type === "okul.lesson", label: "Dersi aç", component: LessonView }`; içinde `strip({ detail: phase === "during" ? "derste" : "ders bitti" })` |
+
+#### Denetim
+
+Adım denetimi 1 (`d13a6ee..feb51f7`, adım 2–5) **GEÇMEDİ**: engelleyici (1) galerinin onaylı görüntüleri yenilenmemişti, (2) zeminin canlı renk testi tam koşuda kırmızı; önemli (3) ILERLEME güncel değildi, (4) şeridin yeni girdilerinin testi yoktu, (5) Bugün'ün hapı ve alan paneli sınanmıyordu, (6) sayılan dakikanın uçtan uca testi yoktu. Hepsi `1d56f5e`/`9c844d4`'te düzeltildi (canlı test `sync.spec.ts`'e taşındı; `stripText` ve testi; pomodoro e2e'si veritabanında 25 dk'yı doğrular). Notlar: 7 (deneme migration'ı sonraki adımların sütunlarını önceden açıyor: kabul), 8–10 düzeltildi, 11 görüşün gerek, 12 `docs/06` kural 3b'ye yazıldı.
+
+Adım denetimi 2 (`feb51f7..9c844d4`, adım 6–8) **GEÇMEDİ**: engelleyici (1) yerleşim durumu oturuma bağlı değildi (aynı kaydın ikinci oturumu eskisinden sürerdi): `PomodoroState.session`, `FlowState.session`, `sessionId` girdisi, birim ve e2e testi; önemli (2) akışın "Bitir"i ve sayılan dakikası, (3) molada yenileme ve ikinci cihaz: e2e eklendi; kontrol listesinin süreli adımı yenilemede baştan sayar (eski `StepRunner` gibi; adımı modül saklar, geri sayımı değil: bilinen sınır), (4) 10 sn zaman aşımı, "Takıldım"/"Yatıyorum"un adımı atlaması ve telefonda alttan sayfa e2e'de sınanmıyor (kod yolu ayrı: `stuck` ve `bed` `leave`'den geçmez; telefondaki sayfa görsel testte, `cikarken-not-telefon`): açık; notlar 5 (çift bitiş), 6 (sıra kuralı `docs/06`'da), 7, 8, 9, 10 düzeltildi (`91cda86`).
+
+`check:full` 1 (`91cda86`) kırmızı: `safe-area.spec.ts` (galerinin yeni bölümü telefonda 427 px'e taşıyordu) ve çıkış notunun "Kaldığın yer"i (Realtime yük altında gecikti; çekirdek artık notu tutunca ekranı tazeler): `fca004d`. 2 (`fca004d`) kırmızı: eski canlı test ("Başla on one screen…") yeni canlı testin yükünden sonra düştü; yeni test dosyanın sonuna alındı, dosya tek başına üç kez yeşil: `b9d5abe`. 3 (`b9d5abe`) yeşil.
+
+Faz denetimi: aşağıda.
+
+**Karelerle karşılaştırma** (Okul'un kareleri `docs/tasarim/kareler/okul/`; `deneme` örnekleri Okul'un içeriğini taşımaz, karşılaştırma yerleşim ve parça düzeyindedir):
+
+| Ekran | Kare | Sonuç |
+| --- | --- | --- |
+| Modül sayfası, ana sayfa ve seçici (telefon) | `AnaSayfa`, `DersSecici` | aynı düzen (ad, hap ve seçici, açılan panel, satırda nokta ve ikinci satır); fark: seçicinin yüksekliği `spacing-control` (karede 48), alt başlık karede yok (görüşün gerek) |
+| Modül sayfası, pano | `PanoAna` | aynı (tek sekme çubuğu, bölümler noktalı); fark: gövde modülün |
+| Pomodoro, odak ve mola | `K1T2`, `K1T3`, `K1P2` | aynı düzen ve renkler; fark: sayaç `text-6xl` (karede 60, aynı), panoda `text-timer-board` (124, aynı); tur noktaları kit'in dairesi |
+| Akış, mola, kaldığın yer | `K3T2`, `K3T4`, `SahneKaldiginYerOdev`, `PanoKaldiginYerOdev` | aynı; fark: sayaç `text-7xl` (karede 68) |
+| Süre doldu | `K1T5`, `K3T5`, `K3P5` | aynı; üçüncü seçenek telefonda sessiz yazı, panoda düğme |
+| Kontrol listesi | `K4T6`, `SahneDokuman`, `K4P6` | aynı; fark: adım dairesi `size-5.5` (karede 22) |
+| Çıkarken not | `K3T6`, `K3P6` | telefonda aynı; panoda yerleşimli sahnede aynı, yerleşimsiz sahnede pencere (görüşün gerek) |
+| Blok görünümü | `SahneDers`, `PanoDersSahne` | kabuk aynı (şeritte süre yok, kısa yazı); içerik `deneme`'nin |
+| Oturum bitti | `K1T7` | aynı |
+
 
 ### Ek: Sabah açılışı (16 Kas 2026)
 
@@ -1080,7 +1145,7 @@ Testler: 413 birim, 207 veritabanı, 166 uçtan uca (`npm run check:full` yeşil
 
 ## Sıradaki adım
 
-Sabah açılışı yayında; telefonda bakılacaklar "Senden bekleyenler"de. Sonra Ç4d (teknik cila; `docs/07`) ya da Rutin 2: senin seçimin. Gerçek cihazda bakılacaklar "Senden bekleyenler"de.
+Okul Adım 1 (`prompts/okul-adim-1.md`; istemi Okul tasarım sohbeti, yukarıdaki "Okul Adım 1 için sözleşme özeti"nden yazacak). Okul çekirdek A'nın yayını "Senden bekleyenler"de.
 
 ## Senden bekleyenler
 
