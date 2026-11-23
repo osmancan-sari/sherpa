@@ -244,6 +244,9 @@ describe("incomingFields", () => {
       // Ç2: the module's range is kept on the item, for the `size` call.
       effort_min_minutes: 120,
       effort_max_minutes: 600,
+      // Okul çekirdek A: not a placeholder, no reason, unless the module says.
+      effort_provisional: false,
+      effort_basis: null,
     });
     expect(incomingFields(proposal({ effort: {} })).facts).toMatchObject({
       effort_min_minutes: null,
@@ -429,6 +432,62 @@ describe("mergeProposal", () => {
     const stored = { values: first.patch, provenance: first.provenance };
     const again = mergeProposal(stored, incomingFields(proposal({ importance: null })));
     expect(again.patch).not.toHaveProperty("importance");
+  });
+});
+
+describe("a placeholder effort and its reason (Okul çekirdek A)", () => {
+  const placeholder = proposal({
+    effort: { provisional: true, basis: "  Önceki iki midterm 7 ve 9 saat sürdü.  " },
+  });
+
+  it("are facts of a deadline proposal; the reason is one trimmed line of at most 200", () => {
+    expect(incomingFields(placeholder).facts).toMatchObject({
+      effort_provisional: true,
+      effort_basis: "Önceki iki midterm 7 ve 9 saat sürdü.",
+    });
+    expect(() => parseProposal(proposal({ effort: { basis: "x".repeat(201) } }))).toThrowError(
+      /effort.basis: at most 200 characters/,
+    );
+    expect(() => parseProposal(proposal({ effort: { basis: "bir\niki" } }))).toThrowError(
+      /effort.basis: one sentence, on one line/,
+    );
+    expect(() =>
+      parseProposal({
+        ...proposal({ when: { recurrence: { count: 3, period: "week" } } }),
+        effort: { provisional: true, basis: "neden" },
+      }),
+    ).toThrowError(/effort.provisional: not used by a recurrence.*effort.basis: not used/);
+  });
+
+  it("the module's real effort later takes the mark and the reason away", () => {
+    const first = mergeProposal(null, incomingFields(placeholder));
+    expect(first.patch).toMatchObject({ effort_provisional: true });
+    const stored = {
+      values: { ...first.patch, effort_total_minutes: 480 },
+      provenance: { ...first.provenance, effort_total_minutes: "ai" as const },
+    };
+    const real = mergeProposal(
+      stored,
+      incomingFields(proposal({ effort: { total_minutes: 420 } })),
+    );
+    expect(real.patch).toMatchObject({
+      effort_total_minutes: 420,
+      effort_provisional: false,
+      effort_basis: null,
+    });
+    expect(real.provenance.effort_total_minutes).toBe("module");
+  });
+
+  it("is never kept on the user's own effort", () => {
+    const first = mergeProposal(null, incomingFields(proposal()));
+    const stored = {
+      values: { ...first.patch, effort_total_minutes: 300 },
+      provenance: markUserEdited(first.provenance, ["effort_total_minutes"]),
+    };
+    const again = mergeProposal(stored, incomingFields(placeholder));
+    expect(again.patch).not.toHaveProperty("effort_provisional");
+    expect(again.patch).not.toHaveProperty("effort_total_minutes");
+    expect(again.provenance.effort_provisional).toBe("module");
   });
 });
 

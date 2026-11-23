@@ -10,11 +10,13 @@ import { useModule } from "@/core/ui/module/ModuleProvider";
 import { SAVE_FAILED, useNotify } from "@/core/ui/Notices";
 import { dayKey, formatMinutes, shiftDay } from "@/lib/date";
 import { type DenemeKind, getItem, KIND_LABEL, listItems } from "../queries";
-import { settingsOf } from "../rules";
+import { changeItem, settingsOf } from "../rules";
 
 /** Sub page /m/deneme/kayit/:id: one record, and the work the core holds for it. */
 export function ItemPage({ params }: ModuleViewProps) {
-  const { row } = useModule();
+  const { row, ctx } = useModule();
+  const notify = useNotify();
+  const refreshAll = useRefreshAll();
   const detail = useModuleQuery(row, ["item", params.id], async (ctx) => {
     const item = await getItem(ctx, params.id);
     if (!item) return null;
@@ -41,7 +43,18 @@ export function ItemPage({ params }: ModuleViewProps) {
         : "—",
     ]);
     rows.push(["Harcanan", formatMinutes(work.effort_done_minutes)]);
+    // Okul çekirdek A: a placeholder effort and its reason, as the core keeps them.
+    if (work.effort_provisional) rows.push(["Yer tutucu", work.effort_basis ?? "gerekçe yok"]);
   }
+  // Okul çekirdek A: the module learns the real length: the same key, now with its minutes.
+  const settle = async () => {
+    try {
+      await changeItem(ctx, item.id, { minutes: SETTLED_MINUTES });
+      await refreshAll();
+    } catch {
+      notify(SAVE_FAILED);
+    }
+  };
 
   return (
     <div className="flex flex-col gap-4">
@@ -54,9 +67,17 @@ export function ItemPage({ params }: ModuleViewProps) {
           </div>
         ))}
       </dl>
+      {item.placeholder && !item.minutes && !item.done ? (
+        <div>
+          <Button onClick={() => void settle()}>Süreyi kesinleştir: 2 sa</Button>
+        </div>
+      ) : null}
     </div>
   );
 }
+
+/** Okul çekirdek A: the length "Süreyi kesinleştir" gives a placeholder record. */
+const SETTLED_MINUTES = 120;
 
 /** Region 4 of the module page ("history"): what the finished records cost. */
 export function HistoryView() {

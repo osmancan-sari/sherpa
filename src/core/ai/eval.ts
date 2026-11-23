@@ -227,6 +227,8 @@ function sizeInputFor(suite: EvalSuite, output: EnrichOutput): SizeInput {
     meta: {},
     need: task ? ["effort_total_minutes"] : ["effort_total_minutes", "session_minutes"],
     similar: [],
+    module_actuals: [],
+    provisional: false,
   };
 }
 
@@ -359,6 +361,75 @@ export async function evaluateTone(deps: AiDeps, suite: ToneSuite): Promise<Tone
     total: rows.length,
     answered: rows.filter((row) => row.error === null).length,
     clean: rows.filter((row) => row.error === null && row.misses.length === 0).length,
+    costUsd: costs.reduce((sum, row) => sum + Number(row.cost_usd), 0),
+    reused,
+    rows,
+  };
+}
+
+// --- Size with the module's own actuals (Okul çekirdek A) ---------------------------------------
+
+/**
+ * A `size` call as a module's placeholder would send it, with the module's own actuals
+ * (`sizingActuals`): the estimate should land near them. The range is what a person would accept.
+ */
+export type SizeCase = { name: string; input: SizeInput; expect: { min: number; max: number } };
+export type SizeSuite = { cases: SizeCase[] };
+
+export type SizeRow = {
+  name: string;
+  minutes: number | null;
+  inRange: boolean;
+  /** The AI's reason, as "Neden?" shows it. */
+  reason: string;
+  error: string | null;
+};
+
+export type SizeReport = {
+  total: number;
+  inRange: number;
+  costUsd: number;
+  reused: number;
+  rows: SizeRow[];
+};
+
+/** Asks every size case through the gateway; is the estimate inside the expected range? */
+export async function evaluateSize(deps: AiDeps, suite: SizeSuite): Promise<SizeReport> {
+  const rows: SizeRow[] = [];
+  const callIds: string[] = [];
+  let reused = 0;
+  for (const item of suite.cases) {
+    const result = await runAiCall(deps, sizeSpec, item.input);
+    if (result.status === "ok") {
+      if (result.reused) reused++;
+      else callIds.push(result.callId);
+      const answer = result.output.effort_total_minutes;
+      const minutes = answer.value;
+      rows.push({
+        name: item.name,
+        minutes,
+        inRange: minutes !== null && minutes >= item.expect.min && minutes <= item.expect.max,
+        reason: answer.reason,
+        error: null,
+      });
+    } else {
+      if (result.status === "failed" && result.callId) callIds.push(result.callId);
+      rows.push({
+        name: item.name,
+        minutes: null,
+        inRange: false,
+        reason: "",
+        error: `${result.status}: ${result.reason}`,
+      });
+    }
+  }
+  const costs =
+    callIds.length === 0
+      ? []
+      : unwrap(await deps.db.from("ai_calls").select("cost_usd").in("id", callIds));
+  return {
+    total: rows.length,
+    inRange: rows.filter((row) => row.inRange).length,
     costUsd: costs.reduce((sum, row) => sum + Number(row.cost_usd), 0),
     reused,
     rows,

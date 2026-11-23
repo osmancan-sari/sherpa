@@ -49,6 +49,14 @@ export type WorkProposal = {
     total_minutes?: number | null;
     session_minutes?: number | null;
     bounds?: { min: number; max: number } | null;
+    /**
+     * Okul çekirdek A: the effort is a placeholder until the module knows better (an exam's
+     * preparation before its documents). A fact: absent is false. Never kept on the user's own
+     * effort. The planner counts it like any effort; the screens say "yaklaşık".
+     */
+    provisional?: boolean | null;
+    /** Okul çekirdek A: one sentence of why the effort is what it is ("Neden?"); at most 200. */
+    basis?: string | null;
   };
   fit?: { energy?: Energy | null; context?: Context | null };
   importance?: 1 | 2 | 3 | 4 | null;
@@ -700,6 +708,12 @@ export type ModuleDefinition = {
   /** Short text with the module's own effort hints, given to the AI (Ç2). */
   sizingHints?: string;
   /**
+   * Okul çekirdek A: what work like this really took, as the module knows it (the same course's
+   * earlier exams), given to the AI's `size` call beside the core's own similar work. Read only
+   * and cheap; at most 10 rows are used; one that fails is left out.
+   */
+  sizingActuals?: (item: WorkItem, ctx: ModuleContext) => Promise<SizingActual[]>;
+  /**
    * Readers of pasted free text (an announcement, an e-mail): what to look for and the shape of
    * one suggestion. The core runs the `extract` call; the module decides what the suggestions
    * become.
@@ -720,6 +734,9 @@ export type ModuleDefinition = {
   // Interface
   ui: ModuleUi;
 };
+
+/** Okul çekirdek A: one finished piece of work and the minutes it really took. */
+export type SizingActual = { title: string; minutes: number };
 
 export type ModuleRegistry = {
   list: readonly ModuleDefinition[];

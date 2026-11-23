@@ -101,6 +101,8 @@ export function workItem(overrides: Partial<WorkItem> = {}): WorkItem {
     effort_done_minutes: 0,
     effort_min_minutes: null,
     effort_max_minutes: null,
+    effort_provisional: false,
+    effort_basis: null,
     session_minutes: null,
     importance: 2,
     energy: null,

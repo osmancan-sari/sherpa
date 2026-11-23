@@ -42,6 +42,7 @@ import {
   updateRhythm,
   updateTask,
   updateWorkItem,
+  userEffort,
   type WorkItemEdit,
 } from "@/core/data/work";
 import { saveAiSettings } from "@/core/ai/budget";
@@ -351,7 +352,10 @@ export function useEditWorkItem() {
     mutate: (db, args: { id: string; patch: WorkItemEdit }) =>
       updateWorkItem(db, args.id, args.patch),
     optimistic: ({ id, patch }) => [
-      { key: keys.workItems, update: list.patch<WorkItem>(id, patch) },
+      {
+        key: keys.workItems,
+        update: list.patch<WorkItem>(id, { ...patch, ...userEffort(patch) } as Partial<WorkItem>),
+      },
     ],
     onError,
   });

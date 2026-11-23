@@ -4,6 +4,7 @@
 
 - `cases.json`: 35 örnek satır ve beklenen sonuçları (modül, iş ya da iş kalemi, süre, son tarih; beşinde zaman kısıtı: açık pencere, açık kaçınma, açık yol ve kısıt olmayan iki satır, biri son tarih bildiren, biri yalnızca gün içi bir kelime geçen). Satırlar 11 Kasım 2026 çarşamba gününe göre okunur. Kullanıcının gerçek girişleri birikince bu örnekler onlarla değiştirilmeli.
 - `tone-cases.json`: suçlamaya davet eden 4 planlama çağrısı (`plan`, `replan`, `week`, `review`); yanıtlarda kullanıcının okuyacağı her cümle yasaklı kalıplara (ürün kuralı 2: geçmişi sayan, suçlayan sözcükler) karşı taranır.
+- `size-cases.json` (Okul çekirdek A, 23 Kas 2026): modülün yer tutucu süre için `size`'a gönderdiği 3 örnek; ikisinde modülün önceki gerçekleşenleri (`module_actuals`, aynı dersin önceki sınavları), birinde yalnızca ipucu. Tahmin beklenen aralıkta mı, ve gerekçesi ("Neden?"de okunacak cümle) yazdırılır.
 - `npm run ai:eval`: gerçek modele sorar (`.env.local` içinde `ANTHROPIC_API_KEY`, `AI_MODEL_FAST` ve `AI_MODEL_PLAN`); birkaç sent tutar. Çağrılar uygulamanın geçidinden yerel hesapla (`ALLOWED_EMAIL`, yerel Supabase) yapılır; her biri `ai_calls` tablosuna maliyetiyle yazılır ve ayın bütçesine sayılır. İstem ve model değişmediyse önceki yanıtlar yeniden kullanılır (kural 10); yeniden sormak için istemin `version` değeri değişir.
 - `npm run ai:eval -- --fake`: betiği sahte sağlayıcıyla dener (anahtar gerekmez, sonuçlar anlamsızdır). İkisi de yerel Supabase ve `npm run db:user` ile açılmış hesap ister.
 

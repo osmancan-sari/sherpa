@@ -4,7 +4,7 @@ import { decomposeWorkItem } from "@/core/ai/flows/decompose";
 import { enrichEntry } from "@/core/ai/flows/enrich";
 import { applyEnrichment, readSuggestion } from "@/core/ai/flows/enrich-apply";
 import { runExtract } from "@/core/ai/flows/extract";
-import { sizeWorkItem } from "@/core/ai/flows/size";
+import { buildSizeInput, sizeWorkItem } from "@/core/ai/flows/size";
 import { acceptSplit, declineSplit } from "@/core/ai/flows/split";
 import { fakeProvider } from "@/core/ai/fake";
 import { saveAiSettings, usageThisMonth } from "@/core/ai/budget";
@@ -349,6 +349,61 @@ function prep(over: Partial<WorkProposal> = {}): WorkProposal {
 }
 
 describe("size", () => {
+  it("Okul çekirdek A: the module's own actuals and a placeholder go to size; the mark stays", async () => {
+    const mod = await makeModule(db);
+    const { id } = await propose(db, mod, prep({ effort: { provisional: true } }));
+    const seen: string[] = [];
+    const withActuals: ModuleDefinition = {
+      ...(sinama as ModuleDefinition),
+      sizingActuals: async (item, ctx) => {
+        seen.push(`${item.title}:${ctx.module.slug}`);
+        return [
+          { title: "Midterm 1 hazırlığı", minutes: 420 },
+          { title: " ", minutes: 60 },
+          { title: "Quiz 2 hazırlığı", minutes: -5 },
+          ...Array.from({ length: 12 }, (_, n) => ({ title: `Quiz ${n}`, minutes: 90.4 })),
+        ];
+      },
+    };
+    const actualsRegistry: ModuleRegistry = {
+      list: [withActuals],
+      get: (slug) => (slug === "sinama" ? withActuals : undefined),
+    };
+    const item = ok(await db.from("work_items").select("*").single());
+    const input = await buildSizeInput(db, actualsRegistry, item, ["effort_total_minutes"], NOW);
+    expect(seen).toEqual(["Ara sınav hazırlığı:sinama"]);
+    expect(input?.provisional).toBe(true);
+    // Checked (empty titles and non-positive minutes out), rounded and cut to ten.
+    expect(input?.module_actuals).toHaveLength(10);
+    expect(input?.module_actuals[0]).toEqual({ title: "Midterm 1 hazırlığı", minutes: 420 });
+    expect(input?.module_actuals[1]).toEqual({ title: "Quiz 0", minutes: 90 });
+
+    // A hook that fails gives none; the estimate goes on and the placeholder stays one.
+    const failing: ModuleDefinition = {
+      ...(sinama as ModuleDefinition),
+      sizingActuals: async () => {
+        throw new Error("okunamadı");
+      },
+    };
+    const failingRegistry: ModuleRegistry = {
+      list: [failing],
+      get: (slug) => (slug === "sinama" ? failing : undefined),
+    };
+    expect(
+      (await buildSizeInput(db, failingRegistry, item, ["effort_total_minutes"], NOW))
+        ?.module_actuals,
+    ).toEqual([]);
+    expect(await sizeWorkItem(deps(), failingRegistry, { id }, NOW)).toMatchObject({
+      status: "applied",
+    });
+    // No bounds with this placeholder: the fake's plain answer.
+    expect(ok(await db.from("work_items").select("*").single())).toMatchObject({
+      effort_total_minutes: 120,
+      effort_provisional: true,
+      provenance: { effort_total_minutes: "ai" },
+    });
+  });
+
   it("fills the empty judgement fields of a proposal inside its bounds, with reasons", async () => {
     const mod = await makeModule(db);
     const { id } = await propose(db, mod, prep());

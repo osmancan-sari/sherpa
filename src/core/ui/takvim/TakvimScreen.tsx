@@ -39,6 +39,7 @@ import {
 } from "@/core/today/takvim";
 import type { Block } from "@/core/types";
 import { formatMinutes, formatTime, inIstanbul, shiftDay, weekStart } from "@/lib/date";
+import { effortText, isPlaceholder } from "@/core/today/effort";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { tr } from "date-fns/locale";
@@ -437,9 +438,14 @@ function ThisWeek({
                       </>
                     ) : null}
                   </span>
-                  <span className="shrink-0 tabular-nums">
+                  <span className="shrink-0 tabular-nums" data-testid="week-work-minutes">
                     {formatMinutes(Math.min(row.workedMinutes, row.shareMinutes))} /{" "}
-                    {formatMinutes(row.shareMinutes)}
+                    {/* Okul çekirdek A: a placeholder's share is "yaklaşık". */}
+                    {effortText(
+                      row.shareMinutes,
+                      row.type === "item" &&
+                        isPlaceholder(items.find((item) => item.id === row.id)),
+                    )}
                   </span>
                 </div>
               </li>

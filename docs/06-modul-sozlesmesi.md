@@ -459,7 +459,9 @@ type WorkProposal = {
   when?: { due?: string; hard?: boolean; earliest?: string }
        | { recurrence: { count: number; period: 'day' | 'week' | 'month'; floor?: number } }
        | { fixed: { starts_at: string; ends_at: string; location?: string } }
-  effort?: { total_minutes?: number; session_minutes?: number; bounds?: { min: number; max: number } }
+  effort?: { total_minutes?: number; session_minutes?: number; bounds?: { min: number; max: number }
+            provisional?: boolean     // Okul çekirdek A: efor yer tutucu; modül kesin süreyi sonra verir (aşağıda kurallar)
+            basis?: string }          // Okul çekirdek A: eforun tek cümlelik gerekçesi ("Neden?"); en çok 200 karakter, tek satır
   fit?: { energy?: Energy; context?: Context }
   timing?: Timing                      // zaman kısıtları (Ç3b); aşağıda
   facet?: string | null                // Ç3e: bölümün anahtarı; yalnızca bölümü olan modülde (yukarıda "Bölümler")
@@ -513,6 +515,7 @@ Zarfın kuralları (`src/core/contract/envelope.ts`, saf fonksiyonlar; yazma `sr
 - **Zaman kısıtları (`timing`, Ç3b).** Modül, işlerinin ne zaman yapılabileceğini bildiği kadarıyla yazar: açılış saatleri, kaçınılan saatler, yol, dinlenme günü. Alanların tanımı, sınırları ve biçime göre hangilerinin kullanılabildiği `docs/03-veri-modeli.md` içinde "Zaman kısıtları" bölümündedir; planlayıcının davranışı `docs/04-planlayici.md` içinde. Beş alt alan da olgu alanıdır ve kaynağı alt alan başına tutulur (`timing.windows` …): kullanıcı bir işte kaçınılan saati değiştirirse modülün sonraki teklifi yalnızca onu ezmez. Modül bu değerleri genellikle kendi ayarından üretir (kullanıcı salon saatini bir kez girer, modül her işe yazar). Geçersiz `timing` (ters saat, boş liste, sığmayan `rest_days`, biçimin kullanmadığı alan) teklifi reddettirir.
 - **Bölüm (`facet`, Ç3e).** Üç biçimde de kullanılabilir (kalem, ritim, blok). Teklif anında modülün o anki bölüm listesinde olmalıdır; yoksa teklif alanın adıyla reddedilir (`facet: "x" is not one of the module's facets`). Bölümü olmayan modül `facet` gönderemez. Bölümü olan modülde `facet` olgu alanıdır: her teklifte yazılır, boş gelirse bölüm kalkar; kullanıcı formdan değiştirdiyse ezilmez (`kept`). Bölümü olmayan modülün tekliflerinde `facet` hiç yazılmaz ve `changed` içinde görünmez.
 - Efor boş ve `bounds` verilmişse sınırın ortası (5 dakikaya yuvarlanır) `default` kaynağıyla yazılır; var olan bir değerin üzerine yazılmaz. Sınır da yoksa efor boş kalır.
+- **Yer tutucu süre (Okul çekirdek A, 23 Kas 2026).** `effort.provisional` ve `effort.basis` yalnızca son tarih biçiminde kullanılır (tekrar ve sabit zaman biçimi reddeder) ve olgu alanıdır: her teklifte yazılır, gelmezse yer tutucu değildir ve gerekçe yoktur (`work_items.effort_provisional`, `effort_basis`). Yer tutucu efor planlayıcıya, hafta ve ay yüküne gerçek efor gibi girer; ekranlar "yaklaşık" yazar (Bugün, Takvim, modül sayfası); "Neden?" gerekçeyi gösterir (modülün cümlesi, yoksa yapay zekanın efor gerekçesi). Modül süreyi sonradan verince (`total_minutes`, `provisional` olmadan) kaynak `module` olur, işaret ve eski gerekçe kalkar. Kullanıcının elle verdiği efor hiçbir zaman ezilmez ve yer tutucu sayılmaz: kullanıcı eforu değiştirince işaret ve gerekçe silinir, modülün sonraki yer tutucu teklifi onlara dokunmaz. Yer tutucu işte oturum açılmasın isteniyorsa modül `earliest` verir. Gerekçe 200 karakteri ya da tek satırı aşarsa teklif reddedilir. Test: `tests/db/provisional-effort.test.ts`, `src/core/contract/envelope.test.ts`, `src/core/planner/week.test.ts`.
 - Teklif edilen kalem `active` açılır (`proposed` durumu yapay zekanın bölme önerileri içindir, Ç2).
 - `withdraw` hiçbir şeyi silmez: kalem ve açık oturum işleri `dropped`, ritim pasif, blok `cancelled` olur; kalemde çalışan oturum varsa durdurulur; bitmiş kayda dokunulmaz. Geri çekilen `key` yeniden teklif edilirse aynı kayıt geri gelir; kullanıcının kendi kapattığı kayıt (kalem, ritim, blok) geri gelmez. Kimin kapattığı `provenance` içinde durum alanının kaynağı olarak tutulur.
 
@@ -548,6 +551,9 @@ Oturum olayları yalnızca işin sahibi modüle verilir (oturumun `module_id`'si
 
 ```ts
   sizingHints?: string                 // yapay zekaya verilen, modüle özel efor ipuçları (kısa metin)
+  sizingActuals?: (item: WorkItem, ctx: ModuleContext) => Promise<{ title: string; minutes: number }[]>
+                                       // Okul çekirdek A: modülün bildiği önceki gerçekleşenler (aynı dersin önceki sınavları);
+                                       // `size`'a gider, en çok 10 satır; ucuz ve salt okuyan; hata verirse boş sayılır
   onOutcome?: (o: Outcome, ctx: ModuleContext) => Promise<void>
 ```
 

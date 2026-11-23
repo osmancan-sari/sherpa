@@ -1,6 +1,8 @@
 import type { ModuleRegistry } from "@/core/contract/types";
+import { createModuleContext } from "@/core/data/context";
 import {
   type Db,
+  type ModuleRow,
   type Provenance,
   TASK_MAX_MINUTES,
   TASK_MIN_MINUTES,
@@ -145,7 +147,45 @@ export async function buildSizeInput(
     meta: (item.meta ?? {}) as Record<string, unknown>,
     need,
     similar: await finishedItemsOfModule(db, item.module_id, item.title),
+    module_actuals: await moduleActuals(db, registry, mod, item),
+    provisional: item.effort_provisional,
   };
+}
+
+/** At most this many of the module's own actuals go to `size` (Okul çekirdek A). */
+export const MODULE_ACTUALS_MAX = 10;
+
+/**
+ * Okul çekirdek A: what the module knows such work really took (`sizingActuals`), checked and
+ * cut to ten. A module without it, or one that fails, gives none: the estimate goes on.
+ */
+export async function moduleActuals(
+  db: Db,
+  registry: ModuleRegistry,
+  mod: ModuleRow,
+  item: WorkItem,
+): Promise<{ title: string; minutes: number }[]> {
+  const sizingActuals = registry.get(mod.slug)?.sizingActuals;
+  if (!sizingActuals) return [];
+  try {
+    const rows = await sizingActuals(item, createModuleContext({ db, registry, module: mod }));
+    return (Array.isArray(rows) ? rows : [])
+      .filter(
+        (row) =>
+          typeof row?.title === "string" &&
+          row.title.trim().length > 0 &&
+          Number.isFinite(row.minutes) &&
+          row.minutes > 0,
+      )
+      .slice(0, MODULE_ACTUALS_MAX)
+      .map((row) => ({ title: row.title.trim().slice(0, 120), minutes: Math.round(row.minutes) }));
+  } catch (error) {
+    console.error(
+      `sizingActuals of "${mod.slug}"`,
+      error instanceof Error ? error.message : "unknown",
+    );
+    return [];
+  }
 }
 
 /** Estimates the empty judgement fields of a work item and writes them, marked as the AI's. */
@@ -237,6 +277,8 @@ export async function sizeTask(
     meta: {},
     need: ["effort_total_minutes"],
     similar: similar.map((row) => ({ title: row.title, estimated: null, spent: row.minutes })),
+    module_actuals: [],
+    provisional: false,
   };
   const result = await runAiCall(deps, sizeSpec, input, { subject: { type: "task", id: task.id } });
   if (result.status !== "ok") return { status: result.status, reason: result.reason };

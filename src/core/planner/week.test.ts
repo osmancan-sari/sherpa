@@ -100,6 +100,32 @@ describe("loadByWeek", () => {
     expect(weeks.map((row) => row.demandMinutes)).toEqual([120, 120]);
   });
 
+  it("Okul çekirdek A: a placeholder effort counts like any in the weeks' load", () => {
+    const placeholder = workItem({
+      effort_total_minutes: 480,
+      effort_provisional: true,
+      effort_basis: "Önceki iki quiz 7 ve 9 saat sürdü.",
+      due_at: due(shiftDay(MONDAY, 4)),
+    });
+    const real = { ...placeholder, effort_provisional: false, effort_basis: null };
+    const asPlaceholder = loadByWeek(load({ items: [placeholder] }), { from: MONDAY, weeks: 2 });
+    const asReal = loadByWeek(load({ items: [real] }), { from: MONDAY, weeks: 2 });
+    expect(asPlaceholder.map((row) => row.demandMinutes)).toEqual([480, 0]);
+    expect(asPlaceholder).toEqual(asReal);
+  });
+
+  it("Okul çekirdek A: a placeholder that may not start yet opens no sitting but loads its weeks", () => {
+    const waiting = workItem({
+      effort_total_minutes: 600,
+      effort_provisional: true,
+      earliest_at: at(shiftDay(MONDAY, 7), "00:00").toISOString(),
+      due_at: due(shiftDay(MONDAY, 13)),
+    });
+    expect(commitWeek(week({ items: [waiting] })).committed).toEqual([]);
+    const weeks = loadByWeek(load({ items: [waiting] }), { from: MONDAY, weeks: 2 });
+    expect(weeks[0].demandMinutes + weeks[1].demandMinutes).toBe(600);
+  });
+
   it("leaves undated items out of the weekly load", () => {
     const item = workItem({ effort_total_minutes: 600, due_at: null });
     expect(

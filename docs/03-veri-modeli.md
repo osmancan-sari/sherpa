@@ -140,6 +140,8 @@ earliest_at timestamptz null
 effort_total_minutes int null          -- toplam efor; uzak ufukta kapasite hesabı bununla yapılır
 effort_done_minutes int default 0      -- biten oturumlardan
 effort_min_minutes int null, effort_max_minutes int null   -- zarfın `effort.bounds` değeri; yapay zekanın tahmini bu aralıkta kalır
+effort_provisional boolean default false   -- Okul çekirdek A: efor yer tutucudur (modül kesin süreyi sonra verir); kullanıcının eforunda hiç true olmaz
+effort_basis text null        -- Okul çekirdek A: eforun tek cümlelik gerekçesi ("Neden?"); en çok 200 karakter, tek satır
 session_minutes int null               -- önerilen oturum uzunluğu
 importance smallint default 2
 energy enum(deep, light, physical), context enum(any, desk, home, campus, office, out, commute)

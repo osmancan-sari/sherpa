@@ -27,6 +27,8 @@ import type { PlannedTarget } from "@/core/data/sessions";
 import type { Rhythm, Session, Task, WorkItem } from "@/core/types";
 import { useColors } from "@/core/app/facets";
 import { formatMinutes, formatTime } from "@/lib/date";
+import { effortText, effortWhy, isPlaceholder } from "@/core/today/effort";
+import { aiNotesOf } from "../ai/AiMarks";
 import { cn } from "@/lib/utils";
 import { Tag } from "../kit/Choice";
 import { ProgressBar } from "../kit/Feedback";
@@ -325,6 +327,17 @@ export function ChainLine({ text }: { text: string | null }) {
   );
 }
 
+/**
+ * Okul çekirdek A: "Neden?" also says what the work's effort rests on (the module's sentence, else
+ * the AI's reason for the number), "yaklaşık" for a placeholder.
+ */
+function withEffortWhy(reasons: string[], item: WorkItem | undefined): string[] {
+  if (!item) return reasons;
+  const ai = aiNotesOf(item).find((note) => note.column === "effort_total_minutes");
+  const line = effortWhy(item, ai?.reason ?? null);
+  return line ? [...reasons, line] : reasons;
+}
+
 /** "Neden?": why this work, why now; the engine's notes and the AI's. */
 function Why({ reasons }: { reasons: string[] }) {
   const [open, setOpen] = useState(false);
@@ -448,7 +461,8 @@ function Suggest({
       <h2 className={TITLE}>{candidate.title}</h2>
       <p className={DETAIL}>
         {[
-          formatMinutes(assignment.minutes),
+          // Okul çekirdek A: a placeholder effort's minutes are "yaklaşık".
+          effortText(assignment.minutes, isPlaceholder(candidate.item)),
           travelText(assignment.travelBefore, assignment.travelAfter),
           candidate.progress,
         ]
@@ -460,7 +474,7 @@ function Suggest({
           {assignment.travelBefore ? "Yola çıkış" : "Başlangıç"} {formatTime(at)}
         </p>
       ) : null}
-      <Why reasons={assignment.reasons} />
+      <Why reasons={withEffortWhy(assignment.reasons, candidate.item)} />
       <CardActions
         quiet={<Quiet onClick={() => setUnplanned(true)}>Başka bir şey yapıyorum</Quiet>}
       >

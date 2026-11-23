@@ -9,7 +9,16 @@ export type DenemeItem = Tables<"deneme_items">;
  * daily routine in the waking's or the bedtime's chain.
  */
 export type DenemeKind =
-  "hedef" | "aliskanlik" | "etkinlik" | "antrenman" | "odak" | "konu" | "rutin";
+  | "hedef"
+  | "aliskanlik"
+  | "etkinlik"
+  | "antrenman"
+  | "odak"
+  | "konu"
+  | "rutin"
+  // Okul çekirdek A: focused sittings on the kit's layouts (pomodoro, flow).
+  | "pomodoro"
+  | "akis";
 
 export const SOURCE_TYPE = "deneme.item";
 
@@ -21,6 +30,8 @@ export const KIND_LABEL: Record<DenemeKind, string> = {
   odak: "Odak",
   konu: "Konu",
   rutin: "Rutin",
+  pomodoro: "Pomodoro",
+  akis: "Akış",
 };
 
 function unwrap<T>(result: { data: T; error: { message: string } | null }): NonNullable<T> {
@@ -48,6 +59,8 @@ export type NewItem = {
   facet?: string | null;
   /** Ç3f: a routine's place in its chain (1–99, on the order axis the modules share). */
   chain_order?: number | null;
+  /** Okul çekirdek A: the work goes in with a placeholder effort until its minutes are given. */
+  placeholder?: boolean;
 };
 
 export async function insertItem(ctx: ModuleContext, item: NewItem): Promise<DenemeItem> {
@@ -61,6 +74,7 @@ export async function insertItem(ctx: ModuleContext, item: NewItem): Promise<Den
         minutes: item.minutes ?? null,
         facet: item.facet ?? null,
         chain_order: item.chain_order ?? null,
+        placeholder: item.placeholder ?? false,
       })
       .select()
       .single(),

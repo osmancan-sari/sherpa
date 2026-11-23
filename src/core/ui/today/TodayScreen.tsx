@@ -34,6 +34,7 @@ import { blocksOfDay } from "@/core/today/select";
 import { type Welcome, welcomeOf } from "@/core/today/welcome";
 import type { Block, Task } from "@/core/types";
 import { dayKey, formatDue, formatMinutes, formatTime } from "@/lib/date";
+import { effortText, isPlaceholder } from "@/core/today/effort";
 import { cn } from "@/lib/utils";
 import { AiBadge } from "../ai/AiMarks";
 import { IconButton } from "../kit/Button";
@@ -583,7 +584,8 @@ function CandidateRow({
 
   const parts = [
     facet ? `${mod?.row.name ?? ""} · ${facet.name}` : mod?.row.name,
-    formatMinutes(minutes),
+    // Okul çekirdek A: a placeholder effort's minutes are "yaklaşık".
+    effortText(minutes, isPlaceholder(candidate.item)),
     travelText(candidate.travelBefore, candidate.travelAfter),
     candidate.progress,
     candidate.type === "follow_up" ? "takip" : null,

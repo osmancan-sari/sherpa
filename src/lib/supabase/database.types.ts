@@ -404,15 +404,20 @@ export type Database = {
       };
       deneme_items: {
         Row: {
+          block_note: string | null;
           chain_order: number | null;
           created_at: string;
           done: boolean;
           due_on: string | null;
+          exit_note: string | null;
+          exit_noted_at: string | null;
           facet: string | null;
           feedback: string | null;
           id: string;
           kind: string;
+          layout_state: Json | null;
           minutes: number | null;
+          placeholder: boolean;
           scene_step: number | null;
           spent_minutes: number | null;
           title: string;
@@ -421,15 +426,20 @@ export type Database = {
         };
         ComputedFields: never;
         Insert: {
+          block_note?: string | null;
           chain_order?: number | null;
           created_at?: string;
           done?: boolean;
           due_on?: string | null;
+          exit_note?: string | null;
+          exit_noted_at?: string | null;
           facet?: string | null;
           feedback?: string | null;
           id?: string;
           kind?: string;
+          layout_state?: Json | null;
           minutes?: number | null;
+          placeholder?: boolean;
           scene_step?: number | null;
           spent_minutes?: number | null;
           title: string;
@@ -437,15 +447,20 @@ export type Database = {
           user_id?: string;
         };
         Update: {
+          block_note?: string | null;
           chain_order?: number | null;
           created_at?: string;
           done?: boolean;
           due_on?: string | null;
+          exit_note?: string | null;
+          exit_noted_at?: string | null;
           facet?: string | null;
           feedback?: string | null;
           id?: string;
           kind?: string;
+          layout_state?: Json | null;
           minutes?: number | null;
+          placeholder?: boolean;
           scene_step?: number | null;
           spent_minutes?: number | null;
           title?: string;
@@ -1573,9 +1588,11 @@ export type Database = {
           due_at: string | null;
           due_is_hard: boolean;
           earliest_at: string | null;
+          effort_basis: string | null;
           effort_done_minutes: number;
           effort_max_minutes: number | null;
           effort_min_minutes: number | null;
+          effort_provisional: boolean;
           effort_total_minutes: number | null;
           energy: Database["public"]["Enums"]["energy_kind"] | null;
           facet: string | null;
@@ -1608,9 +1625,11 @@ export type Database = {
           due_at?: string | null;
           due_is_hard?: boolean;
           earliest_at?: string | null;
+          effort_basis?: string | null;
           effort_done_minutes?: number;
           effort_max_minutes?: number | null;
           effort_min_minutes?: number | null;
+          effort_provisional?: boolean;
           effort_total_minutes?: number | null;
           energy?: Database["public"]["Enums"]["energy_kind"] | null;
           facet?: string | null;
@@ -1642,9 +1661,11 @@ export type Database = {
           due_at?: string | null;
           due_is_hard?: boolean;
           earliest_at?: string | null;
+          effort_basis?: string | null;
           effort_done_minutes?: number;
           effort_max_minutes?: number | null;
           effort_min_minutes?: number | null;
+          effort_provisional?: boolean;
           effort_total_minutes?: number | null;
           energy?: Database["public"]["Enums"]["energy_kind"] | null;
           facet?: string | null;

@@ -1,4 +1,4 @@
-import type { ModuleContext, Outcome, WorkProposal } from "@/core/contract/types";
+import type { ModuleContext, Outcome, SizingActual, WorkProposal } from "@/core/contract/types";
 import type { AppEvent } from "@/core/types";
 import { dayKey, END_OF_DAY, istanbulInstant } from "@/lib/date";
 import {
@@ -6,6 +6,7 @@ import {
   type DenemeItem,
   type DenemeKind,
   insertItem,
+  listItems,
   type NewItem,
   SOURCE_TYPE,
   updateItem,
@@ -131,14 +132,33 @@ export function proposalFor(item: DenemeItem, settings: Settings, now: Date): Wo
     ...base,
     when: { due: item.due_on ? istanbulInstant(item.due_on, END_OF_DAY).toISOString() : null },
     // A known length is a fact; without one the core (later the AI) decides inside the bounds.
+    // Okul çekirdek A: a placeholder record says its effort is not known yet, and why it is what
+    // it is; giving its minutes later takes the mark away.
     effort: item.minutes
       ? { total_minutes: item.minutes, session_minutes: Math.min(item.minutes, 45) }
-      : { bounds: { min: 30, max: 240 } },
+      : item.placeholder
+        ? { bounds: { min: 30, max: 240 }, provisional: true, basis: PLACEHOLDER_BASIS }
+        : { bounds: { min: 30, max: 240 } },
     fit: { energy: "deep", context: "desk" },
     importance: 2,
     meta: { kind },
     ...facet,
   };
+}
+
+/** Okul çekirdek A: the one sentence a placeholder record's effort rests on ("Neden?"). */
+export const PLACEHOLDER_BASIS = "Benzer deneme kayıtları bir ile dört saat arasında sürdü.";
+
+/**
+ * Okul çekirdek A (`sizingActuals`): what the module's finished records really took, for the AI's
+ * estimate of a new one. Read only.
+ */
+export async function sizingActuals(ctx: ModuleContext): Promise<SizingActual[]> {
+  const items = await listItems(ctx);
+  return items
+    .filter((item) => item.done && item.spent_minutes !== null && item.spent_minutes > 0)
+    .slice(-10)
+    .map((item) => ({ title: item.title, minutes: item.spent_minutes as number }));
 }
 
 /** Ç3e: a topic is one of the module's facets; it has no work of its own. */

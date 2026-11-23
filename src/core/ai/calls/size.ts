@@ -25,6 +25,13 @@ export type SizeInput = {
   need: SizeField[];
   /** Finished work of the same module: estimated and really spent minutes. */
   similar: { title: string; estimated: number | null; spent: number }[];
+  /**
+   * Okul çekirdek A: what work like this really took, as the module knows it (`sizingActuals`:
+   * the same course's earlier exams). The closest evidence there is.
+   */
+  module_actuals: { title: string; minutes: number }[];
+  /** Okul çekirdek A: the module says the effort is a placeholder until it knows better. */
+  provisional: boolean;
 };
 
 export const sizeOutput = z.object({
@@ -38,16 +45,20 @@ export type SizeOutput = z.infer<typeof sizeOutput>;
 
 export const sizeSpec: AiCallSpec<SizeOutput> = {
   kind: "size",
-  version: "size-2",
+  version: "size-3",
   maxTokens: 3000,
   schema: sizeOutput,
   system: `A module of a planning app proposed a piece of work, or the user typed it on one line
 in quick add, and some judgement fields are empty. Estimate only the fields listed in "need"; answer null (confidence 0, empty reason) for
 the others.
 
-- effort_total_minutes: the whole effort to finish the work. Base it on "similar" (what such work
-  really took; "spent" is the truth, "estimated" was the guess) and on the module's
-  "sizing_hints". If "bounds" is given, the value must lie within bounds.min and bounds.max.
+- effort_total_minutes: the whole effort to finish the work. Base it first on "module_actuals"
+  (what the module itself knows such work really took: the closest evidence), then on "similar"
+  (what such work really took; "spent" is the truth, "estimated" was the guess) and on the
+  module's "sizing_hints". If "bounds" is given, the value must lie within bounds.min and
+  bounds.max. When "provisional" is true the module will replace the number later; still give
+  your best estimate, and say in the reason, in one short Turkish sentence, what it rests on (the
+  user reads it under "Neden?").
 - session_minutes: how long one sitting on this work should be, 15 to 90 minutes. Deep work
   suits longer sittings, small chores shorter ones.
 - importance: 1 low, 2 normal, 3 high, 4 very high. A hard or near deadline raises it.

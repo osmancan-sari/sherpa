@@ -1,0 +1,67 @@
+{
+  "cases": [
+    {
+      "name": "midterm hazırlığı, aynı dersin önceki iki midtermi",
+      "input": {
+        "title": "Midterm hazırlığı",
+        "module": { "slug": "okul", "name": "Okul" },
+        "sizing_hints": "Sınav hazırlığı dokümanın planından gelir; doküman yokken yer tutucudur.",
+        "today": "2026-11-11",
+        "due": "2026-11-30",
+        "hard_deadline": true,
+        "known": { "importance": 4, "energy": "deep", "session_minutes": null },
+        "bounds": null,
+        "meta": { "course": "Robotics", "weight": 20, "scope_weeks": 6 },
+        "need": ["effort_total_minutes"],
+        "similar": [],
+        "module_actuals": [
+          { "title": "Robotics Midterm 1 hazırlığı", "minutes": 420 },
+          { "title": "Robotics Midterm (geçen dönem) hazırlığı", "minutes": 540 }
+        ],
+        "provisional": true
+      },
+      "expect": { "min": 360, "max": 660 }
+    },
+    {
+      "name": "quiz hazırlığı, önceki quizler kısa",
+      "input": {
+        "title": "Quiz 4 hazırlığı",
+        "module": { "slug": "okul", "name": "Okul" },
+        "sizing_hints": "Sınav hazırlığı dokümanın planından gelir; doküman yokken yer tutucudur.",
+        "today": "2026-11-11",
+        "due": "2026-11-24",
+        "hard_deadline": true,
+        "known": { "importance": 3, "energy": "deep", "session_minutes": null },
+        "bounds": null,
+        "meta": { "course": "Big Data", "weight": 5, "scope_weeks": 2 },
+        "need": ["effort_total_minutes"],
+        "similar": [],
+        "module_actuals": [
+          { "title": "Big Data Quiz 2 hazırlığı", "minutes": 100 },
+          { "title": "Big Data Quiz 3 hazırlığı", "minutes": 130 }
+        ],
+        "provisional": true
+      },
+      "expect": { "min": 75, "max": 200 }
+    },
+    {
+      "name": "önceki gerçekleşen yok: yalnızca ipucu",
+      "input": {
+        "title": "Final hazırlığı",
+        "module": { "slug": "okul", "name": "Okul" },
+        "sizing_hints": "Bir final hazırlığı genelde 12–20 saat sürer.",
+        "today": "2026-11-11",
+        "due": "2027-01-10",
+        "hard_deadline": true,
+        "known": { "importance": 4, "energy": "deep", "session_minutes": null },
+        "bounds": null,
+        "meta": { "course": "Deep Learning", "weight": 40 },
+        "need": ["effort_total_minutes"],
+        "similar": [],
+        "module_actuals": [],
+        "provisional": true
+      },
+      "expect": { "min": 600, "max": 1500 }
+    }
+  ]
+}

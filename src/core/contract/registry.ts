@@ -85,6 +85,9 @@ export function definitionProblems(def: ModuleDefinition): string[] {
   if (def.facets !== undefined && typeof def.facets !== "function") {
     say("facets must be a function of the module's context");
   }
+  if (def.sizingActuals !== undefined && typeof def.sizingActuals !== "function") {
+    say("sizingActuals must be a function of the work item and the module's context");
+  }
   if (def.hostsClosing !== undefined && typeof def.hostsClosing !== "function") {
     say("hostsClosing must be a function of the module's context");
   }

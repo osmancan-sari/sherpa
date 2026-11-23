@@ -4,7 +4,10 @@ import {
   type EvalReport,
   type EvalSuite,
   evaluateEnrich,
+  evaluateSize,
   evaluateTone,
+  type SizeReport,
+  type SizeSuite,
   type ToneReport,
   type ToneSuite,
 } from "@/core/ai/eval";
@@ -65,6 +68,18 @@ function printTone(report: ToneReport) {
   }
 }
 
+function printSize(report: SizeReport) {
+  console.log(`
+Size with the module's actuals (Okul çekirdek A): ${report.inRange}/${report.total} in range`);
+  console.log(`Cost: ${report.costUsd.toFixed(4)} $ (${report.reused} answers reused)`);
+  for (const row of report.rows) {
+    const verdict = row.error
+      ? `no answer (${row.error})`
+      : `${row.minutes ?? "-"} dk${row.inRange ? "" : " (OUT OF RANGE)"}: ${row.reason}`;
+    console.log(`- ${row.name}: ${verdict}`);
+  }
+}
+
 const readJson = <T>(name: string) =>
   JSON.parse(readFileSync(new URL(name, import.meta.url), "utf8")) as T;
 
@@ -72,6 +87,7 @@ async function main() {
   const { url, email } = localSetup("The AI quality check");
   const suite = readJson<EvalSuite>("./cases.json");
   const tone = readJson<ToneSuite>("./tone-cases.json");
+  const sizes = readJson<SizeSuite>("./size-cases.json");
   const fake = process.argv.includes("--fake");
   const db = await signInAs(url, email);
   const config = fake
@@ -86,6 +102,7 @@ async function main() {
   }
   print(await evaluateEnrich({ db, config }, suite));
   printTone(await evaluateTone({ db, config }, tone));
+  printSize(await evaluateSize({ db, config }, sizes));
 }
 
 main().catch((error: unknown) => {

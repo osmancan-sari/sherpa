@@ -13,7 +13,16 @@ import { kayitReader } from "./extract";
 import { ingest } from "./ingest";
 import { jobs } from "./jobs";
 import { type DenemeKind, listItems, SOURCE_TYPE } from "./queries";
-import { addItem, EVENTS, listeners, onOutcome, proposalFor, proposes, settingsOf } from "./rules";
+import {
+  addItem,
+  EVENTS,
+  listeners,
+  onOutcome,
+  proposalFor,
+  proposes,
+  settingsOf,
+  sizingActuals,
+} from "./rules";
 
 // "Deneme": the small module the core is tried against until real modules arrive. It uses
 // every connection point of the contract (docs/06-modul-sozlesmesi.md) once, with the simplest
@@ -28,6 +37,8 @@ const KINDS: DenemeKind[] = [
   "odak",
   "konu",
   "rutin",
+  "pomodoro",
+  "akis",
 ];
 
 /**
@@ -137,6 +148,8 @@ export const deneme: ModuleDefinition = {
             { value: "odak", label: "Odak" },
             { value: "konu", label: "Konu" },
             { value: "rutin", label: "Rutin (sabah ya da akşam dizisi)" },
+            { value: "pomodoro", label: "Pomodoro (turlu oturum)" },
+            { value: "akis", label: "Akış (molayı sen verirsin)" },
           ],
         },
         {
@@ -245,6 +258,8 @@ export const deneme: ModuleDefinition = {
   // Work envelope
   sizingHints:
     "Deneme kayıtları küçük işlerdir: bir hedef genellikle 30 dakika ile 4 saat arasında sürer.",
+  // Okul çekirdek A: what the finished records really took, for the AI's estimate.
+  sizingActuals: (_item, ctx) => sizingActuals(ctx),
   onOutcome,
 
   // Pasted text → suggested records (AI `extract`); the page /m/deneme/metin uses it.
@@ -296,6 +311,18 @@ export const deneme: ModuleDefinition = {
         label: "Örnek kayıt",
         run: async (ctx) => {
           await addItem(ctx, { title: "Örnek hedef", due_on: shiftDay(dayKey(ctx.now()), 3) });
+        },
+      },
+      // Okul çekirdek A: a record whose effort is a placeholder until its minutes are given.
+      {
+        key: "yer-tutucu",
+        label: "Yer tutucu örnek",
+        run: async (ctx) => {
+          await addItem(ctx, {
+            title: "Örnek sınav hazırlığı",
+            due_on: shiftDay(dayKey(ctx.now()), 7),
+            placeholder: true,
+          });
         },
       },
     ],

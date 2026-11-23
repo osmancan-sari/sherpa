@@ -25,6 +25,7 @@ import {
 } from "@/core/app/hooks";
 import type { ChipData, ModuleFacet, ModulePage, ModuleReport } from "@/core/contract/types";
 import { type Candidate, minutesPerWeek, moduleUpcoming } from "@/core/today/select";
+import { effortText, isPlaceholder } from "@/core/today/effort";
 import {
   dayKey,
   formatDue,
@@ -463,9 +464,10 @@ function UpcomingRow({ candidate, now }: { candidate: Candidate; now: Date }) {
   const item = candidate.item;
   const parts = [
     facet?.name,
+    // Okul çekirdek A: a placeholder effort is "yaklaşık".
     candidate.type === "item" && item?.effort_total_minutes
-      ? `${formatMinutes(item.effort_done_minutes)} / ${formatMinutes(item.effort_total_minutes)}`
-      : formatMinutes(candidate.minutes),
+      ? `${formatMinutes(item.effort_done_minutes)} / ${effortText(item.effort_total_minutes, isPlaceholder(item))}`
+      : effortText(candidate.minutes, isPlaceholder(item)),
     candidate.progress,
     candidate.dueAt ? formatDue(candidate.dueAt, now) : null,
     candidate.task?.status === "waiting" ? "bekliyor" : null,

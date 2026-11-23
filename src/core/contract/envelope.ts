@@ -23,6 +23,9 @@ import type { ModuleFacet, ProposalTarget, WorkProposal } from "./types";
 
 const instant = z.iso.datetime({ offset: true });
 
+/** Okul çekirdek A: the longest reason a work item's effort carries (`effort_basis`). */
+export const EFFORT_BASIS_MAX = 200;
+
 const proposalSchema = z
   .strictObject({
     schema: z.literal(1),
@@ -61,6 +64,15 @@ const proposalSchema = z
         session_minutes: z.number().int().min(TASK_MIN_MINUTES).max(TASK_MAX_MINUTES).nullish(),
         bounds: z
           .strictObject({ min: z.number().int().min(1), max: z.number().int().min(1) })
+          .nullish(),
+        // Okul çekirdek A: a placeholder effort and one sentence of why.
+        provisional: z.boolean().nullish(),
+        basis: z
+          .string()
+          .trim()
+          .min(1)
+          .max(EFFORT_BASIS_MAX, `at most ${EFFORT_BASIS_MAX} characters`)
+          .regex(/^[^\n\r]*$/, "one sentence, on one line")
           .nullish(),
       })
       .optional(),
@@ -130,6 +142,8 @@ const proposalSchema = z
       unusable("recurrence", [
         ["effort.total_minutes", proposal.effort?.total_minutes],
         ["effort.bounds", proposal.effort?.bounds],
+        ["effort.provisional", proposal.effort?.provisional],
+        ["effort.basis", proposal.effort?.basis],
         ["importance", proposal.importance],
         ["depends_on", proposal.depends_on],
         ["artifact", proposal.artifact],
@@ -315,6 +329,9 @@ export function incomingFields(
       // The module's range for the effort: the `size` call keeps its estimate inside it.
       effort_min_minutes: proposal.effort?.bounds?.min ?? null,
       effort_max_minutes: proposal.effort?.bounds?.max ?? null,
+      // Okul çekirdek A: facts about the effort; absent is "not a placeholder", "no reason".
+      effort_provisional: proposal.effort?.provisional ?? false,
+      effort_basis: proposal.effort?.basis?.trim() || null,
     },
     judgments: estimates,
     timing: checkTiming(proposal.timing, { kind: "deadline" }).timing,
@@ -363,6 +380,14 @@ export type MergeResult = {
  */
 export function mergeProposal(stored: Stored, incoming: IncomingFields): MergeResult {
   const provenance: Provenance = { ...(stored?.provenance ?? {}) };
+  // Okul çekirdek A: the user's own effort is never a placeholder, and the module's reason for
+  // another number is not shown beside it.
+  if (provenance.effort_total_minutes === "user" && "effort_provisional" in incoming.facts) {
+    incoming = {
+      ...incoming,
+      facts: { ...incoming.facts, effort_provisional: false, effort_basis: null },
+    };
+  }
   const patch: Record<string, unknown> = {};
   const changed: string[] = [];
   const kept: string[] = [];

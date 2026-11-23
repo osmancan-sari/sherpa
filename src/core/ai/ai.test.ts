@@ -164,6 +164,8 @@ describe("the fake provider", () => {
     meta: {},
     need: ["effort_total_minutes", "session_minutes"],
     similar: [],
+    module_actuals: [],
+    provisional: false,
     ...over,
   });
 

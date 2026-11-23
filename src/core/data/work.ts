@@ -238,13 +238,21 @@ export type WorkItemEdit = Partial<
 > & { timing?: Timing | null };
 
 /** The user edits a work item: the edited fields become the user's and survive later proposals. */
+/**
+ * Okul çekirdek A: the effort the user gives is theirs, never a placeholder, and the module's
+ * reason for another number goes with it.
+ */
+export function userEffort(edit: WorkItemEdit): Partial<WorkItem> {
+  return "effort_total_minutes" in edit ? { effort_provisional: false, effort_basis: null } : {};
+}
+
 export async function updateWorkItem(db: Db, id: string, edit: WorkItemEdit): Promise<WorkItem> {
   const current = unwrap(
     await db.from("work_items").select("provenance, timing").eq("id", id).single(),
   );
   const { timing: timingEdit, ...rest } = edit;
   let provenance = markUserEdited(current.provenance as Provenance, Object.keys(rest));
-  const values: Record<string, unknown> = { ...rest };
+  const values: Record<string, unknown> = { ...rest, ...userEffort(rest) };
   if (timingEdit !== undefined) {
     // Each changed field of the time constraints becomes the user's on its own.
     const edited = editTiming(current.timing, timingEdit, { kind: "deadline" }, provenance);
