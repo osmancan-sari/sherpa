@@ -8,7 +8,7 @@ Bir modül ancak tasarımı "onaylandı" olduktan sonra kodlanır. Tasarım, her
 
 | Sıra | Modül | Tür | Alan | Öncelik | Tasarım durumu | Dosya |
 | --- | --- | --- | --- | --- | --- | --- |
-| 1 | Okul | Dönemlik | — | Kritik | Taslak (ayrıntılı) | `okul.md`, `okul-ninova.md` |
+| 1 | Okul | Dönemlik | — | Kritik | Onaylandı (23 Kas 2026); kareler depoda, çekirdek kararları alındı. Sırada çekirdek paket A, sonra Adım 1 | `okul.md`, `okul-cekirdek-notlari.md`, `okul-ninova.md`, `okul-kepler.md` |
 | 2 | Beslenme | Ömürlük | Sağlık | Kritik | Taslak | aşağıda |
 | 3 | Rutin (sabah ve akşam) | Ömürlük | Sağlık | Yüksek | Onaylandı (14 Kas 2026); kurulum Ç3f'den sonra | `rutin.md` |
 | 4 | Spor | Ömürlük | Sağlık | Yüksek | Bekliyor | aşağıda |

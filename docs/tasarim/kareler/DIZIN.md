@@ -282,6 +282,10 @@ Tuvaldeki ("Sherpa · Çekirdek ekranları", https://claude.ai/artifact/YDd1zPn8
 | `XP3` | Pano · Bugün: boş gün; yapay zeka bütçesi doldu | pano | 4.10 Boş ve hata durumları | kopyalandı |
 | `XP4` | Pano · modül sayfası: modül arşivde | pano | 4.10 Boş ve hata durumları | kopyalandı |
 
+## Okul modülü
+
+Okul'un kareleri ayrı tuvaldendir ve alt klasörde durur: [`okul/`](okul/), dizini [`okul/DIZIN.md`](okul/DIZIN.md). 90 kare (telefon, pano ve üç şema), onaylı 16–17 Kas 2026; tuvalin 17 Kas 2026 tarihli sürümünden içerik değiştirilmeden kopyalandı. Ekran dokümanları: `../ekranlar/okul-sahneler.md`, `../ekranlar/okul-sayfalar.md`. Kare adları çekirdeğinkilerle çakışabilir (`K3…`, `K4…`); Okul'un karesi her zaman `okul/` yoluyla anılır.
+
 ## Notlar
 
 - Kopyalanamayan kare: yok.

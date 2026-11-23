@@ -33,7 +33,7 @@ Uygulamanın adı **Sherpa**: dağda yolu bilen ve yükü taşıyan rehber. Zirv
 6. **Ritüele bağımlı değil.** Akşam kapanışı planı iyileştirir ama şart değildir.
 7. **Günün bitiş çizgisi var.** Planlanan işler bitince ekran "Bugün tamam" der. Bitiş bir saat değildir (Ç4a, 14 Kas 2026): gün akşam rutinine ve yatışa kadar sürer, plan günün kalanıdır.
 8. **Modüler.** Her modül çekirdeğe aynı sözleşmeyle bağlanır, içi serbesttir.
-9. **Önce kullan, sonra büyüt.** Her modül tasarlanır, kurulur, 2 hafta kullanılır, sonra geliştirilir.
+9. **Tam tasarla, sırayla kur.** Her modül baştan bütün olarak tasarlanır ve tam kurulur; kurulum adımları arasında kullanım için beklenmez. Adımlara bölme yalnızca teknik bağımlılık ve doğrulama içindir (her adım testleri ve denetimiyle kapanır). Eski "2 hafta kullan, sonra geliştir" kuralı 16 Kas 2026'da kullanıcının kararıyla kaldırıldı (`docs/09-kararlar.md`).
 
 ## Kavramlar
 

@@ -24,7 +24,7 @@ Her sohbetin başında şunları oku: `CLAUDE.md`, `docs/ILERLEME.md`, `docs/09-
 - Dosyaları doğrudan depoda güncelle. Klasöre erişemiyorsan güncel dosyayı bana ver ve hangi yola koyacağımı söyle.
 - Çekirdek tasarımı sabittir. Modül oturumunda çekirdeği değiştirme; eksik görürsen "çekirdek için notlar" başlığı altında ayrı listele.
 - Varsayımla boşluk doldurma. Emin olmadığını sor. Bir dış kaynağa erişilebildiğini denemeden yazma; deneyemediysen "denenmedi" de.
-- Ürün ilkelerine uy (`docs/01-urun.md`): sabit haftalık program yok, ölçülemeyen durumun takibi yok, oyunlaştırma yok, her giriş en fazla iki dokunuş ya da tek cümle, bir modül iki hafta kullanılmadan büyütülmez.
+- Ürün ilkelerine uy (`docs/01-urun.md`): sabit haftalık program yok, ölçülemeyen durumun takibi yok, oyunlaştırma yok, her giriş en fazla iki dokunuş ya da tek cümle. Modüller baştan tam tasarlanır ve tam kurulur; adımlar arasında kullanım için beklenmez (16 Kas 2026).
 - Her modülün kendine özel arayüzü vardır. Ekranları ve veri girişlerini anlatmakla yetinme, çizerek göster.
 - Türkçe yaz; kod, tablo ve sütun adları İngilizce kalır.
 - Bu projede ders çalışma ya da özet çıkarma önerme; ders içeriği ayrı projelerde yürüyor.

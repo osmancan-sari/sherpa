@@ -331,7 +331,7 @@ Bir modülün süreci: tasarım oturumu (bkz. `prompts/modul-tasarim-oturumu.md`
 
 | Modül | Adımlar | Tasarım durumu |
 | --- | --- | --- |
-| Okul | 1: dönem takibi ve Notion aktarımı · 2: Ninova · 3: hazırlık dokümanı otomasyonu | Taslak hazır; ayrı oturumda ayrıntılanacak |
+| Okul | 1: temel (dönem takibi, Notion aktarımı, ödev ve proje sahneleri) · 2: veri bağlantıları (Ninova, Kepler, dosyalar, bildirim) · 3: hazırlık zinciri ve otomasyon | Onaylandı (23 Kas 2026). Sıra: çekirdek paket A → Adım 1 → paket B → Adım 2 → paket C → Adım 3 (`docs/moduller/okul-cekirdek-notlari.md`, "Kararlar") |
 | Beslenme | 1: plan, prep, alışveriş · 2 ve 3: belirlenecek | Taslak |
 | Rutin (sabah ve akşam) | 1: tablolar, üç ritim, iki sahne, modül sayfası, kayıt (Ç3f'den sonra) · 2: Kestirmeler bağlantısı, Düzenlilik, sürelerin öğrenilmesi (Ç4'ün parçaları arasına alınabilir) · 3: faz 2 (modül sayfasının cam görünüşü Ç4b'de, "Yarının listesi" adımı Ç4c'de kuruldu) | Onaylandı (14 Kas 2026; `docs/moduller/rutin.md`); 1. adım kuruldu (14 Kas 2026, `rutin-1-tamam`); "Yarının listesi" ve alan görünümü Ç4c'de (16 Kas 2026) |
 | Spor | 1: duruş programı ve koç sahnesi | Bekliyor |

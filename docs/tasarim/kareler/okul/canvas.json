@@ -1,0 +1,858 @@
+{
+ "v": 3,
+ "createdOnFiles": {
+  "v": 1,
+  "at": "2026-11-16T09:44:40Z"
+ },
+ "title": "Sherpa · Okul modülü (taslak mockuplar)",
+ "launch": {
+  "view": "canvas"
+ },
+ "pages": [],
+ "boards": {
+  "Isler.dc.html": {
+   "x": 0,
+   "y": 0,
+   "w": 390,
+   "h": 2090,
+   "title": "1 · Okul'un verdiği işler ve sahneleri"
+  },
+  "K1T1.dc.html": {
+   "x": 0,
+   "y": 2510,
+   "w": 390,
+   "h": 844,
+   "title": "2 · Quiz hazırlığı · 1 Bugün: Başla · telefon"
+  },
+  "K1T2.dc.html": {
+   "x": 470,
+   "y": 2510,
+   "w": 390,
+   "h": 844,
+   "title": "3 · Quiz hazırlığı · 2 Odak turu 1 · telefon"
+  },
+  "K1T3.dc.html": {
+   "x": 940,
+   "y": 2510,
+   "w": 390,
+   "h": 844,
+   "title": "4 · Quiz hazırlığı · 3 Kısa mola · telefon"
+  },
+  "K1T4.dc.html": {
+   "x": 1410,
+   "y": 2510,
+   "w": 390,
+   "h": 844,
+   "title": "5 · Quiz hazırlığı · 4 Odak turu 3: sıradaki bölüm · telefon"
+  },
+  "K1T5.dc.html": {
+   "x": 1880,
+   "y": 2510,
+   "w": 390,
+   "h": 844,
+   "title": "6 · Quiz hazırlığı · 5 Süre doldu: bölüm bitmediyse +5 dk · telefon"
+  },
+  "K1T6.dc.html": {
+   "x": 2350,
+   "y": 2510,
+   "w": 390,
+   "h": 844,
+   "title": "7 · Quiz hazırlığı · 6 Soru çözme: bölümün türü sayacı değiştirir · telefon"
+  },
+  "K1T7.dc.html": {
+   "x": 2820,
+   "y": 2510,
+   "w": 390,
+   "h": 844,
+   "title": "8 · Quiz hazırlığı · 7 Oturum bitti: tek yazı · telefon"
+  },
+  "K1T8.dc.html": {
+   "x": 3290,
+   "y": 2510,
+   "w": 390,
+   "h": 844,
+   "title": "9 · Quiz hazırlığı · 8 Bugün: sıradaki iş · telefon"
+  },
+  "K1P1.dc.html": {
+   "x": 0,
+   "y": 3494,
+   "w": 1440,
+   "h": 900,
+   "title": "10 · Quiz hazırlığı · 1 Bugün: Başla · pano"
+  },
+  "K1P2.dc.html": {
+   "x": 1520,
+   "y": 3494,
+   "w": 1440,
+   "h": 900,
+   "title": "11 · Quiz hazırlığı · 2 Odak turu 1 · pano"
+  },
+  "K1P3.dc.html": {
+   "x": 3040,
+   "y": 3494,
+   "w": 1440,
+   "h": 900,
+   "title": "12 · Quiz hazırlığı · 3 Kısa mola · pano"
+  },
+  "K1P4.dc.html": {
+   "x": 4560,
+   "y": 3494,
+   "w": 1440,
+   "h": 900,
+   "title": "13 · Quiz hazırlığı · 4 Odak turu 3: sıradaki bölüm · pano"
+  },
+  "K1P5.dc.html": {
+   "x": 6080,
+   "y": 3494,
+   "w": 1440,
+   "h": 900,
+   "title": "14 · Quiz hazırlığı · 5 Süre doldu: bölüm bitmediyse +5 dk · pano"
+  },
+  "K1P6.dc.html": {
+   "x": 7600,
+   "y": 3494,
+   "w": 1440,
+   "h": 900,
+   "title": "15 · Quiz hazırlığı · 6 Soru çözme: bölümün türü sayacı değiştirir · pano"
+  },
+  "K1P7.dc.html": {
+   "x": 9120,
+   "y": 3494,
+   "w": 1440,
+   "h": 900,
+   "title": "16 · Quiz hazırlığı · 7 Oturum bitti: tek yazı · pano"
+  },
+  "K1P8.dc.html": {
+   "x": 10640,
+   "y": 3494,
+   "w": 1440,
+   "h": 900,
+   "title": "17 · Quiz hazırlığı · 8 Bugün: sıradaki iş · pano"
+  },
+  "K2T1.dc.html": {
+   "x": 0,
+   "y": 4814,
+   "w": 390,
+   "h": 844,
+   "title": "18 · Midterm hazırlığı · 1 Bugün: Başla · telefon"
+  },
+  "K2T2.dc.html": {
+   "x": 470,
+   "y": 4814,
+   "w": 390,
+   "h": 844,
+   "title": "19 · Midterm hazırlığı · 2 Soru çözme başlıyor · telefon"
+  },
+  "K2T3.dc.html": {
+   "x": 940,
+   "y": 4814,
+   "w": 390,
+   "h": 844,
+   "title": "20 · Midterm hazırlığı · 3 Soru çözme: biri takıldı, sona kaldı · telefon"
+  },
+  "K2T4.dc.html": {
+   "x": 1410,
+   "y": 4814,
+   "w": 390,
+   "h": 844,
+   "title": "21 · Midterm hazırlığı · 4 Bölüm arası mola · telefon"
+  },
+  "K2T5.dc.html": {
+   "x": 1880,
+   "y": 4814,
+   "w": 390,
+   "h": 844,
+   "title": "22 · Midterm hazırlığı · 5 Okuma: yeni eklenen bölüm · telefon"
+  },
+  "K2T6.dc.html": {
+   "x": 2350,
+   "y": 4814,
+   "w": 390,
+   "h": 844,
+   "title": "23 · Midterm hazırlığı · 6 Oturum bitti: tek yazı · telefon"
+  },
+  "K2T7.dc.html": {
+   "x": 2820,
+   "y": 4814,
+   "w": 390,
+   "h": 844,
+   "title": "24 · Midterm hazırlığı · 7 Bugün: sıradaki iş · telefon"
+  },
+  "K2P1.dc.html": {
+   "x": 0,
+   "y": 5798,
+   "w": 1440,
+   "h": 900,
+   "title": "25 · Midterm hazırlığı · 1 Bugün: Başla · pano"
+  },
+  "K2P2.dc.html": {
+   "x": 1520,
+   "y": 5798,
+   "w": 1440,
+   "h": 900,
+   "title": "26 · Midterm hazırlığı · 2 Soru çözme başlıyor · pano"
+  },
+  "K2P3.dc.html": {
+   "x": 3040,
+   "y": 5798,
+   "w": 1440,
+   "h": 900,
+   "title": "27 · Midterm hazırlığı · 3 Soru çözme: biri takıldı, sona kaldı · pano"
+  },
+  "K2P4.dc.html": {
+   "x": 4560,
+   "y": 5798,
+   "w": 1440,
+   "h": 900,
+   "title": "28 · Midterm hazırlığı · 4 Bölüm arası mola · pano"
+  },
+  "K2P5.dc.html": {
+   "x": 6080,
+   "y": 5798,
+   "w": 1440,
+   "h": 900,
+   "title": "29 · Midterm hazırlığı · 5 Okuma: yeni eklenen bölüm · pano"
+  },
+  "K2P6.dc.html": {
+   "x": 7600,
+   "y": 5798,
+   "w": 1440,
+   "h": 900,
+   "title": "30 · Midterm hazırlığı · 6 Oturum bitti: tek yazı · pano"
+  },
+  "K2P7.dc.html": {
+   "x": 9120,
+   "y": 5798,
+   "w": 1440,
+   "h": 900,
+   "title": "31 · Midterm hazırlığı · 7 Bugün: sıradaki iş · pano"
+  },
+  "K3T1.dc.html": {
+   "x": 0,
+   "y": 7118,
+   "w": 390,
+   "h": 844,
+   "title": "32 · Ödev · 1 Bugün: Başla · telefon"
+  },
+  "K3T2.dc.html": {
+   "x": 470,
+   "y": 7118,
+   "w": 390,
+   "h": 844,
+   "title": "33 · Ödev · 2 Akış başlıyor: ilk oturum, not yok · telefon"
+  },
+  "K3T3.dc.html": {
+   "x": 940,
+   "y": 7118,
+   "w": 390,
+   "h": 844,
+   "title": "34 · Ödev · 3 Akış sürüyor · telefon"
+  },
+  "K3T4.dc.html": {
+   "x": 1410,
+   "y": 7118,
+   "w": 390,
+   "h": 844,
+   "title": "35 · Ödev · 4 Mola: sen verirsin, ileri sayar · telefon"
+  },
+  "K3T5.dc.html": {
+   "x": 1880,
+   "y": 7118,
+   "w": 390,
+   "h": 844,
+   "title": "36 · Ödev · 5 Planlanan süre doldu · telefon"
+  },
+  "K3T6.dc.html": {
+   "x": 2350,
+   "y": 7118,
+   "w": 390,
+   "h": 844,
+   "title": "37 · Ödev · 6 Çıkarken: nerede kaldın · telefon"
+  },
+  "K3T7.dc.html": {
+   "x": 2820,
+   "y": 7118,
+   "w": 390,
+   "h": 844,
+   "title": "38 · Ödev · 7 Bugün: sıradaki iş · telefon"
+  },
+  "K3P1.dc.html": {
+   "x": 0,
+   "y": 8102,
+   "w": 1440,
+   "h": 900,
+   "title": "39 · Ödev · 1 Bugün: Başla · pano"
+  },
+  "K3P2.dc.html": {
+   "x": 1520,
+   "y": 8102,
+   "w": 1440,
+   "h": 900,
+   "title": "40 · Ödev · 2 Akış başlıyor: ilk oturum, not yok · pano"
+  },
+  "K3P3.dc.html": {
+   "x": 3040,
+   "y": 8102,
+   "w": 1440,
+   "h": 900,
+   "title": "41 · Ödev · 3 Akış sürüyor · pano"
+  },
+  "K3P4.dc.html": {
+   "x": 4560,
+   "y": 8102,
+   "w": 1440,
+   "h": 900,
+   "title": "42 · Ödev · 4 Mola: sen verirsin, ileri sayar · pano"
+  },
+  "K3P5.dc.html": {
+   "x": 6080,
+   "y": 8102,
+   "w": 1440,
+   "h": 900,
+   "title": "43 · Ödev · 5 Planlanan süre doldu · pano"
+  },
+  "K3P6.dc.html": {
+   "x": 7600,
+   "y": 8102,
+   "w": 1440,
+   "h": 900,
+   "title": "44 · Ödev · 6 Çıkarken: nerede kaldın · pano"
+  },
+  "K3P7.dc.html": {
+   "x": 9120,
+   "y": 8102,
+   "w": 1440,
+   "h": 900,
+   "title": "45 · Ödev · 7 Bugün: sıradaki iş · pano"
+  },
+  "K4T1.dc.html": {
+   "x": 0,
+   "y": 9422,
+   "w": 390,
+   "h": 844,
+   "title": "46 · Proje alt işi · 1 Bugün: Başla · telefon"
+  },
+  "K4T2.dc.html": {
+   "x": 470,
+   "y": 9422,
+   "w": 390,
+   "h": 844,
+   "title": "47 · Proje alt işi · 2 Odak turu 1: alt işin içinde adım yok · telefon"
+  },
+  "K4T3.dc.html": {
+   "x": 940,
+   "y": 9422,
+   "w": 390,
+   "h": 844,
+   "title": "48 · Proje alt işi · 3 Kısa mola · telefon"
+  },
+  "K4T4.dc.html": {
+   "x": 1410,
+   "y": 9422,
+   "w": 390,
+   "h": 844,
+   "title": "49 · Proje alt işi · 4 Odak turu 2: son tur · telefon"
+  },
+  "K4T5.dc.html": {
+   "x": 1880,
+   "y": 9422,
+   "w": 390,
+   "h": 844,
+   "title": "50 · Proje alt işi · 5 Süre bitti: bitti mi? · telefon"
+  },
+  "K4T6.dc.html": {
+   "x": 2350,
+   "y": 9422,
+   "w": 390,
+   "h": 844,
+   "title": "51 · Proje alt işi · 6 Teslim: kontrol listesi · telefon"
+  },
+  "K4T7.dc.html": {
+   "x": 2820,
+   "y": 9422,
+   "w": 390,
+   "h": 844,
+   "title": "52 · Proje alt işi · 7 Bugün: sıradaki iş · telefon"
+  },
+  "K4P1.dc.html": {
+   "x": 0,
+   "y": 10406,
+   "w": 1440,
+   "h": 900,
+   "title": "53 · Proje alt işi · 1 Bugün: Başla · pano"
+  },
+  "K4P2.dc.html": {
+   "x": 1520,
+   "y": 10406,
+   "w": 1440,
+   "h": 900,
+   "title": "54 · Proje alt işi · 2 Odak turu 1: alt işin içinde adım yok · pano"
+  },
+  "K4P3.dc.html": {
+   "x": 3040,
+   "y": 10406,
+   "w": 1440,
+   "h": 900,
+   "title": "55 · Proje alt işi · 3 Kısa mola · pano"
+  },
+  "K4P4.dc.html": {
+   "x": 4560,
+   "y": 10406,
+   "w": 1440,
+   "h": 900,
+   "title": "56 · Proje alt işi · 4 Odak turu 2: son tur · pano"
+  },
+  "K4P5.dc.html": {
+   "x": 6080,
+   "y": 10406,
+   "w": 1440,
+   "h": 900,
+   "title": "57 · Proje alt işi · 5 Süre bitti: bitti mi? · pano"
+  },
+  "K4P6.dc.html": {
+   "x": 7600,
+   "y": 10406,
+   "w": 1440,
+   "h": 900,
+   "title": "58 · Proje alt işi · 6 Teslim: kontrol listesi · pano"
+  },
+  "K4P7.dc.html": {
+   "x": 9120,
+   "y": 10406,
+   "w": 1440,
+   "h": 900,
+   "title": "59 · Proje alt işi · 7 Bugün: sıradaki iş · pano"
+  },
+  "SahneAkisProje.dc.html": {
+   "x": 0,
+   "y": 11726,
+   "w": 390,
+   "h": 844,
+   "title": "60 · Telefon · akış: proje, iki alt iş aynı oturumda"
+  },
+  "SahneProva.dc.html": {
+   "x": 470,
+   "y": 11726,
+   "w": 390,
+   "h": 844,
+   "title": "61 · Telefon · hedefli: sunum provası"
+  },
+  "SahneTekrar.dc.html": {
+   "x": 940,
+   "y": 11726,
+   "w": 390,
+   "h": 844,
+   "title": "62 · Telefon · tek blok: sınav öncesi özet tekrar"
+  },
+  "SahneDokuman.dc.html": {
+   "x": 1410,
+   "y": 11726,
+   "w": 390,
+   "h": 844,
+   "title": "63 · Telefon · kontrol listesi: hazırlık dokümanı"
+  },
+  "SahneToplanti.dc.html": {
+   "x": 1880,
+   "y": 11726,
+   "w": 390,
+   "h": 844,
+   "title": "64 · Telefon · kontrol listesi: takım toplantısı"
+  },
+  "SahneDers.dc.html": {
+   "x": 2350,
+   "y": 11726,
+   "w": 390,
+   "h": 844,
+   "title": "65 · Telefon · sabit blok: derste"
+  },
+  "SahneSinav.dc.html": {
+   "x": 2820,
+   "y": 11726,
+   "w": 390,
+   "h": 844,
+   "title": "66 · Telefon · sabit blok: sınav günü"
+  },
+  "PanoDokuman.dc.html": {
+   "x": 3290,
+   "y": 11726,
+   "w": 1440,
+   "h": 900,
+   "title": "67 · Pano · kontrol listesi: hazırlık dokümanı"
+  },
+  "PanoDersSahne.dc.html": {
+   "x": 4810,
+   "y": 11726,
+   "w": 1440,
+   "h": 900,
+   "title": "68 · Pano · sabit blok: ders bitti, devam sorusu"
+  },
+  "AnaSayfa.dc.html": {
+   "x": 0,
+   "y": 13046,
+   "w": 390,
+   "h": 4469,
+   "title": "69 · Telefon · ana sayfa: dönemin bütün işleri"
+  },
+  "DersSecici.dc.html": {
+   "x": 470,
+   "y": 13046,
+   "w": 390,
+   "h": 844,
+   "title": "70 · Telefon · ders seçici açık"
+  },
+  "Ders.dc.html": {
+   "x": 940,
+   "y": 13046,
+   "w": 390,
+   "h": 2950,
+   "title": "71 · Telefon · ders sayfası: dersin bütün işleri, VF şartları, notlandırma"
+  },
+  "Devam.dc.html": {
+   "x": 1410,
+   "y": 13046,
+   "w": 390,
+   "h": 1270,
+   "title": "72 · Telefon · ders sayfası: devam, Kepler onayıyla"
+  },
+  "Dosyalar.dc.html": {
+   "x": 1880,
+   "y": 13046,
+   "w": 390,
+   "h": 1260,
+   "title": "73 · Telefon · ders sayfası: dosyalar"
+  },
+  "DosyaAyrinti.dc.html": {
+   "x": 2350,
+   "y": 13046,
+   "w": 390,
+   "h": 844,
+   "title": "74 · Telefon · dosyaya dokununca"
+  },
+  "SorumlulukAyrinti.dc.html": {
+   "x": 2820,
+   "y": 13046,
+   "w": 390,
+   "h": 844,
+   "title": "75 · Telefon · işe dokununca (duyurudan gelen tarih)"
+  },
+  "SinavAyrinti.dc.html": {
+   "x": 3290,
+   "y": 13046,
+   "w": 390,
+   "h": 1841,
+   "title": "76 · Telefon · sınava dokununca: kapsam, dokümanlar ve bölünmüş oturumlar"
+  },
+  "Bildirimler.dc.html": {
+   "x": 3760,
+   "y": 13046,
+   "w": 390,
+   "h": 960,
+   "title": "77 · Telefon · bildirimler: beş olay"
+  },
+  "OkulAyarlar.dc.html": {
+   "x": 4230,
+   "y": 13046,
+   "w": 390,
+   "h": 1944,
+   "title": "78 · Telefon · Okul ayarları: kararların tek yerde görünümü"
+  },
+  "SahneYontem.dc.html": {
+   "x": 4700,
+   "y": 13046,
+   "w": 390,
+   "h": 844,
+   "title": "79 · Telefon · ayarlar: iş türüne göre yöntem (sahnede değil)"
+  },
+  "SahneSureler.dc.html": {
+   "x": 5170,
+   "y": 13046,
+   "w": 390,
+   "h": 844,
+   "title": "80 · Telefon · ayarlar: pomodoro süreleri (sahnede değil)"
+  },
+  "PanoAna.dc.html": {
+   "x": 0,
+   "y": 17935,
+   "w": 1440,
+   "h": 3088,
+   "title": "81 · Pano · ana sayfa: dönemin bütün işleri"
+  },
+  "PanoDers.dc.html": {
+   "x": 1520,
+   "y": 17935,
+   "w": 1440,
+   "h": 1806,
+   "title": "82 · Pano · ders sayfası: dersin bütün işleri, VF şartları, notlandırma"
+  },
+  "PanoSinavAyrinti.dc.html": {
+   "x": 3040,
+   "y": 17935,
+   "w": 1440,
+   "h": 900,
+   "title": "83 · Pano · sınava dokununca: kapsam, dokümanlar ve bölünmüş oturumlar"
+  },
+  "AkisKlasor.dc.html": {
+   "x": 0,
+   "y": 21443,
+   "w": 1440,
+   "h": 1960,
+   "title": "84 · Uçtan uca 1 · klasör yapısı ve kim nereye yazar"
+  },
+  "AkisNinova.dc.html": {
+   "x": 1520,
+   "y": 21443,
+   "w": 1440,
+   "h": 1157,
+   "title": "85 · Uçtan uca 2 · Ninova'dan klasöre: tetik ve adımlar"
+  },
+  "AkisDokuman.dc.html": {
+   "x": 3040,
+   "y": 21443,
+   "w": 1440,
+   "h": 2052,
+   "title": "86 · Uçtan uca 3 · hazırlık dokümanları: quiz, midterm, final"
+  },
+  "SahneKaldiginYerHazirlik.dc.html": {
+   "x": 0,
+   "y": 23915,
+   "w": 390,
+   "h": 844,
+   "title": "87 · Telefon · oturum başı: hazırlıkta kaldığın yer (kendiliğinden)"
+  },
+  "PanoKaldiginYerHazirlik.dc.html": {
+   "x": 470,
+   "y": 23915,
+   "w": 1440,
+   "h": 900,
+   "title": "88 · Pano · oturum başı: hazırlıkta kaldığın yer (kendiliğinden)"
+  },
+  "SahneKaldiginYerOdev.dc.html": {
+   "x": 1990,
+   "y": 23915,
+   "w": 390,
+   "h": 844,
+   "title": "89 · Telefon · oturum başı: ödevde kaldığın yer (yazdığın cümle)"
+  },
+  "PanoKaldiginYerOdev.dc.html": {
+   "x": 2460,
+   "y": 23915,
+   "w": 1440,
+   "h": 900,
+   "title": "90 · Pano · oturum başı: ödevde kaldığın yer (yazdığın cümle)"
+  }
+ },
+ "order": [
+  "Isler.dc.html",
+  "K1T1.dc.html",
+  "K1T2.dc.html",
+  "K1T3.dc.html",
+  "K1T4.dc.html",
+  "K1T5.dc.html",
+  "K1T6.dc.html",
+  "K1T7.dc.html",
+  "K1T8.dc.html",
+  "K1P1.dc.html",
+  "K1P2.dc.html",
+  "K1P3.dc.html",
+  "K1P4.dc.html",
+  "K1P5.dc.html",
+  "K1P6.dc.html",
+  "K1P7.dc.html",
+  "K1P8.dc.html",
+  "K2T1.dc.html",
+  "K2T2.dc.html",
+  "K2T3.dc.html",
+  "K2T4.dc.html",
+  "K2T5.dc.html",
+  "K2T6.dc.html",
+  "K2T7.dc.html",
+  "K2P1.dc.html",
+  "K2P2.dc.html",
+  "K2P3.dc.html",
+  "K2P4.dc.html",
+  "K2P5.dc.html",
+  "K2P6.dc.html",
+  "K2P7.dc.html",
+  "K3T1.dc.html",
+  "K3T2.dc.html",
+  "K3T3.dc.html",
+  "K3T4.dc.html",
+  "K3T5.dc.html",
+  "K3T6.dc.html",
+  "K3T7.dc.html",
+  "K3P1.dc.html",
+  "K3P2.dc.html",
+  "K3P3.dc.html",
+  "K3P4.dc.html",
+  "K3P5.dc.html",
+  "K3P6.dc.html",
+  "K3P7.dc.html",
+  "K4T1.dc.html",
+  "K4T2.dc.html",
+  "K4T3.dc.html",
+  "K4T4.dc.html",
+  "K4T5.dc.html",
+  "K4T6.dc.html",
+  "K4T7.dc.html",
+  "K4P1.dc.html",
+  "K4P2.dc.html",
+  "K4P3.dc.html",
+  "K4P4.dc.html",
+  "K4P5.dc.html",
+  "K4P6.dc.html",
+  "K4P7.dc.html",
+  "SahneAkisProje.dc.html",
+  "SahneProva.dc.html",
+  "SahneTekrar.dc.html",
+  "SahneDokuman.dc.html",
+  "SahneToplanti.dc.html",
+  "SahneDers.dc.html",
+  "SahneSinav.dc.html",
+  "PanoDokuman.dc.html",
+  "PanoDersSahne.dc.html",
+  "AnaSayfa.dc.html",
+  "DersSecici.dc.html",
+  "Ders.dc.html",
+  "Devam.dc.html",
+  "Dosyalar.dc.html",
+  "DosyaAyrinti.dc.html",
+  "SorumlulukAyrinti.dc.html",
+  "SinavAyrinti.dc.html",
+  "Bildirimler.dc.html",
+  "OkulAyarlar.dc.html",
+  "SahneYontem.dc.html",
+  "SahneSureler.dc.html",
+  "PanoAna.dc.html",
+  "PanoDers.dc.html",
+  "PanoSinavAyrinti.dc.html",
+  "AkisKlasor.dc.html",
+  "AkisNinova.dc.html",
+  "AkisDokuman.dc.html",
+  "SahneKaldiginYerHazirlik.dc.html",
+  "PanoKaldiginYerHazirlik.dc.html",
+  "SahneKaldiginYerOdev.dc.html",
+  "PanoKaldiginYerOdev.dc.html"
+ ],
+ "notes": {
+  "tK1": {
+   "x": 0,
+   "y": 2210,
+   "text": "Senaryo 1 · Quiz hazırlığı: 8 saatlik işin 2 saatlik oturumu (oturum 2 / 4)",
+   "kind": "title1",
+   "maxW": 6000
+  },
+  "tK2": {
+   "x": 0,
+   "y": 4514,
+   "text": "Senaryo 2 · Midterm hazırlığı: 16 saatlik işin 6. oturumu (2 saat)",
+   "kind": "title1",
+   "maxW": 6000
+  },
+  "tK3": {
+   "x": 0,
+   "y": 6818,
+   "text": "Senaryo 3 · Ödev: iki oturumun birincisi (90 dakika)",
+   "kind": "title1",
+   "maxW": 6000
+  },
+  "tK4": {
+   "x": 0,
+   "y": 9122,
+   "text": "Senaryo 4 · Proje: Proposal alt işinin 2. ve son oturumu, teslimle biter",
+   "kind": "title1",
+   "maxW": 6000
+  },
+  "t1": {
+   "x": 0,
+   "y": -300,
+   "text": "Okul'un verdiği işler",
+   "kind": "title1",
+   "maxW": 1400
+  },
+  "n2": {
+   "x": 470,
+   "y": 0,
+   "w": 420,
+   "fill": "blue",
+   "text": "Sahne Modüller menüsünde değil, Bugün'ün içindedir. Bugün'de sıradaki iş bir çalışma oturumuysa Başla'ya basınca ekran o işin sahnesine geçer. Telefonda sahne ekranı kaplar, alt menü görünmez; panoda yan menüde Bugün seçili kalır. Çık'a basınca ya da oturum bitince Bugün'e dönülür. Aşağıdaki dört senaryo bunu adım adım gösterir."
+  },
+  "n1": {
+   "x": 950,
+   "y": 0,
+   "w": 420,
+   "fill": "gray",
+   "text": "Taslak, onay için değil hizalanmak için. Dersler, tarihler ve ağırlıklar Notion'dan; final dönemi (2–17 Ocak 2027) İTÜ akademik takviminden. Kepler'den gelen her şey (notlar, yoklama onayı) henüz denenmedi. Notlar, devam, dosya adları, süreler, saatler, Quiz 3 duyurusu ve tahmini tarihler örnektir. Pano kareleri sayfanın tamamını gösterir; ekranda ilk 900 piksel görünür."
+  },
+  "n5": {
+   "x": 1430,
+   "y": 0,
+   "w": 420,
+   "fill": "blue",
+   "text": "Sınav hazırlığı nasıl kurulur.\n\nKapsam kuralla hesaplanır: quizde önceki quizin bittiği yerden (ilk quiz dönem başından), midtermde dönem başından ya da önceki midtermden, finalde bütün dönem. Bitiş: sınavdan önceki hafta işlenen konular. Duyuru farklı söylerse duyuru geçerlidir.\n\nDokümanlar: quizde 1 hafta, midterm ve finalde 2 hafta kala syllabus sırasıyla üretilir, kapsam netleşince güncellenir. Her sınavda iki doküman: konu anlatımı ve örnek sorular. Finalde tek doküman bütün konuları kapsar.\n\nHocanın dosyası olmayan konunun dokümanı hiçbir zaman yazılmaz; konu dosyası gelene kadar yer tutucu süreyle bekler.\n\nDoküman yokken çalışma oturumu açılmaz. Oturumlar dokümanın bölümlerinden doğar."
+  },
+  "n6": {
+   "x": -500,
+   "y": 2510,
+   "w": 420,
+   "fill": "blue",
+   "text": "Senaryolar nasıl okunur.\n\nHer senaryoda üst sıra telefon, alt sıra pano; soldan sağa aynı yedi adım: Bugün'de Başla, sahnenin durumları, oturumun sonu, yeniden Bugün.\n\nBugün'ün pano karesi depodaki onaylı kareden (ZP1) alındı; yalnızca kartın, ilk sıradakinin ve günün akışındaki parçanın metni değişti.\n\nÖneri: bir oturum karışık olabilir. Okuma bölümü pomodoro turlarıyla, soru bölümü soru sayacıyla ilerler; bölüm değişince ortadaki sayaç değişir (senaryo 1, adım 6). Süre dolunca sahne \"Bitti\" ya da \"+5 dk\" diye sorar (adım 5)."
+  },
+  "n7": {
+   "x": -500,
+   "y": 3130,
+   "w": 420,
+   "fill": "gray",
+   "text": "Çekirdekle uyuşmayan: çekirdekte bir oturum en çok 90 dakikadır; senaryolardaki 2 saatlik oturum bu sınırı aşar (plan bloğu molaları içerir, odak süresi 75–100 dk). Çekirdek kararı gerekir.\n\nOturum sonu çekirdeğin kuralına göre tek yazıdır: sayı, süre, övgü yazılmaz.\n\nÖrnek olanlar: bölüm adları, soru sayıları, saatler, günler, notlar."
+  },
+  "to": {
+   "x": 0,
+   "y": 11426,
+   "text": "Senaryolarda olmayan sahneler",
+   "kind": "title1",
+   "maxW": 6000
+  },
+  "n3": {
+   "x": -500,
+   "y": 11726,
+   "w": 420,
+   "fill": "blue",
+   "text": "Hangi iş hangi sahneyi açar.\n\nPomodoro: konu çalışma, yazılı ödev, okuma, rapor yazma.\nAkış: kodlama ödevi, proje kodu ve notebook.\nHedefli: soru çözme, sunum provası.\nTek blok: sınav öncesi özet tekrar.\nKontrol listesi (sayaç yok): hazırlık dokümanı, teslim yükleme, takım toplantısı.\nSabit blok (başlatılmaz, karta dokununca açılır): ders ve recitation, sınav günü.\nSahne yok: bekleyen.\n\nHangi iş türünün hangi sayaçla açılacağı modülün ayarlarındadır; oturum sırasında değiştirilmez."
+  },
+  "n4": {
+   "x": -500,
+   "y": 12286,
+   "w": 420,
+   "fill": "gray",
+   "text": "Örnek olanlar: dersin bitiş saati, derslik, sınav süresi, yanına alınacaklar, süreler, notlar, komut metni, dosya adları. Denenmedi: teslimin Ninova'dan görülüp kendiliğinden kapanması, dokümanın klasöre düşünce adımın kapanması, Ninova ödev sayfasının doğrudan açılması."
+  },
+  "t2": {
+   "x": 0,
+   "y": 12746,
+   "text": "Modülün içi · telefon",
+   "kind": "title1",
+   "maxW": 4620
+  },
+  "t3": {
+   "x": 0,
+   "y": 17635,
+   "text": "Modülün içi · pano",
+   "kind": "title1",
+   "maxW": 4480
+  },
+  "tn": {
+   "x": 0,
+   "y": 23615,
+   "text": "Sonradan eklenenler · oturum başında Kaldığın yer",
+   "kind": "title1",
+   "maxW": 4480
+  },
+  "tf": {
+   "x": 0,
+   "y": 21143,
+   "text": "Uçtan uca: dosyalar ve hazırlık dokümanları",
+   "kind": "title1",
+   "maxW": 4480
+  }
+ },
+ "designSystems": []
+}

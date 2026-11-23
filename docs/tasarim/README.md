@@ -17,7 +17,8 @@ Sherpa'nın görünüşünün tek kaynağı (kullanıcının kararı, 15 Kas 202
   - [`bugun.md`](ekranlar/bugun.md), [`takvim.md`](ekranlar/takvim.md), [`kapanis.md`](ekranlar/kapanis.md): içeriği değişen ekranlar (Ç4c).
   - [`gelen-kutusu.md`](ekranlar/gelen-kutusu.md), [`giris-ve-duzenleme.md`](ekranlar/giris-ve-duzenleme.md), [`moduller.md`](ekranlar/moduller.md), [`sahne.md`](ekranlar/sahne.md), [`ayarlar.md`](ekranlar/ayarlar.md), [`giris-ekranlari.md`](ekranlar/giris-ekranlari.md), [`bos-ve-hata.md`](ekranlar/bos-ve-hata.md): Ç4b.
   - [`rutin.md`](ekranlar/rutin.md): Rutin'in sahnesi ve modül sayfası.
-- [`kareler/`](kareler/): onaylı pano karelerinin kaynak dosyaları ve [`DIZIN.md`](kareler/DIZIN.md). **Donmuştur;** elle değiştirilmez.
+  - [`okul-sahneler.md`](ekranlar/okul-sahneler.md), [`okul-sayfalar.md`](ekranlar/okul-sayfalar.md): Okul'un Bugün kartı, sahne yerleşimleri, blok görünümü ve modül sayfaları (onaylı 16–17 Kas 2026; henüz kurulmadı).
+- [`kareler/`](kareler/): onaylı pano karelerinin kaynak dosyaları ve [`DIZIN.md`](kareler/DIZIN.md). **Donmuştur;** elle değiştirilmez. Modül kareleri alt klasördedir: [`kareler/okul/`](kareler/okul/).
 
 ## Çelişkide sıra
 

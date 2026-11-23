@@ -29,6 +29,70 @@ Kullanıcının kendi oturumuyla, yalnızca okuyarak denendi. Ninova'nın belgel
 - Dolu bir not tablosunun yapısı
 - Üniversitenin otomatik erişimle ilgili kuralı
 
+## Deneme 2 (17 Kasım 2026)
+
+Kullanıcı girişi kendisi yaptı; yalnızca okundu (GET). Hiçbir form gönderilmedi, dosya indirilmedi. Sayfalar hem tarayıcıda açılarak hem sayfanın içinden aynı oturumla istenerek okundu; ikisi de 200 döndü.
+
+| Ne denendi | Adres | Sonuç |
+| --- | --- | --- |
+| Ders listesi | `/Kampus1` → `/members/ogrenci.default.aspx` | Okundu. Altı güncel ders ve yolları: BBF 301E `37636.122715`, YZV 302E `27886.121813`, YZV 406E `31387.123526`, YZV 411E `31596.122445`, YZV 448E `37550.121976`, YZV 475E `37747.122884`. Listede eski dönem ve bölüm sınıfları da var (YZV 401 altında); toplayıcı dönemi `SinifBilgileri`'ndeki "Dönem" alanından ayırmalı |
+| Bütün derslerin açık ödevleri | `/Kampus?1/Odevler` | Okundu: tek sayfada ders, teslim başlangıcı ve bitişi, "istenen n dosyanın m adedini yüklediniz". Altı ders için tek istek yeter |
+| Bütün derslerin duyuruları | `/Kampus?1/Duyurular` | Okundu: 80 duyuru bağlantısı, her birinde ders, tarih, yazan ve metnin başı. Tam metin `/Sinif/<id>/Duyuru/<no>` |
+| Ödev ayrıntısı | `/Sinif/<id>/Odev/<no>` | Okundu: teslim başlangıcı ve bitişi, açıklama, kaynak dosyalar (ad, boyut, tarih; bağlantı `?g<no>`), istenen dosyalar ve uzantıları |
+| Teslim durumu | `/Sinif/<id>/Odevler` | Okundu: yüklenen dosya sayısı her ödevde yazıyor ("1 adet dosyanın 1 adedini" ya da "0 adedini"). Teslimin kendiliğinden doğrulanması buna dayanabilir |
+| Dosya listesi | `/Sinif/<id>/SinifDosyalari`, `/DersDosyalari`, alt klasör `?g<no>` | Okundu. Klasör ve dosya aynı bağlantı biçiminde; ayrım satırdaki simgeden (`/images/ds/folder`, `ikon-pdf.png`). Ad çoğu zaman uzantısız ("Lecture 0" bir PDF). Kök listede klasörün toplam boyutu yazıyor. Boyut yuvarlak (KB, MB) |
+| Not tablosu (dolu) | `/Sinif/<id>/Notlar` | Okundu: değerlendirme adı, not, hocanın açıklaması, "Ağırlıklı Ortalamanız". Altı dersin dördünde en az bir satır var. İki tür satır görüldü (`rpGalileoNot`, `rpNot`); farkı bilinmiyor. Yardım metnindeki yüzde, ortalama, sıralama (imleçle görünen) okunmadı |
+| Yoklama | `/Sinif/<id>/Yoklama` | Okundu. Sayfada iki bölüm var: "Ninova Yoklama Bilgileri" ve **"Kepler Yoklama Bilgileri"** (hafta × ders saati, 0 ya da 1). Yani Kepler'in yoklaması Ninova'dan okunabiliyor. Beş derste Kepler tablosu var, YZV 411E'de yok. 0'ın "gelmedi" mi "yoklama alınmadı" mı olduğu sayfadan anlaşılmıyor (ara tatil haftası ve gelecek haftalar da 0) |
+| Ders saati | `/Sinif/<id>/SinifBilgileri` | Okundu: gün, **başlangıç ve bitiş saati**, derslik ("Perşembe 08:30 - 11:29 · Z-20"), dönemin başlangıç ve bitiş tarihi (28 Eylül – 31 Aralık 2026), eğitmenler |
+| `robots.txt` | `/robots.txt` | `User-Agent: * / Allow: /` |
+
+### Ninova'daki dosyaların boyutu (17 Kasım, dönemin 8. haftası)
+
+Kök listelerdeki yuvarlak boyutların toplamı, yaklaşık:
+
+| Ders | Boyut | Not |
+| --- | --- | --- |
+| BBF 301E | ~10 MB | |
+| YZV 302E | ~111 MB | 64 MB'ı "PreviousYear" |
+| YZV 406E | ~44 MB | 38 MB'ı Ders Dosyaları (tek derste dolu) |
+| YZV 411E | ~12 MB | |
+| YZV 448E | ~71 MB | hafta klasörleri (W01–W07) |
+| YZV 475E | ~18 MB | |
+| **Toplam** | **~266 MB** | eski yıl klasörü çıkınca ~200 MB |
+
+Dönem sonu için kaba öngörü bunun iki katına yakındır; tek dosyaların en büyüğü görülen listelerde 9 MB.
+
+### Hocaların klasör düzeni (kök)
+
+- BBF 301E: slaytlar kökte tek tek; `Exercise Sets`, `Recitations`, `Seating Plans`.
+- YZV 302E: `Lecture Notes 2026`, `Recitation Slides`, `Study Questions`, `Code`, `ReadingMaterial`, `PreviousYear`, `Sample Proposals`, `Seating Plans`; syllabus ve takvim kökte.
+- YZV 406E: slaytlar Ders Dosyaları'nda numaralı; Sınıf Dosyaları'nda `Recitations`, `ROS2 Installation`, `Seating Plans`; syllabus kökte.
+- YZV 411E: `Lecture Slides`, `Recitations`, `Seating Plans`.
+- YZV 448E: hafta klasörleri `W01`–`W07`.
+- YZV 475E: `Slides`; syllabus kökte.
+
+Syllabus kökte görülen dersler: YZV 302E, YZV 406E, YZV 475E, BBF 301E (`BBF301E_CourseEval.andPlan`). YZV 411E ve YZV 448E'de kökte yok; alt klasörlere bakılmadı.
+
+### İndirme (17 Kasım, kullanıcının izniyle)
+
+Tek dosya denendi: `2026_2027_Fall_YZV_303E_Syllabus.pdf` (YZV 302E, Sınıf Dosyaları). Sayfanın içinden GET ile istendi; dosya diske yazılmadı.
+
+- 200 döndü; `content-type: application/pdf`, `content-length: 79119`, `content-disposition: attachment; filename=2026_2027_Fall_YZV_303E_Syllabus.pdf`. Yani gerçek dosya adı ve türü yanıtın başlığından alınabiliyor (listede ad uzantısız olsa da).
+- PDF'in metin katmanı var (taranmış görüntü değil; gömülü yazı tipleri ve Unicode eşlemesi var). Metnin düzgün çıkarılması ve haftalık konu sırasının okunması gerçek bir PDF okuyucuyla denenmedi.
+
+### Oturum ve giriş
+
+- Kullanıcının söylediği: Ninova ve Kepler aynı hesap; yalnızca kullanıcı adı ve şifre, ek doğrulama adımı yok.
+- Girişten 45 dakika sonra (19:27) oturum hâlâ açıktı. Üst sınır ölçülmedi.
+
+### Hâlâ denenmeyenler
+
+1. Syllabus'tan haftalık konu sırasının çıkarılması (gerçek PDF okuyucuyla); YZV 411E ve YZV 448E'de syllabus'un yeri.
+2. Oturumun en çok ne kadar açık kaldığı; toplayıcının kendi başına giriş yapması.
+3. Otomatik erişim kuralı: `robots.txt` serbest; Ninova'nın Hakkında ve Yardım sayfalarında anahtar sözcük aramasında kural bulunmadı. Üniversitenin genel kullanım kuralları okunmadı.
+4. Not satırındaki iki türün farkı (`rpGalileoNot`, `rpNot`). Sıra, ortalama ve standart sapma Kepler'den alınabiliyor (`okul-kepler.md`).
+5. Çok sayıda dosyanın art arda indirilmesi (hız sınırı var mı).
+
 ## Tasarım
 
 ### Toplayıcı
