@@ -95,6 +95,7 @@ export function LayoutPieces() {
             plan={PLAN}
             state={null}
             startedAt={START}
+            sessionId="galeri"
             now={AT}
             onChange={noop}
             onFinish={noop}
@@ -110,6 +111,7 @@ export function LayoutPieces() {
             plan={PLAN}
             state={BREAK}
             startedAt={START}
+            sessionId="galeri"
             now={AT}
             onChange={noop}
             onFinish={noop}
@@ -124,6 +126,7 @@ export function LayoutPieces() {
             plan={{ plannedMinutes: 90 }}
             state={null}
             startedAt={START}
+            sessionId="galeri"
             now={AT}
             onChange={noop}
             onFinish={noop}
@@ -150,6 +153,7 @@ export function LayoutPieces() {
             plan={{ plannedMinutes: 90 }}
             state={{ ...ON_BREAK, since: "2026-11-23T10:17:28Z" }}
             startedAt={START}
+            sessionId="galeri"
             now={AT}
             onChange={noop}
             onFinish={noop}
@@ -207,6 +211,7 @@ export function LayoutPieces() {
           plan={PLAN}
           state={null}
           startedAt={START}
+          sessionId="galeri"
           now={AT}
           onChange={noop}
           onFinish={noop}
@@ -222,6 +227,7 @@ export function LayoutPieces() {
           plan={{ plannedMinutes: 10 }}
           state={null}
           startedAt={START}
+          sessionId="galeri"
           now={AT}
           onChange={noop}
           onFinish={noop}

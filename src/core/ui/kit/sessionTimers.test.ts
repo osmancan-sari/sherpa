@@ -98,6 +98,25 @@ describe("the pomodoro", () => {
   });
 });
 
+describe("a state belongs to its session", () => {
+  it("another session's state is not used: the layout starts at this session's start", () => {
+    const earlier = pomodoroView(PLAN, null, START, at(27), "s1").state;
+    expect(earlier.session).toBe("s1");
+    const next = at(60);
+    expect(pomodoroView(PLAN, earlier, next, at(65), "s2")).toMatchObject({
+      phase: "focus",
+      round: 1,
+      countedMinutes: 5,
+    });
+    expect(pomodoroView(PLAN, earlier, START, at(28), "s1").phase).toBe("break");
+    const flowed = flowView({ plannedMinutes: 30 }, null, START, at(40), "s1").state;
+    expect(flowView({ plannedMinutes: 30 }, flowed, next, at(70), "s2")).toMatchObject({
+      timeUp: false,
+      countedMinutes: 10,
+    });
+  });
+});
+
 describe("the flow", () => {
   it("counts up; a break counts up too and is no work", () => {
     const plan = { plannedMinutes: 90 };

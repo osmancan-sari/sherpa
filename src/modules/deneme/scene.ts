@@ -11,7 +11,8 @@ export const denemeScene: ModuleScene = {
   when: (subject) => ["odak", "antrenman", "pomodoro", "akis"].includes(kindOf(subject) as string),
   component: DenemeScene,
   look: { tone: "focus" },
-  // Ç3g: the scene takes the Today keys: Space is the workout's next step, the focus's "Bitti".
+  // Ç3g: the scene takes the Today keys: Space is the workout's next step, the focus's "Bitti",
+  // the flow's "Bitir" (through its note); the pomodoro leaves Space alone (its buttons).
   keys: "scene",
   // Sabah açılışı: a focused sitting or a workout bound to the waking, first in the morning's
   // chain, opens the app on this welcome (the facets' sunny and night scenes have none).

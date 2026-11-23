@@ -41,7 +41,6 @@ import type { Block } from "@/core/types";
 import { formatMinutes, formatTime, inIstanbul, shiftDay, weekStart } from "@/lib/date";
 import { effortText, isPlaceholder } from "@/core/today/effort";
 import { blockViewHref, blockViewOf } from "@/core/contract/blockView";
-import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { tr } from "date-fns/locale";
 import { ClientOnly } from "../ClientOnly";

@@ -18,6 +18,11 @@ const iso = (time: number) => new Date(time).toISOString();
 export type PomodoroPlan = { focusMinutes: number; breakMinutes: number; rounds: number };
 
 export type PomodoroState = {
+  /**
+   * The session this state belongs to. A state of another session (the record's last sitting)
+   * is not this one's: the layout starts again from this session's start.
+   */
+  session?: string;
   /** 1-based round. */
   round: number;
   phase: "focus" | "break";
@@ -54,8 +59,9 @@ export type PomodoroView = {
   countedMinutes: number;
 };
 
-export function pomodoroStart(at: Date): PomodoroState {
+export function pomodoroStart(at: Date, session?: string): PomodoroState {
   return {
+    ...(session ? { session } : {}),
     round: 1,
     phase: "focus",
     since: at.toISOString(),
@@ -103,8 +109,11 @@ export function pomodoroView(
   stored: PomodoroState | null,
   startedAt: Date,
   now: Date,
+  /** The running session: a stored state of another session is not used. */
+  session?: string,
 ): PomodoroView {
-  const state = pomodoroNow(plan, stored ?? pomodoroStart(startedAt), now);
+  const own = stored && (session === undefined || stored.session === session) ? stored : null;
+  const state = pomodoroNow(plan, own ?? pomodoroStart(startedAt, session), now);
   const elapsedMs = phaseElapsed(state, now.getTime());
   const targetMs = phaseTarget(plan, state);
   const focusNow = state.phase === "focus" ? Math.min(elapsedMs, targetMs) : 0;
@@ -193,6 +202,8 @@ export const pomodoro = {
 export type FlowPlan = { plannedMinutes: number };
 
 export type FlowState = {
+  /** The session this state belongs to (as `PomodoroState.session`). */
+  session?: string;
   /** When the work began (ISO). */
   since: string;
   /** On a break since then (ISO), or working. */
@@ -217,8 +228,14 @@ export type FlowView = {
   countedMinutes: number;
 };
 
-export function flowStart(at: Date): FlowState {
-  return { since: at.toISOString(), breakSince: null, breakMs: 0, extraMs: 0 };
+export function flowStart(at: Date, session?: string): FlowState {
+  return {
+    ...(session ? { session } : {}),
+    since: at.toISOString(),
+    breakSince: null,
+    breakMs: 0,
+    extraMs: 0,
+  };
 }
 
 export function flowView(
@@ -226,8 +243,11 @@ export function flowView(
   stored: FlowState | null,
   startedAt: Date,
   now: Date,
+  /** The running session: a stored state of another session is not used. */
+  session?: string,
 ): FlowView {
-  const state = stored ?? flowStart(startedAt);
+  const own = stored && (session === undefined || stored.session === session) ? stored : null;
+  const state = own ?? flowStart(startedAt, session);
   const time = now.getTime();
   const breakNow = state.breakSince ? Math.max(0, time - ms(state.breakSince)) : 0;
   const workedMs = Math.max(0, time - ms(state.since) - state.breakMs - breakNow);

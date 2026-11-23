@@ -248,6 +248,99 @@ for (const device of DEVICES) {
       await expect(page.getByTestId("strip-title")).toHaveText("Sabah");
       await shot(page, `rutin-sahne-${device.name}`);
     });
+
+    // Okul çekirdek A: a module page of its own shape (deneme's "Sayfa: ana sayfalı").
+    test(`a module page of its own shape (${device.name})`, async ({ page }) => {
+      await insert("modules", {
+        slug: "deneme",
+        name: "Deneme",
+        color: "#2563eb",
+        status: "active",
+        settings: { page: "home" },
+      });
+      await insert("deneme_items", [
+        { title: "Robotik: hız kinematiği", kind: "konu", due_on: "2026-12-08" },
+        { title: "Büyük veri sistemleri", kind: "konu" },
+        { title: "Rapor taslağı", due_on: "2026-11-20" },
+        { title: "Sunum provası", due_on: "2026-11-27" },
+      ]);
+      await page.goto("/m/deneme");
+      await expect(page.getByTestId("deneme-home")).toContainText("Sunum provası");
+      await shot(page, `modul-ana-sayfa-${device.name}`);
+      if (device.name === "telefon") {
+        await page.getByRole("button", { name: "Bölümler" }).click();
+        await expect(page.getByRole("list", { name: "Bölümler" })).toBeVisible();
+        await shot(page, "modul-secici-telefon");
+      }
+    });
+
+    // Okul çekirdek A: the way out's note over a flow (deneme's "akis").
+    test(`the way out's note (${device.name})`, async ({ page }) => {
+      const [mod] = await insert("modules", {
+        slug: "deneme",
+        name: "Deneme",
+        color: "#2563eb",
+        status: "active",
+      });
+      const [record] = await insert("deneme_items", {
+        title: "Ödev kodu",
+        kind: "akis",
+        minutes: 90,
+        exit_note: "Merge yazıldı; test 3 geçmiyor",
+      });
+      const [item] = await insert("work_items", {
+        module_id: mod.id,
+        key: `item:${record.id}`,
+        title: "Ödev kodu",
+        effort_total_minutes: 180,
+        source_type: "deneme.item",
+        source_id: record.id,
+        meta: { kind: "akis" },
+      });
+      const [task] = await insert("tasks", {
+        module_id: mod.id,
+        work_item_id: item.id,
+        title: "Ödev kodu",
+        est_minutes: 90,
+        status: "doing",
+        source_type: "deneme.item",
+        source_id: record.id,
+      });
+      await insert("sessions", {
+        task_id: task.id,
+        module_id: mod.id,
+        started_at: "2026-11-13T10:50:00Z",
+      });
+      await page.goto("/");
+      await expect(page.getByTestId("deneme-flow")).toBeVisible();
+      await shot(page, `akis-sahne-${device.name}`);
+      await page.getByLabel("Sahne şeridi").getByRole("button", { name: "Çık" }).click();
+      await expect(page.getByTestId("exit-note")).toBeVisible();
+      await shot(page, `cikarken-not-${device.name}`);
+    });
+
+    // Okul çekirdek A: a fixed block's view (deneme's event).
+    test(`a fixed block's view (${device.name})`, async ({ page }) => {
+      const [mod] = await insert("modules", {
+        slug: "deneme",
+        name: "Deneme",
+        color: "#2563eb",
+        status: "active",
+      });
+      const [record] = await insert("deneme_items", { title: "Seminer", kind: "etkinlik" });
+      const [block] = await insert("blocks", {
+        module_id: mod.id,
+        key: `item:${record.id}`,
+        title: "Seminer",
+        starts_at: "2026-11-13T10:30:00Z",
+        ends_at: "2026-11-13T12:00:00Z",
+        source_type: "deneme.item",
+        source_id: record.id,
+      });
+      await page.goto(`/?blok=${block.id}`);
+      await expect(page.getByTestId("deneme-block-view")).toHaveAttribute("data-phase", "during");
+      await shot(page, `blok-gorunumu-${device.name}`);
+    });
   });
 }
 

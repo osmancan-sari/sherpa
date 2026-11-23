@@ -206,3 +206,17 @@ Paket A'nın istemini ilerleme sohbeti yazar (`prompts/okul-cekirdek-a.md`), şu
 - **Karar 1'in sınırı (paket B'de kurulur).** Ölçüm: ~266 MB (8. hafta), dönem sonu öngörüsü ~530 MB. Bulutta yalnızca güncel dönem durur; "eski yıl" etiketli dosyalar buluta kopyalanmaz (yalnızca bilgisayarda, listede öyle işaretli). Modül başına yumuşak sınır 800 MB: aşılınca yeni dosya buluta gitmez, bilgisayarda kalır ve modül sayfasında tek satır uyarı çıkar. Dönem kapanınca bulut kopyaları silinir, bilgisayardaki klasör kalır. Supabase planının depolama sınırı paket B'nin ilk adımında panelden doğrulanır; sınır 800 MB'ın altındaysa sayı ona göre düşürülür.
 - **Karar 2:** ek doğrulama adımı olmadığı kullanıcının beyanıdır; toplayıcının kendi girişi hâlâ "denenmedi" (`okul.md` bölüm 11). Paket B'nin giriş ucu buna bağlı değildir.
 - **Karar 8:** bildirim yedeğinin (Bugün'ün üstünde tek satır) karesi yok; paket B'de mevcut uyarı satırının diliyle kurulur ve "görüşün gerek" olarak işaretlenir.
+
+## Paket A kuruldu (Okul çekirdek A, 23 Kas 2026)
+
+Maddeler **3, 4, 5, 7, 9, 10 (pomodoro, akış, kontrol listesi ve `ui.blockView`) ve 11 kuruldu**; soru sayacı ve tek blok paket C'de. Kesin adlar ve kullanım örnekleri `docs/ILERLEME.md`, "Okul çekirdek A" → "Okul Adım 1 için sözleşme özeti"; sözleşme `docs/06-modul-sozlesmesi.md` ("Modül sayfası", "Sahne" kural 2, 3b, 3c, "Sahne yerleşimleri", "Sabit blok görünümü", "İş zarfı"). Önerilen adlardan ayrılanlar: `ui.home` yerine `ui.page.home` (biçimin bütünü `ui.page`'de: `facetView`, `pickLabel`, `status`, `subtitle`, `upcoming`, `history`, `entries`); önceki gerçekleşenler zarfta değil tanımda (`sizingActuals`).
+
+| # | Durum |
+| --- | --- |
+| 3 | kuruldu (doküman) |
+| 4 | kuruldu |
+| 5 | kuruldu |
+| 7 | kuruldu |
+| 9 | kuruldu |
+| 10 | pomodoro, akış, kontrol listesi, sabit blok görünümü kuruldu; soru sayacı ve tek blok paket C |
+| 11 | kuruldu |

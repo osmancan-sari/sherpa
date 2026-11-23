@@ -541,6 +541,7 @@ export function PomodoroLayout({
   plan,
   state,
   startedAt,
+  sessionId,
   onChange,
   onFinish,
   color,
@@ -556,9 +557,14 @@ export function PomodoroLayout({
 }: {
   device: Device;
   plan: PomodoroPlan;
-  /** The module's stored state; null: the first round from the session's start. */
+  /**
+   * The module's stored state; null, or another session's: the first round from this session's
+   * start.
+   */
   state: PomodoroState | null;
   startedAt: Date;
+  /** The running session (`SceneProps.session.id`): the state is kept for it. */
+  sessionId: string;
   onChange: (state: PomodoroState) => void;
   onFinish: (countedMinutes: number) => void;
   /** The work's colour (the ring in focus). */
@@ -577,7 +583,7 @@ export function PomodoroLayout({
 }) {
   const second = useSecond();
   const now = givenNow ?? second;
-  const view = pomodoroView(plan, state, startedAt, now);
+  const view = pomodoroView(plan, state, startedAt, now, sessionId);
   const act = (next: (current: PomodoroState) => PomodoroState) => onChange(next(view.state));
   const inBreak = view.phase === "break";
   const label = inBreak ? "Kısa mola" : "Odak";
@@ -655,6 +661,7 @@ export function FlowLayout({
   plan,
   state,
   startedAt,
+  sessionId,
   onChange,
   onFinish,
   color,
@@ -668,8 +675,11 @@ export function FlowLayout({
 }: {
   device: Device;
   plan: FlowPlan;
+  /** The module's stored state; null, or another session's: work from this session's start. */
   state: FlowState | null;
   startedAt: Date;
+  /** The running session (`SceneProps.session.id`). */
+  sessionId: string;
   onChange: (state: FlowState) => void;
   onFinish: (countedMinutes: number) => void;
   color: string;
@@ -683,7 +693,7 @@ export function FlowLayout({
 }) {
   const second = useSecond();
   const now = givenNow ?? second;
-  const view = flowView(plan, state, startedAt, now);
+  const view = flowView(plan, state, startedAt, now, sessionId);
   const act = (next: (current: FlowState) => FlowState) => onChange(next(view.state));
   const worked = Math.floor(view.workedMs / 60_000);
   return (

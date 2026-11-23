@@ -78,6 +78,7 @@ export function PomodoroScene(props: SceneProps) {
         plan={POMODORO_PLAN}
         state={state}
         startedAt={session.startedAt}
+        sessionId={session.id}
         onChange={save}
         onFinish={(counted) => end(() => void controls.finish(counted))}
         color={color}
@@ -118,7 +119,7 @@ export function FlowScene(props: SceneProps) {
   useEffect(() => {
     latest.current = () => {
       if (session.id === "pending") return;
-      const view = flowView(plan, state, session.startedAt, new Date());
+      const view = flowView(plan, state, session.startedAt, new Date(), session.id);
       void controls.finish(view.countedMinutes);
     };
   });
@@ -137,6 +138,7 @@ export function FlowScene(props: SceneProps) {
         plan={plan}
         state={state}
         startedAt={session.startedAt}
+        sessionId={session.id}
         onChange={save}
         onFinish={(counted) => void controls.finish(counted)}
         color={color}

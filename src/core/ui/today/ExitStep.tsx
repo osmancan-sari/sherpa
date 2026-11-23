@@ -63,7 +63,12 @@ export function useExitStep({
   const [saving, setSaving] = useState(false);
   const busy = useRef(false);
 
+  // Each step ends once: a skip while the note is being kept, or a late save, does not run the
+  // way out a second time.
+  const ended = useRef<WeakSet<Pending>>(new WeakSet());
   const finish = useCallback(async (step: Pending, left: boolean) => {
+    if (ended.current.has(step)) return;
+    ended.current.add(step);
     setPending(null);
     setText("");
     setSaving(false);
@@ -97,16 +102,19 @@ export function useExitStep({
       return;
     }
     setSaving(true);
+    let timer: ReturnType<typeof setTimeout> | undefined;
     try {
       await Promise.race([
         note.save(value, { subject, session, ctx }),
-        new Promise((_, reject) =>
-          setTimeout(() => reject(new Error("timeout")), EXIT_NOTE_TIMEOUT_MS),
-        ),
+        new Promise((_, reject) => {
+          timer = setTimeout(() => reject(new Error("timeout")), EXIT_NOTE_TIMEOUT_MS);
+        }),
       ]);
     } catch (error) {
       // The way out is never held: the note is lost, the error only logged.
       console.error("beforeExit", error instanceof Error ? error.message : "unknown");
+    } finally {
+      clearTimeout(timer);
     }
     await finish(pending, true);
   }, [pending, note, text, subject, session, ctx, finish]);
@@ -180,7 +188,7 @@ function ExitNoteForm({
     </Button>
   );
   const skip = (
-    <Button type="button" variant="quiet" onClick={onSkip}>
+    <Button type="button" variant="quiet" disabled={saving} onClick={onSkip}>
       Yazmadan çık
     </Button>
   );

@@ -90,8 +90,18 @@ function TodayBody() {
   const moduleMap = useMemo(() => new Map(modules.map((mod) => [mod.row.id, mod])), [modules]);
   // The scene (Ç3c): left on this device ("Çık"), or failed, per session.
   const [exitedScene, setExitedScene] = useSceneExit();
-  // Okul çekirdek A: a fixed block's view, named in the address.
+  // Okul çekirdek A: a fixed block's view, named in the address. A block that is not there (or
+  // opens nothing) leaves the address clean: plain Today.
   const blockParam = useBlockParam();
+  const blockMissing =
+    blockParam.blockId !== null &&
+    input !== undefined &&
+    input !== null &&
+    !input.blocks.some((row) => row.id === blockParam.blockId && blockViewOf(row, moduleMap));
+  const closeBlock = blockParam.close;
+  useEffect(() => {
+    if (blockMissing) closeBlock();
+  }, [blockMissing, closeBlock]);
   const [failedScene, setFailedScene] = useState<string | null>(null);
   const [stuck, setStuck] = useState<Task | null>(null);
   const stopForStuck = useStopForStuck();

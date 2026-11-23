@@ -324,3 +324,60 @@ test("a fixed block the module proposed opens its view from Bugün, the day's fl
   await expect(view).toBeVisible();
   expect(await rows("sessions")).toEqual([]);
 });
+
+test("the flow layout's break holds after a reload and on another device; Bitir tells the worked minutes; the next sitting starts fresh", async ({
+  page,
+  browser,
+  baseURL,
+}) => {
+  await page.clock.install();
+  await activateDeneme(page);
+  await addRecord(page, "Proje kodu", { kind: "akis", minutes: "120" });
+  await startFromModule(page, "Proje kodu");
+  const sessionId = await runningFor(20);
+  await page.reload();
+  const clock = page.getByTestId("flow-clock");
+  await page.getByRole("button", { name: "Mola ver" }).click();
+  await expect(clock).toHaveAttribute("data-break", "");
+  await waitFor(
+    () => rows("deneme_items"),
+    (list) => (list[0]?.layout_state as { breakSince?: string | null } | null)?.breakSince != null,
+  );
+  // A reload and the other device: still on the break, the same worked minutes.
+  await page.reload();
+  await expect(clock).toHaveAttribute("data-break", "");
+  await expect(clock).toContainText("çalışılan 20 dk");
+  const phone = await browser.newContext({
+    baseURL,
+    storageState: STORAGE_STATE,
+    viewport: { width: 390, height: 844 },
+    isMobile: true,
+    hasTouch: true,
+    locale: "tr-TR",
+    timezoneId: "Europe/Istanbul",
+  });
+  const other = await phone.newPage();
+  // The other device's clock is the real one too (a new context starts at the run's moment).
+  await other.clock.setSystemTime(new Date());
+  await other.goto("/");
+  await expect(other.getByTestId("flow-clock")).toHaveAttribute("data-break", "");
+  await expect(other.getByTestId("flow-clock")).toContainText("çalışılan 20 dk");
+  await phone.close();
+
+  // Bitir from the break: the note is skipped, the session ends with 20 worked minutes.
+  await page.getByRole("button", { name: "Bitir" }).click();
+  await page.getByTestId("exit-note").getByRole("button", { name: "Yazmadan çık" }).click();
+  await expect(page.getByTestId("scene")).toBeHidden();
+  const ended = await waitFor(
+    () => rows("sessions"),
+    (list) => list.find((row) => row.id === sessionId)?.ended_at != null,
+  );
+  expect(ended.find((row) => row.id === sessionId)?.counted_minutes).toBe(20);
+  const [item] = await rows("work_items");
+  expect(item.effort_done_minutes).toBe(20);
+
+  // The next sitting of the same record does not go on from the last one's state.
+  await startFromModule(page, "Proje kodu");
+  await expect(clock).toContainText("mola vermeden");
+  await expect(clock.getByRole("timer", { name: "Akış" })).toHaveText(/^00:0\d$/);
+});
