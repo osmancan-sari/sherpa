@@ -124,7 +124,7 @@ function CoursePageInner({ facet }: ModuleFacetViewProps) {
           </PanelLabel>
           {ahead.map((row) => (
             <div key={row.id}>
-              <WorkRow row={row} showCourse={false} />
+              <WorkRow row={row} showCourse={false} className="border-line border-t border-b-0" />
               {stepsOf(row.id).map((step) => (
                 <ListRow
                   key={step.id}

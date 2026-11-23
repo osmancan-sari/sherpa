@@ -101,6 +101,7 @@ export function AddAssessmentSheet({
         </Field>
         <Field label="Ad">
           <Input
+            aria-label="Ad"
             value={form.title}
             maxLength={160}
             onChange={(event) => setForm({ ...form, title: event.target.value })}
@@ -108,6 +109,7 @@ export function AddAssessmentSheet({
         </Field>
         <Field label="Tür">
           <Select
+            aria-label="Tür"
             value={form.kind}
             onChange={(event) => setForm({ ...form, kind: event.target.value })}
           >
@@ -121,12 +123,14 @@ export function AddAssessmentSheet({
         <div className="grid grid-cols-2 gap-3">
           <Field label="Gün">
             <DateInput
+              aria-label="Gün"
               value={form.date}
               onChange={(event) => setForm({ ...form, date: event.target.value })}
             />
           </Field>
           <Field label="Saat">
             <Input
+              aria-label="Saat"
               value={form.time}
               placeholder="SS:dd"
               inputMode="numeric"
@@ -137,6 +141,7 @@ export function AddAssessmentSheet({
         </div>
         <Field label="Ağırlık (%)">
           <Input
+            aria-label="Ağırlık (%)"
             value={weight}
             inputMode="decimal"
             maxLength={6}
@@ -208,10 +213,15 @@ export function DateSheet({
       <div className="flex flex-col gap-4">
         <div className="grid grid-cols-2 gap-3">
           <Field label="Gün">
-            <DateInput value={date} onChange={(event) => setDate(event.target.value)} />
+            <DateInput
+              aria-label="Gün"
+              value={date}
+              onChange={(event) => setDate(event.target.value)}
+            />
           </Field>
           <Field label="Saat">
             <Input
+              aria-label="Saat"
               value={time}
               placeholder="SS:dd"
               inputMode="numeric"
@@ -386,10 +396,19 @@ export function StepSheet({
     >
       <div className="flex flex-col gap-4">
         <Field label="Ad">
-          <Input value={title} maxLength={160} onChange={(event) => setTitle(event.target.value)} />
+          <Input
+            aria-label="Ad"
+            value={title}
+            maxLength={160}
+            onChange={(event) => setTitle(event.target.value)}
+          />
         </Field>
         <Field label="Gün">
-          <DateInput value={date} onChange={(event) => setDate(event.target.value)} />
+          <DateInput
+            aria-label="Gün"
+            value={date}
+            onChange={(event) => setDate(event.target.value)}
+          />
         </Field>
         <Segmented
           label="Kimin"
@@ -404,6 +423,7 @@ export function StepSheet({
         {owner === "other" ? (
           <Field label="Kim">
             <Input
+              aria-label="Kim"
               value={ownerName}
               maxLength={60}
               onChange={(event) => setOwnerName(event.target.value)}
@@ -456,10 +476,15 @@ export function MeetingSheet({
       <div className="flex flex-col gap-4">
         <div className="grid grid-cols-2 gap-3">
           <Field label="Gün">
-            <DateInput value={day} onChange={(event) => setDay(event.target.value)} />
+            <DateInput
+              aria-label="Gün"
+              value={day}
+              onChange={(event) => setDay(event.target.value)}
+            />
           </Field>
           <Field label="Saat">
             <Input
+              aria-label="Saat"
               value={time}
               placeholder="SS:dd"
               maxLength={5}

@@ -217,8 +217,9 @@ function AssessmentPageInner({ params }: ModuleViewProps) {
   if (exam) {
     const docs = docsReady(data.prepDocs.filter((doc) => doc.assessment_id === a.id));
     const dd = docDay(a.kind, a.date);
+    const open = sittings.filter((task) => task.status === "todo" || task.status === "doing");
     const rest =
-      left !== null && left > 0
+      left !== null && left > 0 && open.length === 0
         ? docs.ready
           ? `Kalan ${item?.effort_provisional ? "yaklaşık " : ""}${formatMinutes(left)}; oturumlar haftası gelince açılır.`
           : `Kalan ${item?.effort_provisional ? "yaklaşık " : ""}${formatMinutes(left)}; "Dokümanım hazır" denince oturumlar açılır.`
@@ -230,7 +231,7 @@ function AssessmentPageInner({ params }: ModuleViewProps) {
             a={a}
             course={course}
             row={row}
-            extra={live > 0 ? `${live} oturumun ${done}'i bitti` : null}
+            extra={live > 0 ? `biten oturum ${done} / ${live}` : null}
             onDate={() => setDating(true)}
           />
           {a.scope_text ? (
@@ -240,7 +241,7 @@ function AssessmentPageInner({ params }: ModuleViewProps) {
           ) : null}
           <Panel variant="dense" label="Dokümanlar" className="pb-1.5" data-testid="okul-docs">
             <SwitchRow
-              className="border-line border-t"
+              className="border-line border-t px-4 md:px-4.5"
               label="Dokümanım hazır"
               checked={docs.ready}
               onChange={(on) => void write((ctx) => setDocsReady(ctx, a.id, on))}
@@ -271,7 +272,7 @@ function AssessmentPageInner({ params }: ModuleViewProps) {
           a={a}
           course={course}
           row={row}
-          extra={live > 0 ? `${live} oturumun ${done}'i bitti` : null}
+          extra={live > 0 ? `biten oturum ${done} / ${live}` : null}
           onDate={() => setDating(true)}
         />
         {a.resume_note ? (
@@ -484,7 +485,7 @@ function AttendancePageInner({ params }: ModuleViewProps) {
   return (
     <div data-testid="okul-attendance" className="flex flex-col gap-4">
       <header className="flex flex-col gap-0.5">
-        <h2 className="text-title tracking-title font-bold">{course.name}: devam</h2>
+        <h2 className="text-title tracking-title font-bold">{course.name}</h2>
         <p className="text-ink-2 text-note">
           {[
             next ? `Sıradaki ders ${weekdayDayMonth(next.date)}` : null,

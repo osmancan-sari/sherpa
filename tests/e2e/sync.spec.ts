@@ -3,7 +3,13 @@ import { deviceToken, insert, postIngest, rows, seedModule, update, waitFor } fr
 import { expect, test } from "./fixtures";
 import { roomInTheDay, STORAGE_STATE } from "./helpers";
 import { activateDeneme, addRecord } from "./scene-helpers";
-import { runAt, runNow } from "./clock";
+import { runAt, runDay, runNow } from "./clock";
+import { okulContext, smallTerm, userDb } from "./okul-helpers";
+import { createRegistry } from "@/core/contract/registry";
+import { startSessionTold } from "@/core/data/session-events";
+import { okul } from "@/modules/okul/module";
+import { insertAssessment } from "@/modules/okul/queries";
+import { syncAssessment } from "@/modules/okul/rules";
 
 // Two devices, one account: what happens on the phone shows on the second screen without a
 // reload (docs/11-yayin-ve-cihazlar.md, "Eşitleme"). Both pages stay open the whole time;
@@ -451,4 +457,79 @@ test("Okul çekirdek A: a facet's colour changed elsewhere reaches an open scene
   await update("modules", mod.id as string, { facet_colors: { sabah: "#db2777" } });
   await expect(backdrop).toHaveAttribute("data-color", "#db2777");
   expect(reloads()).toBe(0);
+});
+
+test("Okul 1: a checklist step taken on one device shows on the other without a reload", async ({
+  page,
+  browser,
+  baseURL,
+}) => {
+  await page.clock.install();
+  // Okul's hand-in list, started as "Başla" starts it.
+  const ctx = await okulContext(() => new Date());
+  const [course] = await smallTerm(ctx, [{ code: "ALG305E", name: "Algoritma", color: "#5fd6c6" }]);
+  const homework = await insertAssessment(ctx, {
+    course_id: course.id,
+    title: "Assignment 2",
+    kind: "homework",
+    date: runDay(3),
+    time: "23:59",
+    date_status: "exact",
+  });
+  await syncAssessment(ctx, homework.id);
+  const [item] = (await rows("work_items")).filter((row) => row.key === `submit:${homework.id}`);
+  await startSessionTold(
+    { db: await userDb(), registry: createRegistry([okul]) },
+    { workItemId: item.id as string },
+  );
+  await page.goto("/");
+  const second = await phone(browser, baseURL!);
+  await second.page.clock.install();
+  await second.page.goto("/");
+  await expect(second.page.getByTestId("okul-hand-in")).toBeVisible();
+  await expect(second.page.getByTestId("strip-minutes")).toHaveText("· 0 / 4");
+  const reloads = forbidReloads(second.page);
+  await page.getByTestId("okul-hand-in").getByRole("button", { name: "Sonraki" }).click();
+  await expect(second.page.getByTestId("strip-minutes")).toHaveText("· 1 / 4");
+  await page.getByTestId("okul-hand-in").getByRole("button", { name: "Sonraki" }).click();
+  await expect(second.page.getByTestId("strip-minutes")).toHaveText("· 2 / 4");
+  expect(reloads()).toBe(0);
+  await page.getByTestId("okul-hand-in").getByRole("button", { name: "Sonra yap" }).click();
+  await waitFor(
+    () => rows("sessions"),
+    (list) => list.every((row) => row.ended_at !== null),
+  );
+
+  await second.context.close();
+});
+
+test("Okul 1: a timed checklist step shows the same time on both devices", async ({
+  page,
+  browser,
+  baseURL,
+}) => {
+  await page.clock.install();
+  // The test module's workout: its first step counts down from its stored start.
+  await activateDeneme(page);
+  const second = await phone(browser, baseURL!);
+  await second.page.clock.install();
+  await addRecord(page, "Salon", { kind: "antrenman", minutes: "45" });
+  await page.goto("/m/deneme");
+  await page
+    .getByRole("region", { name: "Yaklaşanlar" })
+    .getByRole("button", { name: "Başla: Salon" })
+    .click();
+  await page.goto("/");
+  await second.page.goto("/");
+  const timer = (target: Page) =>
+    target.getByTestId("deneme-workout").getByRole("timer", { name: "Kalan süre" });
+  await expect(timer(page)).toBeVisible();
+  await expect(timer(second.page)).toBeVisible();
+  const seconds = async (target: Page) => {
+    const [m, s] = ((await timer(target).textContent()) ?? "0:0").split(":").map(Number);
+    return m * 60 + s;
+  };
+  const [a, b] = [await seconds(page), await seconds(second.page)];
+  expect(Math.abs(a - b)).toBeLessThanOrEqual(2);
+  await second.context.close();
 });

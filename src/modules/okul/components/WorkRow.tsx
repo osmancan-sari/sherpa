@@ -26,7 +26,15 @@ export function DayLead({ day }: { day: string | null }) {
  * A row of the term's work (frames AnaSayfa, Ders): the day, the name with "tahmini", the course,
  * kind and weight, the work done of its length, an exam's documents. The whole row opens the work.
  */
-export function WorkRow({ row, showCourse = true }: { row: Row; showCourse?: boolean }) {
+export function WorkRow({
+  row,
+  showCourse = true,
+  className,
+}: {
+  row: Row;
+  showCourse?: boolean;
+  className?: string;
+}) {
   const lines = [
     showCourse ? row.line : row.line.split(" · ").slice(1).join(" · ") || null,
     row.progress ? progressText(row.progress) : null,
@@ -36,6 +44,7 @@ export function WorkRow({ row, showCourse = true }: { row: Row; showCourse?: boo
   return (
     <ListRow
       data-testid="okul-row"
+      className={className}
       data-id={row.id}
       lead={<DayLead day={row.date} />}
       pending={row.done}
