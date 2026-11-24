@@ -5,7 +5,7 @@ Bu dosyayı Claude Code günceller. Yeni bir oturum yalnızca bu dosyayı ve `pr
 ## Durum
 
 - Faz: **Okul 1 bitti** (23 Kas 2026; istem `prompts/okul-adim-1.md`; etiket `okul-1-tamam`; görüntüler `docs/ekran-goruntuleri/okul-1/`). Okul modülünün temeli: tablolar, Notion aktarımı, sayfalar, ders blokları ve Derste görünümü, sınav hazırlığı (yer tutucu ve "Dokümanım hazır"), ödev ve proje sahneleri, teslim ve toplantı listesi. Oturum gözetimsiz: `sherpa-prod`'a ve `git push`'a dokunulmaz
-- Adım: 0–8 bitti; adım denetimi 1 GEÇMEDİ (düzeltildi), faz denetimi GEÇTİ; `check:full` yeşil (671 / 338 / 342); etiket `okul-1-tamam`. Yayın ve gerçek aktarım senin izninle ("Senden bekleyenler")
+- Adım: 0–8 bitti; adım denetimi 1 GEÇMEDİ (düzeltildi), faz denetimi GEÇTİ; `check:full` yeşil (671 / 338 / 342); etiket `okul-1-tamam`. Yayında (24 Kas 2026); gerçek aktarım kullanıcının env dosyasını bekliyor
 - Son commit: faz denetiminin düzeltmeleri ve rapor
 - Önceki: Okul çekirdek A (`okul-cekirdek-a-tamam`, 23 Kas 2026, yayında)
 
@@ -1228,7 +1228,7 @@ Okul çekirdek B (`prompts/okul-cekirdek-b.md`; istemi ilerleme sohbeti yazacak)
 
 ### Okul 1 yayını ve gerçek aktarım
 
-Oturum gözetimsizdi: hiçbir şey yayınlanmadı, `git push` yapılmadı.
+**Yayın yapıldı (24 Kas 2026, kullanıcının izniyle):** iki migration önce `sherpa-dev`, sonra `sherpa-prod`'a uygulandı (iki projede de deneme çalıştırması yalnızca bu ikisini gösterdi); `main` (`420c4e6`) ve `okul-1-tamam` GitHub'da. Kalan: Okul'u etkinleştirmek (3), gerçek aktarım (4: kullanıcı üretim env dosyasını hazırlayıp yolunu yazacak; önce kuru çalıştırma ve sayılar ona gösterilecek, onaydan sonra `--write`). "Görüşün gerek" maddeleri kullanıcının kararıyla şimdilik kurulduğu gibi kalır (telefonda bakıp yazacak).
 
 1. **Migration'lar:** `npm run db:push` (`sherpa-dev`; deneme çalıştırması yalnızca `20261123174511_okul_tables.sql` ve `20261123182410_okul_session_log_fk.sql`'i göstermeli), sonra `npx supabase db push --remote=<prod ref>` (`sherpa-prod`). Kod migration'sız açılmaz (Okul her ortamda kayıtlı; dışa aktarım tablolarını okur).
 2. `git push origin main` ve etiket (`okul-1-tamam`).
