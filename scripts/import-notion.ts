@@ -43,7 +43,8 @@ async function main() {
   const envFile = option("--env") ?? ".env.local";
   const dir = option("--dir") ?? join("data", "notion-export");
   process.loadEnvFile(envFile);
-  const url = env("NEXT_PUBLIC_SUPABASE_URL");
+  // The project's root: a REST address copied from the dashboard ("…/rest/v1/") is cut back to it.
+  const url = new URL(env("NEXT_PUBLIC_SUPABASE_URL")).origin;
   const host = new URL(url).hostname;
   if (!remote && !["127.0.0.1", "localhost"].includes(host)) {
     throw new Error(
@@ -93,7 +94,7 @@ async function main() {
   const read = readExport(data);
   const report = await importExport(ctx, read, { dryRun, palette: COURSE_PALETTE });
 
-  console.log(dryRun ? "Dry run (nothing written):" : `Imported into ${host}:`);
+  console.log(dryRun ? `Dry run on ${host} (nothing written):` : `Imported into ${host}:`);
   for (const [table, counts] of Object.entries(report.tables)) {
     console.log(`  ${table}: ${counts.inserted} new, ${counts.updated} already there`);
   }
